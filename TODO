@@ -1,0 +1,2 @@
+-Overlap MPI communication with computation. The situation is particularly bad in the CUDA version.
+-Move to autoconf, make the CUDA dependencies optional.

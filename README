@@ -1,0 +1,18 @@
+This is a distributed variant of efficient implementations of a simple Trotter-Suzuki solver. The kernels are based on:
+
+https://bitbucket.org/zzzoom/trottersuzuki
+
+CUDA and an MPI implementation are required for compiling.
+
+A test example is included. Usage: trottertest [OPTION]. Arguments:
+  -d NUMBER     Matrix dimension (default: 640)
+  -i NUMBER     Number of iterations (default: 1000)
+  -k NUMBER     Kernel type (default: 0): 
+                   0: CPU, cache-optimized
+                   1: CPU, SSE and cache-optimized
+                   2: GPU
+  -s NUMBER     Snapshots are taken at every NUMBER of iterations.
+                Zero means no snapshots. Default: 0.
+
+MPI extensions (c) 2012 by Peter Wittek <peterwittek@acm.org>
+Kernel implementations (c) 2010-2012 by Carlos Bederián <bc@famaf.unc.edu.ar>
