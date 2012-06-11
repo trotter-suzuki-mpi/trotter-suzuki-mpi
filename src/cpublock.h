@@ -39,8 +39,8 @@ class CPUBlock: public ITrotterKernel {
 public:
     CPUBlock(float *p_real, float *p_imag, float a, float b, size_t tile_width, size_t tile_height, int halo_x, int halo_y);
     ~CPUBlock();
-    void run_kernels();
-    void run_kernel(int k);
+    void run_kernel();
+    void run_kernel_on_halo();
     void wait_for_completion();
     void copy_results();
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const;
@@ -59,7 +59,9 @@ public:
     };
 
     void initialize_MPI(MPI_Comm cartcomm, int _start_x, int _inner_end_x, int _start_y, int _inner_start_y, int _inner_end_y);
-    void exchange_borders();
+    void start_halo_exchange();
+    void finish_halo_exchange();
+
 
 
 private:

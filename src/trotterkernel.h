@@ -32,14 +32,17 @@
 
 class ITrotterKernel {
 public:
-    virtual void run_kernels() = 0;
+    virtual void run_kernel() = 0;
+    virtual void run_kernel_on_halo() = 0;
     virtual void wait_for_completion() = 0;
     virtual void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const = 0;
 
     virtual bool runs_in_place() const = 0;
     virtual std::string get_name() const = 0;
+    
     virtual void initialize_MPI(MPI_Comm cartcomm, int _start_x, int _inner_end_x, int _start_y, int _inner_start_y, int _inner_end_y) = 0;
-    virtual void exchange_borders() = 0;
+    virtual void start_halo_exchange() = 0;
+    virtual void finish_halo_exchange() = 0;
 
 };
 

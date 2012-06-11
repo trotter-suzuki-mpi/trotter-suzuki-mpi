@@ -115,11 +115,15 @@ void trotter(const int matrix_width, const int matrix_height, const int iteratio
             print_matrix(filename.str(), p_real+((inner_start_y-start_y)*width+inner_start_x-start_x),
                          width, inner_end_x-inner_start_x, inner_end_y-inner_start_y);
         }
-        kernel->run_kernels();
-        kernel->wait_for_completion();
+        kernel->run_kernel_on_halo();
         if (i!=iterations-1) {
-            kernel->exchange_borders();
+          kernel->start_halo_exchange();
         }
+        kernel->run_kernel();
+        if (i!=iterations-1) {
+            kernel->finish_halo_exchange();
+        }
+        kernel->wait_for_completion();
     }
 
     gettimeofday(&end, NULL);

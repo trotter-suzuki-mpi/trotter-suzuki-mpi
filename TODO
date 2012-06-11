@@ -1,2 +1,3 @@
--Overlap MPI communication with computation. The situation is particularly bad in the CUDA version.
+-Overlap MPI communication with computation in the CPU kernel.
 -Move to autoconf, make the CUDA dependencies optional.
+-Include SSE kernel.

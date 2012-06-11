@@ -137,22 +137,12 @@ CPUBlock::~CPUBlock() {
     delete[] p_imag[1];
 }
 
-void CPUBlock::run_kernel(int k) {
-    switch (k) {
-    case 1:
-        kernel8(p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense]);
-        break;
-
-    default:
-        // TODO: throw
-        break;
-    }
+void CPUBlock::run_kernel() {
+    kernel8(p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense]);
     sense = 1 - sense;
 }
 
-void CPUBlock::run_kernels() {
-    run_kernel(1);
-}
+void CPUBlock::run_kernel_on_halo() { }
 
 void CPUBlock::wait_for_completion() { }
 
@@ -242,7 +232,9 @@ void CPUBlock::initialize_MPI(MPI_Comm _cartcomm, int _start_x, int _inner_end_x
     MPI_Type_commit (&horizontalBorder);
 }
 
-void CPUBlock::exchange_borders() {
+void CPUBlock::start_halo_exchange() { }
+
+void CPUBlock::finish_halo_exchange() {
     MPI_Request req[8];
     MPI_Status statuses[8];
     int offset=0;
