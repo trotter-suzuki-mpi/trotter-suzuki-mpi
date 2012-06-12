@@ -69,40 +69,49 @@ static void full_step(size_t stride, size_t width, size_t height, float a, float
     block_kernel_vertical  (0u, stride, width, height, a, b, real, imag);
 }
 
-void CPUBlock::process_band(size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag) {
+void CPUBlock::process_sides(size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, float * block_real, float * block_imag) {
+    // First block [0..block_width - halo_x]
+    memcpy2D(block_real, block_width * sizeof(float), &p_real[read_y * tile_width], tile_width * sizeof(float), block_width * sizeof(float), read_height);
+    memcpy2D(block_imag, block_width * sizeof(float), &p_imag[read_y * tile_width], tile_width * sizeof(float), block_width * sizeof(float), read_height);
+    full_step(block_width, block_width, read_height, a, b, block_real, block_imag);
+    memcpy2D(&next_real[(read_y + write_offset) * tile_width], tile_width * sizeof(float), &block_real[write_offset * block_width], block_width * sizeof(float), (block_width - halo_x) * sizeof(float), write_height);
+    memcpy2D(&next_imag[(read_y + write_offset) * tile_width], tile_width * sizeof(float), &block_imag[write_offset * block_width], block_width * sizeof(float), (block_width - halo_x) * sizeof(float), write_height);
+
+    size_t block_start=((tile_width-block_width)/(block_width - 2 * halo_x)+1)*(block_width - 2 * halo_x);
+    // Last block
+    memcpy2D(block_real, block_width * sizeof(float), &p_real[read_y * tile_width + block_start], tile_width * sizeof(float), (tile_width - block_start) * sizeof(float), read_height);
+    memcpy2D(block_imag, block_width * sizeof(float), &p_imag[read_y * tile_width + block_start], tile_width * sizeof(float), (tile_width - block_start) * sizeof(float), read_height);
+    full_step(block_width, tile_width - block_start, read_height, a, b, block_real, block_imag);
+    memcpy2D(&next_real[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(float), &block_real[write_offset * block_width + halo_x], block_width * sizeof(float), (tile_width - block_start - halo_x) * sizeof(float), write_height);
+    memcpy2D(&next_imag[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(float), &block_imag[write_offset * block_width + halo_x], block_width * sizeof(float), (tile_width - block_start - halo_x) * sizeof(float), write_height);
+}
+
+void CPUBlock::process_band(size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, int inner, int sides) {
     float *block_real=new float[block_height * block_width];
     float *block_imag=new float[block_height * block_width];
 
     if (tile_width <= block_width) {
-        // One full block
-        memcpy2D(block_real, block_width * sizeof(float), &p_real[read_y * tile_width], tile_width * sizeof(float), tile_width * sizeof(float), read_height);
-        memcpy2D(block_imag, block_width * sizeof(float), &p_imag[read_y * tile_width], tile_width * sizeof(float), tile_width * sizeof(float), read_height);
-        full_step(block_width, tile_width, read_height, a, b, block_real, block_imag);
-        memcpy2D(&next_real[(read_y + write_offset) * tile_width], tile_width * sizeof(float), &block_real[write_offset * block_width], block_width * sizeof(float), tile_width * sizeof(float), write_height);
-        memcpy2D(&next_imag[(read_y + write_offset) * tile_width], tile_width * sizeof(float), &block_imag[write_offset * block_width], block_width * sizeof(float), tile_width * sizeof(float), write_height);
-    } else {
-
-        // First block [0..block_width - halo_x]
-        memcpy2D(block_real, block_width * sizeof(float), &p_real[read_y * tile_width], tile_width * sizeof(float), block_width * sizeof(float), read_height);
-        memcpy2D(block_imag, block_width * sizeof(float), &p_imag[read_y * tile_width], tile_width * sizeof(float), block_width * sizeof(float), read_height);
-        full_step(block_width, block_width, read_height, a, b, block_real, block_imag);
-        memcpy2D(&next_real[(read_y + write_offset) * tile_width], tile_width * sizeof(float), &block_real[write_offset * block_width], block_width * sizeof(float), (block_width - halo_x) * sizeof(float), write_height);
-        memcpy2D(&next_imag[(read_y + write_offset) * tile_width], tile_width * sizeof(float), &block_imag[write_offset * block_width], block_width * sizeof(float), (block_width - halo_x) * sizeof(float), write_height);
-
-        size_t block_start;
-        for (block_start = block_width - 2 * halo_x; block_start < tile_width - block_width; block_start += block_width - 2 * halo_x) {
-            memcpy2D(block_real, block_width * sizeof(float), &p_real[read_y * tile_width + block_start], tile_width * sizeof(float), block_width * sizeof(float), read_height);
-            memcpy2D(block_imag, block_width * sizeof(float), &p_imag[read_y * tile_width + block_start], tile_width * sizeof(float), block_width * sizeof(float), read_height);
-            full_step(block_width, block_width, read_height, a, b, block_real, block_imag);
-            memcpy2D(&next_real[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(float), &block_real[write_offset * block_width + halo_x], block_width * sizeof(float), (block_width - 2 * halo_x) * sizeof(float), write_height);
-            memcpy2D(&next_imag[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(float), &block_imag[write_offset * block_width + halo_x], block_width * sizeof(float), (block_width - 2 * halo_x) * sizeof(float), write_height);
+        if (sides) {
+          // One full block
+          memcpy2D(block_real, block_width * sizeof(float), &p_real[read_y * tile_width], tile_width * sizeof(float), tile_width * sizeof(float), read_height);
+          memcpy2D(block_imag, block_width * sizeof(float), &p_imag[read_y * tile_width], tile_width * sizeof(float), tile_width * sizeof(float), read_height);
+          full_step(block_width, tile_width, read_height, a, b, block_real, block_imag);
+          memcpy2D(&next_real[(read_y + write_offset) * tile_width], tile_width * sizeof(float), &block_real[write_offset * block_width], block_width * sizeof(float), tile_width * sizeof(float), write_height);
+          memcpy2D(&next_imag[(read_y + write_offset) * tile_width], tile_width * sizeof(float), &block_imag[write_offset * block_width], block_width * sizeof(float), tile_width * sizeof(float), write_height);
         }
-        // Last block
-        memcpy2D(block_real, block_width * sizeof(float), &p_real[read_y * tile_width + block_start], tile_width * sizeof(float), (tile_width - block_start) * sizeof(float), read_height);
-        memcpy2D(block_imag, block_width * sizeof(float), &p_imag[read_y * tile_width + block_start], tile_width * sizeof(float), (tile_width - block_start) * sizeof(float), read_height);
-        full_step(block_width, tile_width - block_start, read_height, a, b, block_real, block_imag);
-        memcpy2D(&next_real[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(float), &block_real[write_offset * block_width + halo_x], block_width * sizeof(float), (tile_width - block_start - halo_x) * sizeof(float), write_height);
-        memcpy2D(&next_imag[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(float), &block_imag[write_offset * block_width + halo_x], block_width * sizeof(float), (tile_width - block_start - halo_x) * sizeof(float), write_height);
+    } else {
+        if (sides) {
+        process_sides(read_y, read_height, write_offset, write_height, a, b, p_real, p_imag, next_real, next_imag, block_real, block_imag);
+        }
+        if (inner) {
+          for (size_t block_start = block_width - 2 * halo_x; block_start < tile_width - block_width; block_start += block_width - 2 * halo_x) {
+              memcpy2D(block_real, block_width * sizeof(float), &p_real[read_y * tile_width + block_start], tile_width * sizeof(float), block_width * sizeof(float), read_height);
+              memcpy2D(block_imag, block_width * sizeof(float), &p_imag[read_y * tile_width + block_start], tile_width * sizeof(float), block_width * sizeof(float), read_height);
+              full_step(block_width, block_width, read_height, a, b, block_real, block_imag);
+              memcpy2D(&next_real[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(float), &block_real[write_offset * block_width + halo_x], block_width * sizeof(float), (block_width - 2 * halo_x) * sizeof(float), write_height);
+              memcpy2D(&next_imag[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(float), &block_imag[write_offset * block_width + halo_x], block_width * sizeof(float), (block_width - 2 * halo_x) * sizeof(float), write_height);
+          }
+        }
     }
     delete[] block_real;
     delete[] block_imag;
@@ -142,7 +151,30 @@ void CPUBlock::run_kernel() {
     sense = 1 - sense;
 }
 
-void CPUBlock::run_kernel_on_halo() { }
+void CPUBlock::run_kernel_on_halo() { 
+    int inner=0, sides=0;
+    if (tile_height <= BLOCK_HEIGHT) {
+        // One full band
+        inner=1; sides=1;
+        process_band(0, tile_height, 0, tile_height, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
+    } else {
+       
+        // Sides
+        inner=0; sides=1;
+        size_t block_start;
+        for (block_start = BLOCK_HEIGHT - 2 * halo_y; block_start < tile_height - BLOCK_HEIGHT; block_start += BLOCK_HEIGHT - 2 * halo_y) {
+            process_band(block_start, BLOCK_HEIGHT, halo_y, BLOCK_HEIGHT - 2 * halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
+        }
+        
+        // First band
+        inner=1; sides=1;
+        process_band(0, BLOCK_HEIGHT, 0, BLOCK_HEIGHT - halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
+
+        // Last band
+        inner=1; sides=1;
+        process_band(block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
+  }
+}
 
 void CPUBlock::wait_for_completion() { }
 
@@ -157,51 +189,10 @@ void CPUBlock::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, 
 }
 
 void CPUBlock::kernel8(const float *p_real, const float *p_imag, float * next_real, float * next_imag) {
-
-    if (tile_height <= BLOCK_HEIGHT) {
-        // One full band
-        process_band(0, tile_height, 0, tile_height, a, b, p_real, p_imag, next_real, next_imag);
-    } else {
-
-#ifdef _OPENMP
-        size_t block_start;
-        #pragma omp parallel default(shared) private(block_start)
-        {
-            #pragma omp sections nowait
-            {
-                #pragma omp section
-                {
-                    // First band
-                    process_band(0, BLOCK_HEIGHT, 0, BLOCK_HEIGHT - halo_y, a, b, p_real, p_imag, next_real, next_imag);
-                }
-                #pragma omp section
-                {
-                    // Last band
-                    block_start = tile_height - BLOCK_HEIGHT + (tile_height - BLOCK_HEIGHT) % (BLOCK_HEIGHT - 2 * halo_y);
-                    process_band(block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a, b, p_real, p_imag, next_real, next_imag);
-                }
-            }
-
-            #pragma omp for schedule(runtime) nowait
-            for (block_start = BLOCK_HEIGHT - 2 * halo_y; block_start < tile_height - BLOCK_HEIGHT; block_start += BLOCK_HEIGHT - 2 * halo_y) {
-                process_band(block_start, BLOCK_HEIGHT, halo_y, BLOCK_HEIGHT - 2 * halo_y, a, b, p_real, p_imag, next_real, next_imag);
-            }
-
-            #pragma omp barrier
-        }
-#else
-
-        // First band
-        process_band(0, BLOCK_HEIGHT, 0, BLOCK_HEIGHT - halo_y, a, b, p_real, p_imag, next_real, next_imag);
-
-        size_t block_start;
-        for (block_start = BLOCK_HEIGHT - 2 * halo_y; block_start < tile_height - BLOCK_HEIGHT; block_start += BLOCK_HEIGHT - 2 * halo_y) {
-            process_band(block_start, BLOCK_HEIGHT, halo_y, BLOCK_HEIGHT - 2 * halo_y, a, b, p_real, p_imag, next_real, next_imag);
-        }
-
-        // Last band
-        process_band(block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a, b, p_real, p_imag, next_real, next_imag);
-#endif /* _OPENMP */
+    // Inner part
+    int inner=1, sides=0;
+    for (size_t block_start = BLOCK_HEIGHT - 2 * halo_y; block_start < tile_height - BLOCK_HEIGHT; block_start += BLOCK_HEIGHT - 2 * halo_y) {
+          process_band(block_start, BLOCK_HEIGHT, halo_y, BLOCK_HEIGHT - 2 * halo_y, a, b, p_real, p_imag, next_real, next_imag, inner, sides);
     }
 }
 
@@ -232,31 +223,29 @@ void CPUBlock::initialize_MPI(MPI_Comm _cartcomm, int _start_x, int _inner_end_x
     MPI_Type_commit (&horizontalBorder);
 }
 
-void CPUBlock::start_halo_exchange() { }
-
-void CPUBlock::finish_halo_exchange() {
-    MPI_Request req[8];
-    MPI_Status statuses[8];
-    int offset=0;
+void CPUBlock::start_halo_exchange() { 
     // Halo exchange: LEFT/RIGHT
-    offset = (inner_start_y-start_y)*tile_width;
-    MPI_Irecv(p_real[sense]+offset, 1, verticalBorder, neighbors[LEFT], 1, cartcomm, req);
-    MPI_Irecv(p_imag[sense]+offset, 1, verticalBorder, neighbors[LEFT], 2, cartcomm, req+1);
+    int offset = (inner_start_y-start_y)*tile_width;
+    MPI_Irecv(p_real[1-sense]+offset, 1, verticalBorder, neighbors[LEFT], 1, cartcomm, req);
+    MPI_Irecv(p_imag[1-sense]+offset, 1, verticalBorder, neighbors[LEFT], 2, cartcomm, req+1);
     offset = (inner_start_y-start_y)*tile_width+inner_end_x-start_x;
-    MPI_Irecv(p_real[sense]+offset, 1, verticalBorder, neighbors[RIGHT], 3, cartcomm, req+2);
-    MPI_Irecv(p_imag[sense]+offset, 1, verticalBorder, neighbors[RIGHT], 4, cartcomm, req+3);
+    MPI_Irecv(p_real[1-sense]+offset, 1, verticalBorder, neighbors[RIGHT], 3, cartcomm, req+2);
+    MPI_Irecv(p_imag[1-sense]+offset, 1, verticalBorder, neighbors[RIGHT], 4, cartcomm, req+3);
 
     offset=(inner_start_y-start_y)*tile_width+inner_end_x-halo_x-start_x;
-    MPI_Isend(p_real[sense]+offset, 1, verticalBorder, neighbors[RIGHT], 1, cartcomm,req+4);
-    MPI_Isend(p_imag[sense]+offset, 1, verticalBorder, neighbors[RIGHT], 2, cartcomm,req+5);
+    MPI_Isend(p_real[1-sense]+offset, 1, verticalBorder, neighbors[RIGHT], 1, cartcomm,req+4);
+    MPI_Isend(p_imag[1-sense]+offset, 1, verticalBorder, neighbors[RIGHT], 2, cartcomm,req+5);
     offset=(inner_start_y-start_y)*tile_width+halo_x;
-    MPI_Isend(p_real[sense]+offset, 1, verticalBorder, neighbors[LEFT], 3, cartcomm,req+6);
-    MPI_Isend(p_imag[sense]+offset, 1, verticalBorder, neighbors[LEFT], 4, cartcomm,req+7);
+    MPI_Isend(p_real[1-sense]+offset, 1, verticalBorder, neighbors[LEFT], 3, cartcomm,req+6);
+    MPI_Isend(p_imag[1-sense]+offset, 1, verticalBorder, neighbors[LEFT], 4, cartcomm,req+7);
+}
+
+void CPUBlock::finish_halo_exchange() {
 
     MPI_Waitall(8, req, statuses);
 
     // Halo exchange: UP/DOWN
-    offset = 0;
+    int offset = 0;
     MPI_Irecv(p_real[sense]+offset, 1, horizontalBorder, neighbors[UP], 1, cartcomm, req);
     MPI_Irecv(p_imag[sense]+offset, 1, horizontalBorder, neighbors[UP], 2, cartcomm, req+1);
     offset = (inner_end_y-start_y)*tile_width;

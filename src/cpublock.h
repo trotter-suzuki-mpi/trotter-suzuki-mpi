@@ -66,7 +66,8 @@ public:
 
 private:
     void kernel8(const float *p_real, const float *p_imag, float * next_real, float * next_imag);
-    void process_band(size_t, size_t, size_t, size_t, float, float, const float *, const float *, float *, float *);
+    void process_band(size_t, size_t, size_t, size_t, float, float, const float *, const float *, float *, float *, int, int);
+    void process_sides(size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, float * block_real, float * block_imag);
 
     float *orig_real;
     float *orig_imag;
@@ -81,6 +82,8 @@ private:
 
     MPI_Comm cartcomm;
     int neighbors[4];
+    MPI_Request req[8];
+    MPI_Status statuses[8];    
     MPI_Datatype horizontalBorder, verticalBorder;
     int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
 };
