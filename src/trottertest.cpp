@@ -26,6 +26,7 @@
 
 #include "common.h"
 #include "cpublock.h"
+#include "cpublocksse.h"
 #ifdef CUDA
 #include "cc2kernel.h"
 #endif
@@ -80,10 +81,7 @@ void trotter(const int matrix_width, const int matrix_height, const int iteratio
         break;
 
     case 1:
-        if (coords[0]==0 && coords[1]==0) {
-            std::cerr << "SSE kernel not included yet\n";
-        }
-        MPI_Abort(MPI_COMM_WORLD, 2);
+        kernel=new CPUBlockSSEKernel(p_real, p_imag, h_a, h_b, width, height, halo_x, halo_y);
         break;
 
     case 2:

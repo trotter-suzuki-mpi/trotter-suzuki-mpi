@@ -14,7 +14,7 @@ LDFLAGS=-lm -L$(CUDA_PATH)/lib64 -lcudart
 INCLUDES=-I$(MPI_PATH)/include -I$(CUDA_PATH)/include
 
 TARGETS=build/trottertest
-OBJS=src/common.o src/cpublock.o src/cc2kernel.cu.co src/trottertest.o
+OBJS=src/common.o src/cpublock.o src/cpublocksse.o src/cc2kernel.cu.co src/trottertest.o
 
 all: $(TARGETS)
 
