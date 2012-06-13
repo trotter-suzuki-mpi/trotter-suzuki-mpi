@@ -81,12 +81,12 @@ private:
     dim3 threadsPerBlock;
     cudaStream_t stream1, stream2;
 
-    float a;
-    float b;
     float *p_real;
     float *p_imag;
     float *pdev_real[2];
     float *pdev_imag[2];
+    float a;
+    float b;
     int sense;
     int halo_x, halo_y, tile_width, tile_height;
 

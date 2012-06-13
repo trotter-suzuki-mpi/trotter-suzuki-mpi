@@ -36,12 +36,6 @@
 #define BLOCK_WIDTH 128u
 #define BLOCK_HEIGHT 128u
 
-//These are for the MPI NEIGHBOURS
-#define UP    0
-#define DOWN  1
-#define LEFT  2
-#define RIGHT 3
-
 class CPUBlockSSEKernel: public ITrotterKernel{
 public:
     CPUBlockSSEKernel(float *p_real, float *p_imag, float _a, float _b, int tile_width, int tile_height, int halo_x, int halo_y);
@@ -83,10 +77,10 @@ private:
     
     MPI_Comm cartcomm;
     int neighbors[4];
+    int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
     MPI_Request req[32];
     MPI_Status statuses[32];    
     MPI_Datatype horizontalBorder, verticalBorder;    
-    int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
 
 };
 
