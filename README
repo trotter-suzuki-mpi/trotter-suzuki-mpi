@@ -14,5 +14,11 @@ A test example is included. Usage: trottertest [OPTION]. Arguments:
   -s NUMBER     Snapshots are taken at every NUMBER of iterations.
                 Zero means no snapshots. Default: 0.
 
+Usage example:
+
+mpirun -np 2 build/trottertest -k 0 -i 100 -d 640 -s 10
+
+The included shell script single2double.sh generates a double precision variant. Executing it will overwrite the single precision source code.
+
 MPI extensions (c) 2012 by Peter Wittek <peterwittek@acm.org>
 Kernel implementations (c) 2010-2012 by Carlos Bederián <bc@famaf.unc.edu.ar>
