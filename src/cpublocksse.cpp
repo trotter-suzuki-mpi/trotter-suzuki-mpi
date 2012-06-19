@@ -32,7 +32,6 @@ static inline void update_shifty_sse(size_t stride, size_t width, size_t height,
     __m128 aq, bq;
     aq = _mm_load1_ps(&a);
     bq = _mm_load1_ps(&b);
-
     for (int i = 0; i < height - offset_y; i++) {
         int idx1 = i * stride;
         int idx2 = (i+offset_y) * stride;
