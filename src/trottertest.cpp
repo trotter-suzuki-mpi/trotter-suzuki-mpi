@@ -95,6 +95,21 @@ void trotter(const int matrix_width, const int matrix_height, const int iteratio
 #endif
         break;
 
+    case 3:
+#ifdef CUDA
+        if (coords[0]==0 && coords[1]==0) {
+            std::cerr << "Hybrid kernel not implemented yet\n";
+        }
+        MPI_Abort(MPI_COMM_WORLD, 2);
+
+#else
+        if (coords[0]==0 && coords[1]==0) {
+            std::cerr << "Compiled without CUDA\n";
+        }
+        MPI_Abort(MPI_COMM_WORLD, 2);
+#endif
+        break;
+
     default:
         kernel=new CPUBlock(p_real, p_imag, h_a, h_b, width, height, halo_x, halo_y);
     }
@@ -144,6 +159,7 @@ void print_usage() {
               "                      0: CPU, cache-optimized\n" \
               "                      1: CPU, SSE and cache-optimized\n" \
               "                      2: GPU\n" \
+              "                      3: Hybrid\n" \
               "     -s NUMBER     Snapshots are taken at every NUMBER of iterations.\n" \
               "                   Zero means no snapshots. Default: " << SNAPSHOTS << ".\n";
 }
@@ -178,7 +194,7 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
             break;
         case 'k':
             *kernel_type = atoi(optarg);
-            if (*kernel_type<0||*kernel_type>2) {
+            if (*kernel_type<0||*kernel_type>3) {
                 fprintf (stderr, "The argument of option -k should be a valid kernel.\n");
                 MPI_Abort(MPI_COMM_WORLD, 1);
             }

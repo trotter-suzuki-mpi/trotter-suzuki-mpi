@@ -126,3 +126,59 @@ void get_quadrant_sample(const float * r00, const float * r01, const float * r10
     }
     assert (dest_y == y + height);
 }
+
+void merge_line_to_buffer(const float * evens, const float * odds, size_t x, size_t width, float * dest) {
+
+    const float * odds_p = odds + (x/2);
+    const float * evens_p = evens + (x/2);
+
+    size_t dest_x = x;
+    size_t buffer_x = 0;
+    if (x % 2 == 1) {
+        dest[buffer_x++] = *(odds_p++);
+        dest_x++;
+    }
+    while (dest_x < (x + width) - (x + width) % 2) {
+        dest[buffer_x++] = *(evens_p++);
+        dest[buffer_x++] = *(odds_p++);
+        dest_x++;
+        dest_x++;
+    }
+    if (dest_x < x + width) {
+        dest[buffer_x++] = *evens_p;
+        dest_x++;
+    }
+    assert(dest_x == x + width);
+}
+
+
+void get_quadrant_sample_to_buffer(const float * r00, const float * r01, const float * r10, const float * r11,
+                         const float * i00, const float * i01, const float * i10, const float * i11,
+                         size_t src_stride, size_t dest_stride,
+                         size_t x, size_t y, size_t width, size_t height,
+                         float * dest_real, float * dest_imag)
+{
+    size_t dest_y = y;
+    size_t buffer_y = 0;
+    if (y % 2 == 1) {
+        merge_line_to_buffer(&r10[(y/2) * src_stride], &r11[(y/2) * src_stride], x, width, dest_real);
+        merge_line_to_buffer(&i10[(y/2) * src_stride], &i11[(y/2) * src_stride], x, width, dest_imag);
+        ++dest_y;
+        ++buffer_y;
+    }
+    while (dest_y < (y + height) - (y + height) % 2) {
+        merge_line_to_buffer(&r00[(dest_y/2) * src_stride], &r01[(dest_y/2) * src_stride], x, width, &dest_real[buffer_y * dest_stride]);
+        merge_line_to_buffer(&i00[(dest_y/2) * src_stride], &i01[(dest_y/2) * src_stride], x, width, &dest_imag[buffer_y * dest_stride]);
+        ++dest_y;
+        ++buffer_y;
+        merge_line_to_buffer(&r10[(dest_y/2) * src_stride], &r11[(dest_y/2) * src_stride], x, width, &dest_real[buffer_y * dest_stride]);
+        merge_line_to_buffer(&i10[(dest_y/2) * src_stride], &i11[(dest_y/2) * src_stride], x, width, &dest_imag[buffer_y * dest_stride]);
+        ++dest_y;
+        ++buffer_y;
+    }
+    if (dest_y < y + height) {
+        merge_line_to_buffer(&r00[(dest_y/2) * src_stride], &r01[(dest_y/2) * src_stride], x, width, &dest_real[buffer_y * dest_stride]);
+        merge_line_to_buffer(&i00[(dest_y/2) * src_stride], &i01[(dest_y/2) * src_stride], x, width, &dest_imag[buffer_y * dest_stride]);
+    }
+    assert (dest_y == y + height);
+}

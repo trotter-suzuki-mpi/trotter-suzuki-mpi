@@ -74,14 +74,16 @@ static  inline __device__ void trotter_horz_pair_flexible_nosync(float a, float 
 }
 
 __launch_bounds__(BLOCK_X * STRIDE_Y)
-__global__ void cc2kernel(float a, float b, int tile_width, int tile_height, int halo_x, int halo_y, const float * __restrict__ p_real, const float * __restrict__ p_imag, float * __restrict__ p2_real, float * __restrict__ p2_imag, int inner, int horizontal, int vertical) {
+__global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t block_width, size_t block_height, size_t halo_x, size_t halo_y, float a, float b, const float * __restrict__ p_real, const float * __restrict__ p_imag, float * __restrict__ p2_real, float * __restrict__ p2_imag, int inner, int horizontal, int vertical) {
     __shared__ float rl[BLOCK_Y][BLOCK_X];
     __shared__ float im[BLOCK_Y][BLOCK_X];
     
-    int blockIdxx=inner*(blockIdx.x+1)+horizontal*(blockIdx.x)+vertical*(blockIdx.x*((tile_width + (BLOCK_X - 2 * STEPS * halo_x) - 1) / (BLOCK_X - 2 * STEPS * halo_x)-1));
-    int blockIdxy=inner*(blockIdx.y+1)+horizontal*(blockIdx.y*((tile_height + (BLOCK_Y - 2 * STEPS * halo_y) - 1) / (BLOCK_Y - 2 * STEPS * halo_y)-1))+vertical*(blockIdx.y+1);
-    int px = blockIdxx * (BLOCK_X - 2 * STEPS * halo_x) + threadIdx.x - STEPS * halo_x;
-    int py = blockIdxy * (BLOCK_Y - 2 * STEPS * halo_y) + threadIdx.y - STEPS * halo_y;
+    int blockIdxx=inner*(blockIdx.x+1)+horizontal*(blockIdx.x)+vertical*(blockIdx.x*((tile_width + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x)-1));
+    int blockIdxy=inner*(blockIdx.y+1)+horizontal*(blockIdx.y*((tile_height + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y)-1))+vertical*(blockIdx.y+1);
+    
+    // BLOCK_X can be different from block_width using the hybrid kernel
+    int px = blockIdxx * (block_width - 2 * halo_x) + threadIdx.x - halo_x;
+    int py = blockIdxy * (block_height - 2 * halo_y) + threadIdx.y - halo_y;
 
     // Read block from global into shared memory
     if (px >= 0 && px < tile_width) {
@@ -99,7 +101,7 @@ __global__ void cc2kernel(float a, float b, int tile_width, int tile_height, int
     // Place threads along the black cells of a checkerboard pattern
     int sx = threadIdx.x;
     int sy;
-    if ((STEPS * halo_x) % 2 == (STEPS * halo_y) % 2) {
+    if ((halo_x) % 2 == (halo_y) % 2) {
         sy = 2 * threadIdx.y + threadIdx.x % 2;
     } else {
         sy = 2 * threadIdx.y + 1 - threadIdx.x % 2;
@@ -107,7 +109,7 @@ __global__ void cc2kernel(float a, float b, int tile_width, int tile_height, int
 
     // global y coordinate of the thread on the checkerboard (px remains the same)
     // used for range checks
-    int checkerboard_py = blockIdxy * (BLOCK_Y - 2 * STEPS * halo_y) + sy - STEPS * halo_y;
+    int checkerboard_py = blockIdxy * (BLOCK_Y - 2 * halo_y) + sy - halo_y;
 
     // Keep the fixed black cells on registers, reds are updated in shared memory
     float cell_r[BLOCK_Y / (STRIDE_Y * 2)];
@@ -120,52 +122,49 @@ __global__ void cc2kernel(float a, float b, int tile_width, int tile_height, int
         cell_i[part] = im[sy + part * 2 * STRIDE_Y][sx];
     }
 
-    // Update cells STEPS full steps
+    // 12344321
 #pragma unroll
-    for (int i = 0; i < STEPS; i++) {
-        // 12344321
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+        trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+    }
+    __syncthreads();
 #pragma unroll
-        for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-            trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
-        }
-        __syncthreads();
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+        trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+    }
+    __syncthreads();
 #pragma unroll
-        for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-            trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
-        }
-        __syncthreads();
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+        trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+    }
+    __syncthreads();
 #pragma unroll
-        for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-            trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
-        }
-        __syncthreads();
-#pragma unroll
-        for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-            trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
-        }
-        __syncthreads();
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+        trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+    }
+    __syncthreads();
 
 #pragma unroll
-        for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-            trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
-        }
-        __syncthreads();
-#pragma unroll
-        for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-            trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
-        }
-        __syncthreads();
-#pragma unroll
-        for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-            trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
-        }
-        __syncthreads();
-#pragma unroll
-        for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-            trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
-        }
-        __syncthreads();
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+        trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
+    __syncthreads();
+#pragma unroll
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+        trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+    }
+    __syncthreads();
+#pragma unroll
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+        trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+    }
+    __syncthreads();
+#pragma unroll
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+        trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+    }
+    __syncthreads();
+
 
     // Write black cells in registers to shared memory
 #pragma unroll
@@ -176,14 +175,14 @@ __global__ void cc2kernel(float a, float b, int tile_width, int tile_height, int
     __syncthreads();
 
     // discard the halo and copy results from shared to global memory
-    sx = threadIdx.x + STEPS * halo_x;
-    sy = threadIdx.y + STEPS * halo_y;
-    px += STEPS * halo_x;
-    py += STEPS * halo_y;
-    if (sx < BLOCK_X - STEPS * halo_x && px < tile_width) {
+    sx = threadIdx.x + halo_x;
+    sy = threadIdx.y + halo_y;
+    px += halo_x;
+    py += halo_y;
+    if (sx < BLOCK_X - halo_x && px < tile_width) {
 #pragma unroll
         for (int i = 0, pidx = py * tile_width + px; i < BLOCK_Y / STRIDE_Y; ++i, pidx += STRIDE_Y * tile_width) {
-            if (sy + i * STRIDE_Y < BLOCK_Y - STEPS * halo_y && py + i * STRIDE_Y < tile_height) {
+            if (sy + i * STRIDE_Y < BLOCK_Y - halo_y && py + i * STRIDE_Y < tile_height) {
                 p2_real[pidx] = rl[sy + i * STRIDE_Y][sx];
                 p2_imag[pidx] = im[sy + i * STRIDE_Y][sx];
             }
@@ -191,12 +190,19 @@ __global__ void cc2kernel(float a, float b, int tile_width, int tile_height, int
     }
 }
 
+// Wrapper function for the hybrid kernel
+void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t block_width, size_t block_height, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, float a, float b, const float * __restrict__ pdev_real, const float * __restrict__ pdev_imag, float * __restrict__ pdev2_real, float * __restrict__ pdev2_imag, int inner, int horizontal, int vertical) {
+    cc2kernel<<<numBlocks, threadsPerBlock, 0, stream>>>(tile_width, tile_height, block_width, block_height, halo_x, halo_y, a, b, pdev_real, pdev_imag, pdev2_real, pdev2_imag, inner, horizontal, vertical);
+    CUT_CHECK_ERROR("Kernel error in cc2kernel_wrapper");
+}
+
+
 CC2Kernel::CC2Kernel(float *_p_real, float *_p_imag, float _a, float _b, int _tile_width, int _tile_height, int _halo_x, int _halo_y):
     p_real(_p_real),
     p_imag(_p_imag),
     threadsPerBlock(BLOCK_X, STRIDE_Y),
-    numBlocks((_tile_width  + (BLOCK_X - 2 * STEPS * _halo_x) - 1) / (BLOCK_X - 2 * STEPS * _halo_x),
-              (_tile_height + (BLOCK_Y - 2 * STEPS * _halo_y) - 1) / (BLOCK_Y - 2 * STEPS * _halo_y)),
+    numBlocks((_tile_width  + (BLOCK_X - 2 * _halo_x) - 1) / (BLOCK_X - 2 * _halo_x),
+              (_tile_height + (BLOCK_Y - 2 * _halo_y) - 1) / (BLOCK_Y - 2 * _halo_y)),
     sense(0),
     a(_a),
     b(_b),
@@ -247,22 +253,22 @@ CC2Kernel::~CC2Kernel() {
 void CC2Kernel::run_kernel_on_halo() {
     int inner=0, horizontal=0, vertical=0;  
     inner=0; horizontal=1; vertical=0;
-    numBlocks.x=(tile_width  + (BLOCK_X - 2 * STEPS * halo_x) - 1) / (BLOCK_X - 2 * STEPS * halo_x);
+    numBlocks.x=(tile_width  + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x);
     numBlocks.y=2;
-    cc2kernel<<<numBlocks, threadsPerBlock, 0, stream1>>>(a, b, tile_width, tile_height, halo_x, halo_y, pdev_real[sense], pdev_imag[sense], pdev_real[1-sense], pdev_imag[1-sense], inner, horizontal, vertical);
+    cc2kernel<<<numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, BLOCK_X, BLOCK_Y, halo_x, halo_y, a, b, pdev_real[sense], pdev_imag[sense], pdev_real[1-sense], pdev_imag[1-sense], inner, horizontal, vertical);
 
     inner=0; horizontal=0; vertical=1;
     numBlocks.x=2;
-    numBlocks.y=(tile_height  + (BLOCK_Y - 2 * STEPS * halo_y) - 1) / (BLOCK_Y - 2 * STEPS * halo_y);
-    cc2kernel<<<numBlocks, threadsPerBlock, 0, stream1>>>(a, b, tile_width, tile_height, halo_x, halo_y, pdev_real[sense], pdev_imag[sense], pdev_real[1-sense], pdev_imag[1-sense], inner, horizontal, vertical);
+    numBlocks.y=(tile_height  + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y);
+    cc2kernel<<<numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, BLOCK_X, BLOCK_Y, halo_x, halo_y, a, b, pdev_real[sense], pdev_imag[sense], pdev_real[1-sense], pdev_imag[1-sense], inner, horizontal, vertical);
 }
 
 void CC2Kernel::run_kernel() {
     int inner=0, horizontal=0, vertical=0;  
     inner=1; horizontal=0; vertical=0;  
-    numBlocks.x=(tile_width  + (BLOCK_X - 2 * STEPS * halo_x) - 1) / (BLOCK_X - 2 * STEPS * halo_x);
-    numBlocks.y=(tile_height + (BLOCK_Y - 2 * STEPS * halo_y) - 1) / (BLOCK_Y - 2 * STEPS * halo_y) - 2;
-    cc2kernel<<<numBlocks, threadsPerBlock, 0, stream2>>>(a, b, tile_width, tile_height, halo_x, halo_y, pdev_real[sense], pdev_imag[sense], pdev_real[1-sense], pdev_imag[1-sense], inner, horizontal, vertical);
+    numBlocks.x=(tile_width  + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x);
+    numBlocks.y=(tile_height + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y) - 2;
+    cc2kernel<<<numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, BLOCK_X, BLOCK_Y, halo_x, halo_y, a, b, pdev_real[sense], pdev_imag[sense], pdev_real[1-sense], pdev_imag[1-sense], inner, horizontal, vertical);
     sense = 1 - sense;
     CUT_CHECK_ERROR("Kernel error in CC2Kernel::run_kernel");
 }

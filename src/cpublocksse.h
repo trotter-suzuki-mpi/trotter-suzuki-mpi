@@ -36,6 +36,10 @@
 #define BLOCK_WIDTH 128u
 #define BLOCK_HEIGHT 128u
 
+void process_sides_sse(size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * r00, const float * r01, const float * r10, const float * r11, const float * i00, const float * i01, const float * i10, const float * i11, float * next_r00, float * next_r01, float * next_r10, float * next_r11, float * next_i00, float * next_i01, float * next_i10, float * next_i11, float * block_r00, float * block_r01, float * block_r10, float * block_r11, float * block_i00, float * block_i01, float * block_i10, float * block_i11);
+
+void process_band_sse(size_t read_y, size_t read_height, size_t write_offset, size_t write_height, size_t block_width, size_t block_height, size_t tile_width, size_t halo_x, float a, float b, const float * r00, const float * r01, const float * r10, const float * r11, const float * i00, const float * i01, const float * i10, const float * i11, float * next_r00, float * next_r01, float * next_r10, float * next_r11, float * next_i00, float * next_i01, float * next_i10, float * next_i11, int inner, int sides);
+
 class CPUBlockSSEKernel: public ITrotterKernel{
 public:
     CPUBlockSSEKernel(float *p_real, float *p_imag, float _a, float _b, int tile_width, int tile_height, int halo_x, int halo_y);

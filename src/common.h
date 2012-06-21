@@ -39,5 +39,9 @@ void get_quadrant_sample(const float * r00, const float * r01, const float * r10
                          size_t src_stride, size_t dest_stride,
                          size_t x, size_t y, size_t width, size_t height,
                          float * dest_real, float * dest_imag);
-
+void get_quadrant_sample_to_buffer(const float * r00, const float * r01, const float * r10, const float * r11,
+                         const float * i00, const float * i01, const float * i10, const float * i11,
+                         size_t src_stride, size_t dest_stride,
+                         size_t x, size_t y, size_t width, size_t height,
+                         float * dest_real, float * dest_imag);
 #endif

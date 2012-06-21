@@ -29,6 +29,10 @@
 #define BLOCK_WIDTH 128u
 #define BLOCK_HEIGHT 128u
 
+void process_sides(size_t tile_width, size_t block_width, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, float * block_real, float * block_imag);
+
+void process_band(size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, int inner, int sides);
+
 class CPUBlock: public ITrotterKernel {
 public:
     CPUBlock(float *p_real, float *p_imag, float a, float b, size_t tile_width, size_t tile_height, int halo_x, int halo_y);
@@ -36,7 +40,6 @@ public:
     void run_kernel();
     void run_kernel_on_halo();
     void wait_for_completion();
-    void copy_results();
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const;
 
     bool runs_in_place() const {
@@ -60,11 +63,7 @@ public:
 
 private:
     void kernel8(const float *p_real, const float *p_imag, float * next_real, float * next_imag);
-    void process_band(size_t, size_t, size_t, size_t, float, float, const float *, const float *, float *, float *, int, int);
-    void process_sides(size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, float * block_real, float * block_imag);
 
-    float *orig_real;
-    float *orig_imag;
     float *p_real[2];
     float *p_imag[2];
     float a;
