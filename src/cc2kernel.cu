@@ -19,9 +19,90 @@
 
 #undef _GLIBCXX_ATOMIC_BUILTINS
 #include <cassert>
+#include <vector>
 
 #include "cc2kernel.h"
 #include "common.h"
+
+/** Check and initialize a device attached to a node
+ *  @param commRank - the MPI rank of this process
+ *  @param commSize - the size of MPI comm world
+ *  This snippet is from GPMR:
+ *  http://code.google.com/p/gpmr/
+ */
+void setDevice(int commRank, int commSize, MPI_Comm cartcomm) {
+  FILE * fp = popen("/bin/hostname", "r");
+  char buf[1024];
+  if (fgets(buf, 1023, fp) == NULL) strcpy(buf, "localhost");
+  pclose(fp);
+  std::string host = buf;
+  host = host.substr(0, host.size() - 1);
+  strcpy(buf, host.c_str());
+
+  int devCount;
+  int deviceNum=-1;
+  CUDA_SAFE_CALL(cudaGetDeviceCount(&devCount));
+
+  if (commRank == 0)
+  {
+    std::map<std::string, std::vector<int> > hosts;
+    std::map<std::string, int> devCounts;
+    MPI_Status stat;
+    MPI_Request req;
+
+    hosts[buf].push_back(0);
+    devCounts[buf] = devCount;
+    for (int i = 1; i < commSize; ++i)
+    {
+      MPI_Recv(buf, 1024, MPI_CHAR, i, 0, cartcomm, &stat);
+      MPI_Recv(&devCount, 1, MPI_INT, i, 0, cartcomm, &stat);
+
+      // check to make sure each process on each node reports the same number of devices.
+      hosts[buf].push_back(i);
+      if (devCounts.find(buf) != devCounts.end())
+      {
+        if (devCounts[buf] != devCount)
+        {
+          printf("Error, device count mismatch %d != %d on %s\n", devCounts[buf], devCount, buf); fflush(stdout);
+        }
+      }
+      else devCounts[buf] = devCount;
+    }
+    // check to make sure that we don't have more jobs on a node than we have GPUs.
+    for (std::map<std::string, std::vector<int> >::iterator it = hosts.begin(); it != hosts.end(); ++it)
+    {
+      if (it->second.size() > static_cast<unsigned int>(devCounts[it->first]))
+      {
+        printf("Error, more jobs running on '%s' than devices - %d jobs > %d devices.\n",
+               it->first.c_str(), static_cast<int>(it->second.size()), devCounts[it->first]);
+        fflush(stdout);
+        MPI_Abort(cartcomm, 1);
+      }
+    }
+
+    // send out the device number for each process to use.
+    MPI_Irecv(&deviceNum, 1, MPI_INT, 0, 0, cartcomm, &req);
+    for (std::map<std::string, std::vector<int> >::iterator it = hosts.begin(); it != hosts.end(); ++it)
+    {
+      for (unsigned int i = 0; i < it->second.size(); ++i)
+      {
+        int devID = i;
+        MPI_Send(&devID, 1, MPI_INT, it->second[i], 0, cartcomm);
+      }
+    }
+    MPI_Wait(&req, &stat);
+  }
+  else
+  {
+    // send out the hostname and device count for your local node, then get back the device number you should use.
+    MPI_Status stat;
+    MPI_Send(buf, strlen(buf) + 1, MPI_CHAR, 0, 0, cartcomm);
+    MPI_Send(&devCount, 1, MPI_INT, 0, 0, cartcomm);
+    MPI_Recv(&deviceNum, 1, MPI_INT, 0, 0, cartcomm, &stat);
+  }
+  CUDA_SAFE_CALL(cudaSetDevice(deviceNum));
+  MPI_Barrier(cartcomm);
+}
 
 template<int BLOCK_WIDTH, int BLOCK_HEIGHT, int BACKWARDS>
 inline __device__ void trotter_vert_pair_flexible_nosync(float a, float b, int tile_height, float &cell_r, float &cell_i, int kx, int ky, int py, float rl[BLOCK_HEIGHT][BLOCK_WIDTH], float im[BLOCK_HEIGHT][BLOCK_WIDTH]) {
@@ -219,6 +300,11 @@ CC2Kernel::CC2Kernel(float *_p_real, float *_p_imag, float _a, float _b, int mat
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height, halo_y);
     tile_width=end_x-start_x;
     tile_height=end_y-start_y;
+
+    int nProcs;
+    MPI_Comm_size(cartcomm, &nProcs);
+
+    setDevice(rank, nProcs, cartcomm);
 
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[0]), tile_width * tile_height * sizeof(float)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[1]), tile_width * tile_height * sizeof(float)));
