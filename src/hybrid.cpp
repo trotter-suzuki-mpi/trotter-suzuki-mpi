@@ -24,12 +24,12 @@
 
 // Class methods
 HybridKernel::HybridKernel(float *_p_real, float *_p_imag, float _a, float _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, MPI_Comm _cartcomm):
+    threadsPerBlock(BLOCK_X, STRIDE_Y),
     a(_a),
     b(_b),
+    sense(0),
     halo_x(_halo_x),
-    halo_y(_halo_y),
-    threadsPerBlock(BLOCK_X, STRIDE_Y),
-    sense(0)
+    halo_y(_halo_y)
 {
     cartcomm=_cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
@@ -65,10 +65,7 @@ HybridKernel::HybridKernel(float *_p_real, float *_p_imag, float _a, float _b, i
     size_t max_gpu_rows=0.9*deviceProp.totalGlobalMem/(2*2*sizeof(float)*gpu_tile_width);
     // The halos must be accounted for
     max_gpu_rows-=2*2*2;
-    
-    size_t n_gpu_blocks_y = max_gpu_rows / (BLOCK_Y - 2 * halo_y);
     int n_cpu_rows=tile_height-block_height-last_block_height+2*halo_y-max_gpu_rows;
-
     n_bands_on_cpu=0;
     if (n_cpu_rows>0){
         n_bands_on_cpu=(n_cpu_rows + (block_height - 2 * halo_y) - 1) / (block_height - 2 * halo_y);
@@ -143,7 +140,7 @@ void HybridKernel::run_kernel() {
     int block_start;
     #pragma omp parallel default(shared) private(block_start)
     #pragma omp for schedule(runtime) nowait
-    for (block_start = block_height - 2 * halo_y; block_start < last_band; block_start += block_height - 2 * halo_y) {
+    for (block_start = block_height - 2 * halo_y; block_start < (int)last_band; block_start += block_height - 2 * halo_y) {
         process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
     }
     #pragma omp barrier
@@ -190,7 +187,7 @@ void HybridKernel::run_kernel_on_halo() {
         }
 
         #pragma omp for schedule(runtime) nowait
-        for (block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
+        for (block_start = block_height - 2 * halo_y; block_start < (int)(tile_height - block_height); block_start += block_height - 2 * halo_y) {
             inner=0; sides=1;
             process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
         }

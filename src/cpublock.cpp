@@ -121,9 +121,9 @@ void process_band(size_t tile_width, size_t block_width, size_t block_height, si
 CPUBlock::CPUBlock(float *_p_real, float *_p_imag, float _a, float _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, MPI_Comm _cartcomm):
     a(_a),
     b(_b),
+    sense(0),
     halo_x(_halo_x),
-    halo_y(_halo_y),
-    sense(0)
+    halo_y(_halo_y)
 {
   
     cartcomm=_cartcomm;

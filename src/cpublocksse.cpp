@@ -32,10 +32,10 @@ inline void update_shifty_sse(size_t stride, size_t width, size_t height, float 
     __m128 aq, bq;
     aq = _mm_load1_ps(&a);
     bq = _mm_load1_ps(&b);
-    for (int i = 0; i < height - offset_y; i++) {
+    for (size_t i = 0; i < height - offset_y; i++) {
         int idx1 = i * stride;
         int idx2 = (i+offset_y) * stride;
-        int j = 0;
+        size_t j = 0;
         for (; j < width - width % 4; j += 4, idx1 += 4, idx2 += 4) {
             __m128 r1q = _mm_load_ps(&r1[idx1]);
             __m128 i1q = _mm_load_ps(&i1[idx1]);
@@ -68,10 +68,10 @@ inline void update_shiftx_sse(size_t stride, size_t width, size_t height, float 
     __m128 aq, bq;
     aq = _mm_load1_ps(&a);
     bq = _mm_load1_ps(&b);
-    for (int i = 0; i < height; i++) {
+    for (size_t i = 0; i < height; i++) {
         int idx1 = i * stride;
         int idx2 = i * stride + offset_x;
-        int j = 0;
+        size_t j = 0;
         for (; j < width - offset_x - (width - offset_x) % 4; j += 4, idx1 += 4, idx2 += 4) {
             __m128 r1q = _mm_load_ps(&r1[idx1]);
             __m128 i1q = _mm_load_ps(&i1[idx1]);
@@ -291,9 +291,9 @@ CPUBlockSSEKernel::CPUBlockSSEKernel(float *_p_real, float *_p_imag, float _a, f
     p_imag(_p_imag),
     a(_a),
     b(_b),
+    sense(0),
     halo_x(_halo_x),
-    halo_y(_halo_y),
-    sense(0)
+    halo_y(_halo_y)
 {
     cartcomm=_cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
@@ -326,14 +326,14 @@ CPUBlockSSEKernel::CPUBlockSSEKernel(float *_p_real, float *_p_imag, float _a, f
     posix_memalign(reinterpret_cast<void**>(&i10[1]), 64, ((tile_width * tile_height) / 4) * sizeof(float));
     posix_memalign(reinterpret_cast<void**>(&i11[0]), 64, ((tile_width * tile_height) / 4) * sizeof(float));
     posix_memalign(reinterpret_cast<void**>(&i11[1]), 64, ((tile_width * tile_height) / 4) * sizeof(float));
-    for (int i = 0; i < tile_height/2; i++) {
-        for (int j = 0; j < tile_width/2; j++) {
+    for (size_t i = 0; i < tile_height/2; i++) {
+        for (size_t j = 0; j < tile_width/2; j++) {
             r00[0][i * tile_width / 2 + j] = p_real[2 * i * tile_width + 2 * j];
             i00[0][i * tile_width / 2 + j] = p_imag[2 * i * tile_width + 2 * j];
             r01[0][i * tile_width / 2 + j] = p_real[2 * i * tile_width + 2 * j + 1];
             i01[0][i * tile_width / 2 + j] = p_imag[2 * i * tile_width + 2 * j + 1];
         }
-        for (int j = 0; j < tile_width/2; j++) {
+        for (size_t j = 0; j < tile_width/2; j++) {
             r10[0][i * tile_width / 2 + j] = p_real[(2 * i + 1) * tile_width + 2 * j];
             i10[0][i * tile_width / 2 + j] = p_imag[(2 * i + 1) * tile_width + 2 * j];
             r11[0][i * tile_width / 2 + j] = p_real[(2 * i + 1) * tile_width + 2 * j + 1];

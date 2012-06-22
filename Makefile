@@ -4,10 +4,10 @@ CUDA_PATH=/usr/local/cuda
 OPTS=-g
 
 CXX=$(MPI_PATH)/bin/mpicxx
-CXXFLAGS=-O3 -march=native -ffast-math
+CXXFLAGS=-O3 -march=native -ffast-math -fopenmp -Wall
 
 NVCC=$(CUDA_PATH)/bin/nvcc
-NVCCFLAGS=-O -arch=sm_20 -use_fast_math -Xptxas "-v" -Xcompiler "-O3 -march=native -ffast-math"
+NVCCFLAGS=-O -arch=sm_20 -use_fast_math -Xptxas "-v" -Xcompiler "-O3 -march=native -ffast-math -Wall"
 
 LDFLAGS=-lm -L$(CUDA_PATH)/lib64 -lcudart
 

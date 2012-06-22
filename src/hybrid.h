@@ -63,7 +63,7 @@ private:
     float a;
     float b;
     int sense;
-    int halo_x, halo_y, tile_width, tile_height;
+    size_t halo_x, halo_y, tile_width, tile_height;
     static const size_t block_width=BLOCK_WIDTH;
     static const size_t block_height=BLOCK_HEIGHT;
     size_t gpu_tile_width, gpu_tile_height, gpu_start_x, gpu_start_y;

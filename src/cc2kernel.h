@@ -89,7 +89,7 @@ private:
     float a;
     float b;
     int sense;
-    int halo_x, halo_y, tile_width, tile_height;
+    size_t halo_x, halo_y, tile_width, tile_height;
 
     MPI_Comm cartcomm;
     int neighbors[4];

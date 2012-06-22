@@ -30,6 +30,7 @@
 
 class ITrotterKernel {
 public:
+    virtual ~ITrotterKernel(){};
     virtual void run_kernel() = 0;
     virtual void run_kernel_on_halo() = 0;
     virtual void wait_for_completion() = 0;

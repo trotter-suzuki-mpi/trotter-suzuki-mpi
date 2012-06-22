@@ -62,7 +62,7 @@ private:
     float a;
     float b;
     int sense;
-    int halo_x, halo_y, tile_width, tile_height;
+    size_t halo_x, halo_y, tile_width, tile_height;
     // NOTE: block rows must be 16 byte aligned
     //       block height must be even
     static const size_t block_width=BLOCK_WIDTH;
