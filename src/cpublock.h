@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
- 
+
 #ifndef __CPUBLOCK_H
 #define __CPUBLOCK_H
 
@@ -66,7 +66,7 @@ private:
     int neighbors[4];
     int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
     MPI_Request req[8];
-    MPI_Status statuses[8];    
+    MPI_Status statuses[8];
     MPI_Datatype horizontalBorder, verticalBorder;
 };
 

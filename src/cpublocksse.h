@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
- 
+
 #ifndef __CPUBLOCKSSE_H
 #define __CPUBLOCKSSE_H
 
@@ -36,16 +36,18 @@ void process_sides_sse(size_t tile_width, size_t block_width, size_t block_heigh
 
 void process_band_sse(size_t read_y, size_t read_height, size_t write_offset, size_t write_height, size_t block_width, size_t block_height, size_t tile_width, size_t halo_x, float a, float b, const float * r00, const float * r01, const float * r10, const float * r11, const float * i00, const float * i01, const float * i10, const float * i11, float * next_r00, float * next_r01, float * next_r10, float * next_r11, float * next_i00, float * next_i01, float * next_i10, float * next_i11, int inner, int sides);
 
-class CPUBlockSSEKernel: public ITrotterKernel{
+class CPUBlockSSEKernel: public ITrotterKernel {
 public:
     CPUBlockSSEKernel(float *p_real, float *p_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, MPI_Comm cartcomm);
     ~CPUBlockSSEKernel();
     void run_kernel();
-    void run_kernel_on_halo();    
+    void run_kernel_on_halo();
     void wait_for_completion();
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const;
 
-    bool runs_in_place() const { return false; }
+    bool runs_in_place() const {
+        return false;
+    }
     std::string get_name() const {
         return "SSE";
     };
@@ -67,13 +69,13 @@ private:
     //       block height must be even
     static const size_t block_width=BLOCK_WIDTH;
     static const size_t block_height=BLOCK_HEIGHT;
-    
+
     MPI_Comm cartcomm;
     int neighbors[4];
     int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
     MPI_Request req[32];
-    MPI_Status statuses[32];    
-    MPI_Datatype horizontalBorder, verticalBorder;    
+    MPI_Status statuses[32];
+    MPI_Datatype horizontalBorder, verticalBorder;
 
 };
 

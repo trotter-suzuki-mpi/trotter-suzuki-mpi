@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
- 
+
 #include <sstream>
 #include <string>
 
@@ -125,7 +125,7 @@ void trotter(const int matrix_width, const int matrix_height, const int iteratio
         }
         kernel->run_kernel_on_halo();
         if (i!=iterations-1) {
-          kernel->start_halo_exchange();
+            kernel->start_halo_exchange();
         }
         kernel->run_kernel();
         if (i!=iterations-1) {

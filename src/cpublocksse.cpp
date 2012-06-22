@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
- 
+
 #include <cassert>
 
 #include <mpi.h>
@@ -161,7 +161,7 @@ void process_sides_sse(size_t tile_width, size_t block_width, size_t block_heigh
     memcpy2D(block_i11, block_stride, &i11[read_idx], matrix_stride, read_width, read_height / 2);
 
     full_step_sse(block_width / 2, block_width / 2, read_height / 2, a, b, block_r00, block_r01, block_r10, block_r11, block_i00, block_i01, block_i10, block_i11);
-    
+
     block_read_idx = (write_offset / 2) * (block_width / 2);
     write_idx = (read_y / 2 + write_offset / 2) * (tile_width / 2);
     write_width = ((block_width - halo_x) / 2) * sizeof(float);
@@ -211,7 +211,7 @@ void process_band_sse(size_t tile_width, size_t block_width, size_t block_height
     float block_i01[(block_height / 2) * (block_width / 2)];
     float block_i10[(block_height / 2) * (block_width / 2)];
     float block_i11[(block_height / 2) * (block_width / 2)];
-        
+
     size_t read_idx;
     size_t read_width;
     size_t block_read_idx;
@@ -298,10 +298,10 @@ CPUBlockSSEKernel::CPUBlockSSEKernel(float *_p_real, float *_p_imag, float _a, f
     cartcomm=_cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
-    int rank, coords[2], dims[2]={0,0}, periods[2]= {0, 0};
+    int rank, coords[2], dims[2]= {0,0}, periods[2]= {0, 0};
     MPI_Comm_rank(cartcomm, &rank);
     MPI_Cart_get(cartcomm, 2, dims, periods, coords);
-    int inner_start_x=0, end_x=0, end_y=0;    
+    int inner_start_x=0, end_x=0, end_y=0;
     calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width, halo_x);
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height, halo_y);
     tile_width=end_x-start_x;
@@ -381,25 +381,29 @@ void CPUBlockSSEKernel::run_kernel_on_halo() {
     int inner=0, sides=0;
     if (tile_height <= block_height) {
         // One full band
-        inner=1; sides=1;
+        inner=1;
+        sides=1;
         process_band_sse(tile_width, block_width, block_height, halo_x, 0, tile_height, 0, tile_height, a, b, r00[sense], r01[sense], r10[sense], r11[sense], i00[sense], i01[sense], i10[sense], i11[sense], r00[1-sense], r01[1-sense], r10[1-sense], r11[1-sense], i00[1-sense], i01[1-sense], i10[1-sense], i11[1-sense], inner, sides);
     } else {
-       
+
         // Sides
-        inner=0; sides=1;
+        inner=0;
+        sides=1;
         size_t block_start;
         for (block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
             process_band_sse(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, r00[sense], r01[sense], r10[sense], r11[sense], i00[sense], i01[sense], i10[sense], i11[sense], r00[1-sense], r01[1-sense], r10[1-sense], r11[1-sense], i00[1-sense], i01[1-sense], i10[1-sense], i11[1-sense], inner, sides);
         }
-        
+
         // First band
-        inner=1; sides=1;
+        inner=1;
+        sides=1;
         process_band_sse(tile_width, block_width, block_height, halo_x,  0, block_height, 0, block_height - halo_y, a, b, r00[sense], r01[sense], r10[sense], r11[sense], i00[sense], i01[sense], i10[sense], i11[sense], r00[1-sense], r01[1-sense], r10[1-sense], r11[1-sense], i00[1-sense], i01[1-sense], i10[1-sense], i11[1-sense], inner, sides);
 
         // Last band
-        inner=1; sides=1;
+        inner=1;
+        sides=1;
         process_band_sse(tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a, b, r00[sense], r01[sense], r10[sense], r11[sense], i00[sense], i01[sense], i10[sense], i11[sense], r00[1-sense], r01[1-sense], r10[1-sense], r11[1-sense], i00[1-sense], i01[1-sense], i10[1-sense], i11[1-sense], inner, sides);
-  }
+    }
 
 }
 

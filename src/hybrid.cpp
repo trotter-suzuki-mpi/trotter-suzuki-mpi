@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
- 
+
 #include <mpi.h>
 
 #include "common.h"
@@ -34,16 +34,16 @@ HybridKernel::HybridKernel(float *_p_real, float *_p_imag, float _a, float _b, i
     cartcomm=_cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
-    int rank, coords[2], dims[2]={0,0}, periods[2]= {0, 0};
+    int rank, coords[2], dims[2]= {0,0}, periods[2]= {0, 0};
     MPI_Comm_rank(cartcomm, &rank);
     MPI_Cart_get(cartcomm, 2, dims, periods, coords);
-    int inner_start_x=0, end_x=0, end_y=0;    
+    int inner_start_x=0, end_x=0, end_y=0;
     calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width, halo_x);
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height, halo_y);
     tile_width=end_x-start_x;
     tile_height=end_y-start_y;
 
-    // The indices of the last blocks are necessary, because their sizes 
+    // The indices of the last blocks are necessary, because their sizes
     // are different from the rest of the blocks
     size_t last_block_start_x=((tile_width-block_width)/(block_width - 2 * halo_x)+1)*(block_width - 2 * halo_x);
     size_t last_block_start_y=((tile_height-block_height)/(block_height - 2 * halo_y)+1)*(block_height - 2 * halo_y);
@@ -67,18 +67,18 @@ HybridKernel::HybridKernel(float *_p_real, float *_p_imag, float _a, float _b, i
     max_gpu_rows-=2*2*2;
     int n_cpu_rows=tile_height-block_height-last_block_height+2*halo_y-max_gpu_rows;
     n_bands_on_cpu=0;
-    if (n_cpu_rows>0){
+    if (n_cpu_rows>0) {
         n_bands_on_cpu=(n_cpu_rows + (block_height - 2 * halo_y) - 1) / (block_height - 2 * halo_y);
     }
-#ifdef DEBUG    
+#ifdef DEBUG
     printf("Max GPU rows: %d\n", max_gpu_rows);
     printf("GPU columns: %d\n", gpu_tile_width);
     printf("CPU rows %d\n", n_cpu_rows);
     printf("%d\n", n_bands_on_cpu);
-#endif    
-    gpu_tile_height = tile_height-(n_bands_on_cpu+1)*(block_height-2*halo_y)-last_block_height+2*halo_y;    
+#endif
+    gpu_tile_height = tile_height-(n_bands_on_cpu+1)*(block_height-2*halo_y)-last_block_height+2*halo_y;
     gpu_start_y = (n_bands_on_cpu+1)*(block_height-2*halo_y);
-#ifdef DEBUG        
+#ifdef DEBUG
     printf("%d %d %d %d\n", gpu_start_x, gpu_tile_width, gpu_start_y, gpu_tile_height);
 #endif
 
@@ -89,14 +89,14 @@ HybridKernel::HybridKernel(float *_p_real, float *_p_imag, float _a, float _b, i
 
     memcpy(p_real[0], _p_real, tile_width * tile_height * sizeof(float));
     memcpy(p_imag[0], _p_imag, tile_width * tile_height * sizeof(float));
-   
+
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[0]), gpu_tile_width * gpu_tile_height * sizeof(float)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[1]), gpu_tile_width * gpu_tile_height * sizeof(float)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[0]), gpu_tile_width * gpu_tile_height * sizeof(float)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[1]), gpu_tile_width * gpu_tile_height * sizeof(float)));
     CUDA_SAFE_CALL(cudaMemcpy2D(pdev_real[0], gpu_tile_width*sizeof(float), &(p_real[0][gpu_start_y*tile_width+gpu_start_x]), tile_width*sizeof(float), gpu_tile_width * sizeof(float), gpu_tile_height, cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy2D(pdev_imag[0], gpu_tile_width*sizeof(float), &(p_imag[0][gpu_start_y*tile_width+gpu_start_x]), tile_width*sizeof(float), gpu_tile_width * sizeof(float), gpu_tile_height, cudaMemcpyHostToDevice));
-	  cudaStreamCreate(&stream);
+    cudaStreamCreate(&stream);
 
     // Halo exchange uses wave pattern to communicate
     // halo_x-wide inner rows are sent first to left and right
@@ -120,13 +120,13 @@ HybridKernel::~HybridKernel() {
     delete[] p_real[1];
     delete[] p_imag[0];
     delete[] p_imag[1];
-    
+
     CUDA_SAFE_CALL(cudaFree(pdev_real[0]));
     CUDA_SAFE_CALL(cudaFree(pdev_real[1]));
     CUDA_SAFE_CALL(cudaFree(pdev_imag[0]));
     CUDA_SAFE_CALL(cudaFree(pdev_imag[1]));
-    
-	  cudaStreamDestroy(stream);
+
+    cudaStreamDestroy(stream);
 }
 
 
@@ -134,7 +134,7 @@ void HybridKernel::run_kernel() {
     // Note that the async CUDA calculations are launched in run_kernel_on_halo
     int inner=1, sides=0;
     size_t last_band=(n_bands_on_cpu+1)*(block_height - 2 * halo_y);
-    if (tile_height - block_height < last_band ) { 
+    if (tile_height - block_height < last_band ) {
         last_band=tile_height - block_height;
     }
     int block_start;
@@ -147,80 +147,88 @@ void HybridKernel::run_kernel() {
     sense = 1 - sense;
 }
 
-void HybridKernel::run_kernel_on_halo() { 
+void HybridKernel::run_kernel_on_halo() {
     // The hybrid kernel is efficient if the CUDA stream is launched first for
     // the inner part of the matrix
-    int inner=1, horizontal=0, vertical=0;  
+    int inner=1, horizontal=0, vertical=0;
     numBlocks.x=(gpu_tile_width  + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x);
     numBlocks.y=(gpu_tile_height + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y);
-      
+
     cc2kernel_wrapper(gpu_tile_width, gpu_tile_height, -BLOCK_X+3*halo_x, -BLOCK_Y+3*halo_y, halo_x, halo_y, numBlocks, threadsPerBlock, stream,  a, b, pdev_real[sense], pdev_imag[sense], pdev_real[1-sense], pdev_imag[1-sense], inner, horizontal, vertical);
-    
+
     // The CPU calculates the halo
-    inner=0; int sides=0;
+    inner=0;
+    int sides=0;
     if (tile_height <= block_height) {
         // One full band
-        inner=1; sides=1;
+        inner=1;
+        sides=1;
         process_band(tile_width, block_width, block_height, halo_x, 0, tile_height, 0, tile_height, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
     } else {
-#ifdef _OPENMP       
-    int block_start;
-    #pragma omp parallel default(shared) private(block_start)
-    {
-        #pragma omp sections nowait
+#ifdef _OPENMP
+        int block_start;
+        #pragma omp parallel default(shared) private(block_start)
         {
-            #pragma omp section
+            #pragma omp sections nowait
             {
-                // First band
-                inner=1; sides=1;
-                process_band(tile_width, block_width, block_height, halo_x, 0, block_height, 0, block_height - halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
+                #pragma omp section
+                {
+                    // First band
+                    inner=1;
+                    sides=1;
+                    process_band(tile_width, block_width, block_height, halo_x, 0, block_height, 0, block_height - halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
 
+                }
+                #pragma omp section
+                {
+                    // Last band
+                    block_start = ((tile_height-block_height)/(block_height - 2 * halo_y)+1)*(block_height - 2 * halo_y);
+                    inner=1;
+                    sides=1;
+                    process_band(tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
+
+                }
             }
-            #pragma omp section
-            {
-                // Last band
-                block_start = ((tile_height-block_height)/(block_height - 2 * halo_y)+1)*(block_height - 2 * halo_y);
-                inner=1; sides=1;
-                process_band(tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
 
+            #pragma omp for schedule(runtime) nowait
+            for (block_start = block_height - 2 * halo_y; block_start < (int)(tile_height - block_height); block_start += block_height - 2 * halo_y) {
+                inner=0;
+                sides=1;
+                process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
             }
-        }
 
-        #pragma omp for schedule(runtime) nowait
-        for (block_start = block_height - 2 * halo_y; block_start < (int)(tile_height - block_height); block_start += block_height - 2 * halo_y) {
-            inner=0; sides=1;
-            process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
+            #pragma omp barrier
         }
-
-        #pragma omp barrier
-    }
 
 #else
         // Sides
-        inner=0; sides=1;
+        inner=0;
+        sides=1;
         int block_start;
         for (block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
             process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
         }
         // First band
-        inner=1; sides=1;
+        inner=1;
+        sides=1;
         process_band(tile_width, block_width, block_height, halo_x, 0, block_height, 0, block_height - halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
 
         // Last band
-        inner=1; sides=1;
+        inner=1;
+        sides=1;
         process_band(tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
-#endif /* _OPENMP */        
-  }
+#endif /* _OPENMP */
+    }
 }
 
-void HybridKernel::wait_for_completion() { 
+void HybridKernel::wait_for_completion() {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
 }
 
 void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const {
-    if ( (x!=0) || (y!=0) || (width!=tile_width) || (height!=tile_height)){
-      printf("Only full tile samples are implemented!\n");
-      return;
+    if ( (x!=0) || (y!=0) || (width!=tile_width) || (height!=tile_height)) {
+        printf("Only full tile samples are implemented!\n");
+        return;
     }
     memcpy2D(dest_real, dest_stride * sizeof(float), &(p_real[sense][y * tile_width + x]), tile_width * sizeof(float), width * sizeof(float), height);
     memcpy2D(dest_imag, dest_stride * sizeof(float), &(p_imag[sense][y * tile_width + x]), tile_width * sizeof(float), width * sizeof(float), height);
@@ -232,7 +240,7 @@ void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t wid
 }
 
 
-void HybridKernel::start_halo_exchange() { 
+void HybridKernel::start_halo_exchange() {
     // Halo exchange: LEFT/RIGHT
     int offset = (inner_start_y-start_y)*tile_width;
     MPI_Irecv(p_real[1-sense]+offset, 1, verticalBorder, neighbors[LEFT], 1, cartcomm, req);
@@ -270,7 +278,7 @@ void HybridKernel::finish_halo_exchange() {
     // Exhange internal halos
 
     // Copy the internal halos to the GPU memory
-   
+
     // Vertical
     size_t height = gpu_tile_height-2*halo_y;	// The vertical halo in rows
     size_t width = halo_x;	// The number of columns of the matrix
@@ -305,11 +313,11 @@ void HybridKernel::finish_halo_exchange() {
     CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][(gpu_tile_height-halo_y)*gpu_tile_width]), gpu_tile_width * sizeof(float), &(p_real[sense][offset_y*tile_width+offset_x]), tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream));
     CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][(gpu_tile_height-halo_y)*gpu_tile_width]), gpu_tile_width * sizeof(float), &(p_imag[sense][offset_y*tile_width+offset_x]), tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream));
 
-   // Copy the internal halos to the CPU memory
+    // Copy the internal halos to the CPU memory
 
     // Vertical
     height = gpu_tile_height-4*halo_y; // tile_height-block_height-last_block_height;
-    width = halo_x;	
+    width = halo_x;
 
     // Left
     offset_x = gpu_start_x+halo_x; //block_width-halo_x;

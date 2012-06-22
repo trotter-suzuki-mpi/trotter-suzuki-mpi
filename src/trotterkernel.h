@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
- 
+
 #ifndef __TROTTERKERNEL_H
 #define __TROTTERKERNEL_H
 
@@ -30,7 +30,7 @@
 
 class ITrotterKernel {
 public:
-    virtual ~ITrotterKernel(){};
+    virtual ~ITrotterKernel() {};
     virtual void run_kernel() = 0;
     virtual void run_kernel_on_halo() = 0;
     virtual void wait_for_completion() = 0;
@@ -38,7 +38,7 @@ public:
 
     virtual bool runs_in_place() const = 0;
     virtual std::string get_name() const = 0;
-    
+
     virtual void start_halo_exchange() = 0;
     virtual void finish_halo_exchange() = 0;
 

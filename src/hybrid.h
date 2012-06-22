@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
- 
+
 #ifndef __HYBRID_H
 #define __HYBRID_H
 
@@ -41,12 +41,12 @@ public:
     }
     std::string get_name() const {
         std::stringstream name;
-        name << "Hybrid";      
+        name << "Hybrid";
 #ifdef _OPENMP
         name << "-OpenMP-" << omp_get_max_threads();
-#endif  
+#endif
         return name.str();
-     };
+    };
 
     void start_halo_exchange();
     void finish_halo_exchange();
@@ -74,7 +74,7 @@ private:
     int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
     MPI_Request req[8];
     MPI_Status statuses[8];
-    MPI_Datatype horizontalBorder, verticalBorder;    
+    MPI_Datatype horizontalBorder, verticalBorder;
 };
 
 #endif

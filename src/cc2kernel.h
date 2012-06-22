@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
- 
+
 #ifndef __CC2KERNEL_H
 #define __CC2KERNEL_H
 
@@ -62,7 +62,7 @@ public:
     CC2Kernel(float *p_real, float *p_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, MPI_Comm cartcomm);
     ~CC2Kernel();
     void run_kernel();
-    void run_kernel_on_halo();    
+    void run_kernel_on_halo();
     void wait_for_completion();
     void copy_results();
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const;

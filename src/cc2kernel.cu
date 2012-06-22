@@ -31,80 +31,81 @@
  *  http://code.google.com/p/gpmr/
  */
 void setDevice(int commRank, MPI_Comm cartcomm) {
-  int commSize;
-  MPI_Comm_size(cartcomm, &commSize);
+    int commSize;
+    MPI_Comm_size(cartcomm, &commSize);
 
-  FILE * fp = popen("/bin/hostname", "r");
-  char buf[1024];
-  if (fgets(buf, 1023, fp) == NULL) strcpy(buf, "localhost");
-  pclose(fp);
-  std::string host = buf;
-  host = host.substr(0, host.size() - 1);
-  strcpy(buf, host.c_str());
+    FILE * fp = popen("/bin/hostname", "r");
+    char buf[1024];
+    if (fgets(buf, 1023, fp) == NULL) strcpy(buf, "localhost");
+    pclose(fp);
+    std::string host = buf;
+    host = host.substr(0, host.size() - 1);
+    strcpy(buf, host.c_str());
 
-  int devCount;
-  int deviceNum=-1;
-  CUDA_SAFE_CALL(cudaGetDeviceCount(&devCount));
+    int devCount;
+    int deviceNum=-1;
+    CUDA_SAFE_CALL(cudaGetDeviceCount(&devCount));
 
-  if (commRank == 0)
-  {
-    std::map<std::string, std::vector<int> > hosts;
-    std::map<std::string, int> devCounts;
-    MPI_Status stat;
-    MPI_Request req;
-
-    hosts[buf].push_back(0);
-    devCounts[buf] = devCount;
-    for (int i = 1; i < commSize; ++i)
+    if (commRank == 0)
     {
-      MPI_Recv(buf, 1024, MPI_CHAR, i, 0, cartcomm, &stat);
-      MPI_Recv(&devCount, 1, MPI_INT, i, 0, cartcomm, &stat);
+        std::map<std::string, std::vector<int> > hosts;
+        std::map<std::string, int> devCounts;
+        MPI_Status stat;
+        MPI_Request req;
 
-      // check to make sure each process on each node reports the same number of devices.
-      hosts[buf].push_back(i);
-      if (devCounts.find(buf) != devCounts.end())
-      {
-        if (devCounts[buf] != devCount)
+        hosts[buf].push_back(0);
+        devCounts[buf] = devCount;
+        for (int i = 1; i < commSize; ++i)
         {
-          printf("Error, device count mismatch %d != %d on %s\n", devCounts[buf], devCount, buf); fflush(stdout);
-        }
-      }
-      else devCounts[buf] = devCount;
-    }
-    // check to make sure that we don't have more jobs on a node than we have GPUs.
-    for (std::map<std::string, std::vector<int> >::iterator it = hosts.begin(); it != hosts.end(); ++it)
-    {
-      if (it->second.size() > static_cast<unsigned int>(devCounts[it->first]))
-      {
-        printf("Error, more jobs running on '%s' than devices - %d jobs > %d devices.\n",
-               it->first.c_str(), static_cast<int>(it->second.size()), devCounts[it->first]);
-        fflush(stdout);
-        MPI_Abort(cartcomm, 1);
-      }
-    }
+            MPI_Recv(buf, 1024, MPI_CHAR, i, 0, cartcomm, &stat);
+            MPI_Recv(&devCount, 1, MPI_INT, i, 0, cartcomm, &stat);
 
-    // send out the device number for each process to use.
-    MPI_Irecv(&deviceNum, 1, MPI_INT, 0, 0, cartcomm, &req);
-    for (std::map<std::string, std::vector<int> >::iterator it = hosts.begin(); it != hosts.end(); ++it)
-    {
-      for (unsigned int i = 0; i < it->second.size(); ++i)
-      {
-        int devID = i;
-        MPI_Send(&devID, 1, MPI_INT, it->second[i], 0, cartcomm);
-      }
+            // check to make sure each process on each node reports the same number of devices.
+            hosts[buf].push_back(i);
+            if (devCounts.find(buf) != devCounts.end())
+            {
+                if (devCounts[buf] != devCount)
+                {
+                    printf("Error, device count mismatch %d != %d on %s\n", devCounts[buf], devCount, buf);
+                    fflush(stdout);
+                }
+            }
+            else devCounts[buf] = devCount;
+        }
+        // check to make sure that we don't have more jobs on a node than we have GPUs.
+        for (std::map<std::string, std::vector<int> >::iterator it = hosts.begin(); it != hosts.end(); ++it)
+        {
+            if (it->second.size() > static_cast<unsigned int>(devCounts[it->first]))
+            {
+                printf("Error, more jobs running on '%s' than devices - %d jobs > %d devices.\n",
+                       it->first.c_str(), static_cast<int>(it->second.size()), devCounts[it->first]);
+                fflush(stdout);
+                MPI_Abort(cartcomm, 1);
+            }
+        }
+
+        // send out the device number for each process to use.
+        MPI_Irecv(&deviceNum, 1, MPI_INT, 0, 0, cartcomm, &req);
+        for (std::map<std::string, std::vector<int> >::iterator it = hosts.begin(); it != hosts.end(); ++it)
+        {
+            for (unsigned int i = 0; i < it->second.size(); ++i)
+            {
+                int devID = i;
+                MPI_Send(&devID, 1, MPI_INT, it->second[i], 0, cartcomm);
+            }
+        }
+        MPI_Wait(&req, &stat);
     }
-    MPI_Wait(&req, &stat);
-  }
-  else
-  {
-    // send out the hostname and device count for your local node, then get back the device number you should use.
-    MPI_Status stat;
-    MPI_Send(buf, strlen(buf) + 1, MPI_CHAR, 0, 0, cartcomm);
-    MPI_Send(&devCount, 1, MPI_INT, 0, 0, cartcomm);
-    MPI_Recv(&deviceNum, 1, MPI_INT, 0, 0, cartcomm, &stat);
-  }
-  CUDA_SAFE_CALL(cudaSetDevice(deviceNum));
-  MPI_Barrier(cartcomm);
+    else
+    {
+        // send out the hostname and device count for your local node, then get back the device number you should use.
+        MPI_Status stat;
+        MPI_Send(buf, strlen(buf) + 1, MPI_CHAR, 0, 0, cartcomm);
+        MPI_Send(&devCount, 1, MPI_INT, 0, 0, cartcomm);
+        MPI_Recv(&deviceNum, 1, MPI_INT, 0, 0, cartcomm, &stat);
+    }
+    CUDA_SAFE_CALL(cudaSetDevice(deviceNum));
+    MPI_Barrier(cartcomm);
 }
 
 template<int BLOCK_WIDTH, int BLOCK_HEIGHT, int BACKWARDS>
@@ -162,10 +163,10 @@ __launch_bounds__(BLOCK_X * STRIDE_Y)
 __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, float a, float b, const float * __restrict__ p_real, const float * __restrict__ p_imag, float * __restrict__ p2_real, float * __restrict__ p2_imag, int inner, int horizontal, int vertical) {
     __shared__ float rl[BLOCK_Y][BLOCK_X];
     __shared__ float im[BLOCK_Y][BLOCK_X];
-    
+
     int blockIdxx=inner*(blockIdx.x+1)+horizontal*(blockIdx.x)+vertical*(blockIdx.x*((tile_width + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x)-1));
     int blockIdxy=inner*(blockIdx.y+1)+horizontal*(blockIdx.y*((tile_height + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y)-1))+vertical*(blockIdx.y+1);
-    
+
     // The offsets are used by the hybrid kernel
     int px = offset_x + blockIdxx * (BLOCK_X - 2 * halo_x) + threadIdx.x - halo_x;
     int py = offset_y + blockIdxy * (BLOCK_Y - 2 * halo_y) + threadIdx.y - halo_y;
@@ -291,19 +292,19 @@ CC2Kernel::CC2Kernel(float *_p_real, float *_p_imag, float _a, float _b, int mat
     halo_x(_halo_x),
     halo_y(_halo_y)
 {
-  
+
     cartcomm=_cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
-    int rank, coords[2], dims[2]={0,0}, periods[2]= {0, 0};
+    int rank, coords[2], dims[2]= {0,0}, periods[2]= {0, 0};
     MPI_Comm_rank(cartcomm, &rank);
     MPI_Cart_get(cartcomm, 2, dims, periods, coords);
-    int inner_start_x=0, end_x=0, end_y=0;    
+    int inner_start_x=0, end_x=0, end_y=0;
     calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width, halo_x);
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height, halo_y);
     tile_width=end_x-start_x;
     tile_height=end_y-start_y;
-    
+
     setDevice(rank, cartcomm);
 
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[0]), tile_width * tile_height * sizeof(float)));
@@ -313,8 +314,8 @@ CC2Kernel::CC2Kernel(float *_p_real, float *_p_imag, float _a, float _b, int mat
     CUDA_SAFE_CALL(cudaMemcpy(pdev_real[0], p_real, tile_width * tile_height * sizeof(float), cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy(pdev_imag[0], p_imag, tile_width * tile_height * sizeof(float), cudaMemcpyHostToDevice));
     cudaStreamCreate(&stream1);
-	  cudaStreamCreate(&stream2);
-    
+    cudaStreamCreate(&stream2);
+
     // Halo exchange uses wave pattern to communicate
     int height = inner_end_y-inner_start_y;	// The vertical halo in rows
     int width = halo_x;	// The number of columns of the matrix
@@ -364,14 +365,16 @@ CC2Kernel::~CC2Kernel() {
     CUDA_SAFE_CALL(cudaFree(pdev_real[1]));
     CUDA_SAFE_CALL(cudaFree(pdev_imag[0]));
     CUDA_SAFE_CALL(cudaFree(pdev_imag[1]));
-    
+
     cudaStreamDestroy(stream1);
-	  cudaStreamDestroy(stream2);
+    cudaStreamDestroy(stream2);
 }
 
 void CC2Kernel::run_kernel_on_halo() {
-    int inner=0, horizontal=0, vertical=0;  
-    inner=0; horizontal=1; vertical=0;
+    int inner=0, horizontal=0, vertical=0;
+    inner=0;
+    horizontal=1;
+    vertical=0;
     numBlocks.x=(tile_width  + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x);
     numBlocks.y=2;
     cc2kernel<<<numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, pdev_real[sense], pdev_imag[sense], pdev_real[1-sense], pdev_imag[1-sense], inner, horizontal, vertical);
@@ -383,8 +386,10 @@ void CC2Kernel::run_kernel_on_halo() {
 }
 
 void CC2Kernel::run_kernel() {
-    int inner=0, horizontal=0, vertical=0;  
-    inner=1; horizontal=0; vertical=0;  
+    int inner=0, horizontal=0, vertical=0;
+    inner=1;
+    horizontal=0;
+    vertical=0;
     numBlocks.x=(tile_width  + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x) ;
     numBlocks.y=(tile_height + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y) - 2;
 
@@ -442,7 +447,7 @@ void CC2Kernel::finish_halo_exchange() {
     offset=halo_y*tile_width;
     CUDA_SAFE_CALL(cudaMemcpy2DAsync(top_real_send, width * sizeof(float), &(pdev_real[sense][offset]), stride * sizeof(float), width * sizeof(float), height, cudaMemcpyDeviceToHost, stream1));
     CUDA_SAFE_CALL(cudaMemcpy2DAsync(top_imag_send, width * sizeof(float), &(pdev_imag[sense][offset]), stride * sizeof(float), width * sizeof(float), height, cudaMemcpyDeviceToHost, stream1));
-    
+
     cudaStreamSynchronize(stream1);
 
 
