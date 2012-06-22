@@ -118,15 +118,26 @@ void process_band(size_t tile_width, size_t block_width, size_t block_height, si
 }
 
 // Class methods
-CPUBlock::CPUBlock(float *_p_real, float *_p_imag, float _a, float _b, size_t _tile_width, size_t _tile_height, int _halo_x, int _halo_y):
+CPUBlock::CPUBlock(float *_p_real, float *_p_imag, float _a, float _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, MPI_Comm _cartcomm):
     a(_a),
     b(_b),
-    tile_width(_tile_width),
-    tile_height(_tile_height),
     halo_x(_halo_x),
     halo_y(_halo_y),
     sense(0)
 {
+  
+    cartcomm=_cartcomm;
+    MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
+    MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
+    int rank, coords[2], dims[2]={0,0}, periods[2]= {0, 0};
+    MPI_Comm_rank(cartcomm, &rank);
+    MPI_Cart_get(cartcomm, 2, dims, periods, coords);
+    int inner_start_x=0, end_x=0, end_y=0;    
+    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width, halo_x);
+    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height, halo_y);
+    tile_width=end_x-start_x;
+    tile_height=end_y-start_y;
+
     p_real[0] = new float[tile_width * tile_height];
     p_real[1] = new float[tile_width * tile_height];
     p_imag[0] = new float[tile_width * tile_height];
@@ -134,6 +145,22 @@ CPUBlock::CPUBlock(float *_p_real, float *_p_imag, float _a, float _b, size_t _t
 
     memcpy(p_real[0], _p_real, tile_width * tile_height * sizeof(float));
     memcpy(p_imag[0], _p_imag, tile_width * tile_height * sizeof(float));
+
+    // Halo exchange uses wave pattern to communicate
+    // halo_x-wide inner rows are sent first to left and right
+    // Then full length rows are exchanged to the top and bottom
+    int count = inner_end_y-inner_start_y;	// The number of rows in the halo submatrix
+    int block_length = halo_x;	// The number of columns in the halo submatrix
+    int stride = tile_width;	// The combined width of the matrix with the halo
+    MPI_Type_vector (count, block_length, stride, MPI_FLOAT, &verticalBorder);
+    MPI_Type_commit (&verticalBorder);
+
+    count = halo_y;	// The vertical halo in rows
+    block_length = tile_width;	// The number of columns of the matrix
+    stride = tile_width;	// The combined width of the matrix with the halo
+    MPI_Type_vector (count, block_length, stride, MPI_FLOAT, &horizontalBorder);
+    MPI_Type_commit (&horizontalBorder);
+
 }
 
 CPUBlock::~CPUBlock() {
@@ -186,33 +213,6 @@ void CPUBlock::kernel8(const float *p_real, const float *p_imag, float * next_re
     for (size_t block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
           process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, p_real, p_imag, next_real, next_imag, inner, sides);
     }
-}
-
-void CPUBlock::initialize_MPI(MPI_Comm _cartcomm, int _start_x, int _inner_end_x, int _start_y, int _inner_start_y, int _inner_end_y)
-{
-    cartcomm=_cartcomm;
-    MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
-    MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
-    start_x = _start_x;
-    inner_end_x = _inner_end_x;
-    start_y = _start_y;
-    inner_start_y = _inner_start_y;
-    inner_end_y = _inner_end_y;
-
-    // Halo exchange uses wave pattern to communicate
-    // halo_x-wide inner rows are sent first to left and right
-    // Then full length rows are exchanged to the top and bottom
-    int count = inner_end_y-inner_start_y;	// The number of rows in the halo submatrix
-    int block_length = halo_x;	// The number of columns in the halo submatrix
-    int stride = tile_width;	// The combined width of the matrix with the halo
-    MPI_Type_vector (count, block_length, stride, MPI_FLOAT, &verticalBorder);
-    MPI_Type_commit (&verticalBorder);
-
-    count = halo_y;	// The vertical halo in rows
-    block_length = tile_width;	// The number of columns of the matrix
-    stride = tile_width;	// The combined width of the matrix with the halo
-    MPI_Type_vector (count, block_length, stride, MPI_FLOAT, &horizontalBorder);
-    MPI_Type_commit (&horizontalBorder);
 }
 
 void CPUBlock::start_halo_exchange() { 

@@ -18,7 +18,7 @@ Usage example:
 
 mpirun -np 2 build/trottertest -k 0 -i 100 -d 640 -s 10
 
-The chunk of the matrix assigned to a node, that is a tile, must have a width that is divisible by two. This puts a constraint on the possible matrix sizes. For instance, running twelve MPI threads in a 4x3 configuration, the dimensions must be divisible by six and sixteen.
+The chunk of the matrix assigned to a node, that is a tile, must have a width that is divisible by two. This puts a constraint on the possible matrix sizes. For instance, running twelve MPI threads in a 4x3 configuration, the dimensions must be divisible by six and eight.
 
 The included shell script single2double.sh generates a double precision variant. Executing it will overwrite the single precision source code.
 

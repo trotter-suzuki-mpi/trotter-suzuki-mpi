@@ -21,6 +21,7 @@
 #include <cassert>
 
 #include "cc2kernel.h"
+#include "common.h"
 
 template<int BLOCK_WIDTH, int BLOCK_HEIGHT, int BACKWARDS>
 inline __device__ void trotter_vert_pair_flexible_nosync(float a, float b, int tile_height, float &cell_r, float &cell_i, int kx, int ky, int py, float rl[BLOCK_HEIGHT][BLOCK_WIDTH], float im[BLOCK_HEIGHT][BLOCK_WIDTH]) {
@@ -74,16 +75,16 @@ static  inline __device__ void trotter_horz_pair_flexible_nosync(float a, float 
 }
 
 __launch_bounds__(BLOCK_X * STRIDE_Y)
-__global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t block_width, size_t block_height, size_t halo_x, size_t halo_y, float a, float b, const float * __restrict__ p_real, const float * __restrict__ p_imag, float * __restrict__ p2_real, float * __restrict__ p2_imag, int inner, int horizontal, int vertical) {
+__global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, float a, float b, const float * __restrict__ p_real, const float * __restrict__ p_imag, float * __restrict__ p2_real, float * __restrict__ p2_imag, int inner, int horizontal, int vertical) {
     __shared__ float rl[BLOCK_Y][BLOCK_X];
     __shared__ float im[BLOCK_Y][BLOCK_X];
     
     int blockIdxx=inner*(blockIdx.x+1)+horizontal*(blockIdx.x)+vertical*(blockIdx.x*((tile_width + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x)-1));
     int blockIdxy=inner*(blockIdx.y+1)+horizontal*(blockIdx.y*((tile_height + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y)-1))+vertical*(blockIdx.y+1);
     
-    // BLOCK_X can be different from block_width using the hybrid kernel
-    int px = blockIdxx * (block_width - 2 * halo_x) + threadIdx.x - halo_x;
-    int py = blockIdxy * (block_height - 2 * halo_y) + threadIdx.y - halo_y;
+    // The offsets are used by the hybrid kernel
+    int px = offset_x + blockIdxx * (BLOCK_X - 2 * halo_x) + threadIdx.x - halo_x;
+    int py = offset_y + blockIdxy * (BLOCK_Y - 2 * halo_y) + threadIdx.y - halo_y;
 
     // Read block from global into shared memory
     if (px >= 0 && px < tile_width) {
@@ -191,26 +192,33 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t block_wi
 }
 
 // Wrapper function for the hybrid kernel
-void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t block_width, size_t block_height, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, float a, float b, const float * __restrict__ pdev_real, const float * __restrict__ pdev_imag, float * __restrict__ pdev2_real, float * __restrict__ pdev2_imag, int inner, int horizontal, int vertical) {
-    cc2kernel<<<numBlocks, threadsPerBlock, 0, stream>>>(tile_width, tile_height, block_width, block_height, halo_x, halo_y, a, b, pdev_real, pdev_imag, pdev2_real, pdev2_imag, inner, horizontal, vertical);
+void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, float a, float b, const float * __restrict__ pdev_real, const float * __restrict__ pdev_imag, float * __restrict__ pdev2_real, float * __restrict__ pdev2_imag, int inner, int horizontal, int vertical) {
+    cc2kernel<<<numBlocks, threadsPerBlock, 0, stream>>>(tile_width, tile_height, offset_x, offset_y, halo_x, halo_y, a, b, pdev_real, pdev_imag, pdev2_real, pdev2_imag, inner, horizontal, vertical);
     CUT_CHECK_ERROR("Kernel error in cc2kernel_wrapper");
 }
 
-
-CC2Kernel::CC2Kernel(float *_p_real, float *_p_imag, float _a, float _b, int _tile_width, int _tile_height, int _halo_x, int _halo_y):
+CC2Kernel::CC2Kernel(float *_p_real, float *_p_imag, float _a, float _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, MPI_Comm _cartcomm):
     p_real(_p_real),
     p_imag(_p_imag),
     threadsPerBlock(BLOCK_X, STRIDE_Y),
-    numBlocks((_tile_width  + (BLOCK_X - 2 * _halo_x) - 1) / (BLOCK_X - 2 * _halo_x),
-              (_tile_height + (BLOCK_Y - 2 * _halo_y) - 1) / (BLOCK_Y - 2 * _halo_y)),
     sense(0),
     a(_a),
     b(_b),
-    tile_width(_tile_width),
-    tile_height(_tile_height),
     halo_x(_halo_x),
     halo_y(_halo_y)
 {
+  
+    cartcomm=_cartcomm;
+    MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
+    MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
+    int rank, coords[2], dims[2]={0,0}, periods[2]= {0, 0};
+    MPI_Comm_rank(cartcomm, &rank);
+    MPI_Cart_get(cartcomm, 2, dims, periods, coords);
+    int inner_start_x=0, end_x=0, end_y=0;    
+    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width, halo_x);
+    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height, halo_y);
+    tile_width=end_x-start_x;
+    tile_height=end_y-start_y;
 
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[0]), tile_width * tile_height * sizeof(float)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[1]), tile_width * tile_height * sizeof(float)));
@@ -220,6 +228,31 @@ CC2Kernel::CC2Kernel(float *_p_real, float *_p_imag, float _a, float _b, int _ti
     CUDA_SAFE_CALL(cudaMemcpy(pdev_imag[0], p_imag, tile_width * tile_height * sizeof(float), cudaMemcpyHostToDevice));
     cudaStreamCreate(&stream1);
 	  cudaStreamCreate(&stream2);
+    
+    // Halo exchange uses wave pattern to communicate
+    int height = inner_end_y-inner_start_y;	// The vertical halo in rows
+    int width = halo_x;	// The number of columns of the matrix
+    // Allocating pinned memory for the buffers
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &left_real_receive, height*width*sizeof(float), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &left_real_send, height*width*sizeof(float), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &right_real_receive, height*width*sizeof(float), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &right_real_send, height*width*sizeof(float), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &left_imag_receive, height*width*sizeof(float), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &left_imag_send, height*width*sizeof(float), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &right_imag_receive, height*width*sizeof(float), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &right_imag_send, height*width*sizeof(float), cudaHostAllocDefault));
+
+    height = halo_y;	// The vertical halo in rows
+    width = tile_width;	// The number of columns of the matrix
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &bottom_real_receive, height*width*sizeof(float), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &bottom_real_send, height*width*sizeof(float), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &top_real_receive, height*width*sizeof(float), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &top_real_send, height*width*sizeof(float), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &bottom_imag_receive, height*width*sizeof(float), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &bottom_imag_send, height*width*sizeof(float), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &top_imag_receive, height*width*sizeof(float), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &top_imag_send, height*width*sizeof(float), cudaHostAllocDefault));
+
 }
 
 
@@ -255,20 +288,21 @@ void CC2Kernel::run_kernel_on_halo() {
     inner=0; horizontal=1; vertical=0;
     numBlocks.x=(tile_width  + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x);
     numBlocks.y=2;
-    cc2kernel<<<numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, BLOCK_X, BLOCK_Y, halo_x, halo_y, a, b, pdev_real[sense], pdev_imag[sense], pdev_real[1-sense], pdev_imag[1-sense], inner, horizontal, vertical);
+    cc2kernel<<<numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, pdev_real[sense], pdev_imag[sense], pdev_real[1-sense], pdev_imag[1-sense], inner, horizontal, vertical);
 
     inner=0; horizontal=0; vertical=1;
     numBlocks.x=2;
     numBlocks.y=(tile_height  + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y);
-    cc2kernel<<<numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, BLOCK_X, BLOCK_Y, halo_x, halo_y, a, b, pdev_real[sense], pdev_imag[sense], pdev_real[1-sense], pdev_imag[1-sense], inner, horizontal, vertical);
+    cc2kernel<<<numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, pdev_real[sense], pdev_imag[sense], pdev_real[1-sense], pdev_imag[1-sense], inner, horizontal, vertical);
 }
 
 void CC2Kernel::run_kernel() {
     int inner=0, horizontal=0, vertical=0;  
     inner=1; horizontal=0; vertical=0;  
-    numBlocks.x=(tile_width  + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x);
+    numBlocks.x=(tile_width  + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x) ;
     numBlocks.y=(tile_height + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y) - 2;
-    cc2kernel<<<numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, BLOCK_X, BLOCK_Y, halo_x, halo_y, a, b, pdev_real[sense], pdev_imag[sense], pdev_real[1-sense], pdev_imag[1-sense], inner, horizontal, vertical);
+
+    cc2kernel<<<numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, pdev_real[sense], pdev_imag[sense], pdev_real[1-sense], pdev_imag[1-sense], inner, horizontal, vertical);
     sense = 1 - sense;
     CUT_CHECK_ERROR("Kernel error in CC2Kernel::run_kernel");
 }
@@ -289,42 +323,6 @@ void CC2Kernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t width,
     assert(y + height <= tile_height);
     CUDA_SAFE_CALL(cudaMemcpy2D(dest_real, dest_stride * sizeof(float), &(pdev_real[sense][y * tile_width + x]), tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyDeviceToHost));
     CUDA_SAFE_CALL(cudaMemcpy2D(dest_imag, dest_stride * sizeof(float), &(pdev_imag[sense][y * tile_width + x]), tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyDeviceToHost));
-}
-
-void CC2Kernel::initialize_MPI(MPI_Comm _cartcomm, int _start_x, int _inner_end_x, int _start_y, int _inner_start_y, int _inner_end_y)
-{
-    cartcomm=_cartcomm;
-    MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
-    MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
-    start_x = _start_x;
-    inner_end_x = _inner_end_x;
-    start_y = _start_y;
-    inner_start_y = _inner_start_y;
-    inner_end_y = _inner_end_y;
-
-    // Halo exchange uses wave pattern to communicate
-    int height = inner_end_y-inner_start_y;	// The vertical halo in rows
-    int width = halo_x;	// The number of columns of the matrix
-    // Allocating pinned memory for the buffers
-    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &left_real_receive, height*width*sizeof(float), cudaHostAllocDefault));
-    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &left_real_send, height*width*sizeof(float), cudaHostAllocDefault));
-    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &right_real_receive, height*width*sizeof(float), cudaHostAllocDefault));
-    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &right_real_send, height*width*sizeof(float), cudaHostAllocDefault));
-    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &left_imag_receive, height*width*sizeof(float), cudaHostAllocDefault));
-    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &left_imag_send, height*width*sizeof(float), cudaHostAllocDefault));
-    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &right_imag_receive, height*width*sizeof(float), cudaHostAllocDefault));
-    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &right_imag_send, height*width*sizeof(float), cudaHostAllocDefault));
-
-    height = halo_y;	// The vertical halo in rows
-    width = tile_width;	// The number of columns of the matrix
-    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &bottom_real_receive, height*width*sizeof(float), cudaHostAllocDefault));
-    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &bottom_real_send, height*width*sizeof(float), cudaHostAllocDefault));
-    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &top_real_receive, height*width*sizeof(float), cudaHostAllocDefault));
-    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &top_real_send, height*width*sizeof(float), cudaHostAllocDefault));
-    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &bottom_imag_receive, height*width*sizeof(float), cudaHostAllocDefault));
-    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &bottom_imag_send, height*width*sizeof(float), cudaHostAllocDefault));
-    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &top_imag_receive, height*width*sizeof(float), cudaHostAllocDefault));
-    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &top_imag_send, height*width*sizeof(float), cudaHostAllocDefault));
 }
 
 void CC2Kernel::start_halo_exchange() {

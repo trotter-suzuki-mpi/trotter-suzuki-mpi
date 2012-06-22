@@ -23,7 +23,7 @@
 #include <string>
 #include <complex>
 
-//#define DEBUG
+#define DEBUG
 #define CUDA
 
 static const double h_a = cos(0.02);

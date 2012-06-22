@@ -77,16 +77,16 @@ void trotter(const int matrix_width, const int matrix_height, const int iteratio
     ITrotterKernel * kernel;
     switch (kernel_type) {
     case 0:
-        kernel=new CPUBlock(p_real, p_imag, h_a, h_b, width, height, halo_x, halo_y);
+        kernel=new CPUBlock(p_real, p_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, cartcomm);
         break;
 
     case 1:
-        kernel=new CPUBlockSSEKernel(p_real, p_imag, h_a, h_b, width, height, halo_x, halo_y);
+        kernel=new CPUBlockSSEKernel(p_real, p_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, cartcomm);
         break;
 
     case 2:
 #ifdef CUDA
-        kernel=new CC2Kernel(p_real, p_imag, h_a, h_b, width, height, halo_x, halo_y);
+        kernel=new CC2Kernel(p_real, p_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, cartcomm);
 #else
         if (coords[0]==0 && coords[1]==0) {
             std::cerr << "Compiled without CUDA\n";
@@ -111,10 +111,9 @@ void trotter(const int matrix_width, const int matrix_height, const int iteratio
         break;
 
     default:
-        kernel=new CPUBlock(p_real, p_imag, h_a, h_b, width, height, halo_x, halo_y);
+        kernel=new CPUBlock(p_real, p_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, cartcomm);
+        break;
     }
-
-    kernel->initialize_MPI(cartcomm, start_x, inner_end_x, start_y, inner_start_y, inner_end_y);
 
     struct timeval start, end;
     gettimeofday(&start, NULL);

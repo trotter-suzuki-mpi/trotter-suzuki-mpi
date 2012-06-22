@@ -42,7 +42,7 @@ void process_band_sse(size_t read_y, size_t read_height, size_t write_offset, si
 
 class CPUBlockSSEKernel: public ITrotterKernel{
 public:
-    CPUBlockSSEKernel(float *p_real, float *p_imag, float _a, float _b, int tile_width, int tile_height, int halo_x, int halo_y);
+    CPUBlockSSEKernel(float *p_real, float *p_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, MPI_Comm cartcomm);
     ~CPUBlockSSEKernel();
     void run_kernel();
     void run_kernel_on_halo();    
@@ -60,7 +60,6 @@ public:
 #endif
     };
 
-    void initialize_MPI(MPI_Comm cartcomm, int _start_x, int _inner_end_x, int _start_y, int _inner_start_y, int _inner_end_y);
     void start_halo_exchange();
     void finish_halo_exchange();
 

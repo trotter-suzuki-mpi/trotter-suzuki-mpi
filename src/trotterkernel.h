@@ -22,8 +22,6 @@
 
 #include <string>
 
-#include <mpi.h>
-
 //These are for the MPI NEIGHBOURS
 #define UP    0
 #define DOWN  1
@@ -40,7 +38,6 @@ public:
     virtual bool runs_in_place() const = 0;
     virtual std::string get_name() const = 0;
     
-    virtual void initialize_MPI(MPI_Comm cartcomm, int _start_x, int _inner_end_x, int _start_y, int _inner_start_y, int _inner_end_y) = 0;
     virtual void start_halo_exchange() = 0;
     virtual void finish_halo_exchange() = 0;
 

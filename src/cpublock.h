@@ -35,7 +35,7 @@ void process_band(size_t tile_width, size_t block_width, size_t block_height, si
 
 class CPUBlock: public ITrotterKernel {
 public:
-    CPUBlock(float *p_real, float *p_imag, float a, float b, size_t tile_width, size_t tile_height, int halo_x, int halo_y);
+    CPUBlock(float *p_real, float *p_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, MPI_Comm cartcomm);
     ~CPUBlock();
     void run_kernel();
     void run_kernel_on_halo();
@@ -55,7 +55,6 @@ public:
 #endif
     };
 
-    void initialize_MPI(MPI_Comm cartcomm, int _start_x, int _inner_end_x, int _start_y, int _inner_start_y, int _inner_end_y);
     void start_halo_exchange();
     void finish_halo_exchange();
 
