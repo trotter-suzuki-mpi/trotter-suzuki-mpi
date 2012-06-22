@@ -29,13 +29,13 @@
 #include "cpublocksse.h"
 #ifdef CUDA
 #include "cc2kernel.h"
+#include "hybrid.h"
 #endif
 
 #define DIM 640
 #define ITERATIONS 1000
 #define KERNEL_TYPE 0
 #define SNAPSHOTS 0
-
 
 void trotter(const int matrix_width, const int matrix_height, const int iterations, const int snapshots, const int kernel_type) {
 
@@ -97,11 +97,7 @@ void trotter(const int matrix_width, const int matrix_height, const int iteratio
 
     case 3:
 #ifdef CUDA
-        if (coords[0]==0 && coords[1]==0) {
-            std::cerr << "Hybrid kernel not implemented yet\n";
-        }
-        MPI_Abort(MPI_COMM_WORLD, 2);
-
+        kernel=new HybridKernel(p_real, p_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, cartcomm);
 #else
         if (coords[0]==0 && coords[1]==0) {
             std::cerr << "Compiled without CUDA\n";
@@ -141,7 +137,7 @@ void trotter(const int matrix_width, const int matrix_height, const int iteratio
     gettimeofday(&end, NULL);
     if (coords[0]==0 && coords[1]==0) {
         long time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
-        std::cout << matrix_width << "x" << matrix_height << " " << kernel->get_name() << " " << matrix_width * matrix_height << " "<< time << std::endl;
+        std::cout << "TROTTER " << matrix_width << "x" << matrix_height << " " << kernel->get_name() << " " << nProcs << " " <<time << std::endl;
     }
     delete[] p_real;
     delete[] p_imag;
@@ -158,7 +154,7 @@ void print_usage() {
               "                      0: CPU, cache-optimized\n" \
               "                      1: CPU, SSE and cache-optimized\n" \
               "                      2: GPU\n" \
-              "                      3: Hybrid\n" \
+              "                      3: Hybrid (experimental) \n" \
               "     -s NUMBER     Snapshots are taken at every NUMBER of iterations.\n" \
               "                   Zero means no snapshots. Default: " << SNAPSHOTS << ".\n";
 }

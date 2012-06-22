@@ -27,10 +27,6 @@
 #include <xmmintrin.h>
 #include <emmintrin.h>
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 #include "trotterkernel.h"
 
 #define BLOCK_WIDTH 128u
@@ -51,13 +47,7 @@ public:
 
     bool runs_in_place() const { return false; }
     std::string get_name() const {
-#ifdef _OPENMP
-        std::stringstream name;
-        name << "OpenMP Block SSE kernel (" << omp_get_max_threads() << " threads)";
-        return name.str();
-#else
-        return "CPU Block SSE kernel";
-#endif
+        return "SSE";
     };
 
     void start_halo_exchange();
