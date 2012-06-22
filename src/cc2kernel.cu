@@ -30,7 +30,10 @@
  *  This snippet is from GPMR:
  *  http://code.google.com/p/gpmr/
  */
-void setDevice(int commRank, int commSize, MPI_Comm cartcomm) {
+void setDevice(int commRank, MPI_Comm cartcomm) {
+  int commSize;
+  MPI_Comm_size(cartcomm, &commSize);
+
   FILE * fp = popen("/bin/hostname", "r");
   char buf[1024];
   if (fgets(buf, 1023, fp) == NULL) strcpy(buf, "localhost");
@@ -191,7 +194,7 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x
 
     // global y coordinate of the thread on the checkerboard (px remains the same)
     // used for range checks
-    int checkerboard_py = blockIdxy * (BLOCK_Y - 2 * halo_y) + sy - halo_y;
+    int checkerboard_py = offset_y + blockIdxy * (BLOCK_Y - 2 * halo_y) + sy - halo_y;
 
     // Keep the fixed black cells on registers, reds are updated in shared memory
     float cell_r[BLOCK_Y / (STRIDE_Y * 2)];
@@ -300,11 +303,8 @@ CC2Kernel::CC2Kernel(float *_p_real, float *_p_imag, float _a, float _b, int mat
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height, halo_y);
     tile_width=end_x-start_x;
     tile_height=end_y-start_y;
-
-    int nProcs;
-    MPI_Comm_size(cartcomm, &nProcs);
-
-    setDevice(rank, nProcs, cartcomm);
+    
+    setDevice(rank, cartcomm);
 
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[0]), tile_width * tile_height * sizeof(float)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[1]), tile_width * tile_height * sizeof(float)));

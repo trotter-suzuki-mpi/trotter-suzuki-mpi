@@ -2,7 +2,7 @@ This is a distributed variant of efficient implementations of a simple Trotter-S
 
 https://bitbucket.org/zzzoom/trottersuzuki
 
-CUDA and an MPI implementation are required for compiling. It also require a GPU with Compute Cabapility 2.0 for the CUDA kernel to execute.
+CUDA and an MPI implementation are required for compiling. It also require a GPU with at least Compute Cabapility 2.0 for the CUDA kernel to execute.
 
 A test example is included. Usage: trottertest [OPTION]. Arguments:
   -d NUMBER     Matrix dimension (default: 640)

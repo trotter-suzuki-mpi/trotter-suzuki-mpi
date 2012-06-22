@@ -54,7 +54,7 @@
     exit(-1);                                    \
   }
 
-void setDevice(int commRank, int commSize, MPI_Comm cartcomm);
+void setDevice(int commRank, MPI_Comm cartcomm);
 void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, float a, float b, const float * __restrict__ pdev_real, const float * __restrict__ pdev_imag, float * __restrict__ pdev2_real, float * __restrict__ pdev2_imag, int inner, int horizontal, int vertical);
 
 class CC2Kernel: public ITrotterKernel {
