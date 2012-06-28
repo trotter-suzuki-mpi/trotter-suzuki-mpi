@@ -139,9 +139,11 @@ void HybridKernel::run_kernel() {
     }
     int block_start;
     #pragma omp parallel default(shared) private(block_start)
-    #pragma omp for schedule(runtime) nowait
-    for (block_start = block_height - 2 * halo_y; block_start < (int)last_band; block_start += block_height - 2 * halo_y) {
-        process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
+    {
+        #pragma omp for schedule(runtime) nowait
+        for (block_start = block_height - 2 * halo_y; block_start < (int)last_band; block_start += block_height - 2 * halo_y) {
+            process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
+        }
     }
     #pragma omp barrier
     sense = 1 - sense;
