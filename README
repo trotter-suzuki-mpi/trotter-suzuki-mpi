@@ -27,9 +27,9 @@ OMP_NUM_THREADS=6 mpirun -np 2 build/trottertest -k 3 -i 100 -d 14000
 
 The included shell script single2double.sh generates a double precision variant. Executing it will overwrite the single precision source code.
 
-Further details are available in the following manuscript:
+Further details are available in the following paper:
 
-http://arxiv.org/abs/1208.2407
+Wittek, P. and Cucchietti, F.M. (2013). A Second-Order Distributed Trotter-Suzuki Solver with a Hybrid CPU-GPU Kernel. Computer Physics Communications, 184, pp. 1165-1171. http://arxiv.org/abs/1208.2407
 
 MPI extensions (c) 2012 by Peter Wittek <peterwittek@acm.org>
 Kernel implementations (c) 2010-2012 by Carlos Bederián <bc@famaf.unc.edu.ar>
