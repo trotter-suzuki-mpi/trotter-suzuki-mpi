@@ -41,4 +41,4 @@ Citation
 ==
 Further details are available in the following paper:
 
-Wittek, P. and Cucchietti, F.M. (2013). A Second-Order Distributed Trotter-Suzuki Solver with a Hybrid CPU-GPU Kernel. Computer Physics Communications, 184, pp. 1165-1171. http://arxiv.org/abs/1208.2407
+Wittek, P. and Cucchietti, F.M. (2013). [A Second-Order Distributed Trotter-Suzuki Solver with a Hybrid CPU-GPU Kernel](http://dx.doi.org/10.1016/j.cpc.2012.12.008). Computer Physics Communications, 184, pp. 1165-1171. [PDF](http://arxiv.org/pdf/1208.2407)
