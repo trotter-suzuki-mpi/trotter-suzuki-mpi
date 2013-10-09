@@ -11,7 +11,10 @@ CUDA and an MPI implementation are required for compiling. It also require a GPU
 Usage
 ==
 
-A test example is included. Usage: trottertest [OPTION]. Arguments:
+A test example is included. Usage: trottertest [OPTIONS]. 
+
+Arguments:
+
     -d NUMBER     Matrix dimension (default: 640)
     -i NUMBER     Number of iterations (default: 1000)
     -k NUMBER     Kernel type (default: 0): 
