@@ -12,15 +12,15 @@ Usage
 ==
 
 A test example is included. Usage: trottertest [OPTION]. Arguments:
-  -d NUMBER     Matrix dimension (default: 640)
-  -i NUMBER     Number of iterations (default: 1000)
-  -k NUMBER     Kernel type (default: 0): 
-                   0: CPU, cache-optimized
-                   1: CPU, SSE and cache-optimized
-                   2: GPU
-                   3: Hybrid CPU-GPU (experimental)                    
-  -s NUMBER     Snapshots are taken at every NUMBER of iterations.
-                Zero means no snapshots. Default: 0.
+    -d NUMBER     Matrix dimension (default: 640)
+    -i NUMBER     Number of iterations (default: 1000)
+    -k NUMBER     Kernel type (default: 0): 
+                    0: CPU, cache-optimized
+                    1: CPU, SSE and cache-optimized
+                    2: GPU
+                    3: Hybrid CPU-GPU (experimental)                    
+    -s NUMBER     Snapshots are taken at every NUMBER of iterations.
+                    Zero means no snapshots. Default: 0.
 
 Example:
 
