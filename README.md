@@ -55,7 +55,7 @@ Options for configure
     --prefix=PATH           Set directory prefix for installation
 
 
-By default Somoclu is installed into /usr/local. If you prefer a
+By default, the executable is installed into /usr/local. If you prefer a
 different location, use this option to select an installation
 directory.
 
@@ -71,7 +71,7 @@ The above flags allow the identification of the correct MPI library the user wis
 
     --with-cuda=/path/to/cuda           Set path for CUDA
 
-Somoclu looks for CUDA in /usr/local/cuda. If your installation is not there, then specify the path with this parameter. If you do not want CUDA enabled, set the parameter to ```--without-cuda```.
+The configure script looks for CUDA in /usr/local/cuda. If your installation is not there, then specify the path with this parameter. If you do not want CUDA enabled, set the parameter to ```--without-cuda```.
 
 Citation
 ==
