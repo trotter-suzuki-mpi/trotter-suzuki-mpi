@@ -1,7 +1,7 @@
 Distributed Trotter-Suzuki Solver
 ==
 
-This is a distributed variant of efficient implementations of a simple Trotter-Suzuki solver. The kernels are based on the efficient [implementation](https://bitbucket.org/zzzoom/trottersuzuki) by 
+This is a distributed variant of efficient implementations of a Trotter-Suzuki solver with high-performance multicore, SSE, GPU, and hybrid kernels. The kernels are based on the [implementation](https://bitbucket.org/zzzoom/trottersuzuki) by 
 Carlos Bederián
 
 Dependencies
