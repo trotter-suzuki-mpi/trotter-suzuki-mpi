@@ -1,0 +1,6 @@
+Since 1.0:
+ - Build system revised, CUDA is no longer necessary.
+
+Version 1.0: 2012-06-28
+
+  - Initial release.

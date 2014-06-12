@@ -23,8 +23,9 @@
 #include <string>
 #include <complex>
 
-//#define DEBUG
-#define CUDA
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 static const double h_a = cos(0.02);
 static const double h_b = sin(0.02);
