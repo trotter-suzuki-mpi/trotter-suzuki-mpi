@@ -57,7 +57,8 @@
 void setDevice(int commRank, MPI_Comm cartcomm);
 void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, float a, float b, const float * __restrict__ pdev_real, const float * __restrict__ pdev_imag, float * __restrict__ pdev2_real, float * __restrict__ pdev2_imag, int inner, int horizontal, int vertical);
 
-class CC2Kernel: public ITrotterKernel {
+class CC2Kernel: public ITrotterKernel
+{
 public:
     CC2Kernel(float *p_real, float *p_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, MPI_Comm cartcomm);
     ~CC2Kernel();
@@ -67,10 +68,12 @@ public:
     void copy_results();
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const;
 
-    bool runs_in_place() const {
+    bool runs_in_place() const
+    {
         return false;
     }
-    std::string get_name() const {
+    std::string get_name() const
+    {
         return "CUDA";
     }
 
