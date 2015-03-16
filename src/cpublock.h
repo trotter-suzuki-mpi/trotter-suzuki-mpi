@@ -29,7 +29,8 @@ void process_sides(size_t tile_width, size_t block_width, size_t halo_x, size_t 
 
 void process_band(size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, int inner, int sides);
 
-class CPUBlock: public ITrotterKernel {
+class CPUBlock: public ITrotterKernel
+{
 public:
     CPUBlock(float *p_real, float *p_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, MPI_Comm cartcomm);
     ~CPUBlock();
@@ -38,10 +39,12 @@ public:
     void wait_for_completion();
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const;
 
-    bool runs_in_place() const {
+    bool runs_in_place() const
+    {
         return false;
     }
-    std::string get_name() const {
+    std::string get_name() const
+    {
         return "CPU";
     };
 

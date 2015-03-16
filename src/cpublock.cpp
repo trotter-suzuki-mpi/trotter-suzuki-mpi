@@ -23,8 +23,10 @@
 #include "cpublock.h"
 
 // Helpers
-void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, size_t height, float a, float b, float * p_real, float * p_imag) {
-    for (size_t idx = start_offset, peer = idx + stride; idx < width; idx += 2, peer += 2) {
+void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, size_t height, float a, float b, float * p_real, float * p_imag)
+{
+    for (size_t idx = start_offset, peer = idx + stride; idx < width; idx += 2, peer += 2)
+    {
         float tmp_real = p_real[idx];
         float tmp_imag = p_imag[idx];
         p_real[idx] = a * tmp_real - b * p_imag[peer];
@@ -32,8 +34,10 @@ void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, siz
         p_real[peer] = a * p_real[peer] - b * tmp_imag;
         p_imag[peer] = a * p_imag[peer] + b * tmp_real;
     }
-    for (size_t y = 1; y < height - 1; ++y) {
-        for (size_t idx = y * stride + (start_offset + y) % 2, peer = idx + stride; idx < y * stride + width; idx += 2, peer += 2) {
+    for (size_t y = 1; y < height - 1; ++y)
+    {
+        for (size_t idx = y * stride + (start_offset + y) % 2, peer = idx + stride; idx < y * stride + width; idx += 2, peer += 2)
+        {
             float tmp_real = p_real[idx];
             float tmp_imag = p_imag[idx];
             p_real[idx] = a * tmp_real - b * p_imag[peer];
@@ -44,9 +48,12 @@ void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, siz
     }
 }
 
-void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, size_t height, float a, float b, float * p_real, float * p_imag) {
-    for (size_t y = 0; y < height; ++y) {
-        for (size_t idx = y * stride + (start_offset + y) % 2, peer = idx + 1; idx < y * stride + width - 1; idx += 2, peer += 2) {
+void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, size_t height, float a, float b, float * p_real, float * p_imag)
+{
+    for (size_t y = 0; y < height; ++y)
+    {
+        for (size_t idx = y * stride + (start_offset + y) % 2, peer = idx + 1; idx < y * stride + width - 1; idx += 2, peer += 2)
+        {
             float tmp_real = p_real[idx];
             float tmp_imag = p_imag[idx];
             p_real[idx] = a * tmp_real - b * p_imag[peer];
@@ -58,7 +65,8 @@ void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, s
 }
 
 
-void full_step(size_t stride, size_t width, size_t height, float a, float b, float * real, float * imag) {
+void full_step(size_t stride, size_t width, size_t height, float a, float b, float * real, float * imag)
+{
     block_kernel_vertical  (0u, stride, width, height, a, b, real, imag);
     block_kernel_horizontal(0u, stride, width, height, a, b, real, imag);
     block_kernel_vertical  (1u, stride, width, height, a, b, real, imag);
@@ -69,7 +77,8 @@ void full_step(size_t stride, size_t width, size_t height, float a, float b, flo
     block_kernel_vertical  (0u, stride, width, height, a, b, real, imag);
 }
 
-void process_sides(size_t tile_width, size_t block_width, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, float * block_real, float * block_imag) {
+void process_sides(size_t tile_width, size_t block_width, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, float * block_real, float * block_imag)
+{
     // First block [0..block_width - halo_x]
     memcpy2D(block_real, block_width * sizeof(float), &p_real[read_y * tile_width], tile_width * sizeof(float), block_width * sizeof(float), read_height);
     memcpy2D(block_imag, block_width * sizeof(float), &p_imag[read_y * tile_width], tile_width * sizeof(float), block_width * sizeof(float), read_height);
@@ -86,12 +95,15 @@ void process_sides(size_t tile_width, size_t block_width, size_t halo_x, size_t 
     memcpy2D(&next_imag[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(float), &block_imag[write_offset * block_width + halo_x], block_width * sizeof(float), (tile_width - block_start - halo_x) * sizeof(float), write_height);
 }
 
-void process_band(size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, int inner, int sides) {
+void process_band(size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, int inner, int sides)
+{
     float *block_real=new float[block_height * block_width];
     float *block_imag=new float[block_height * block_width];
 
-    if (tile_width <= block_width) {
-        if (sides) {
+    if (tile_width <= block_width)
+    {
+        if (sides)
+        {
             // One full block
             memcpy2D(block_real, block_width * sizeof(float), &p_real[read_y * tile_width], tile_width * sizeof(float), tile_width * sizeof(float), read_height);
             memcpy2D(block_imag, block_width * sizeof(float), &p_imag[read_y * tile_width], tile_width * sizeof(float), tile_width * sizeof(float), read_height);
@@ -99,12 +111,17 @@ void process_band(size_t tile_width, size_t block_width, size_t block_height, si
             memcpy2D(&next_real[(read_y + write_offset) * tile_width], tile_width * sizeof(float), &block_real[write_offset * block_width], block_width * sizeof(float), tile_width * sizeof(float), write_height);
             memcpy2D(&next_imag[(read_y + write_offset) * tile_width], tile_width * sizeof(float), &block_imag[write_offset * block_width], block_width * sizeof(float), tile_width * sizeof(float), write_height);
         }
-    } else {
-        if (sides) {
+    }
+    else
+    {
+        if (sides)
+        {
             process_sides(tile_width, block_width, halo_x, read_y, read_height, write_offset, write_height, a, b, p_real, p_imag, next_real, next_imag, block_real, block_imag);
         }
-        if (inner) {
-            for (size_t block_start = block_width - 2 * halo_x; block_start < tile_width - block_width; block_start += block_width - 2 * halo_x) {
+        if (inner)
+        {
+            for (size_t block_start = block_width - 2 * halo_x; block_start < tile_width - block_width; block_start += block_width - 2 * halo_x)
+            {
                 memcpy2D(block_real, block_width * sizeof(float), &p_real[read_y * tile_width + block_start], tile_width * sizeof(float), block_width * sizeof(float), read_height);
                 memcpy2D(block_imag, block_width * sizeof(float), &p_imag[read_y * tile_width + block_start], tile_width * sizeof(float), block_width * sizeof(float), read_height);
                 full_step(block_width, block_width, read_height, a, b, block_real, block_imag);
@@ -163,32 +180,39 @@ CPUBlock::CPUBlock(float *_p_real, float *_p_imag, float _a, float _b, int matri
 
 }
 
-CPUBlock::~CPUBlock() {
+CPUBlock::~CPUBlock()
+{
     delete[] p_real[0];
     delete[] p_real[1];
     delete[] p_imag[0];
     delete[] p_imag[1];
 }
 
-void CPUBlock::run_kernel() {
+void CPUBlock::run_kernel()
+{
     kernel8(p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense]);
     sense = 1 - sense;
 }
 
-void CPUBlock::run_kernel_on_halo() {
+void CPUBlock::run_kernel_on_halo()
+{
     int inner=0, sides=0;
-    if (tile_height <= block_height) {
+    if (tile_height <= block_height)
+    {
         // One full band
         inner=1;
         sides=1;
         process_band(tile_width, block_width, block_height, halo_x, 0, tile_height, 0, tile_height, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
-    } else {
+    }
+    else
+    {
 
         // Sides
         inner=0;
         sides=1;
         size_t block_start;
-        for (block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
+        for (block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y)
+        {
             process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
         }
 
@@ -206,20 +230,24 @@ void CPUBlock::run_kernel_on_halo() {
 
 void CPUBlock::wait_for_completion() { }
 
-void CPUBlock::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const {
+void CPUBlock::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const
+{
     memcpy2D(dest_real, dest_stride * sizeof(float), &(p_real[sense][y * tile_width + x]), tile_width * sizeof(float), width * sizeof(float), height);
     memcpy2D(dest_imag, dest_stride * sizeof(float), &(p_imag[sense][y * tile_width + x]), tile_width * sizeof(float), width * sizeof(float), height);
 }
 
-void CPUBlock::kernel8(const float *p_real, const float *p_imag, float * next_real, float * next_imag) {
+void CPUBlock::kernel8(const float *p_real, const float *p_imag, float * next_real, float * next_imag)
+{
     // Inner part
     int inner=1, sides=0;
-    for (size_t block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
+    for (size_t block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y)
+    {
         process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, p_real, p_imag, next_real, next_imag, inner, sides);
     }
 }
 
-void CPUBlock::start_halo_exchange() {
+void CPUBlock::start_halo_exchange()
+{
     // Halo exchange: LEFT/RIGHT
     int offset = (inner_start_y-start_y)*tile_width;
     MPI_Irecv(p_real[1-sense]+offset, 1, verticalBorder, neighbors[LEFT], 1, cartcomm, req);
@@ -236,7 +264,8 @@ void CPUBlock::start_halo_exchange() {
     MPI_Isend(p_imag[1-sense]+offset, 1, verticalBorder, neighbors[LEFT], 4, cartcomm,req+7);
 }
 
-void CPUBlock::finish_halo_exchange() {
+void CPUBlock::finish_halo_exchange()
+{
 
     MPI_Waitall(8, req, statuses);
 

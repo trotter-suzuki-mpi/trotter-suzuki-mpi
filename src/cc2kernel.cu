@@ -30,7 +30,8 @@
  *  This snippet is from GPMR:
  *  http://code.google.com/p/gpmr/
  */
-void setDevice(int commRank, MPI_Comm cartcomm) {
+void setDevice(int commRank, MPI_Comm cartcomm)
+{
     int commSize;
     MPI_Comm_size(cartcomm, &commSize);
 
@@ -109,12 +110,14 @@ void setDevice(int commRank, MPI_Comm cartcomm) {
 }
 
 template<int BLOCK_WIDTH, int BLOCK_HEIGHT, int BACKWARDS>
-inline __device__ void trotter_vert_pair_flexible_nosync(float a, float b, int tile_height, float &cell_r, float &cell_i, int kx, int ky, int py, float rl[BLOCK_HEIGHT][BLOCK_WIDTH], float im[BLOCK_HEIGHT][BLOCK_WIDTH]) {
+inline __device__ void trotter_vert_pair_flexible_nosync(float a, float b, int tile_height, float &cell_r, float &cell_i, int kx, int ky, int py, float rl[BLOCK_HEIGHT][BLOCK_WIDTH], float im[BLOCK_HEIGHT][BLOCK_WIDTH])
+{
     float peer_r;
     float peer_i;
 
     const int ky_peer = ky + 1 - 2 * BACKWARDS;
-    if (py >= BACKWARDS && py < tile_height - 1 + BACKWARDS && ky >= BACKWARDS && ky < BLOCK_HEIGHT - 1 + BACKWARDS) {
+    if (py >= BACKWARDS && py < tile_height - 1 + BACKWARDS && ky >= BACKWARDS && ky < BLOCK_HEIGHT - 1 + BACKWARDS)
+    {
         peer_r = rl[ky_peer][kx];
         peer_i = im[ky_peer][kx];
 #ifndef DISABLE_FMA
@@ -135,12 +138,14 @@ inline __device__ void trotter_vert_pair_flexible_nosync(float a, float b, int t
 
 
 template<int BLOCK_WIDTH, int BLOCK_HEIGHT, int BACKWARDS>
-static  inline __device__ void trotter_horz_pair_flexible_nosync(float a, float b,  int tile_width, float &cell_r, float &cell_i, int kx, int ky, int px, float rl[BLOCK_HEIGHT][BLOCK_WIDTH], float im[BLOCK_HEIGHT][BLOCK_WIDTH]) {
+static  inline __device__ void trotter_horz_pair_flexible_nosync(float a, float b,  int tile_width, float &cell_r, float &cell_i, int kx, int ky, int px, float rl[BLOCK_HEIGHT][BLOCK_WIDTH], float im[BLOCK_HEIGHT][BLOCK_WIDTH])
+{
     float peer_r;
     float peer_i;
 
     const int kx_peer = kx + 1 - 2 * BACKWARDS;
-    if (px >= BACKWARDS && px < tile_width - 1 + BACKWARDS && kx >= BACKWARDS && kx < BLOCK_WIDTH - 1 + BACKWARDS) {
+    if (px >= BACKWARDS && px < tile_width - 1 + BACKWARDS && kx >= BACKWARDS && kx < BLOCK_WIDTH - 1 + BACKWARDS)
+    {
         peer_r = rl[ky][kx_peer];
         peer_i = im[ky][kx_peer];
 #ifndef DISABLE_FMA
@@ -160,7 +165,8 @@ static  inline __device__ void trotter_horz_pair_flexible_nosync(float a, float 
 }
 
 __launch_bounds__(BLOCK_X * STRIDE_Y)
-__global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, float a, float b, const float * __restrict__ p_real, const float * __restrict__ p_imag, float * __restrict__ p2_real, float * __restrict__ p2_imag, int inner, int horizontal, int vertical) {
+__global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, float a, float b, const float * __restrict__ p_real, const float * __restrict__ p_imag, float * __restrict__ p2_real, float * __restrict__ p2_imag, int inner, int horizontal, int vertical)
+{
     __shared__ float rl[BLOCK_Y][BLOCK_X];
     __shared__ float im[BLOCK_Y][BLOCK_X];
 
@@ -172,10 +178,13 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x
     int py = offset_y + blockIdxy * (BLOCK_Y - 2 * halo_y) + threadIdx.y - halo_y;
 
     // Read block from global into shared memory
-    if (px >= 0 && px < tile_width) {
+    if (px >= 0 && px < tile_width)
+    {
 #pragma unroll
-        for (int i = 0, pidx = py * tile_width + px; i < BLOCK_Y / STRIDE_Y; ++i, pidx += STRIDE_Y * tile_width) {
-            if (py + i * STRIDE_Y >= 0 && py + i * STRIDE_Y < tile_height) {
+        for (int i = 0, pidx = py * tile_width + px; i < BLOCK_Y / STRIDE_Y; ++i, pidx += STRIDE_Y * tile_width)
+        {
+            if (py + i * STRIDE_Y >= 0 && py + i * STRIDE_Y < tile_height)
+            {
                 rl[threadIdx.y + i * STRIDE_Y][threadIdx.x] = p_real[pidx];
                 im[threadIdx.y + i * STRIDE_Y][threadIdx.x] = p_imag[pidx];
             }
@@ -187,9 +196,12 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x
     // Place threads along the black cells of a checkerboard pattern
     int sx = threadIdx.x;
     int sy;
-    if ((halo_x) % 2 == (halo_y) % 2) {
+    if ((halo_x) % 2 == (halo_y) % 2)
+    {
         sy = 2 * threadIdx.y + threadIdx.x % 2;
-    } else {
+    }
+    else
+    {
         sy = 2 * threadIdx.y + 1 - threadIdx.x % 2;
     }
 
@@ -203,50 +215,59 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x
 
 #pragma unroll
     // Read black cells to registers
-    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part)
+    {
         cell_r[part] = rl[sy + part * 2 * STRIDE_Y][sx];
         cell_i[part] = im[sy + part * 2 * STRIDE_Y][sx];
     }
 
     // 12344321
 #pragma unroll
-    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part)
+    {
         trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 #pragma unroll
-    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part)
+    {
         trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 #pragma unroll
-    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part)
+    {
         trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 #pragma unroll
-    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part)
+    {
         trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 
 #pragma unroll
-    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part)
+    {
         trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 #pragma unroll
-    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part)
+    {
         trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 #pragma unroll
-    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part)
+    {
         trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 #pragma unroll
-    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part)
+    {
         trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
@@ -254,7 +275,8 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x
 
     // Write black cells in registers to shared memory
 #pragma unroll
-    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
+    for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part)
+    {
         rl[sy + part * 2 * STRIDE_Y][sx] = cell_r[part];
         im[sy + part * 2 * STRIDE_Y][sx] = cell_i[part];
     }
@@ -265,10 +287,13 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x
     sy = threadIdx.y + halo_y;
     px += halo_x;
     py += halo_y;
-    if (sx < BLOCK_X - halo_x && px < tile_width) {
+    if (sx < BLOCK_X - halo_x && px < tile_width)
+    {
 #pragma unroll
-        for (int i = 0, pidx = py * tile_width + px; i < BLOCK_Y / STRIDE_Y; ++i, pidx += STRIDE_Y * tile_width) {
-            if (sy + i * STRIDE_Y < BLOCK_Y - halo_y && py + i * STRIDE_Y < tile_height) {
+        for (int i = 0, pidx = py * tile_width + px; i < BLOCK_Y / STRIDE_Y; ++i, pidx += STRIDE_Y * tile_width)
+        {
+            if (sy + i * STRIDE_Y < BLOCK_Y - halo_y && py + i * STRIDE_Y < tile_height)
+            {
                 p2_real[pidx] = rl[sy + i * STRIDE_Y][sx];
                 p2_imag[pidx] = im[sy + i * STRIDE_Y][sx];
             }
@@ -277,7 +302,8 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x
 }
 
 // Wrapper function for the hybrid kernel
-void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, float a, float b, const float * __restrict__ pdev_real, const float * __restrict__ pdev_imag, float * __restrict__ pdev2_real, float * __restrict__ pdev2_imag, int inner, int horizontal, int vertical) {
+void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, float a, float b, const float * __restrict__ pdev_real, const float * __restrict__ pdev_imag, float * __restrict__ pdev2_real, float * __restrict__ pdev2_imag, int inner, int horizontal, int vertical)
+{
     cc2kernel<<<numBlocks, threadsPerBlock, 0, stream>>>(tile_width, tile_height, offset_x, offset_y, halo_x, halo_y, a, b, pdev_real, pdev_imag, pdev2_real, pdev2_imag, inner, horizontal, vertical);
     CUT_CHECK_ERROR("Kernel error in cc2kernel_wrapper");
 }
@@ -343,7 +369,8 @@ CC2Kernel::CC2Kernel(float *_p_real, float *_p_imag, float _a, float _b, int mat
 }
 
 
-CC2Kernel::~CC2Kernel() {
+CC2Kernel::~CC2Kernel()
+{
     CUDA_SAFE_CALL(cudaFreeHost(left_real_receive));
     CUDA_SAFE_CALL(cudaFreeHost(left_real_send));
     CUDA_SAFE_CALL(cudaFreeHost(right_real_receive));
@@ -370,7 +397,8 @@ CC2Kernel::~CC2Kernel() {
     cudaStreamDestroy(stream2);
 }
 
-void CC2Kernel::run_kernel_on_halo() {
+void CC2Kernel::run_kernel_on_halo()
+{
     int inner=0, horizontal=0, vertical=0;
     inner=0;
     horizontal=1;
@@ -385,7 +413,8 @@ void CC2Kernel::run_kernel_on_halo() {
     cc2kernel<<<numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, pdev_real[sense], pdev_imag[sense], pdev_real[1-sense], pdev_imag[1-sense], inner, horizontal, vertical);
 }
 
-void CC2Kernel::run_kernel() {
+void CC2Kernel::run_kernel()
+{
     int inner=0, horizontal=0, vertical=0;
     inner=1;
     horizontal=0;
@@ -398,16 +427,19 @@ void CC2Kernel::run_kernel() {
     CUT_CHECK_ERROR("Kernel error in CC2Kernel::run_kernel");
 }
 
-void CC2Kernel::wait_for_completion() {
+void CC2Kernel::wait_for_completion()
+{
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
 }
 
-void CC2Kernel::copy_results() {
+void CC2Kernel::copy_results()
+{
     CUDA_SAFE_CALL(cudaMemcpy(p_real, pdev_real[sense], tile_width * tile_height * sizeof(float), cudaMemcpyDeviceToHost));
     CUDA_SAFE_CALL(cudaMemcpy(p_imag, pdev_imag[sense], tile_width * tile_height * sizeof(float), cudaMemcpyDeviceToHost));
 }
 
-void CC2Kernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const {
+void CC2Kernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const
+{
     assert(x < tile_width);
     assert(y < tile_height);
     assert(x + width <= tile_width);
@@ -416,11 +448,13 @@ void CC2Kernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t width,
     CUDA_SAFE_CALL(cudaMemcpy2D(dest_imag, dest_stride * sizeof(float), &(pdev_imag[sense][y * tile_width + x]), tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyDeviceToHost));
 }
 
-void CC2Kernel::start_halo_exchange() {
+void CC2Kernel::start_halo_exchange()
+{
 
 }
 
-void CC2Kernel::finish_halo_exchange() {
+void CC2Kernel::finish_halo_exchange()
+{
     MPI_Request req[8];
     MPI_Status statuses[8];
     int offset=0;
@@ -498,12 +532,14 @@ void CC2Kernel::finish_halo_exchange() {
     stride = tile_width;	// The combined width of the matrix with the halo
 
     offset = (inner_start_y-start_y)*tile_width;
-    if (neighbors[LEFT]>=0) {
+    if (neighbors[LEFT]>=0)
+    {
         CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(float), left_real_receive, width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream1));
         CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(float), left_imag_receive, width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream1));
     }
     offset = (inner_start_y-start_y)*tile_width+inner_end_x-start_x;
-    if (neighbors[RIGHT]>=0) {
+    if (neighbors[RIGHT]>=0)
+    {
         CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(float), right_real_receive, width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream1));
         CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(float), right_imag_receive, width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream1));
     }
@@ -513,13 +549,15 @@ void CC2Kernel::finish_halo_exchange() {
     stride = tile_width;	// The combined width of the matrix with the halo
 
     offset = 0;
-    if (neighbors[UP]>=0) {
+    if (neighbors[UP]>=0)
+    {
         CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(float), top_real_receive, width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream1));
         CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(float), top_imag_receive, width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream1));
     }
 
     offset = (inner_end_y-start_y)*tile_width;
-    if (neighbors[DOWN]>=0) {
+    if (neighbors[DOWN]>=0)
+    {
         CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(float), bottom_real_receive, width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream1));
         CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(float), bottom_imag_receive, width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream1));
     }
