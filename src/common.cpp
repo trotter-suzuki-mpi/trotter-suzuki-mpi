@@ -24,21 +24,26 @@
 
 #include "common.h"
 
-void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo) {
+void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo)
+{
     int inner=(int)ceil((double)length/(double)dim);
     *inner_start=coord*inner;
     *start = ( coord == 0 ? 0 : *inner_start - halo );
     *end = *inner_start + (inner+halo);
-    if (*end>length) {
+    if (*end>length)
+    {
         *end=length;
     }
     *inner_end = ( *end == length ? *end : *end - halo );
 }
 
-void print_complex_matrix(std::string filename, float * matrix_real, float * matrix_imag, size_t stride, size_t width, size_t height) {
+void print_complex_matrix(std::string filename, float * matrix_real, float * matrix_imag, size_t stride, size_t width, size_t height)
+{
     std::ofstream out(filename.c_str(), std::ios::out | std::ios::trunc);
-    for (size_t i = 0; i < height; ++i) {
-        for (size_t j = 0; j < width; ++j) {
+    for (size_t i = 0; i < height; ++i)
+    {
+        for (size_t j = 0; j < width; ++j)
+        {
             out << "(" << matrix_real[i * stride + j] << "," << matrix_imag[i * stride + j] << ") ";
         }
         out << std::endl;
@@ -46,10 +51,13 @@ void print_complex_matrix(std::string filename, float * matrix_real, float * mat
     out.close();
 }
 
-void print_matrix(std::string filename, float * matrix, size_t stride, size_t width, size_t height) {
+void print_matrix(std::string filename, float * matrix, size_t stride, size_t width, size_t height)
+{
     std::ofstream out(filename.c_str(), std::ios::out | std::ios::trunc);
-    for (size_t i = 0; i < height; ++i) {
-        for (size_t j = 0; j < width; ++j) {
+    for (size_t i = 0; i < height; ++i)
+    {
+        for (size_t j = 0; j < width; ++j)
+        {
             out << matrix[i * stride + j] << " ";
         }
         out << std::endl;
@@ -57,10 +65,13 @@ void print_matrix(std::string filename, float * matrix, size_t stride, size_t wi
     out.close();
 }
 
-void init_p(float *p_real, float *p_imag, int start_x, int end_x, int start_y, int end_y) {
+void init_p(float *p_real, float *p_imag, int start_x, int end_x, int start_y, int end_y)
+{
     double s = 64.0; // FIXME: y esto?
-    for (int y = start_y+1, j=0; y <= end_y; y++,j++) {
-        for (int x = start_x+1, i=0; x <= end_x; x++,i++) {
+    for (int y = start_y+1, j=0; y <= end_y; y++,j++)
+    {
+        for (int x = start_x+1, i=0; x <= end_x; x++,i++)
+        {
             std::complex<float> tmp = std::complex<float>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
                                       * exp(std::complex<float>(0.0, 0.4 * (x + y - 480.0)));
 
@@ -70,30 +81,37 @@ void init_p(float *p_real, float *p_imag, int start_x, int end_x, int start_y, i
     }
 }
 
-void memcpy2D(void * dst, size_t dstride, const void * src, size_t sstride, size_t width, size_t height) {
+void memcpy2D(void * dst, size_t dstride, const void * src, size_t sstride, size_t width, size_t height)
+{
     char *d = reinterpret_cast<char *>(dst);
     const char *s = reinterpret_cast<const char *>(src);
-    for (size_t i = 0; i < height; ++i) {
-        for (size_t j = 0; j < width; ++j) {
+    for (size_t i = 0; i < height; ++i)
+    {
+        for (size_t j = 0; j < width; ++j)
+        {
             d[i * dstride + j] = s[i * sstride + j];
         }
     }
 }
 
-void merge_line(const float * evens, const float * odds, size_t x, size_t width, float * dest) {
+void merge_line(const float * evens, const float * odds, size_t x, size_t width, float * dest)
+{
 
     const float * odds_p = odds + (x/2);
     const float * evens_p = evens + (x/2);
 
     size_t dest_x = x;
-    if (x % 2 == 1) {
+    if (x % 2 == 1)
+    {
         dest[dest_x++] = *(odds_p++);
     }
-    while (dest_x < (x + width) - (x + width) % 2) {
+    while (dest_x < (x + width) - (x + width) % 2)
+    {
         dest[dest_x++] = *(evens_p++);
         dest[dest_x++] = *(odds_p++);
     }
-    if (dest_x < x + width) {
+    if (dest_x < x + width)
+    {
         dest[dest_x++] = *evens_p;
     }
     assert(dest_x == x + width);
@@ -107,12 +125,14 @@ void get_quadrant_sample(const float * r00, const float * r01, const float * r10
                          float * dest_real, float * dest_imag)
 {
     size_t dest_y = y;
-    if (y % 2 == 1) {
+    if (y % 2 == 1)
+    {
         merge_line(&r10[(y/2) * src_stride], &r11[(y/2) * src_stride], x, width, dest_real);
         merge_line(&i10[(y/2) * src_stride], &i11[(y/2) * src_stride], x, width, dest_imag);
         ++dest_y;
     }
-    while (dest_y < (y + height) - (y + height) % 2) {
+    while (dest_y < (y + height) - (y + height) % 2)
+    {
         merge_line(&r00[(dest_y/2) * src_stride], &r01[(dest_y/2) * src_stride], x, width, &dest_real[dest_y * dest_stride]);
         merge_line(&i00[(dest_y/2) * src_stride], &i01[(dest_y/2) * src_stride], x, width, &dest_imag[dest_y * dest_stride]);
         ++dest_y;
@@ -120,31 +140,36 @@ void get_quadrant_sample(const float * r00, const float * r01, const float * r10
         merge_line(&i10[(dest_y/2) * src_stride], &i11[(dest_y/2) * src_stride], x, width, &dest_imag[dest_y * dest_stride]);
         ++dest_y;
     }
-    if (dest_y < y + height) {
+    if (dest_y < y + height)
+    {
         merge_line(&r00[(dest_y/2) * src_stride], &r01[(dest_y/2) * src_stride], x, width, &dest_real[dest_y * dest_stride]);
         merge_line(&i00[(dest_y/2) * src_stride], &i01[(dest_y/2) * src_stride], x, width, &dest_imag[dest_y * dest_stride]);
     }
     assert (dest_y == y + height);
 }
 
-void merge_line_to_buffer(const float * evens, const float * odds, size_t x, size_t width, float * dest) {
+void merge_line_to_buffer(const float * evens, const float * odds, size_t x, size_t width, float * dest)
+{
 
     const float * odds_p = odds + (x/2);
     const float * evens_p = evens + (x/2);
 
     size_t dest_x = x;
     size_t buffer_x = 0;
-    if (x % 2 == 1) {
+    if (x % 2 == 1)
+    {
         dest[buffer_x++] = *(odds_p++);
         dest_x++;
     }
-    while (dest_x < (x + width) - (x + width) % 2) {
+    while (dest_x < (x + width) - (x + width) % 2)
+    {
         dest[buffer_x++] = *(evens_p++);
         dest[buffer_x++] = *(odds_p++);
         dest_x++;
         dest_x++;
     }
-    if (dest_x < x + width) {
+    if (dest_x < x + width)
+    {
         dest[buffer_x++] = *evens_p;
         dest_x++;
     }
@@ -160,13 +185,15 @@ void get_quadrant_sample_to_buffer(const float * r00, const float * r01, const f
 {
     size_t dest_y = y;
     size_t buffer_y = 0;
-    if (y % 2 == 1) {
+    if (y % 2 == 1)
+    {
         merge_line_to_buffer(&r10[(y/2) * src_stride], &r11[(y/2) * src_stride], x, width, dest_real);
         merge_line_to_buffer(&i10[(y/2) * src_stride], &i11[(y/2) * src_stride], x, width, dest_imag);
         ++dest_y;
         ++buffer_y;
     }
-    while (dest_y < (y + height) - (y + height) % 2) {
+    while (dest_y < (y + height) - (y + height) % 2)
+    {
         merge_line_to_buffer(&r00[(dest_y/2) * src_stride], &r01[(dest_y/2) * src_stride], x, width, &dest_real[buffer_y * dest_stride]);
         merge_line_to_buffer(&i00[(dest_y/2) * src_stride], &i01[(dest_y/2) * src_stride], x, width, &dest_imag[buffer_y * dest_stride]);
         ++dest_y;
@@ -176,7 +203,8 @@ void get_quadrant_sample_to_buffer(const float * r00, const float * r01, const f
         ++dest_y;
         ++buffer_y;
     }
-    if (dest_y < y + height) {
+    if (dest_y < y + height)
+    {
         merge_line_to_buffer(&r00[(dest_y/2) * src_stride], &r01[(dest_y/2) * src_stride], x, width, &dest_real[buffer_y * dest_stride]);
         merge_line_to_buffer(&i00[(dest_y/2) * src_stride], &i01[(dest_y/2) * src_stride], x, width, &dest_imag[buffer_y * dest_stride]);
     }
