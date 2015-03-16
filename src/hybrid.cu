@@ -67,7 +67,8 @@ HybridKernel::HybridKernel(float *_p_real, float *_p_imag, float _a, float _b, i
     max_gpu_rows-=2*2*2;
     int n_cpu_rows=tile_height-block_height-last_block_height+2*halo_y-max_gpu_rows;
     n_bands_on_cpu=0;
-    if (n_cpu_rows>0) {
+    if (n_cpu_rows>0)
+    {
         n_bands_on_cpu=(n_cpu_rows + (block_height - 2 * halo_y) - 1) / (block_height - 2 * halo_y);
     }
 #ifdef DEBUG
@@ -115,7 +116,8 @@ HybridKernel::HybridKernel(float *_p_real, float *_p_imag, float _a, float _b, i
 
 }
 
-HybridKernel::~HybridKernel() {
+HybridKernel::~HybridKernel()
+{
     delete[] p_real[0];
     delete[] p_real[1];
     delete[] p_imag[0];
@@ -130,18 +132,21 @@ HybridKernel::~HybridKernel() {
 }
 
 
-void HybridKernel::run_kernel() {
+void HybridKernel::run_kernel()
+{
     // Note that the async CUDA calculations are launched in run_kernel_on_halo
     int inner=1, sides=0;
     size_t last_band=(n_bands_on_cpu+1)*(block_height - 2 * halo_y);
-    if (tile_height - block_height < last_band ) {
+    if (tile_height - block_height < last_band )
+    {
         last_band=tile_height - block_height;
     }
     int block_start;
     #pragma omp parallel default(shared) private(block_start)
     {
         #pragma omp for schedule(runtime) nowait
-        for (block_start = block_height - 2 * halo_y; block_start < (int)last_band; block_start += block_height - 2 * halo_y) {
+        for (block_start = block_height - 2 * halo_y; block_start < (int)last_band; block_start += block_height - 2 * halo_y)
+        {
             process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
         }
     }
@@ -149,7 +154,8 @@ void HybridKernel::run_kernel() {
     sense = 1 - sense;
 }
 
-void HybridKernel::run_kernel_on_halo() {
+void HybridKernel::run_kernel_on_halo()
+{
     // The hybrid kernel is efficient if the CUDA stream is launched first for
     // the inner part of the matrix
     int inner=1, horizontal=0, vertical=0;
@@ -161,12 +167,15 @@ void HybridKernel::run_kernel_on_halo() {
     // The CPU calculates the halo
     inner=0;
     int sides=0;
-    if (tile_height <= block_height) {
+    if (tile_height <= block_height)
+    {
         // One full band
         inner=1;
         sides=1;
         process_band(tile_width, block_width, block_height, halo_x, 0, tile_height, 0, tile_height, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
-    } else {
+    }
+    else
+    {
 #ifdef _OPENMP
         int block_start;
         #pragma omp parallel default(shared) private(block_start)
@@ -193,7 +202,8 @@ void HybridKernel::run_kernel_on_halo() {
             }
 
             #pragma omp for schedule(runtime) nowait
-            for (block_start = block_height - 2 * halo_y; block_start < (int)(tile_height - block_height); block_start += block_height - 2 * halo_y) {
+            for (block_start = block_height - 2 * halo_y; block_start < (int)(tile_height - block_height); block_start += block_height - 2 * halo_y)
+            {
                 inner=0;
                 sides=1;
                 process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
@@ -207,7 +217,8 @@ void HybridKernel::run_kernel_on_halo() {
         inner=0;
         sides=1;
         int block_start;
-        for (block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
+        for (block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y)
+        {
             process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, p_real[sense], p_imag[sense], p_real[1-sense], p_imag[1-sense], inner, sides);
         }
         // First band
@@ -223,12 +234,15 @@ void HybridKernel::run_kernel_on_halo() {
     }
 }
 
-void HybridKernel::wait_for_completion() {
+void HybridKernel::wait_for_completion()
+{
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
 }
 
-void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const {
-    if ( (x!=0) || (y!=0) || (width!=tile_width) || (height!=tile_height)) {
+void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const
+{
+    if ( (x!=0) || (y!=0) || (width!=tile_width) || (height!=tile_height))
+    {
         printf("Only full tile samples are implemented!\n");
         return;
     }
@@ -242,7 +256,8 @@ void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t wid
 }
 
 
-void HybridKernel::start_halo_exchange() {
+void HybridKernel::start_halo_exchange()
+{
     // Halo exchange: LEFT/RIGHT
     int offset = (inner_start_y-start_y)*tile_width;
     MPI_Irecv(p_real[1-sense]+offset, 1, verticalBorder, neighbors[LEFT], 1, cartcomm, req);
@@ -259,7 +274,8 @@ void HybridKernel::start_halo_exchange() {
     MPI_Isend(p_imag[1-sense]+offset, 1, verticalBorder, neighbors[LEFT], 4, cartcomm,req+7);
 }
 
-void HybridKernel::finish_halo_exchange() {
+void HybridKernel::finish_halo_exchange()
+{
     MPI_Waitall(8, req, statuses);
 
     // Halo exchange: UP/DOWN
