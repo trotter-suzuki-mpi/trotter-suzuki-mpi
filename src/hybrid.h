@@ -28,7 +28,8 @@
 #include "cpublock.h"
 #include "cc2kernel.h"
 
-class HybridKernel: public ITrotterKernel {
+class HybridKernel: public ITrotterKernel
+{
 public:
     HybridKernel(float *p_real, float *p_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, MPI_Comm cartcomm);
     ~HybridKernel();
@@ -36,10 +37,12 @@ public:
     void run_kernel_on_halo();
     void wait_for_completion();
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const;
-    bool runs_in_place() const {
+    bool runs_in_place() const
+    {
         return false;
     }
-    std::string get_name() const {
+    std::string get_name() const
+    {
         std::stringstream name;
         name << "Hybrid";
 #ifdef _OPENMP
