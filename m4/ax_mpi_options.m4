@@ -7,6 +7,7 @@ MPI_CXX=none
 
 ###
 
+
 AC_ARG_WITH(mpi-compilers,
 AS_HELP_STRING([--with-mpi-compilers=DIR or --with-mpi-compilers=yes],
 [use MPI compiler (mpicxx) found in directory DIR, or in your PATH if =yes]),
@@ -56,34 +57,40 @@ if test "X${MPI_CXX}" = "Xnone" ; then
   MPI_CXX=${MY_CXX}
 fi
 
+
+
+# if the user gives configure the option --with-mpi=directory then set MPI_DIR
 AC_ARG_WITH(mpi,
 AS_HELP_STRING([--with-mpi=MPIROOT],[use MPI root directory.]),
 [
-  if test "X${withval}" = "Xno"; then :; else
-     MPI_DIR=${withval}
-     AC_MSG_CHECKING(MPI directory)
-     AC_MSG_RESULT([${MPI_DIR}])
-
-  fi
+	if test x"$with_mpi" != x"yes"; then
+	  MPI_DIR=${with_mpi}
+      AC_MSG_CHECKING(MPI directory)
+      AC_MSG_RESULT([${MPI_DIR}])
+    fi
 ]
 )
 
-AC_ARG_WITH(mpi-libs,
-AS_HELP_STRING([--with-mpi-libs="LIBS"],[MPI libraries @<:@default "-lmpi"@:>@]),
-[
-  if test "X${withval}" = "Xno"; then :; else
-    MPI_LIBS=${withval}
-    AC_MSG_CHECKING(user-defined MPI libraries)
-    AC_MSG_RESULT([${MPI_LIBS}])
+#otherwise try to find it
+if test -z "${MPI_DIR}";	then
+	# Here write the FIND script
+	# set MPI_DIR to the correct directory
+	# otherwise send error
+	
+	echo "Looking for MPI directory"
+	MPI_DIR="/usr/lib/openmpi"  #provisional
+	# AC_MSG_RESULT([${MPI_DIR}])
+	
+	if test -z "${MPI_DIR}";	then
+	  AC_MSG_ERROR([cannot find MPI directory])
+	fi
+fi
 
-  fi
-]
-)
 
 AC_ARG_WITH(mpi-incdir,
 AS_HELP_STRING([--with-mpi-incdir=DIR],[MPI include directory @<:@default MPIROOT/include@:>@]),
 [
-  if test "X${withval}" = "Xno"; then :; else
+  if test "X${withval}" != "Xno" && test "X${withval}" != "Xyes"; then
     MPI_INC="-I${withval}"
     AC_MSG_CHECKING(user-defined MPI includes)
     AC_MSG_RESULT([${MPI_INC}])
@@ -91,10 +98,15 @@ AS_HELP_STRING([--with-mpi-incdir=DIR],[MPI include directory @<:@default MPIROO
 ]
 )
 
+# set MPI_INC to the default directory if not already specified by the user
+if test -z "${MPI_INC}"; then
+  MPI_INC="-I${MPI_DIR}/include"
+fi
+
 AC_ARG_WITH(mpi-libdir,
 AS_HELP_STRING([--with-mpi-libdir=DIR],[MPI library directory @<:@default MPIROOT/lib@:>@]),
 [
-  if test "X${withval}" = "Xno"; then :; else
+  if test "X${withval}" != "Xno" && test "X${withval}" != "Xyes"; then
     MPI_LIBDIR="-L${withval}"
     AC_MSG_CHECKING(user-defined MPI library directory)
     AC_MSG_RESULT([${MPI_LIBDIR}])
@@ -102,5 +114,24 @@ AS_HELP_STRING([--with-mpi-libdir=DIR],[MPI library directory @<:@default MPIROO
   fi
 ]
 )
+
+if test -z "${MPI_LIBDIR}"; then
+  MPI_LIBDIR="-L${MPI_DIR}/lib"
+fi
+
+AC_ARG_WITH(mpi-libs,
+AS_HELP_STRING([--with-mpi-libs="LIBS"],[MPI libraries @<:@default "-lmpi"@:>@]),
+[
+  if test "X${withval}" != "Xno" && test "X${withval}" != "Xyes"; then
+    MPI_LIBS=${withval}
+    AC_MSG_CHECKING(user-defined MPI libraries)
+    AC_MSG_RESULT([${MPI_LIBS}])
+  fi
+]
+)
+
+if test -n "${MPI_LIBDIR}"; then
+  MPI_LIBS="-lmpi"
+fi
 
 ])
