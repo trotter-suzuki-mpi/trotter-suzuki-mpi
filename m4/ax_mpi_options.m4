@@ -73,13 +73,27 @@ AS_HELP_STRING([--with-mpi=MPIROOT],[use MPI root directory.]),
 
 #otherwise try to find it
 if test -z "${MPI_DIR}";	then
-	# Here write the FIND script
 	# set MPI_DIR to the correct directory
 	# otherwise send error
 	
 	echo "Looking for MPI directory"
-	MPI_DIR="/usr/lib/openmpi"  #provisional
-	# AC_MSG_RESULT([${MPI_DIR}])
+	DIRS="$(find / -name mpi.h 2>/dev/null)"
+	counter=1
+	DIR=no
+	until [test -z "$DIR"]
+	do
+		DIR="$(echo $DIRS | awk -v awk_var=$counter '{print $awk_var}' )" 
+		if test -n "$DIR"; then
+		  match="$(echo ${DIR:(-21)})"
+		  if test x"$match" = x"openmpi/include/mpi.h"; then
+			index="$(echo ${#DIR})"
+			index=$(($index-14))
+			MPI_DIR="$(echo ${DIR:0:$index})"
+			AC_MSG_RESULT([MPI directory: ${MPI_DIR}])
+		  fi
+		fi
+		counter=$(($counter+1))
+	done
 	
 	if test -z "${MPI_DIR}";	then
 	  AC_MSG_ERROR([cannot find MPI directory])
