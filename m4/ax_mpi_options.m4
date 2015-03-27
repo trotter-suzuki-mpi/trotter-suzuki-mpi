@@ -52,7 +52,6 @@ AS_HELP_STRING([--with-mpi-compilers=DIR or --with-mpi-compilers=yes],
 )
 
 if test "X${MPI_CXX}" = "Xnone" ; then 
-  echo "Looking for an MPI C++ compiler in your path"
   AC_CHECK_PROGS([MY_CXX], [mpic++ mpicxx mpiCC mpiicpc], [none],)
   MPI_CXX=${MY_CXX}
 fi
@@ -76,8 +75,9 @@ if test -z "${MPI_DIR}";	then
 	# set MPI_DIR to the correct directory
 	# otherwise send error
 	
-	echo "Looking for MPI directory"
-	DIRS="$(find / -name mpi.h 2>/dev/null)"
+	AC_MSG_CHECKING([for MPI directory])
+	CANDIDATES="$(echo $LD_LIBRARY_PATH|sed -e 's/:/ /g')"
+	DIRS="$(find /usr /opt $CANDIDATES -name mpi.h 2>/dev/null)"
 	counter=1
 	DIR=no
 	until [test -z "$DIR"]
@@ -89,13 +89,14 @@ if test -z "${MPI_DIR}";	then
 			index="$(echo ${#DIR})"
 			index=$(($index-14))
 			MPI_DIR="$(echo ${DIR:0:$index})"
-			AC_MSG_RESULT([MPI directory: ${MPI_DIR}])
+			AC_MSG_RESULT([${MPI_DIR}])
 		  fi
 		fi
 		counter=$(($counter+1))
 	done
 	
 	if test -z "${MPI_DIR}";	then
+	  AC_MSG_RESULT([${MPI_DIR}])
 	  AC_MSG_ERROR([cannot find MPI directory])
 	fi
 fi
