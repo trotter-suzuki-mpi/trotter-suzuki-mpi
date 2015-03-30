@@ -77,19 +77,20 @@ if test -z "${MPI_DIR}";	then
 	
 	AC_MSG_CHECKING([for MPI directory])
 	CANDIDATES="$(echo $LD_LIBRARY_PATH|sed -e 's/:/ /g')"
-	DIRS="$(find /usr /opt $CANDIDATES -name mpi.h 2>/dev/null)"
+	DIRS="$(find /opt /usr $CANDIDATES -name mpi.h 2>/dev/null)"
 	counter=1
 	DIR=no
 	until [test -z "$DIR"]
 	do
 		DIR="$(echo $DIRS | awk -v awk_var=$counter '{print $awk_var}' )" 
 		if test -n "$DIR"; then
-		  match="$(echo ${DIR:(-21)})"
-		  if test x"$match" = x"openmpi/include/mpi.h"; then
+		  match="$(echo ${DIR:(-13)})"
+		  if test x"$match" = x"include/mpi.h"; then
 			index="$(echo ${#DIR})"
 			index=$(($index-14))
 			MPI_DIR="$(echo ${DIR:0:$index})"
 			AC_MSG_RESULT([${MPI_DIR}])
+			DIR=
 		  fi
 		fi
 		counter=$(($counter+1))
