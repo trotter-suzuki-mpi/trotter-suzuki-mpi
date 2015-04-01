@@ -52,7 +52,6 @@ AS_HELP_STRING([--with-mpi-compilers=DIR or --with-mpi-compilers=yes],
 )
 
 if test "X${MPI_CXX}" = "Xnone" ; then 
-  echo "Looking for an MPI C++ compiler in your path"
   AC_CHECK_PROGS([MY_CXX], [mpic++ mpicxx mpiCC mpiicpc], [none],)
   MPI_CXX=${MY_CXX}
 fi
@@ -73,15 +72,64 @@ AS_HELP_STRING([--with-mpi=MPIROOT],[use MPI root directory.]),
 
 #otherwise try to find it
 if test -z "${MPI_DIR}";	then
-	# Here write the FIND script
 	# set MPI_DIR to the correct directory
 	# otherwise send error
 	
-	echo "Looking for MPI directory"
-	MPI_DIR="/usr/lib/openmpi"  #provisional
-	# AC_MSG_RESULT([${MPI_DIR}])
+	AC_MSG_CHECKING([for MPI directory])
+	
+	
+	pathlibs="$(echo $LD_LIBRARY_PATH|sed -e 's/:/ /g')"
+	counter=1
+	end=no
+	until [test x"$end" = x"yes"]
+	do
+		pathlib="$(echo $pathlibs | awk -v awk_var=$counter '{print $awk_var}' )" 
+		if test -n "$pathlib"; then
+		  match="$(echo ${pathlib:(-4)})"
+		  if test x"$match" = x"/lib"; then
+			index="$(echo ${#pathlib})"
+			index=$(($index-4))
+			search_path="$(echo ${pathlib:0:$index})"
+			CANDIDATES="$CANDIDATES $search_path"
+		  fi
+		  match="$(echo ${pathlib:(-6)})"
+		  if test x"$match" = x"/lib64"; then
+			index="$(echo ${#pathlib})"
+			index=$(($index-6))
+			search_path="$(echo ${pathlib:0:$index})"
+			CANDIDATES="$CANDIDATES $search_path"
+		  fi
+		else
+		  end=yes
+		fi
+		counter=$(($counter+1))
+	done
+	
+	#find what path has the openmpi directory
+	counter=1
+	DIR=no
+	until [test -z "$DIR"]
+	do
+		DIR="$(echo $CANDIDATES | awk -v awk_var=$counter '{print $awk_var}' )"
+		if test -n "$DIR"; then
+		  DIR_COPY=$DIR
+		  until [test -z "$DIR_COPY" || test x"$FIND" = x"yes"]
+		  do
+			NUM="$(expr match "$DIR_COPY" 'openmpi')"
+			if test x"$NUM" = x"7"; then
+			  FIND=yes
+			  MPI_DIR=$DIR
+			  AC_MSG_RESULT([${MPI_DIR}])
+			  DIR=
+			fi
+			DIR_COPY="$(echo ${DIR_COPY:1})"
+		  done
+		fi
+		counter=$(($counter+1))
+	done
 	
 	if test -z "${MPI_DIR}";	then
+	  AC_MSG_RESULT([${MPI_DIR}])
 	  AC_MSG_ERROR([cannot find MPI directory])
 	fi
 fi

@@ -18,11 +18,21 @@ openmp_enabled=no
 if test x"$OPENMP_CFLAGS" != x"" ; then
   openmp_enabled=yes
 fi
-CXXFLAGS="${CXXFLAGS} ${OPENMP_CFLAGS}"
 string=`$CXX --version`
+# Change -fopenmp to -openmp if using ICC
+if [[[ $string == *"ICC"* ]]]
+then
+  if test x"$OPENMP_CFLAGS" = x"-fopenmp"
+  then
+    OPENMP_CFLAGS=-openmp
+  fi
+fi
+
+CXXFLAGS="${CXXFLAGS} ${OPENMP_CFLAGS}"
+
 if [[[ $string == *"ICC"* ]]]
 then  
-  CXXFLAGS="${CXXFLAGS} -fast"
+  CXXFLAGS="${CXXFLAGS}"
 else
   AS_IF([test "x$GXX" = "xyes"],[CXXFLAGS="${CXXFLAGS} -Ofast -march=native"])
 fi
