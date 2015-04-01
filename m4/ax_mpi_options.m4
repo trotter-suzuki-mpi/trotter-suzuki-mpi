@@ -128,9 +128,30 @@ if test -z "${MPI_DIR}";	then
 		counter=$(($counter+1))
 	done
 	
-	if test -z "${MPI_DIR}";	then
-	  AC_MSG_RESULT([${MPI_DIR}])
-	  AC_MSG_ERROR([cannot find MPI directory])
+	# if openmpi root is not in LD_LIBRARY_PATH try to find it in /usr
+	if test -z "${MPI_DIR}";	then	
+		DIRS="$(find /usr -name mpi.h 2>/dev/null)"
+		counter=1
+		DIR=no
+		until [test -z "$DIR"]
+		do
+			DIR="$(echo $DIRS | awk -v awk_var=$counter '{print $awk_var}' )"
+			if test -n "$DIR"; then
+				match="$(echo ${DIR:(-13)})"
+				if test x"$match" = x"include/mpi.h"; then
+					index="$(echo ${#DIR})"
+					index=$(($index-14))
+					MPI_DIR="$(echo ${DIR:0:$index})"
+					AC_MSG_RESULT([${MPI_DIR}])
+					DIR=
+				fi
+			fi
+			counter=$(($counter+1))
+		done
+		if test -z "${MPI_DIR}"; then
+			AC_MSG_RESULT([${MPI_DIR}])
+			AC_MSG_ERROR([cannot find MPI directory])
+		fi
 	fi
 fi
 
