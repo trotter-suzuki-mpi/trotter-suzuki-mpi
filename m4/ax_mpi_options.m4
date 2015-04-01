@@ -76,22 +76,54 @@ if test -z "${MPI_DIR}";	then
 	# otherwise send error
 	
 	AC_MSG_CHECKING([for MPI directory])
-	CANDIDATES="$(echo $LD_LIBRARY_PATH|sed -e 's/:/ /g')"
-	DIRS="$(find /opt /usr $CANDIDATES -name mpi.h 2>/dev/null)"
+	
+	
+	pathlibs="$(echo $LD_LIBRARY_PATH|sed -e 's/:/ /g')"
+	counter=1
+	end=no
+	until [test x"$end" = x"yes"]
+	do
+		pathlib="$(echo $pathlibs | awk -v awk_var=$counter '{print $awk_var}' )" 
+		if test -n "$pathlib"; then
+		  match="$(echo ${pathlib:(-4)})"
+		  if test x"$match" = x"/lib"; then
+			index="$(echo ${#pathlib})"
+			index=$(($index-4))
+			search_path="$(echo ${pathlib:0:$index})"
+			CANDIDATES="$CANDIDATES $search_path"
+		  fi
+		  match="$(echo ${pathlib:(-6)})"
+		  if test x"$match" = x"/lib64"; then
+			index="$(echo ${#pathlib})"
+			index=$(($index-6))
+			search_path="$(echo ${pathlib:0:$index})"
+			CANDIDATES="$CANDIDATES $search_path"
+		  fi
+		else
+		  end=yes
+		fi
+		counter=$(($counter+1))
+	done
+	
+	#find what path has the openmpi directory
 	counter=1
 	DIR=no
 	until [test -z "$DIR"]
 	do
-		DIR="$(echo $DIRS | awk -v awk_var=$counter '{print $awk_var}' )" 
+		DIR="$(echo $CANDIDATES | awk -v awk_var=$counter '{print $awk_var}' )"
 		if test -n "$DIR"; then
-		  match="$(echo ${DIR:(-13)})"
-		  if test x"$match" = x"include/mpi.h"; then
-			index="$(echo ${#DIR})"
-			index=$(($index-14))
-			MPI_DIR="$(echo ${DIR:0:$index})"
-			AC_MSG_RESULT([${MPI_DIR}])
-			DIR=
-		  fi
+		  DIR_COPY=$DIR
+		  until [test -z "$DIR_COPY" || test x"$FIND" = x"yes"]
+		  do
+			NUM="$(expr match "$DIR_COPY" 'openmpi')"
+			if test x"$NUM" = x"7"; then
+			  FIND=yes
+			  MPI_DIR=$DIR
+			  AC_MSG_RESULT([${MPI_DIR}])
+			  DIR=
+			fi
+			DIR_COPY="$(echo ${DIR_COPY:1})"
+		  done
 		fi
 		counter=$(($counter+1))
 	done
