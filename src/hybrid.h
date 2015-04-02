@@ -28,8 +28,7 @@
 #include "cpublock.h"
 #include "cc2kernel.h"
 
-class HybridKernel: public ITrotterKernel
-{
+class HybridKernel: public ITrotterKernel {
 public:
     HybridKernel(float *p_real, float *p_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, MPI_Comm cartcomm);
     ~HybridKernel();
@@ -37,12 +36,10 @@ public:
     void run_kernel_on_halo();
     void wait_for_completion();
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const;
-    bool runs_in_place() const
-    {
+    bool runs_in_place() const {
         return false;
     }
-    std::string get_name() const
-    {
+    std::string get_name() const {
         std::stringstream name;
         name << "Hybrid";
 #ifdef _OPENMP
@@ -67,8 +64,8 @@ private:
     float b;
     int sense;
     size_t halo_x, halo_y, tile_width, tile_height;
-    static const size_t block_width=BLOCK_WIDTH;
-    static const size_t block_height=BLOCK_HEIGHT;
+    static const size_t block_width = BLOCK_WIDTH;
+    static const size_t block_height = BLOCK_HEIGHT;
     size_t gpu_tile_width, gpu_tile_height, gpu_start_x, gpu_start_y;
     size_t n_bands_on_cpu;
 
