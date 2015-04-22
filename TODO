@@ -1,1 +1,3 @@
--Add padding to support matrices of arbitrary size.
+  - Add padding to support matrices of arbitrary size.
+  - Extend kernels to include potential terms.
+  - Make periodic boundary conditions possible.
