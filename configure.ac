@@ -104,6 +104,13 @@ else
     fi
 fi
 
+#Setup CppUnit
+#-------------------------------------------------------------------------------
+TEST_LIBS="-lcppunit -ldl"
+TEST_DEFS=-DCHECK
+AC_SUBST(TEST_LIBS)
+AC_SUBST(TEST_DEFS)
+
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
 AC_OUTPUT
