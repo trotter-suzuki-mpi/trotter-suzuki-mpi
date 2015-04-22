@@ -28,6 +28,8 @@ NVCC       	   = @NVCC@
 MPI_INC        = @MPI_INC@
 MPI_LIBDIR     = @MPI_LIBDIR@
 MPI_LIBS       = @MPI_LIBS@
+TEST_DEFS      = @TEST_DEFS@
+TEST_LIBS      = @TEST_LIBS@
 
 # VPATH-related substitution variables
 srcdir	 = @srcdir@
@@ -40,6 +42,7 @@ ifdef CUDA_LIBS
 endif
 
 OBJS=$(LIBOBJS) trottertest.o
+TEST_OBJS=$(LIBOBJS) cpublocktest.o
 
 all: trottertest
 
@@ -48,6 +51,9 @@ lib: $(LIBOBJS)
 	
 trottertest: $(OBJS)
 	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o $@ $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
+
+check: $(TEST_OBJS) trottertest.cpp
+	$(CXX) $(TEST_DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o trottertest $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} $(TEST_LIBS)
 
 %.o: %.cpp
 		$(CXX) $(DEFS) $(CXXFLAGS) ${MPI_INC} -I$(srcdir) -I.. -o $@ -c $(srcdir)/$<
