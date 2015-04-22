@@ -21,9 +21,14 @@
 #define __CPUBLOCK_H
 
 #include "trotterkernel.h"
+#include <mpi.h>
 
 #define BLOCK_WIDTH 128u
 #define BLOCK_HEIGHT 128u
+
+//Helpers
+void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, size_t height, float a, float b, float * p_real, float * p_imag);
+void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, size_t height, float a, float b, float * p_real, float * p_imag);
 
 void process_sides(size_t tile_width, size_t block_width, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, float * block_real, float * block_imag);
 
