@@ -20,19 +20,21 @@ install uninstall lib somoclu:
 
 all:
 	$(MAKE) -C src $@
-	$(MAKE) -C ./examples $@
-	$(MAKE) -C ./test $@
+	$(MAKE) -C examples $@
+	$(MAKE) -C test $@
 
+trotter:
+	$(MAKE) -C src $@
 box:
-	$(MAKE) -C ./examples $@
+	$(MAKE) -C examples $@
 
 check:
-	$(MAKE) -C ./test $@
+	$(MAKE) -C test $@
 
 clean:
 	$(MAKE) -C src $@
-	$(MAKE) -C ./test $@
-	$(MAKE) -C ./examples $@
+	$(MAKE) -C test $@
+	$(MAKE) -C examples $@
 
 dist: $(distdir).tar.gz
 
