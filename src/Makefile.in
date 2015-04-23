@@ -54,6 +54,7 @@ trottertest: $(OBJS)
 
 check: $(TEST_OBJS) trottertest.cpp
 	$(CXX) $(TEST_DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o unittest $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} $(TEST_LIBS)
+
 %.o: %.cpp
 		$(CXX) $(DEFS) $(CXXFLAGS) ${MPI_INC} -I$(srcdir) -I.. -o $@ -c $(srcdir)/$<
 
