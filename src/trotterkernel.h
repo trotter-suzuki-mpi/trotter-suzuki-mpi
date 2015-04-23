@@ -28,6 +28,8 @@
 #define LEFT  2
 #define RIGHT 3
 
+void trotter(float * p_real, float * p_imag, const int matrix_width, const int matrix_height, const int iterations, const int snapshots, const int kernel_type, int argc, char** argv);
+
 class ITrotterKernel {
 public:
     virtual ~ITrotterKernel() {};
