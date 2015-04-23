@@ -57,19 +57,6 @@ void print_matrix(std::string filename, float * matrix, size_t stride, size_t wi
     out.close();
 }
 
-void init_p(float *p_real, float *p_imag, int start_x, int end_x, int start_y, int end_y) {
-    double s = 64.0; // FIXME: y esto?
-    for (int y = start_y + 1, j = 0; y <= end_y; y++, j++) {
-        for (int x = start_x + 1, i = 0; x <= end_x; x++, i++) {
-            std::complex<float> tmp = std::complex<float>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
-                                      * exp(std::complex<float>(0.0, 0.4 * (x + y - 480.0)));
-
-            p_real[j * (end_x - start_x) + i] = real(tmp);
-            p_imag[j * (end_x - start_x) + i] = imag(tmp);
-        }
-    }
-}
-
 void memcpy2D(void * dst, size_t dstride, const void * src, size_t sstride, size_t width, size_t height) {
     char *d = reinterpret_cast<char *>(dst);
     const char *s = reinterpret_cast<const char *>(src);
