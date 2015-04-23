@@ -1,0 +1,52 @@
+# @configure_input@
+
+# Package-related substitution variables
+package	= @PACKAGE_NAME@
+version	= @PACKAGE_VERSION@
+tarname	= @PACKAGE_TARNAME@
+distdir	= $(tarname)-$(version)
+
+# Prefix-related substitution variables
+prefix	 = @prefix@
+exec_prefix    = @exec_prefix@
+bindir	 = @bindir@
+libdir	 = @libdir@
+
+# Tool-related substitution variables
+CXX		         = @CXX@
+CXXFLAGS       = @CXXFLAGS@
+LIBS	         = @LIBS@
+DEFS           = @DEFS@
+INSTALL	       = @INSTALL@
+INSTALL_DATA   = @INSTALL_DATA@
+INSTALL_PROGRAM= @INSTALL_PROGRAM@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+CUDA_CFLAGS    = @CUDA_CFLAGS@
+CUDA_LIBS      = @CUDA_LIBS@
+CUDA_LDFLAGS   = @CUDA_LDFLAGS@
+NVCC       	   = @NVCC@
+MPI_INC        = @MPI_INC@
+MPI_LIBDIR     = @MPI_LIBDIR@
+MPI_LIBS       = @MPI_LIBS@
+TEST_LIBS      = @TEST_LIBS@
+
+# VPATH-related substitution variables
+srcdir	 = ./../src
+
+LIBOBJS=$(srcdir)/common.o $(srcdir)/cpublock.o $(srcdir)/cpublocksse.o
+
+TEST_OBJS=$(LIBOBJS) cpublocktest.o.te unittest.o.te
+
+all: check
+
+check: $(TEST_OBJS)
+	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o unittest $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} $(TEST_LIBS)
+
+%.o.te: %.cpp
+	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -I$(srcdir) -o $@ -c $^ 
+
+$(srcdir)/%.o: $(srcdir)/%.cpp
+	$(MAKE) -C $(srcdir) $@
+
+clean:
+	-rm -f unittest $(TEST_OBJS) 1>/dev/null
