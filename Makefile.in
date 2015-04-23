@@ -15,8 +15,24 @@ bindir	 = @bindir@
 srcdir         = @srcdir@
 VPATH          = @srcdir@
 
-all clean install uninstall lib somoclu check:
+install uninstall lib somoclu:
 	$(MAKE) -C src $@
+
+all:
+	$(MAKE) -C src $@
+	$(MAKE) -C ./examples $@
+	$(MAKE) -C ./test $@
+
+box:
+	$(MAKE) -C ./examples $@
+
+check:
+	$(MAKE) -C ./test $@
+
+clean:
+	$(MAKE) -C src $@
+	$(MAKE) -C ./test $@
+	$(MAKE) -C ./examples $@
 
 dist: $(distdir).tar.gz
 
