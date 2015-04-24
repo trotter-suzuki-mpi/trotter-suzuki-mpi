@@ -15,26 +15,19 @@ bindir	 = @bindir@
 srcdir         = @srcdir@
 VPATH          = @srcdir@
 
-install uninstall lib somoclu:
-	$(MAKE) -C src $@
-
-all:
+all clean:
 	$(MAKE) -C src $@
 	$(MAKE) -C examples $@
 	$(MAKE) -C test $@
 
-trotter:
+trotter install uninstall lib:
 	$(MAKE) -C src $@
-box:
+
+examples:
 	$(MAKE) -C examples $@
 
 check:
 	$(MAKE) -C test $@
-
-clean:
-	$(MAKE) -C src $@
-	$(MAKE) -C test $@
-	$(MAKE) -C examples $@
 
 dist: $(distdir).tar.gz
 

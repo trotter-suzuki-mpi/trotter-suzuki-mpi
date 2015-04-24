@@ -32,20 +32,20 @@ MPI_LIBS       = @MPI_LIBS@
 # VPATH-related substitution variables
 srcdir	 = ./../src
 
-LIBOBJS=$(srcdir)/common.o $(srcdir)/cpublock.o $(srcdir)/cpublocksse.o $(srcdir)/cpublocksse.o $(srcdir)/trottertest.o
+LIBOBJS=$(srcdir)/common.o $(srcdir)/cpublock.o $(srcdir)/cpublocksse.o $(srcdir)/cpublocksse.o $(srcdir)/trotter.o
 
 ifdef CUDA_LIBS
 	LIBOBJS+=$(srcdir)/cc2kernel.cu.co $(srcdir)/hybrid.cu.co
 endif
 
-BOX_OBJS=$(LIBOBJS) particle_in_a_box.o.sy
+BOX_OBJS=$(LIBOBJS) particle_in_a_box.o
 
 all: box
 
 box: $(BOX_OBJS)
 	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o particle_in_a_box $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} 
 
-%.o.sy: %.cpp
+%.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -I$(srcdir) -o $@ -c $^ 
 
 $(srcdir)/%.o: $(srcdir)/%.cpp

@@ -20,7 +20,7 @@
 #ifndef __CPUBLOCK_H
 #define __CPUBLOCK_H
 
-#include "trotterkernel.h"
+#include "trotter.h"
 #include <mpi.h>
 
 #define BLOCK_WIDTH 128u

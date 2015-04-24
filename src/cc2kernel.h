@@ -26,7 +26,7 @@
 #include <cuda_runtime.h>
 #include <mpi.h>
 
-#include "trotterkernel.h"
+#include "trotter.h"
 
 #define DISABLE_FMA
 
