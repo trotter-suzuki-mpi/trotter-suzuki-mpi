@@ -1,5 +1,7 @@
 Since 1.0:
  - Build system revised, CUDA is no longer necessary.
+ - Main program now accepts an initial state from the command line as a file.
+ - Examples split into separate folder.
  - Better testing of MPI dependencies by configure script.
  - Improved treatment of Intel compilers.
  - Unit testing of CPU kernel.

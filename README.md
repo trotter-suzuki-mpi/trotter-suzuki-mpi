@@ -11,7 +11,9 @@ An MPI implementation is required for compiling. To use the GPU-accelerated vers
 Usage
 ==
 
-A test example is included. Usage: trottertest [OPTIONS]. 
+Usage: trotter [OPTIONS] filename 
+
+The file specified contains the complex matrix describing the initial state in the position picture.
 
 Arguments:
 
