@@ -24,7 +24,7 @@
 #include <omp.h>
 #endif
 
-#include "trotterkernel.h"
+#include "trotter.h"
 #include "cpublock.h"
 #include "cc2kernel.h"
 

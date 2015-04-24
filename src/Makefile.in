@@ -33,18 +33,18 @@ MPI_LIBS       = @MPI_LIBS@
 srcdir	 = @srcdir@
 VPATH	  = @srcdir@
 
-LIBOBJS=common.o cpublock.o cpublocksse.o trottertest.o
+LIBOBJS=common.o cpublock.o cpublocksse.o trotter.o
 
 ifdef CUDA_LIBS
 	LIBOBJS+=cc2kernel.cu.co hybrid.cu.co
 endif
 
-OBJS=$(LIBOBJS) trotter.o
+OBJS=$(LIBOBJS) main.o
 
 all: trotter
 
 lib: $(LIBOBJS)
-	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -shared -o libsomoclu.so $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
+	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -shared -o trotter.so $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
 	
 trotter: $(OBJS)
 	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o $@ $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
@@ -60,11 +60,11 @@ clean:
 
 install:
 	$(INSTALL) -d $(DESTDIR)$(bindir)
-	$(INSTALL_PROGRAM) -m 0755 somoclu \
+	$(INSTALL_PROGRAM) -m 0755 trotter \
 	 $(DESTDIR)$(bindir)
 	 
 uninstall:
-	-rm $(DESTDIR)$(bindir)/somoclu &>/dev/null
+	-rm $(DESTDIR)$(bindir)/trotter &>/dev/null
 
 Makefile: Makefile.in ../config.status
 	cd .. && ./config.status $@

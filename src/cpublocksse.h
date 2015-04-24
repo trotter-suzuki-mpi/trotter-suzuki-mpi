@@ -27,7 +27,7 @@
 #include <xmmintrin.h>
 #include <emmintrin.h>
 
-#include "trotterkernel.h"
+#include "trotter.h"
 
 #define BLOCK_WIDTH 128u
 #define BLOCK_HEIGHT 128u
