@@ -1,3 +1,22 @@
+/**
+ * Distributed Trotter-Suzuki solver
+ * Copyright (C) 2012 Peter Wittek, 2010-2012 Carlos Bederián
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 #include "cpublocktest.h"
 #include "cpublock.h"
 #include "common.h"
@@ -49,6 +68,7 @@ void CPUBlockTest::test_block_kernel_vertical(){
 	
 	//Check
 	CPPUNIT_ASSERT( matrix_processed == matrix_expected );
+	std::cout << "TEST FUNCTION: block_kernel_vertical " << std::endl;
 }
 
 void CPUBlockTest::test_block_kernel_horizontal(){
@@ -91,6 +111,7 @@ void CPUBlockTest::test_block_kernel_horizontal(){
 	
 	//Check
 	CPPUNIT_ASSERT( matrix_processed == matrix_expected );
+	std::cout << "TEST FUNCTION: block_kernel_horizontal " << std::endl;
 }
 
 //Members of class Matrix

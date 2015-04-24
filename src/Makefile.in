@@ -28,32 +28,26 @@ NVCC       	   = @NVCC@
 MPI_INC        = @MPI_INC@
 MPI_LIBDIR     = @MPI_LIBDIR@
 MPI_LIBS       = @MPI_LIBS@
-TEST_DEFS      = @TEST_DEFS@
-TEST_LIBS      = @TEST_LIBS@
 
 # VPATH-related substitution variables
 srcdir	 = @srcdir@
 VPATH	  = @srcdir@
 
-LIBOBJS=common.o cpublock.o cpublocksse.o
+LIBOBJS=common.o cpublock.o cpublocksse.o trottertest.o
 
 ifdef CUDA_LIBS
 	LIBOBJS+=cc2kernel.cu.co hybrid.cu.co
 endif
 
-OBJS=$(LIBOBJS) trottertest.o
-TEST_OBJS=$(LIBOBJS) cpublocktest.o
+OBJS=$(LIBOBJS) trotter.o
 
-all: trottertest
+all: trotter
 
 lib: $(LIBOBJS)
 	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -shared -o libsomoclu.so $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
 	
-trottertest: $(OBJS)
+trotter: $(OBJS)
 	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o $@ $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
-
-check: $(TEST_OBJS) trottertest.cpp
-	$(CXX) $(TEST_DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o unittest $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} $(TEST_LIBS)
 
 %.o: %.cpp
 		$(CXX) $(DEFS) $(CXXFLAGS) ${MPI_INC} -I$(srcdir) -I.. -o $@ -c $(srcdir)/$<
@@ -62,7 +56,7 @@ check: $(TEST_OBJS) trottertest.cpp
 		$(NVCC) $(DEFS) $(CUDA_CFLAGS) ${MPI_INC} -I$(srcdir) -I.. -o $@ -c $(srcdir)/$<
 
 clean:
-	-rm -f trottertest $(OBJS) 1>/dev/null
+	-rm -f trotter $(OBJS) 1>/dev/null
 
 install:
 	$(INSTALL) -d $(DESTDIR)$(bindir)
