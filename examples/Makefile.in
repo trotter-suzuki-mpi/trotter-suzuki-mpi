@@ -40,7 +40,7 @@ endif
 
 BOX_OBJS=$(LIBOBJS) particle_in_a_box.o
 
-all: box
+all example: box
 
 box: $(BOX_OBJS)
 	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o particle_in_a_box $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} 
