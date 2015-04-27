@@ -23,7 +23,7 @@ all clean:
 trotter install uninstall lib:
 	$(MAKE) -C src $@
 
-examples:
+example:
 	$(MAKE) -C examples $@
 
 check:
