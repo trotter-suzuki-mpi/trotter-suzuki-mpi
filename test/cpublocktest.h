@@ -21,11 +21,17 @@
 #define __CPUBLOCKTEST_H
 
 #include <cppunit/extensions/HelperMacros.h>
+#include <cmath>
+
+static const double h_a = cos(0.02);
+static const double h_b = sin(0.02);
 
 class CPUBlockTest: public CppUnit::TestFixture{
 	CPPUNIT_TEST_SUITE( CPUBlockTest );
 	CPPUNIT_TEST( test_block_kernel_vertical );
 	CPPUNIT_TEST( test_block_kernel_horizontal );
+	CPPUNIT_TEST( test_update_shifty_sse );
+	CPPUNIT_TEST( test_update_shiftx_sse );
 	CPPUNIT_TEST_SUITE_END(); 
 	
 	public:
@@ -33,11 +39,14 @@ class CPUBlockTest: public CppUnit::TestFixture{
 		void tearDown();
 		void test_block_kernel_vertical();
 		void test_block_kernel_horizontal();
+		void test_update_shifty_sse();
+		void test_update_shiftx_sse();
 };
 
 class Matrix{
 	public:
 		Matrix(float *matrix_real, float *matrix_imag, int width, int height);
+		void show_matrix();
 		bool operator ==(const Matrix &other) const;
 		
 	private:
