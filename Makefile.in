@@ -19,6 +19,7 @@ all clean:
 	$(MAKE) -C src $@
 	$(MAKE) -C examples $@
 	$(MAKE) -C test $@
+	$(MAKE) -C values $@
 
 trotter install uninstall lib:
 	$(MAKE) -C src $@
@@ -28,6 +29,9 @@ example:
 
 check:
 	$(MAKE) -C test $@
+
+expect:
+	$(MAKE) -C values $@.o
 
 dist: $(distdir).tar.gz
 
