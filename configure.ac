@@ -112,7 +112,8 @@ AC_SUBST(TEST_LIBS)
 AC_CONFIG_FILES([Makefile
                  src/Makefile
 		 test/Makefile
-		 examples/Makefile])
+		 examples/Makefile
+		 values/Makefile])
 AC_OUTPUT
 
 echo \
