@@ -38,7 +38,7 @@
 
 //external potential operator in coordinate representation
 void potential_op_coord_representation(float *hamilt_pot, int dimx, int dimy) {
-    float constant = 1.;
+    float constant = 0.;
     for(int i = 0; i < dimy; i++) {
         for(int j = 0; j < dimx; j++) {
             hamilt_pot[i * dimx + j] = constant;
