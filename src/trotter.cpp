@@ -34,7 +34,7 @@
 #include "hybrid.h"
 #endif
 
-void trotter(double h_a, double h_b, float * external_pot_real, float * external_pot_imag, float * p_real, float * p_imag, const int matrix_width, const int matrix_height, const int iterations, const int snapshots, const int kernel_type, int argc, char** argv, const char *dirname) {
+void trotter(double h_a, double h_b, float * external_pot_real, float * external_pot_imag, float * p_real, float * p_imag, const int matrix_width, const int matrix_height, const int iterations, const int snapshots, const int kernel_type, int *periods, int argc, char** argv, const char *dirname) {
 
     float *_p_real, *_p_imag;
     float *_external_pot_real, *_external_pot_imag;
@@ -43,7 +43,7 @@ void trotter(double h_a, double h_b, float * external_pot_real, float * external
         start_y, end_y, inner_start_y, inner_end_y;
 
     int coords[2], dims[2] = {0, 0};
-    int periods[2] = {0, 0};
+    //int periods[2] = {0, 0};
     int rank;
     int nProcs;
 
@@ -61,8 +61,8 @@ void trotter(double h_a, double h_b, float * external_pot_real, float * external
 
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
-    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width, halo_x);
-    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height, halo_y);
+    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width, halo_x, periods[1]);
+    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height, halo_y, periods[0]);
     int width = end_x - start_x;
     int height = end_y - start_y;
 #ifdef DEBUG
@@ -78,10 +78,10 @@ void trotter(double h_a, double h_b, float * external_pot_real, float * external
     _external_pot_real = new float[width * height];
     _external_pot_imag = new float[width * height];
 
-    memcpy2D(_p_real, width * sizeof(float), &p_real[start_y * matrix_width + start_x], matrix_width * sizeof(float), width * sizeof(float), height);
-    memcpy2D(_p_imag, width * sizeof(float), &p_imag[start_y * matrix_width + start_x], matrix_width * sizeof(float), width * sizeof(float), height);
-    memcpy2D(_external_pot_real, width * sizeof(float), &external_pot_real[start_y * matrix_width + start_x], matrix_width * sizeof(float), width * sizeof(float), height);
-    memcpy2D(_external_pot_imag, width * sizeof(float), &external_pot_imag[start_y * matrix_width + start_x], matrix_width * sizeof(float), width * sizeof(float), height);
+    memcpy2D(_p_real, width * sizeof(float), &p_real[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(float), width * sizeof(float), height);
+    memcpy2D(_p_imag, width * sizeof(float), &p_imag[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(float), width * sizeof(float), height);
+    memcpy2D(_external_pot_real, width * sizeof(float), &external_pot_real[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(float), width * sizeof(float), height);
+    memcpy2D(_external_pot_imag, width * sizeof(float), &external_pot_imag[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(float), width * sizeof(float), height);
 
     delete[] external_pot_real;
     delete[] external_pot_imag;
@@ -92,7 +92,7 @@ void trotter(double h_a, double h_b, float * external_pot_real, float * external
     ITrotterKernel * kernel;
     switch (kernel_type) {
     case 0:
-        kernel = new CPUBlock(_p_real, _p_imag, _external_pot_real, _external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, cartcomm);
+        kernel = new CPUBlock(_p_real, _p_imag, _external_pot_real, _external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm);
         break;
 
     case 1:
@@ -122,7 +122,7 @@ void trotter(double h_a, double h_b, float * external_pot_real, float * external
         break;
 
     default:
-        kernel = new CPUBlock(_p_real, _p_imag, _external_pot_real, _external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, cartcomm);
+        kernel = new CPUBlock(_p_real, _p_imag, _external_pot_real, _external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm);
         break;
     }
 
