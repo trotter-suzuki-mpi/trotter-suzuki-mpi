@@ -28,26 +28,26 @@ NVCC       	   = @NVCC@
 MPI_INC        = @MPI_INC@
 MPI_LIBDIR     = @MPI_LIBDIR@
 MPI_LIBS       = @MPI_LIBS@
+TEST_LIBS      = @TEST_LIBS@
 
 # VPATH-related substitution variables
 srcdir	 = ./../src
-expectdir = ./../values
 
-LIBOBJS=$(srcdir)/common.o $(srcdir)/cpublock.o $(srcdir)/cpublocksse.o $(srcdir)/trotter.o  $(expectdir)/expect.o
+LIBOBJS=$(srcdir)/common.o $(srcdir)/cpublock.o $(srcdir)/cpublocksse.o $(srcdir)/trotter.o
 
 ifdef CUDA_LIBS
 	LIBOBJS+=$(srcdir)/cc2kernel.cu.co $(srcdir)/hybrid.cu.co
 endif
 
-BOX_OBJS=$(LIBOBJS) particle_in_a_box.o
+TEST_OBJS=$(LIBOBJS) cpublocktest.o unittest.o
 
-all example: box
+all: check
 
-box: $(BOX_OBJS)
-	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o particle_in_a_box $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} 
+check: $(TEST_OBJS)
+	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o unittest $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} $(TEST_LIBS)
 
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -I$(expectdir) -I$(srcdir) -o $@ -c $^ 
+	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -I$(srcdir) -o $@ -c $^ 
 
 $(srcdir)/%.o: $(srcdir)/%.cpp
 	$(MAKE) -C $(srcdir) $@
@@ -55,8 +55,5 @@ $(srcdir)/%.o: $(srcdir)/%.cpp
 $(srcdir)/%.cu.co: $(srcdir)/%.cu
 	$(MAKE) -C $(srcdir) $@
 
-$(expectdir)/%.o: $(expectdir)/%.cpp
-	$(MAKE) -C $(expectdir) $@
-
 clean:
-	-rm -f particle_in_a_box $(BOX_OBJS) 1>/dev/null
+	-rm -f unittest $(TEST_OBJS) 1>/dev/null
