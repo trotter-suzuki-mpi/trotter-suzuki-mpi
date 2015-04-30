@@ -162,6 +162,7 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
 
 int main(int argc, char** argv) {
     int dim = 0, iterations = 0, snapshots = 0, kernel_type = 0;
+    int periods[2] = {0,0};
     char file_name[40];
 
     process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, file_name);
@@ -184,7 +185,7 @@ int main(int argc, char** argv) {
     float * p_imag = new float[dim * dim];
     read_initial_state(p_real, p_imag, dim, file_name);
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, dim, dim, iterations, snapshots, kernel_type, argc, argv, "./");
+    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, dim, dim, iterations, snapshots, kernel_type, periods, argc, argv, "./");
 
     return 0;
 }
