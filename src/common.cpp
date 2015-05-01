@@ -32,19 +32,19 @@
 void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound) {
     int inner = (int)ceil((double)length / (double)dim);
     *inner_start = coord * inner;
-    if(periodic_bound)
+    if(periodic_bound != 0)
 		*start = *inner_start - halo;
 	else
 		*start = ( coord == 0 ? 0 : *inner_start - halo );
     *end = *inner_start + (inner + halo);
     
     if (*end > length) {
-		if(periodic_bound)
+		if(periodic_bound != 0)
 			*end = length + halo;
 		else
 			*end = length;
     }
-    if(periodic_bound)
+    if(periodic_bound != 0)
 		*inner_end = *end - halo;
 	else
 		*inner_end = ( *end == length ? *end : *end - halo );

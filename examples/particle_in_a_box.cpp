@@ -166,7 +166,7 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
 
 int main(int argc, char** argv) {
     int dim = 0, iterations = 0, snapshots = 0, kernel_type = 0;
-    int periods[2] = {0,0};
+    int periods[2] = {1,1};
 	bool values = false;
 
     process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, &values);
@@ -213,9 +213,6 @@ int main(int argc, char** argv) {
         filenames = "./";
 
     trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str());
-
-    //if(values)
-    //    expect_values(dim, iterations, snapshots, hamilt_pot, particle_mass, filenames.c_str());
 
     return 0;
 }

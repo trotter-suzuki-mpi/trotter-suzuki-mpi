@@ -35,7 +35,9 @@
 #endif
 
 void trotter(double h_a, double h_b, float * external_pot_real, float * external_pot_imag, float * p_real, float * p_imag, const int matrix_width, const int matrix_height, const int iterations, const int snapshots, const int kernel_type, int *periods, int argc, char** argv, const char *dirname) {
-
+	
+	MPI_Init(&argc, &argv);
+	
     float *_p_real, *_p_imag;
     float *_external_pot_real, *_external_pot_imag;
     std::stringstream filename;
@@ -47,7 +49,7 @@ void trotter(double h_a, double h_b, float * external_pot_real, float * external
     int rank;
     int nProcs;
 
-    MPI_Init(&argc, &argv);
+    
     //MPI_Bcast(&matrix_width, 1, MPI_INT, 0, MPI_COMM_WORLD);
     //MPI_Bcast(&iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
     //MPI_Bcast(&snapshots, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -61,8 +63,8 @@ void trotter(double h_a, double h_b, float * external_pot_real, float * external
 
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
-    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width, halo_x, periods[1]);
-    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height, halo_y, periods[0]);
+    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2*periods[1]*halo_x, halo_x, periods[1]);
+    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2*periods[0]*halo_y, halo_y, periods[0]);
     int width = end_x - start_x;
     int height = end_y - start_y;
 #ifdef DEBUG
@@ -82,11 +84,6 @@ void trotter(double h_a, double h_b, float * external_pot_real, float * external
     memcpy2D(_p_imag, width * sizeof(float), &p_imag[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(float), width * sizeof(float), height);
     memcpy2D(_external_pot_real, width * sizeof(float), &external_pot_real[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(float), width * sizeof(float), height);
     memcpy2D(_external_pot_imag, width * sizeof(float), &external_pot_imag[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(float), width * sizeof(float), height);
-
-    delete[] external_pot_real;
-    delete[] external_pot_imag;
-    delete[] p_real;
-    delete[] p_imag;
 
     // Initialize kernel
     ITrotterKernel * kernel;
@@ -161,6 +158,12 @@ void trotter(double h_a, double h_b, float * external_pot_real, float * external
     }
     delete[] _p_real;
     delete[] _p_imag;
+    delete[] _external_pot_real;
+    delete[] _external_pot_imag;
+    delete[] external_pot_real;
+    delete[] external_pot_imag;
+    delete[] p_real;
+    delete[] p_imag;
     delete kernel;
 
     MPI_Finalize();
