@@ -189,7 +189,8 @@ int main(int argc, char** argv) {
     // Run the tests.
     bool wasSucessful = runner.run();
     // Return error code 1 if the one of test failed.
-    //return wasSucessful ? 0 : 1;
+    if(!wasSucessful)
+	return 1;
     
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
