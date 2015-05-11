@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <complex>
+#include "mpi.h"
 
 #include "trotter.h"
 
@@ -47,8 +48,8 @@ void potential_op_coord_representation(float *hamilt_pot, int dimx, int dimy, in
 
 void init_state(float *p_real, float *p_imag, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
     double s = 64.0; // FIXME: y esto?
-    double L_x = dimx - periods[1]*2*halo_x;
-    double L_y = dimy - periods[0]*2*halo_y;
+    double L_x = dimx - periods[1] * 2 * halo_x;
+    double L_y = dimy - periods[0] * 2 * halo_y;
     double n_x = 1., n_y = 1.;
 
     for (int y = 1; y <= dimy; y++) {
@@ -56,7 +57,7 @@ void init_state(float *p_real, float *p_imag, int dimx, int dimy, int halo_x, in
             //std::complex<float> tmp = std::complex<float>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
             //                        * exp(std::complex<float>(0.0, 0.4 * (x + y - 480.0)));
 
-            std::complex<float> tmp = std::complex<float> (sin(2 * 3.14159 / L_x * (x - periods[1]*halo_x)) * sin(2 * 3.14159 / L_y * (y - periods[0]*halo_y)), 0.0);
+            std::complex<float> tmp = std::complex<float> (sin(2 * 3.14159 / L_x * (x - periods[1] * halo_x)) * sin(2 * 3.14159 / L_y * (y - periods[0] * halo_y)), 0.0);
 
             p_real[y * dimx + x] = real(tmp);
             p_imag[y * dimx + x] = imag(tmp);
@@ -81,7 +82,7 @@ void init_pot_evolution_op(float * hamilt_pot, float * external_pot_real, float 
 
 void print_usage() {
     std::cout << "\nSimulate the evolution of a particle in a box.\n\n"\
-			  "Usage:\n" \
+              "Usage:\n" \
               "     trotter [OPTION]\n" \
               "Arguments:\n" \
               "     -d NUMBER     Matrix dimension (default: " << DIM << ")\n" \
@@ -93,8 +94,9 @@ void print_usage() {
               "                      3: Hybrid (experimental) \n" \
               "     -s NUMBER     Snapshots are taken at every NUMBER of iterations.\n" \
               "                   Zero means no snapshots. Default: " << SNAPSHOTS << ".\n";//\
-              "     -v            Calculates expected values of energy and momentum operators\n"\
-              "                   once the simulation is finished";
+    "     -v            Calculates expected values of energy and momentum operators\n"
+    \
+    "                   once the simulation is finished";
 }
 
 void process_command_line(int argc, char** argv, int *dim, int *iterations, int *snapshots, int *kernel_type, bool *values) {
@@ -166,16 +168,16 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
 
 int main(int argc, char** argv) {
     int dim = 0, iterations = 0, snapshots = 0, kernel_type = 0;
-    int periods[2] = {1,1};
-	bool values = false;
+    int periods[2] = {1, 1};
+    bool values = false;
 
     process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, &values);
-	
-	int halo_x = (kernel_type == 2 ? 3 : 4);
+
+    int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
-	int matrix_width = dim + periods[1]*2*halo_x;
-	int matrix_height = dim + periods[0]*2*halo_y;
-	
+    int matrix_width = dim + periods[1] * 2 * halo_x;
+    int matrix_height = dim + periods[0] * 2 * halo_y;
+
     //set hamiltonian variables
     const double particle_mass = 1.;
     float *hamilt_pot = new float[matrix_width * matrix_height];
