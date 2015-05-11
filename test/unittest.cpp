@@ -162,7 +162,7 @@ void print_usage() {
               "                   Zero means no snapshots. Default: " << SNAPSHOTS << ".\n"\
               "     -n STRING     Set initial state from a file.\n"\
               "     -v            Calculates expected values of energy and momentum operators\n"\
-              "                   once the simulation is finished.";
+              "                   once the simulation ends.\n";
 }
 
 void process_command_line(int argc, char** argv, int *dim, int *iterations, int *snapshots, int *kernel_type, bool *values, char *file_name) {
