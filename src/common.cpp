@@ -22,17 +22,33 @@
 #include <iostream>
 #include <string>
 
-#include "common.h"
 
-void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo) {
+#include <sstream>
+#include <unistd.h>
+#include <complex>
+
+#include "common.h"
+#include "trotter.h"
+
+void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound) {
     int inner = (int)ceil((double)length / (double)dim);
     *inner_start = coord * inner;
-    *start = ( coord == 0 ? 0 : *inner_start - halo );
+    if(periodic_bound != 0)
+        *start = *inner_start - halo;
+    else
+        *start = ( coord == 0 ? 0 : *inner_start - halo );
     *end = *inner_start + (inner + halo);
+
     if (*end > length) {
-        *end = length;
+        if(periodic_bound != 0)
+            *end = length + halo;
+        else
+            *end = length;
     }
-    *inner_end = ( *end == length ? *end : *end - halo );
+    if(periodic_bound != 0)
+        *inner_end = *end - halo;
+    else
+        *inner_end = ( *end == length ? *end : *end - halo );
 }
 
 void print_complex_matrix(std::string filename, float * matrix_real, float * matrix_imag, size_t stride, size_t width, size_t height) {
@@ -167,3 +183,98 @@ void get_quadrant_sample_to_buffer(const float * r00, const float * r01, const f
     }
     assert (dest_y == y + height);
 }
+
+void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, float particle_mass, const char *dirname, procs_topology var, int *periods, int halo_x, int halo_y) {
+
+    if(snapshots == 0)
+        return;
+
+    int N_files = iterations / snapshots;
+    int N_name[N_files];
+    int DIM = dim;
+
+    int start_x, end_x, inner_start_x, inner_end_x,
+        start_y, end_y, inner_start_y, inner_end_y;
+
+    N_name[0] = 0;
+    for(int i = 1; i < N_files; i++) {
+        N_name[i] = N_name[i - 1] + snapshots;
+    }
+
+    std::complex<float> sum_E = 0;
+    std::complex<float> sum_Px = 0, sum_Py = 0;
+    std::complex<float> sum_psi = 0;
+
+    std::complex<float> potential[DIM][DIM];
+    std::complex<float> psi[DIM][DIM];
+    std::complex<float> cost_E = -1. / (2.*particle_mass), cost_P;
+    cost_P = std::complex<float>(0., -0.5);
+
+    std::stringstream filename;
+    std::string filenames;
+
+    filename.str("");
+    filename << dirname << "/exp_val_D" << dim << "_I" << iterations << "_S" << snapshots << ".dat";
+    filenames = filename.str();
+    std::ofstream out(filenames.c_str());
+
+    for(int i = 0; i < DIM; i++) {
+        for(int j = 0; j < DIM; j++) {
+            potential[j][i] = std::complex<float> (hamilt_pot[i * DIM + j], 0.);
+        }
+    }
+
+    out << "#time\tEnergy\t\tPx\tPy\tP**2\tnorm(psi(t))" << std::endl;
+    for(int i = 0; i < N_files; i++) {
+
+        //read wave function
+        for(int idy = 0; idy < var.dimsy; idy++) {
+            for(int idx = 0; idx < var.dimsx; idx++) {
+
+                filename.str("");
+                filename << dirname << "/" << N_name[i] << "-iter-" << idx << "-" << idy << "-comp.dat";
+                filenames = filename.str();
+                std::ifstream in_compl(filenames.c_str());
+
+                //get dimension of input file
+                calculate_borders(idx, var.dimsx, &start_x, &end_x, &inner_start_x, &inner_end_x, dim, halo_x, periods[1]);
+                calculate_borders(idy, var.dimsy, &start_y, &end_y, &inner_start_y, &inner_end_y, dim, halo_y, periods[0]);
+                int width = inner_end_x - inner_start_x;
+                int height = inner_end_y - inner_start_y;
+
+                //read file
+                for(int j = 0; j < height; j++) {
+                    for(int k = 0; k < width; k++) {
+                        in_compl >> psi[k + inner_start_x][j + inner_start_y];
+                    }
+                }
+                in_compl.close();
+            }
+        }
+
+        /*
+                for(int j = 0; j < DIM; j++) {
+                    for(int k = 0; k < DIM; k++) {
+                        in_compl >> psi[k][j];
+                    }
+                }
+                in_compl.close();*/
+
+        for(int j = 1; j < DIM - 1; j++) {
+            for(int k = 1; k < DIM - 1; k++) {
+                sum_E += conj(psi[k][j]) * (cost_E * (psi[k + 1][j] + psi[k - 1][j] + psi[k][j + 1] + psi[k][j - 1] - psi[k][j] * std::complex<float> (4., 0.)) + potential[k][j] * psi[k][j]) ;
+                sum_Px += conj(psi[k][j]) * (psi[k + 1][j] - psi[k - 1][j]);
+                sum_Py += conj(psi[k][j]) * (psi[k][j + 1] - psi[k][j - 1]);
+                sum_psi += conj(psi[k][j]) * psi[k][j];
+            }
+        }
+
+        out << N_name[i] << "\t" << real(sum_E / sum_psi) << "\t" << real(cost_P * sum_Px / sum_psi) << "\t" << real(cost_P * sum_Py / sum_psi) << "\t"
+            << real(cost_P * sum_Px / sum_psi)*real(cost_P * sum_Px / sum_psi) + real(cost_P * sum_Py / sum_psi)*real(cost_P * sum_Py / sum_psi) << "\t" << real(sum_psi) << std::endl;
+        sum_E = 0;
+        sum_Px = 0;
+        sum_Py = 0;
+        sum_psi = 0;
+    }
+}
+

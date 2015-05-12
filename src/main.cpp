@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <complex>
+#include "mpi.h"
 #include "trotter.h"
 
 #define DIM 640
@@ -31,7 +32,7 @@
 #define SNAPSHOTS 0
 
 //external potential operator in coordinate representation
-void potential_op_coord_representation(float *hamilt_pot, int dimx, int dimy) {
+void potential_op_coord_representation(float *hamilt_pot, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
     float constant = 0.;
     for(int i = 0; i < dimy; i++) {
         for(int j = 0; j < dimx; j++) {
@@ -55,15 +56,59 @@ void init_pot_evolution_op(float * hamilt_pot, float * external_pot_real, float 
     }
 }
 
-void read_initial_state(float *p_real, float *p_imag, int dim, char *file_name) {
+void read_initial_state(float *p_real, float *p_imag, int dimx, int dimy, char *file_name, int halo_x, int halo_y, int *periods) {
     std::ifstream input(file_name);
 
+    int in_width = dimx - 2 * periods[1] * halo_x;
+    int in_height = dimy - 2 * periods[0] * halo_y;
     std::complex<float> tmp;
-    for(int i = 0; i < dim; i++) {
-        for(int j = 0; j < dim; j++) {
+    for(int i = 0, idy = periods[0] * halo_y ; i < in_height; i++, idy++) {
+        for(int j = 0, idx = periods[1] * halo_x ; j < in_width; j++, idx++) {
             input >> tmp;
-            p_real[i * dim + j] = real(tmp);
-            p_imag[i * dim + j] = imag(tmp);
+            p_real[idy * dimx + idx] = real(tmp);
+            p_imag[idy * dimx + idx] = imag(tmp);
+
+            //Down band
+            if(i < halo_y && periods[0] != 0) {
+                p_real[(idy + in_height) * dimx + idx] = real(tmp);
+                p_imag[(idy + in_height) * dimx + idx] = imag(tmp);
+                //Down right corner
+                if(j < halo_x && periods[1] != 0) {
+                    p_real[(idy + in_height) * dimx + idx + in_width] = real(tmp);
+                    p_imag[(idy + in_height) * dimx + idx + in_width] = imag(tmp);
+                }
+                //Down left corner
+                if(j >= in_width - halo_x && periods[1] != 0) {
+                    p_real[(idy + in_height) * dimx + idx - in_width] = real(tmp);
+                    p_imag[(idy + in_height) * dimx + idx - in_width] = imag(tmp);
+                }
+            }
+
+            //Upper band
+            if(i >= in_height - halo_y && periods[0] != 0) {
+                p_real[(idy - in_height) * dimx + idx] = real(tmp);
+                p_imag[(idy - in_height) * dimx + idx] = imag(tmp);
+                //Up right corner
+                if(j < halo_x && periods[1] != 0) {
+                    p_real[(idy - in_height) * dimx + idx + in_width] = real(tmp);
+                    p_imag[(idy - in_height) * dimx + idx + in_width] = imag(tmp);
+                }
+                //Up left corner
+                if(j >= in_width - halo_x && periods[1] != 0) {
+                    p_real[(idy - in_height) * dimx + idx - in_width] = real(tmp);
+                    p_imag[(idy - in_height) * dimx + idx - in_width] = imag(tmp);
+                }
+            }
+            //Right band
+            if(j < halo_x && periods[1] != 0) {
+                p_real[idy * dimx + idx + in_width] = real(tmp);
+                p_imag[idy * dimx + idx + in_width] = imag(tmp);
+            }
+            //Left band
+            if(j >= in_width - halo_x && periods[1] != 0) {
+                p_real[idy * dimx + idx - in_width] = real(tmp);
+                p_imag[idy * dimx + idx - in_width] = imag(tmp);
+            }
         }
     }
     input.close();
@@ -129,7 +174,7 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
             }
             break;
         case 'n':
-            for(int i = 0; i < 40; i++)
+            for(int i = 0; i < 100; i++)
                 file_name[i] = optarg[i];
             file_supplied = true;
             break;
@@ -162,29 +207,35 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
 
 int main(int argc, char** argv) {
     int dim = 0, iterations = 0, snapshots = 0, kernel_type = 0;
-    char file_name[40];
+    int periods[2] = {1, 1};
+    char file_name[100];
 
     process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, file_name);
 
+    int halo_x = (kernel_type == 2 ? 3 : 4);
+    int halo_y = 4;
+    int matrix_width = dim + periods[1] * 2 * halo_x;
+    int matrix_height = dim + periods[0] * 2 * halo_y;
+
     //set hamiltonian variables
     const double particle_mass = 1.;
-    float *hamilt_pot = new float[dim * dim];
-    potential_op_coord_representation(hamilt_pot, dim, dim);	//set potential operator
+    float *hamilt_pot = new float[matrix_width * matrix_height];
+    potential_op_coord_representation(hamilt_pot, matrix_width, matrix_height, halo_x, halo_y, periods);	//set potential operator
 
     //set and calculate evolution operator variables from hamiltonian
     const double time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
-    float *external_pot_real = new float[dim * dim];
-    float *external_pot_imag = new float[dim * dim];
-    init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, dim, dim, particle_mass, time_single_it);	//calculate potential part of evolution operator
+    float *external_pot_real = new float[matrix_width * matrix_height];
+    float *external_pot_imag = new float[matrix_width * matrix_height];
+    init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it);	//calculate potential part of evolution operator
     static const double h_a = cos(time_single_it / (2. * particle_mass));
     static const double h_b = sin(time_single_it / (2. * particle_mass));
 
     //set initial state
-    float * p_real = new float[dim * dim];
-    float * p_imag = new float[dim * dim];
-    read_initial_state(p_real, p_imag, dim, file_name);
+    float *p_real = new float[matrix_width * matrix_height];
+    float *p_imag = new float[matrix_width * matrix_height];
+    read_initial_state(p_real, p_imag, matrix_width, matrix_height, file_name, halo_x, halo_y, periods);
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, dim, dim, iterations, snapshots, kernel_type, argc, argv, "./");
+    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, "./");
 
     return 0;
 }

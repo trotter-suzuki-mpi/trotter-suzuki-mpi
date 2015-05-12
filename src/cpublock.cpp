@@ -134,7 +134,7 @@ void process_band(size_t tile_width, size_t block_width, size_t block_height, si
 }
 
 // Class methods
-CPUBlock::CPUBlock(float *_p_real, float *_p_imag, float *_external_pot_real, float *_external_pot_imag, float _a, float _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, MPI_Comm _cartcomm):
+CPUBlock::CPUBlock(float *_p_real, float *_p_imag, float *_external_pot_real, float *_external_pot_imag, float _a, float _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *periods, MPI_Comm _cartcomm):
     a(_a),
     b(_b),
     sense(0),
@@ -144,12 +144,12 @@ CPUBlock::CPUBlock(float *_p_real, float *_p_imag, float *_external_pot_real, fl
     cartcomm = _cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
-    int rank, coords[2], dims[2] = {0, 0}, periods[2] = {0, 0};
+    int rank, coords[2], dims[2] = {0, 0};//, periods[2] = {0, 0};
     MPI_Comm_rank(cartcomm, &rank);
     MPI_Cart_get(cartcomm, 2, dims, periods, coords);
     int inner_start_x = 0, end_x = 0, end_y = 0;
-    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width, halo_x);
-    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height, halo_y);
+    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
+    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     tile_width = end_x - start_x;
     tile_height = end_y - start_y;
 
