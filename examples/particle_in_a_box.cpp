@@ -28,7 +28,7 @@
 #include <iostream>
 #include <complex>
 #include "mpi.h"
-
+#include "common.h"
 #include "trotter.h"
 
 #define DIM 640
@@ -191,24 +191,53 @@ int main(int argc, char** argv) {
     init_state(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, periods);
 
     //set file output directory
-    std::stringstream filename;
-    std::string filenames;
+    std::stringstream dirname;
+    std::string dirnames;
     if(snapshots) {
         int status;
 
-        filename.str("");
-        filename << "D" << dim << "_I" << iterations << "_S" << snapshots << "";
-        filenames = filename.str();
+        dirname.str("");
+        dirname << "D" << dim << "_I" << iterations << "_S" << snapshots << "";
+        dirnames = dirname.str();
 
-        status = mkdir(filenames.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        status = mkdir(dirnames.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
         if(status != 0 && status != -1)
-            filenames = "./";
+            dirnames = "./";
     }
     else
-        filenames = "./";
+        dirnames = "./";
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str(), test);
-
+    procs_topology var = trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, dirnames.c_str(), test);
+	
+	if(var.rank == 0 && snapshots != 0 && (var.dimsy != 1 || var.dimsx != 1)) {
+		int N_files = (int)ceil(double(iterations) / double(snapshots));
+		std::complex<float> psi[dim*dim];
+		int N_name[N_files];
+		N_name[0] = 0;
+		for(int i = 1; i < N_files; i++) {
+			N_name[i] = N_name[i - 1] + snapshots;
+		}
+		
+		std::stringstream filename;
+		std::string filenames;
+		for(int i = 0; i < N_files; i++) {
+			stick_files(N_files, N_name[i], psi, dirnames.c_str(), var, dim, periods, halo_x, halo_y);
+			
+			for(int idy = 0; idy < var.dimsy; idy++) {
+				for(int idx = 0; idx < var.dimsx; idx++) {
+					filename.str("");
+					filename << dirnames << "/" << N_name[i] << "-iter-" << idx << "-" << idy << "-comp.dat";
+					filenames = filename.str();
+					remove(filenames.c_str());
+					filename.str("");
+					filename << dirnames << "/" << N_name[i] << "-iter-" << idx << "-" << idy << "-real.dat";
+					filenames = filename.str();
+					remove(filenames.c_str());
+				}
+			}
+		}
+	}
+	
     return 0;
 }

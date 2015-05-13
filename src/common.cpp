@@ -184,12 +184,71 @@ void get_quadrant_sample_to_buffer(const float * r00, const float * r01, const f
     assert (dest_y == y + height);
 }
 
-void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, float particle_mass, const char *dirname, procs_topology var, int *periods, int halo_x, int halo_y) {
+void stick_files(int N_files, int N_name, std::complex<float> *psi, const char *dirname, procs_topology var, int dim,
+				 int *periods, int halo_x, int halo_y) {
+					 
+	int start_x, end_x, inner_start_x, inner_end_x,
+		start_y, end_y, inner_start_y, inner_end_y;
+	
+	std::stringstream filename;
+	std::string filenames;
+		
+	//read wave function
+	for(int idy = 0; idy < var.dimsy; idy++) {
+		for(int idx = 0; idx < var.dimsx; idx++) {
+			filename.str("");
+			filename << dirname << "/" << N_name << "-iter-" << idx << "-" << idy << "-comp.dat";
+			filenames = filename.str();
+			std::ifstream in_compl(filenames.c_str());
+
+			//get dimension of input file
+			calculate_borders(idx, var.dimsx, &start_x, &end_x, &inner_start_x, &inner_end_x, dim, halo_x, periods[1]);
+			calculate_borders(idy, var.dimsy, &start_y, &end_y, &inner_start_y, &inner_end_y, dim, halo_y, periods[0]);
+			int width = inner_end_x - inner_start_x;
+			int height = inner_end_y - inner_start_y;
+
+			//read file
+			for(int j = 0; j < height; j++) {
+				for(int k = 0; k < width; k++) {
+					in_compl >> psi[(j + inner_start_y) * dim + k + inner_start_x];
+				}
+			}
+			in_compl.close();
+		}
+	}
+	
+	//output an unique file with the entire wavefunction
+	if(var.dimsy != 1 || var.dimsx != 1) {
+		filename.str("");
+		filename << dirname << "/" << N_name << "-iter-comp.dat.union";
+		filenames = filename.str();
+		std::ofstream union_out_comp(filenames.c_str());
+		
+		filename.str("");
+		filename << dirname << "/" << N_name << "-iter-real.dat.union";
+		filenames = filename.str();
+		std::ofstream union_out_real(filenames.c_str());
+		
+		for(int j = 0; j < dim; j++) {
+			for(int k = 0; k < dim; k++) {
+				union_out_comp << psi[j * dim + k] << " ";
+				union_out_real << real(psi[j * dim + k]) << " ";
+			}
+			union_out_comp << std::endl;
+			union_out_real << std::endl;
+		}
+		union_out_comp.close();
+		union_out_real.close();
+	}
+}
+
+void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, float particle_mass,
+				   const char *dirname, procs_topology var, int *periods, int halo_x, int halo_y) {
 
     if(snapshots == 0)
         return;
 
-    int N_files = iterations / snapshots;
+    int N_files = (int)ceil(double(iterations) / double(snapshots));
     int N_name[N_files];
     int DIM = dim;
 
@@ -211,7 +270,7 @@ void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, f
 	const float expected_Py = 0.;
 	
     std::complex<float> potential[DIM][DIM];
-    std::complex<float> psi[DIM][DIM];
+    std::complex<float> psi[DIM*DIM];
     std::complex<float> cost_E = -1. / (2.*particle_mass), cost_P;
     cost_P = std::complex<float>(0., -0.5);
 
@@ -230,39 +289,30 @@ void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, f
     }
 
     out << "#time\tEnergy\t\tPx\tPy\tP**2\tnorm(psi(t))" << std::endl;
-    for(int i = 0; i < N_files; i++) {
-
-        //read wave function
-        for(int idy = 0; idy < var.dimsy; idy++) {
-            for(int idx = 0; idx < var.dimsx; idx++) {
-
-                filename.str("");
-                filename << dirname << "/" << N_name[i] << "-iter-" << idx << "-" << idy << "-comp.dat";
-                filenames = filename.str();
-                std::ifstream in_compl(filenames.c_str());
-
-                //get dimension of input file
-                calculate_borders(idx, var.dimsx, &start_x, &end_x, &inner_start_x, &inner_end_x, dim, halo_x, periods[1]);
-                calculate_borders(idy, var.dimsy, &start_y, &end_y, &inner_start_y, &inner_end_y, dim, halo_y, periods[0]);
-                int width = inner_end_x - inner_start_x;
-                int height = inner_end_y - inner_start_y;
-
-                //read file
-                for(int j = 0; j < height; j++) {
-                    for(int k = 0; k < width; k++) {
-                        in_compl >> psi[k + inner_start_x][j + inner_start_y];
-                    }
-                }
-                in_compl.close();
-            }
-        }
-        
+    for(int i = 0; i < N_files; i++) {	
+		stick_files(N_files, N_name[i], psi, dirname, var, dim, periods, halo_x, halo_y);
+		
+		if(var.dimsy != 1 || var.dimsx != 1) {
+			for(int idy = 0; idy < var.dimsy; idy++) {
+				for(int idx = 0; idx < var.dimsx; idx++) {
+					filename.str("");
+					filename << dirname << "/" << N_name[i] << "-iter-" << idx << "-" << idy << "-comp.dat";
+					filenames = filename.str();
+					remove(filenames.c_str());
+					filename.str("");
+					filename << dirname << "/" << N_name[i] << "-iter-" << idx << "-" << idy << "-real.dat";
+					filenames = filename.str();
+					remove(filenames.c_str());
+				}
+			}	
+		}
+		
         for(int j = 1; j < DIM - 1; j++) {
             for(int k = 1; k < DIM - 1; k++) {
-                sum_E += conj(psi[k][j]) * (cost_E * (psi[k + 1][j] + psi[k - 1][j] + psi[k][j + 1] + psi[k][j - 1] - psi[k][j] * std::complex<float> (4., 0.)) + potential[k][j] * psi[k][j]) ;
-                sum_Px += conj(psi[k][j]) * (psi[k + 1][j] - psi[k - 1][j]);
-                sum_Py += conj(psi[k][j]) * (psi[k][j + 1] - psi[k][j - 1]);
-                sum_psi += conj(psi[k][j]) * psi[k][j];
+                sum_E += conj(psi[k + j * dim]) * (cost_E * (psi[k + 1 + j * dim] + psi[k - 1 + j * dim] + psi[k + (j + 1) * dim] + psi[k + (j - 1) * dim] - psi[k + j * dim] * std::complex<float> (4., 0.)) + potential[k][j] * psi[k + j * dim]) ;
+                sum_Px += conj(psi[k + j * dim]) * (psi[k + 1 + j * dim] - psi[k - 1 + j * dim]);
+                sum_Py += conj(psi[k + j * dim]) * (psi[k + (j + 1) * dim] - psi[k + (j - 1) * dim]);
+                sum_psi += conj(psi[k + j * dim]) * psi[k + j * dim];
             }
         }
 

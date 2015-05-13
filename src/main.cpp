@@ -23,7 +23,9 @@
 #include <stdlib.h>
 #include <iostream>
 #include <complex>
+#include <stdio.h>
 #include "mpi.h"
+#include "common.h"
 #include "trotter.h"
 
 #define DIM 640
@@ -236,7 +238,36 @@ int main(int argc, char** argv) {
     float *p_imag = new float[matrix_width * matrix_height];
     read_initial_state(p_real, p_imag, matrix_width, matrix_height, file_name, halo_x, halo_y, periods);
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, "./", test);
-
+    procs_topology var = trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, ".", test);
+	
+	if(var.rank == 0 && snapshots != 0 && (var.dimsy != 1 || var.dimsx != 1)) {
+		int N_files = (int)ceil(double(iterations) / double(snapshots));
+		std::complex<float> psi[dim*dim];
+		int N_name[N_files];
+		N_name[0] = 0;
+		for(int i = 1; i < N_files; i++) {
+			N_name[i] = N_name[i - 1] + snapshots;
+		}
+		
+		std::stringstream filename;
+		std::string filenames;
+		for(int i = 0; i < N_files; i++){ 
+			stick_files(N_files, N_name[i], psi, ".", var, dim, periods, halo_x, halo_y);
+			
+			for(int idy = 0; idy < var.dimsy; idy++) {
+				for(int idx = 0; idx < var.dimsx; idx++) {
+					filename.str("");
+					filename << "./" << N_name[i] << "-iter-" << idx << "-" << idy << "-comp.dat";
+					filenames = filename.str();
+					remove(filenames.c_str());
+					filename.str("");
+					filename << "./" << N_name[i] << "-iter-" << idx << "-" << idy << "-real.dat";
+					filenames = filename.str();
+					remove(filenames.c_str());
+				}
+			}
+		}
+	}
+		
     return 0;
 }

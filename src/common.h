@@ -42,7 +42,9 @@ void get_quadrant_sample_to_buffer(const float * r00, const float * r01, const f
                                    size_t src_stride, size_t dest_stride,
                                    size_t x, size_t y, size_t width, size_t height,
                                    float * dest_real, float * dest_imag);
-
-void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, float particle_mass, const char *dirname, procs_topology var, int *periods, int halo_x, int halo_y);
+void stick_files(int N_files, int N_name, std::complex<float> *psi, const char *dirname, procs_topology var, int dim,
+				 int *periods, int halo_x, int halo_y);
+void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, float particle_mass, const char *dirname,
+				   procs_topology var, int *periods, int halo_x, int halo_y);
 
 #endif
