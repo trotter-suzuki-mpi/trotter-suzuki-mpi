@@ -35,7 +35,7 @@
 #include "hybrid.h"
 #endif
 
-procs_topology trotter(double h_a, double h_b, float * external_pot_real, float * external_pot_imag, float * p_real, float * p_imag, const int matrix_width, const int matrix_height, const int iterations, const int snapshots, const int kernel_type, int *periods, int argc, char** argv, const char *dirname) {
+procs_topology trotter(double h_a, double h_b, float * external_pot_real, float * external_pot_imag, float * p_real, float * p_imag, const int matrix_width, const int matrix_height, const int iterations, const int snapshots, const int kernel_type, int *periods, int argc, char** argv, const char *dirname, bool test) {
 
     MPI_Init(&argc, &argv);
 
@@ -153,7 +153,7 @@ procs_topology trotter(double h_a, double h_b, float * external_pot_real, float 
     }
 
     gettimeofday(&end, NULL);
-    if (coords[0] == 0 && coords[1] == 0) {
+    if (coords[0] == 0 && coords[1] == 0 && test == false) {
         long time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
         std::cout << "TROTTER " << matrix_width << "x" << matrix_height << " " << kernel->get_name() << " " << nProcs << " " << time << std::endl;
     }

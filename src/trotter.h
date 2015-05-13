@@ -32,7 +32,7 @@ struct procs_topology {
     int rank, dimsx, dimsy;
 };
 
-procs_topology trotter(double h_a, double h_b, float * external_pot_real, float * external_pot_imag, float * p_real, float * p_imag, const int matrix_width, const int matrix_height, const int iterations, const int snapshots, const int kernel_type, int *periods, int argc, char** argv, const char *dirname);
+procs_topology trotter(double h_a, double h_b, float * external_pot_real, float * external_pot_imag, float * p_real, float * p_imag, const int matrix_width, const int matrix_height, const int iterations, const int snapshots, const int kernel_type, int *periods, int argc, char** argv, const char *dirname, bool test);
 
 class ITrotterKernel {
 public:

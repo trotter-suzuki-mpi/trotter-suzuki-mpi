@@ -93,13 +93,10 @@ void print_usage() {
               "                      2: GPU\n" \
               "                      3: Hybrid (experimental) \n" \
               "     -s NUMBER     Snapshots are taken at every NUMBER of iterations.\n" \
-              "                   Zero means no snapshots. Default: " << SNAPSHOTS << ".\n";//\
-    "     -v            Calculates expected values of energy and momentum operators\n"
-    \
-    "                   once the simulation is finished";
+              "                   Zero means no snapshots. Default: " << SNAPSHOTS << ".\n";
 }
 
-void process_command_line(int argc, char** argv, int *dim, int *iterations, int *snapshots, int *kernel_type, bool *values) {
+void process_command_line(int argc, char** argv, int *dim, int *iterations, int *snapshots, int *kernel_type) {
     // Setting default values
     *dim = DIM;
     *iterations = ITERATIONS;
@@ -107,7 +104,7 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
     *kernel_type = KERNEL_TYPE;
 
     int c;
-    while ((c = getopt (argc, argv, "d:hi:k:s:v")) != -1) {
+    while ((c = getopt (argc, argv, "d:hi:k:s:")) != -1) {
         switch (c) {
         case 'd':
             *dim = atoi(optarg);
@@ -141,9 +138,6 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
                 abort ();
             }
             break;
-        case 'v':
-            *values = true;
-            break;
         case '?':
             if (optopt == 'd' || optopt == 'i' || optopt == 'k' || optopt == 's') {
                 fprintf (stderr, "Option -%c requires an argument.\n", optopt);
@@ -169,9 +163,9 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
 int main(int argc, char** argv) {
     int dim = 0, iterations = 0, snapshots = 0, kernel_type = 0;
     int periods[2] = {1, 1};
-    bool values = false;
+    bool test = false;
 
-    process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, &values);
+    process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type);
 
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
@@ -214,7 +208,7 @@ int main(int argc, char** argv) {
     else
         filenames = "./";
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str());
+    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str(), test);
 
     return 0;
 }

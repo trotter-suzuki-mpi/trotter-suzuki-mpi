@@ -209,6 +209,7 @@ int main(int argc, char** argv) {
     int dim = 0, iterations = 0, snapshots = 0, kernel_type = 0;
     int periods[2] = {1, 1};
     char file_name[100];
+    bool test = false;
 
     process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, file_name);
 
@@ -235,7 +236,7 @@ int main(int argc, char** argv) {
     float *p_imag = new float[matrix_width * matrix_height];
     read_initial_state(p_real, p_imag, matrix_width, matrix_height, file_name, halo_x, halo_y, periods);
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, "./");
+    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, "./", test);
 
     return 0;
 }

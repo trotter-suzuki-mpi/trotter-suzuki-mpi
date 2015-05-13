@@ -39,7 +39,7 @@
 #define DIM 640
 #define ITERATIONS 1000
 #define KERNEL_TYPE 0
-#define SNAPSHOTS 0
+#define SNAPSHOTS 100
 
 //external potential operator in coordinate representation
 void potential_op_coord_representation(float *hamilt_pot, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
@@ -145,6 +145,7 @@ void init_pot_evolution_op(float * hamilt_pot, float * external_pot_real, float 
     }
 }
 
+/*
 void print_usage() {
     std::cout << "\nTest some functions of CPU and CPU/SSE kernels and simulate\n"\
               "the evolution of a particle in a box.\n\n"\
@@ -235,15 +236,19 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
         }
     }
 }
-
+*/
 int main(int argc, char** argv) {
     int dim = 0, iterations = 0, snapshots = 0, kernel_type = 0;
     int periods[2] = {1, 1};
     char file_name[100];
     file_name[0] = '\0';
-    bool values = false;
-
-    process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, &values, file_name);
+    bool values = true, test = true;
+    
+    dim = DIM;
+    iterations = ITERATIONS;
+    snapshots = SNAPSHOTS;
+    kernel_type = KERNEL_TYPE;
+    //process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, &values, file_name);
 
     // Get the top level suite from the registry
     CppUnit::Test *suite = CppUnit::TestFactoryRegistry::getRegistry().makeTest();
@@ -302,13 +307,11 @@ int main(int argc, char** argv) {
     else
         filenames = "./";
 
-    std::cout << "Simulation started\n";
-    procs_topology var = trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str());
+    //std::cout << "Simulation running" << std::endl;
+    procs_topology var = trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str(), test);
 
-    if((values == true) && (var.rank == 0)) {
-        std::cout << "Calculating expected values\n";
+    if((values == true) && (var.rank == 0)) 
         expect_values(dim, iterations, snapshots, hamilt_pot, particle_mass, filenames.c_str(), var, periods, halo_x, halo_y);
-    }
 
     return 0;
 }
