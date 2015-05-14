@@ -290,20 +290,18 @@ void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, f
     for(int i = 0; i < N_files; i++) {	
 		stick_files(N_files, N_name[i], psi, dirname, var, dim, periods, halo_x, halo_y);
 		
-		if(var.dimsy != 1 || var.dimsx != 1) {
-			for(int idy = 0; idy < var.dimsy; idy++) {
-				for(int idx = 0; idx < var.dimsx; idx++) {
-					filename.str("");
-					filename << dirname << "/" << N_name[i] << "-iter-" << idx << "-" << idy << "-comp.dat";
-					filenames = filename.str();
-					remove(filenames.c_str());
-					filename.str("");
-					filename << dirname << "/" << N_name[i] << "-iter-" << idx << "-" << idy << "-real.dat";
-					filenames = filename.str();
-					remove(filenames.c_str());
-				}
-			}	
-		}
+		for(int idy = 0; idy < var.dimsy; idy++) {
+			for(int idx = 0; idx < var.dimsx; idx++) {
+				filename.str("");
+				filename << dirname << "/" << N_name[i] << "-iter-" << idx << "-" << idy << "-comp.dat";
+				filenames = filename.str();
+				remove(filenames.c_str());
+				filename.str("");
+				filename << dirname << "/" << N_name[i] << "-iter-" << idx << "-" << idy << "-real.dat";
+				filenames = filename.str();
+				remove(filenames.c_str());
+			}
+		}	
 		
         for(int j = 1; j < DIM - 1; j++) {
             for(int k = 1; k < DIM - 1; k++) {
