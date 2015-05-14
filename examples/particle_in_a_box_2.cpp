@@ -77,6 +77,55 @@ void init_pot_evolution_op(float * hamilt_pot, float * external_pot_real, float 
     }
 }
 
+//read potential form a file
+void read_pot(float *hamilt_pot, int dimx, int dimy, char *file_name, int halo_x, int halo_y, int *periods) {
+    std::ifstream input(file_name);
+
+    int in_width = dimx - 2 * periods[1] * halo_x;
+    int in_height = dimy - 2 * periods[0] * halo_y;
+    double tmp;
+    for(int i = 0, idy = periods[0] * halo_y ; i < in_height; i++, idy++) {
+        for(int j = 0, idx = periods[1] * halo_x ; j < in_width; j++, idx++) {
+            input >> tmp;
+            hamilt_pot[idy * dimx + idx] = tmp;
+            
+            //Down band
+            if(i < halo_y && periods[0] != 0) {
+                hamilt_pot[(idy + in_height) * dimx + idx] = tmp;
+                
+                //Down right corner
+                if(j < halo_x && periods[1] != 0) 
+                    hamilt_pot[(idy + in_height) * dimx + idx + in_width] = tmp;
+                    
+                //Down left corner
+                if(j >= in_width - halo_x && periods[1] != 0) 
+                    hamilt_pot[(idy + in_height) * dimx + idx - in_width] = tmp;
+            }
+
+            //Upper band
+            if(i >= in_height - halo_y && periods[0] != 0) {
+                hamilt_pot[(idy - in_height) * dimx + idx] = tmp;
+                
+                //Up right corner
+                if(j < halo_x && periods[1] != 0) 
+                    hamilt_pot[(idy - in_height) * dimx + idx + in_width] = tmp;
+                
+                //Up left corner
+                if(j >= in_width - halo_x && periods[1] != 0) 
+                    hamilt_pot[(idy - in_height) * dimx + idx - in_width] = tmp;
+            }
+            //Right band
+            if(j < halo_x && periods[1] != 0) 
+                hamilt_pot[idy * dimx + idx + in_width] = tmp;             
+            
+            //Left band
+            if(j >= in_width - halo_x && periods[1] != 0) 
+                hamilt_pot[idy * dimx + idx - in_width] = tmp;
+        }
+    }
+    input.close();
+}
+
 void print_usage() {
     std::cout << "\nSimulate the evolution of a quantum particle in a box with periodic boundary conditions.\n"\
     	      "Initial wave function:\n"\
@@ -92,10 +141,13 @@ void print_usage() {
               "                      2: GPU\n" \
               "                      3: Hybrid (experimental) \n" \
               "     -s NUMBER     Snapshots are taken at every NUMBER of iterations.\n" \
-              "                   Zero means no snapshots. Default: " << SNAPSHOTS << ".\n";
+              "                   Zero means no snapshots. Default: " << SNAPSHOTS << ".\n"\
+              "     -a NUMBER     Parameter h_a of kinetic evolution operator\n"\
+              "     -b NUMBER     Parameter h_b of kinetic evolution operator\n"\
+              "     -p STRING     Name of file that stores the potential operator (in coordinate representation)\n";
 }
 
-void process_command_line(int argc, char** argv, int *dim, int *iterations, int *snapshots, int *kernel_type) {
+void process_command_line(int argc, char** argv, int *dim, int *iterations, int *snapshots, int *kernel_type, double *h_a, double *h_b, char * pot_name) {
     // Setting default values
     *dim = DIM;
     *iterations = ITERATIONS;
@@ -103,7 +155,8 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
     *kernel_type = KERNEL_TYPE;
 
     int c;
-    while ((c = getopt (argc, argv, "d:hi:k:s:")) != -1) {
+    int kinetic_par = 0;
+    while ((c = getopt (argc, argv, "d:hi:k:s:a:b:p:")) != -1) {
         switch (c) {
         case 'd':
             *dim = atoi(optarg);
@@ -137,6 +190,18 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
                 abort ();
             }
             break;
+        case 'a':
+            *h_a = atoi(optarg);
+            kinetic_par++;
+            break;
+        case 'b':
+            *h_b = atoi(optarg);
+            kinetic_par++;
+            break;
+        case 'p':
+            for(int i = 0; i < 100; i++)
+                pot_name[i] = optarg[i];
+            break;
         case '?':
             if (optopt == 'd' || optopt == 'i' || optopt == 'k' || optopt == 's') {
                 fprintf (stderr, "Option -%c requires an argument.\n", optopt);
@@ -157,14 +222,24 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
             abort ();
         }
     }
+    
+    if(kinetic_par == 1) {
+		std::cout << "Both the kinetic parameters should be provided.\n";
+		abort ();
+	}
 }
 
 int main(int argc, char** argv) {
     int dim = 0, iterations = 0, snapshots = 0, kernel_type = 0;
     int periods[2] = {1, 1};
     bool test = false;
+    double h_a = 0.;
+    double h_b = 0.;
+    char pot_name[100];
+    for(int i = 0; i < 100; i++)
+		pot_name[i] = '\0';
 
-    process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type);
+    process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, &h_a, &h_b, pot_name);
 
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
@@ -174,15 +249,20 @@ int main(int argc, char** argv) {
     //set hamiltonian variables
     const double particle_mass = 1.;
     float *hamilt_pot = new float[matrix_width * matrix_height];
-    potential_op_coord_representation(hamilt_pot, matrix_width, matrix_height, halo_x, halo_y, periods);	//set potential operator
+    if(pot_name[0] == '\0')
+		potential_op_coord_representation(hamilt_pot, matrix_width, matrix_height, halo_x, halo_y, periods);	//set potential operator
+	else
+		read_pot(hamilt_pot, matrix_width, matrix_height, pot_name, halo_x, halo_y, periods);	//set potential operator from file
 
     //set and calculate evolution operator variables from hamiltonian
     const double time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
     float *external_pot_real = new float[matrix_width * matrix_height];
     float *external_pot_imag = new float[matrix_width * matrix_height];
     init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it);	//calculate potential part of evolution operator
-    static const double h_a = cos(time_single_it / (2. * particle_mass));
-    static const double h_b = sin(time_single_it / (2. * particle_mass));
+    if(h_a == 0. && h_b == 0.) { 
+		h_a = cos(time_single_it / (2. * particle_mass));
+		h_b = sin(time_single_it / (2. * particle_mass));
+	}
 
     //set initial state
     float *p_real = new float[matrix_width * matrix_height];
