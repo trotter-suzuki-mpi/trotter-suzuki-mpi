@@ -54,9 +54,6 @@ void init_state(float *p_real, float *p_imag, int dimx, int dimy, int halo_x, in
 
     for (int y = 1; y <= dimy; y++) {
         for (int x = 1; x <= dimx; x++) {
-            //std::complex<float> tmp = std::complex<float>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
-            //                        * exp(std::complex<float>(0.0, 0.4 * (x + y - 480.0)));
-
             std::complex<float> tmp = std::complex<float> (sin(2 * 3.14159 / L_x * (x - periods[1] * halo_x)) * sin(2 * 3.14159 / L_y * (y - periods[0] * halo_y)), 0.0);
 
             p_real[y * dimx + x] = real(tmp);
@@ -81,7 +78,9 @@ void init_pot_evolution_op(float * hamilt_pot, float * external_pot_real, float 
 }
 
 void print_usage() {
-    std::cout << "\nSimulate the evolution of a particle in a box.\n\n"\
+    std::cout << "\nSimulate the evolution of a quantum particle in a box with periodic boundary conditions.\n"\
+    	      "Initial wave function:\n"\
+              "  sin(2M_PI / d * x) * sin(2M_PI / d * y) \n"\
               "Usage:\n" \
               "     trotter [OPTION]\n" \
               "Arguments:\n" \
