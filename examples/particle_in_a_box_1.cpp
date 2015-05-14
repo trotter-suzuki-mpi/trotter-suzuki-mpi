@@ -78,8 +78,9 @@ void init_pot_evolution_op(float * hamilt_pot, float * external_pot_real, float 
 }
 
 void print_usage() {
-    std::cout << "\nSimulate the evolution of a quantum particle in a box with initial wave function:\n"\
-              "exp(aj*(x + y - b)) * exp(-((x - c)² + (y - d)²) / 2s²) \n"\
+    std::cout << "\nSimulate the evolution of a quantum particle in a box with periodic boundary conditions.\n"\
+    	      "Initial wave function:\n"\
+              "  exp(aj*(x + y - b)) * exp(-((x - c)² + (y - d)²) / 2s²) \n"\
               "Usage:\n" \
               "     trotter [OPTION]\n" \
               "Arguments:\n" \
