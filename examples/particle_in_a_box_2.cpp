@@ -209,7 +209,7 @@ int main(int argc, char** argv) {
 
     procs_topology var = trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, dirnames.c_str(), test);
 	
-	if(var.rank == 0 && snapshots != 0 && (var.dimsy != 1 || var.dimsx != 1)) {
+	if(var.rank == 0 && snapshots != 0) {
 		int N_files = (int)ceil(double(iterations) / double(snapshots));
 		std::complex<float> psi[dim*dim];
 		int N_name[N_files];
