@@ -218,28 +218,26 @@ void stick_files(int N_files, int N_name, std::complex<float> *psi, const char *
 	}
 	
 	//output an unique file with the entire wavefunction
-	if(var.dimsy != 1 || var.dimsx != 1) {
-		filename.str("");
-		filename << dirname << "/" << N_name << "-iter-comp.dat.union";
-		filenames = filename.str();
-		std::ofstream union_out_comp(filenames.c_str());
-		
-		filename.str("");
-		filename << dirname << "/" << N_name << "-iter-real.dat.union";
-		filenames = filename.str();
-		std::ofstream union_out_real(filenames.c_str());
-		
-		for(int j = 0; j < dim; j++) {
-			for(int k = 0; k < dim; k++) {
-				union_out_comp << psi[j * dim + k] << " ";
-				union_out_real << real(psi[j * dim + k]) << " ";
-			}
-			union_out_comp << std::endl;
-			union_out_real << std::endl;
+	filename.str("");
+	filename << dirname << "/" << N_name << "-iter-comp.dat";
+	filenames = filename.str();
+	std::ofstream union_out_comp(filenames.c_str());
+	
+	filename.str("");
+	filename << dirname << "/" << N_name << "-iter-real.dat";
+	filenames = filename.str();
+	std::ofstream union_out_real(filenames.c_str());
+	
+	for(int j = 0; j < dim; j++) {
+		for(int k = 0; k < dim; k++) {
+			union_out_comp << psi[j * dim + k] << " ";
+			union_out_real << real(psi[j * dim + k]) << " ";
 		}
-		union_out_comp.close();
-		union_out_real.close();
+		union_out_comp << std::endl;
+		union_out_real << std::endl;
 	}
+	union_out_comp.close();
+	union_out_real.close();
 }
 
 void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, float particle_mass,
