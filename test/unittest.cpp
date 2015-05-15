@@ -211,11 +211,6 @@ int main(int argc, char** argv) {
 
     trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str(), show_time_sim);
 
-    delete[] external_pot_real;
-    delete[] external_pot_imag;
-    delete[] p_real;
-    delete[] p_imag;
-
     expect_values(dim, iterations, snapshots, hamilt_pot, particle_mass, filenames.c_str(), periods, halo_x, halo_y);
 
     delete[] hamilt_pot;
