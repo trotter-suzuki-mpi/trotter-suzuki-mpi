@@ -33,7 +33,11 @@ TEST_LIBS      = @TEST_LIBS@
 # VPATH-related substitution variables
 srcdir	 = ./../src
 
-LIBOBJS=$(srcdir)/common.o $(srcdir)/cpublock.o $(srcdir)/cpublocksse.o
+LIBOBJS=$(srcdir)/common.o $(srcdir)/cpublock.o $(srcdir)/cpublocksse.o $(srcdir)/trotter.o
+
+ifdef CUDA_LIBS
+	LIBOBJS+=$(srcdir)/cc2kernel.cu.co $(srcdir)/hybrid.cu.co
+endif
 
 TEST_OBJS=$(LIBOBJS) cpublocktest.o unittest.o
 
@@ -46,6 +50,9 @@ check: $(TEST_OBJS)
 	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -I$(srcdir) -o $@ -c $^ 
 
 $(srcdir)/%.o: $(srcdir)/%.cpp
+	$(MAKE) -C $(srcdir) $@
+
+$(srcdir)/%.cu.co: $(srcdir)/%.cu
 	$(MAKE) -C $(srcdir) $@
 
 clean:

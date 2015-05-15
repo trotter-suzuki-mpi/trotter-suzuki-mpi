@@ -17,13 +17,16 @@
  *
  */
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string>
+#include <sstream>
 
 #include <fstream>
 #include <unistd.h>
 #include <stdlib.h>
 #include <iostream>
 #include <complex>
-#include <stdio.h>
 #include "mpi.h"
 #include "common.h"
 #include "trotter.h"
@@ -39,6 +42,23 @@ void potential_op_coord_representation(float *hamilt_pot, int dimx, int dimy, in
     for(int i = 0; i < dimy; i++) {
         for(int j = 0; j < dimx; j++) {
             hamilt_pot[i * dimx + j] = constant;
+        }
+    }
+}
+
+void init_state(float *p_real, float *p_imag, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
+    double s = 64.0; // FIXME: y esto?
+    double L_x = dimx - periods[1] * 2 * halo_x;
+    double L_y = dimy - periods[0] * 2 * halo_y;
+    double n_x = 1., n_y = 1.;
+
+    for (int y = 1; y <= dimy; y++) {
+        for (int x = 1; x <= dimx; x++) {
+            std::complex<float> tmp = std::complex<float>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
+                                    * exp(std::complex<float>(0.0, 0.4 * (x + y - 480.0)));
+
+            p_real[y * dimx + x] = real(tmp);
+            p_imag[y * dimx + x] = imag(tmp);
         }
     }
 }
@@ -107,67 +127,12 @@ void read_pot(float *hamilt_pot, int dimx, int dimy, char *file_name, int halo_x
     input.close();
 }
 
-void read_initial_state(float *p_real, float *p_imag, int dimx, int dimy, char *file_name, int halo_x, int halo_y, int *periods) {
-    std::ifstream input(file_name);
-
-    int in_width = dimx - 2 * periods[1] * halo_x;
-    int in_height = dimy - 2 * periods[0] * halo_y;
-    std::complex<float> tmp;
-    for(int i = 0, idy = periods[0] * halo_y ; i < in_height; i++, idy++) {
-        for(int j = 0, idx = periods[1] * halo_x ; j < in_width; j++, idx++) {
-            input >> tmp;
-            p_real[idy * dimx + idx] = real(tmp);
-            p_imag[idy * dimx + idx] = imag(tmp);
-
-            //Down band
-            if(i < halo_y && periods[0] != 0) {
-                p_real[(idy + in_height) * dimx + idx] = real(tmp);
-                p_imag[(idy + in_height) * dimx + idx] = imag(tmp);
-                //Down right corner
-                if(j < halo_x && periods[1] != 0) {
-                    p_real[(idy + in_height) * dimx + idx + in_width] = real(tmp);
-                    p_imag[(idy + in_height) * dimx + idx + in_width] = imag(tmp);
-                }
-                //Down left corner
-                if(j >= in_width - halo_x && periods[1] != 0) {
-                    p_real[(idy + in_height) * dimx + idx - in_width] = real(tmp);
-                    p_imag[(idy + in_height) * dimx + idx - in_width] = imag(tmp);
-                }
-            }
-
-            //Upper band
-            if(i >= in_height - halo_y && periods[0] != 0) {
-                p_real[(idy - in_height) * dimx + idx] = real(tmp);
-                p_imag[(idy - in_height) * dimx + idx] = imag(tmp);
-                //Up right corner
-                if(j < halo_x && periods[1] != 0) {
-                    p_real[(idy - in_height) * dimx + idx + in_width] = real(tmp);
-                    p_imag[(idy - in_height) * dimx + idx + in_width] = imag(tmp);
-                }
-                //Up left corner
-                if(j >= in_width - halo_x && periods[1] != 0) {
-                    p_real[(idy - in_height) * dimx + idx - in_width] = real(tmp);
-                    p_imag[(idy - in_height) * dimx + idx - in_width] = imag(tmp);
-                }
-            }
-            //Right band
-            if(j < halo_x && periods[1] != 0) {
-                p_real[idy * dimx + idx + in_width] = real(tmp);
-                p_imag[idy * dimx + idx + in_width] = imag(tmp);
-            }
-            //Left band
-            if(j >= in_width - halo_x && periods[1] != 0) {
-                p_real[idy * dimx + idx - in_width] = real(tmp);
-                p_imag[idy * dimx + idx - in_width] = imag(tmp);
-            }
-        }
-    }
-    input.close();
-}
-
 void print_usage() {
-    std::cout << "Usage:\n" \
-              "     trotter [OPTION] -n file_name\n" \
+    std::cout << "\nSimulate the evolution of a quantum particle in a box with periodic boundary conditions.\n"\
+    	      "Initial wave function:\n"\
+              "  sin(2M_PI / d * x) * sin(2M_PI / d * y) \n"\
+              "Usage:\n" \
+              "     trotter [OPTION]\n" \
               "Arguments:\n" \
               "     -d NUMBER     Matrix dimension (default: " << DIM << ")\n" \
               "     -i NUMBER     Number of iterations (default: " << ITERATIONS << ")\n" \
@@ -178,13 +143,12 @@ void print_usage() {
               "                      3: Hybrid (experimental) \n" \
               "     -s NUMBER     Snapshots are taken at every NUMBER of iterations.\n" \
               "                   Zero means no snapshots. Default: " << SNAPSHOTS << ".\n"\
-              "     -n STRING     Name of file that defines the initial state.\n"
               "     -a NUMBER     Parameter h_a of kinetic evolution operator\n"\
               "     -b NUMBER     Parameter h_b of kinetic evolution operator\n"\
               "     -p STRING     Name of file that stores the potential operator (in coordinate representation)\n";
 }
 
-void process_command_line(int argc, char** argv, int *dim, int *iterations, int *snapshots, int *kernel_type, char *file_name, double *h_a, double *h_b, char * pot_name) {
+void process_command_line(int argc, char** argv, int *dim, int *iterations, int *snapshots, int *kernel_type, double *h_a, double *h_b, char * pot_name) {
     // Setting default values
     *dim = DIM;
     *iterations = ITERATIONS;
@@ -192,9 +156,8 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
     *kernel_type = KERNEL_TYPE;
 
     int c;
-    bool file_supplied = false;
     int kinetic_par = 0;
-    while ((c = getopt (argc, argv, "d:hi:k:s:n:a:b:p:")) != -1) {
+    while ((c = getopt (argc, argv, "d:hi:k:s:a:b:p:")) != -1) {
         switch (c) {
         case 'd':
             *dim = atoi(optarg);
@@ -228,11 +191,6 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
                 abort ();
             }
             break;
-        case 'n':
-            for(int i = 0; i < 100; i++)
-                file_name[i] = optarg[i];
-            file_supplied = true;
-            break;
         case 'a':
             *h_a = atoi(optarg);
             kinetic_par++;
@@ -265,11 +223,7 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
             abort ();
         }
     }
-    if(!file_supplied) {
-        fprintf (stderr, "Initial state file has not been supplied\n");
-        print_usage();
-        abort();
-    }
+    
     if(kinetic_par == 1) {
 		std::cout << "Both the kinetic parameters should be provided.\n";
 		abort ();
@@ -279,15 +233,14 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
 int main(int argc, char** argv) {
     int dim = 0, iterations = 0, snapshots = 0, kernel_type = 0;
     int periods[2] = {1, 1};
-    char file_name[100];
     bool test = false;
     double h_a = 0.;
     double h_b = 0.;
-	char pot_name[100];
+    char pot_name[100];
     for(int i = 0; i < 100; i++)
 		pot_name[i] = '\0';
-		
-    process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, file_name, &h_a, &h_b, pot_name);
+
+    process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, &h_a, &h_b, pot_name);
 
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
@@ -297,11 +250,11 @@ int main(int argc, char** argv) {
     //set hamiltonian variables
     const double particle_mass = 1.;
     float *hamilt_pot = new float[matrix_width * matrix_height];
-	if(pot_name[0] == '\0')
+    if(pot_name[0] == '\0')
 		potential_op_coord_representation(hamilt_pot, matrix_width, matrix_height, halo_x, halo_y, periods);	//set potential operator
 	else
 		read_pot(hamilt_pot, matrix_width, matrix_height, pot_name, halo_x, halo_y, periods);	//set potential operator from file
-	
+
     //set and calculate evolution operator variables from hamiltonian
     const double time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
     float *external_pot_real = new float[matrix_width * matrix_height];
@@ -315,9 +268,27 @@ int main(int argc, char** argv) {
     //set initial state
     float *p_real = new float[matrix_width * matrix_height];
     float *p_imag = new float[matrix_width * matrix_height];
-    read_initial_state(p_real, p_imag, matrix_width, matrix_height, file_name, halo_x, halo_y, periods);
+    init_state(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, periods);
 
-    procs_topology var = trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, ".", test);
+    //set file output directory
+    std::stringstream dirname;
+    std::string dirnames;
+    if(snapshots) {
+        int status;
+
+        dirname.str("");
+        dirname << "D" << dim << "_I" << iterations << "_S" << snapshots << "";
+        dirnames = dirname.str();
+
+        status = mkdir(dirnames.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+        if(status != 0 && status != -1)
+            dirnames = "./";
+    }
+    else
+        dirnames = "./";
+
+    procs_topology var = trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, dirnames.c_str(), test);
 	
 	if(var.rank == 0 && snapshots != 0) {
 		int N_files = (int)ceil(double(iterations) / double(snapshots));
@@ -330,23 +301,23 @@ int main(int argc, char** argv) {
 		
 		std::stringstream filename;
 		std::string filenames;
-		for(int i = 0; i < N_files; i++){ 
-			stick_files(N_files, N_name[i], psi, ".", var, dim, periods, halo_x, halo_y);
+		for(int i = 0; i < N_files; i++) {
+			stick_files(N_files, N_name[i], psi, dirnames.c_str(), var, dim, periods, halo_x, halo_y);
 			
 			for(int idy = 0; idy < var.dimsy; idy++) {
 				for(int idx = 0; idx < var.dimsx; idx++) {
 					filename.str("");
-					filename << "./" << N_name[i] << "-iter-" << idx << "-" << idy << "-comp.dat";
+					filename << dirnames << "/" << N_name[i] << "-iter-" << idx << "-" << idy << "-comp.dat";
 					filenames = filename.str();
 					remove(filenames.c_str());
 					filename.str("");
-					filename << "./" << N_name[i] << "-iter-" << idx << "-" << idy << "-real.dat";
+					filename << dirnames << "/" << N_name[i] << "-iter-" << idx << "-" << idy << "-real.dat";
 					filenames = filename.str();
 					remove(filenames.c_str());
 				}
 			}
 		}
 	}
-		
+	
     return 0;
 }

@@ -22,17 +22,33 @@
 #include <iostream>
 #include <string>
 
-#include "common.h"
+#include <sstream>
+#include <unistd.h>
+#include <complex>
+#include <cmath>
 
-void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo) {
+#include "common.h"
+#include "trotter.h"
+
+void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound) {
     int inner = (int)ceil((double)length / (double)dim);
     *inner_start = coord * inner;
-    *start = ( coord == 0 ? 0 : *inner_start - halo );
+    if(periodic_bound != 0)
+        *start = *inner_start - halo;
+    else
+        *start = ( coord == 0 ? 0 : *inner_start - halo );
     *end = *inner_start + (inner + halo);
+
     if (*end > length) {
-        *end = length;
+        if(periodic_bound != 0)
+            *end = length + halo;
+        else
+            *end = length;
     }
-    *inner_end = ( *end == length ? *end : *end - halo );
+    if(periodic_bound != 0)
+        *inner_end = *end - halo;
+    else
+        *inner_end = ( *end == length ? *end : *end - halo );
 }
 
 void print_complex_matrix(std::string filename, float * matrix_real, float * matrix_imag, size_t stride, size_t width, size_t height) {
@@ -167,3 +183,187 @@ void get_quadrant_sample_to_buffer(const float * r00, const float * r01, const f
     }
     assert (dest_y == y + height);
 }
+
+void stick_files(int N_files, int N_name, std::complex<float> *psi, const char *dirname, procs_topology var, int dim,
+				 int *periods, int halo_x, int halo_y) {
+					 
+	int start_x, end_x, inner_start_x, inner_end_x,
+		start_y, end_y, inner_start_y, inner_end_y;
+	
+	std::stringstream filename;
+	std::string filenames;
+		
+	//read wave function
+	for(int idy = 0; idy < var.dimsy; idy++) {
+		for(int idx = 0; idx < var.dimsx; idx++) {
+			filename.str("");
+			filename << dirname << "/" << N_name << "-iter-" << idx << "-" << idy << "-comp.dat";
+			filenames = filename.str();
+			std::ifstream in_compl(filenames.c_str());
+
+			//get dimension of input file
+			calculate_borders(idx, var.dimsx, &start_x, &end_x, &inner_start_x, &inner_end_x, dim, halo_x, periods[1]);
+			calculate_borders(idy, var.dimsy, &start_y, &end_y, &inner_start_y, &inner_end_y, dim, halo_y, periods[0]);
+			int width = inner_end_x - inner_start_x;
+			int height = inner_end_y - inner_start_y;
+
+			//read file
+			for(int j = 0; j < height; j++) {
+				for(int k = 0; k < width; k++) {
+					in_compl >> psi[(j + inner_start_y) * dim + k + inner_start_x];
+				}
+			}
+			in_compl.close();
+		}
+	}
+	
+	//output an unique file with the entire wavefunction
+	filename.str("");
+	filename << dirname << "/" << N_name << "-iter-comp.dat";
+	filenames = filename.str();
+	std::ofstream union_out_comp(filenames.c_str());
+	
+	filename.str("");
+	filename << dirname << "/" << N_name << "-iter-real.dat";
+	filenames = filename.str();
+	std::ofstream union_out_real(filenames.c_str());
+	
+	for(int j = 0; j < dim; j++) {
+		for(int k = 0; k < dim; k++) {
+			union_out_comp << psi[j * dim + k] << " ";
+			union_out_real << real(psi[j * dim + k]) << " ";
+		}
+		union_out_comp << std::endl;
+		union_out_real << std::endl;
+	}
+	union_out_comp.close();
+	union_out_real.close();
+}
+
+void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, float particle_mass,
+				   const char *dirname, procs_topology var, int *periods, int halo_x, int halo_y) {
+
+    if(snapshots == 0)
+        return;
+
+    int N_files = (int)ceil(double(iterations) / double(snapshots));
+    int N_name[N_files];
+    int DIM = dim;
+
+    int start_x, end_x, inner_start_x, inner_end_x,
+        start_y, end_y, inner_start_y, inner_end_y;
+
+    N_name[0] = 0;
+    for(int i = 1; i < N_files; i++) {
+        N_name[i] = N_name[i - 1] + snapshots;
+    }
+
+    std::complex<float> sum_E = 0;
+    std::complex<float> sum_Px = 0, sum_Py = 0;
+    std::complex<float> sum_psi = 0;
+    float energy[N_files], momentum_x[N_files], momentum_y[N_files], norm[N_files];
+	const float threshold_E = 3, threshold_P = 1;
+	const float expected_E = (2. * M_PI / dim) * (2. * M_PI / dim);
+	const float expected_Px = 0.;
+	const float expected_Py = 0.;
+	
+    std::complex<float> potential[DIM][DIM];
+    std::complex<float> psi[DIM*DIM];
+    std::complex<float> cost_E = -1. / (2.*particle_mass), cost_P;
+    cost_P = std::complex<float>(0., -0.5);
+
+    std::stringstream filename;
+    std::string filenames;
+
+    filename.str("");
+    filename << dirname << "/exp_val_D" << dim << "_I" << iterations << "_S" << snapshots << ".dat";
+    filenames = filename.str();
+    std::ofstream out(filenames.c_str());
+
+    for(int i = 0; i < DIM; i++) {
+        for(int j = 0; j < DIM; j++) {
+            potential[j][i] = std::complex<float> (hamilt_pot[i * DIM + j], 0.);
+        }
+    }
+
+    out << "#time\tEnergy\t\tPx\tPy\tP**2\tnorm(psi(t))" << std::endl;
+    for(int i = 0; i < N_files; i++) {	
+		stick_files(N_files, N_name[i], psi, dirname, var, dim, periods, halo_x, halo_y);
+		
+		for(int idy = 0; idy < var.dimsy; idy++) {
+			for(int idx = 0; idx < var.dimsx; idx++) {
+				filename.str("");
+				filename << dirname << "/" << N_name[i] << "-iter-" << idx << "-" << idy << "-comp.dat";
+				filenames = filename.str();
+				remove(filenames.c_str());
+				filename.str("");
+				filename << dirname << "/" << N_name[i] << "-iter-" << idx << "-" << idy << "-real.dat";
+				filenames = filename.str();
+				remove(filenames.c_str());
+			}
+		}	
+		
+        for(int j = 1; j < DIM - 1; j++) {
+            for(int k = 1; k < DIM - 1; k++) {
+                sum_E += conj(psi[k + j * dim]) * (cost_E * (psi[k + 1 + j * dim] + psi[k - 1 + j * dim] + psi[k + (j + 1) * dim] + psi[k + (j - 1) * dim] - psi[k + j * dim] * std::complex<float> (4., 0.)) + potential[k][j] * psi[k + j * dim]) ;
+                sum_Px += conj(psi[k + j * dim]) * (psi[k + 1 + j * dim] - psi[k - 1 + j * dim]);
+                sum_Py += conj(psi[k + j * dim]) * (psi[k + (j + 1) * dim] - psi[k + (j - 1) * dim]);
+                sum_psi += conj(psi[k + j * dim]) * psi[k + j * dim];
+            }
+        }
+
+        out << N_name[i] << "\t" << real(sum_E / sum_psi) << "\t" << real(cost_P * sum_Px / sum_psi) << "\t" << real(cost_P * sum_Py / sum_psi) << "\t"
+            << real(cost_P * sum_Px / sum_psi)*real(cost_P * sum_Px / sum_psi) + real(cost_P * sum_Py / sum_psi)*real(cost_P * sum_Py / sum_psi) << "\t" << real(sum_psi) << std::endl;
+        
+        energy[i] = real(sum_E / sum_psi);
+        momentum_x[i] = real(cost_P * sum_Px / sum_psi);
+        momentum_y[i] = real(cost_P * sum_Py / sum_psi);
+        norm[i] = real(cost_P * sum_Px / sum_psi)*real(cost_P * sum_Px / sum_psi) + real(cost_P * sum_Py / sum_psi)*real(cost_P * sum_Py / sum_psi);
+        
+        sum_E = 0;
+        sum_Px = 0;
+        sum_Py = 0;
+        sum_psi = 0;
+    }
+    
+    //calculate sample variance
+    float var_E = 0, var_Px = 0, var_Py = 0;
+    float mean_E = 0, mean_Px = 0, mean_Py = 0;
+    
+    for(int i = 0; i < N_files; i++) {
+		mean_E += energy[i];
+		mean_Px += momentum_x[i];
+		mean_Py += momentum_y[i];
+	}
+	mean_E /= N_files;
+	mean_Px /= N_files;
+	mean_Py /= N_files;
+	
+	for(int i = 0; i < N_files; i++) {
+		var_E += (energy[i] - mean_E) * (energy[i] - mean_E);
+		var_Px += (momentum_x[i] - mean_Px) * (momentum_x[i] - mean_Px);
+		var_Py += (momentum_y[i] - mean_Py) * (momentum_y[i] - mean_Py);
+	}
+	var_E /= N_files - 1; var_E = sqrt(var_E);
+	var_Px /= N_files - 1; var_Px = sqrt(var_Px);
+	var_Py /= N_files - 1; var_Py = sqrt(var_Py);
+	
+	//std::cout << "Sample mean Energy: " << mean_E << "  Sample variance Energy: " << var_E << std::endl;
+	//std::cout << "Sample mean Momentum Px: " << mean_Px << "  Sample variance Momentum Px: " << var_Px << std::endl;
+	//std::cout << "Sample mean Momentum Py: " << mean_Py << "  Sample variance Momentum Py: " << var_Py << std::endl;
+	
+	if(std::abs(mean_E - expected_E) / var_E < threshold_E)
+		std::cout << "Energy -> OK\tsigma: " << std::abs(mean_E - expected_E) / var_E << std::endl;
+	else
+		std::cout << "Energy value is not the one theoretically expected: sigma " << std::abs(mean_E - expected_E) / var_E << std::endl;
+	if(std::abs(mean_Px - expected_Px) / var_Px < threshold_P)
+		std::cout << "Momentum Px -> OK\tsigma: " << std::abs(mean_Px - expected_Px) / var_Px << std::endl;
+	else
+		std::cout << "Momentum Px value is not the one theoretically expected: sigma " << std::abs(mean_Px - expected_Px) / var_Px << std::endl;
+	if(std::abs(mean_Py - expected_Py) / var_Py < threshold_P)
+		std::cout << "Momentum Py -> OK\tsigma: " << std::abs(mean_Py - expected_Py) / var_Py << std::endl;
+	else
+		std::cout << "Momentum Py value is not the one theoretically expected: sigma " << std::abs(mean_Py - expected_Py) / var_Py << std::endl;
+	
+}
+

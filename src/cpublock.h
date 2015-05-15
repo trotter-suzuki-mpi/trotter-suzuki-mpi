@@ -36,7 +36,7 @@ void process_band(size_t tile_width, size_t block_width, size_t block_height, si
 
 class CPUBlock: public ITrotterKernel {
 public:
-    CPUBlock(float *p_real, float *p_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, MPI_Comm cartcomm);
+    CPUBlock(float *p_real, float *p_imag, float *_external_pot_real, float *_external_pot_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods, MPI_Comm cartcomm);
     ~CPUBlock();
     void run_kernel();
     void run_kernel_on_halo();
@@ -60,6 +60,8 @@ private:
 
     float *p_real[2];
     float *p_imag[2];
+    float *external_pot_real;
+    float *external_pot_imag;
     float a;
     float b;
     int sense;

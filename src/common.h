@@ -22,18 +22,15 @@
 
 #include <string>
 #include <complex>
+#include "trotter.h"
 
 #if HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-static const double h_a = cos(0.02);
-static const double h_b = sin(0.02);
-
-void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo);
+void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound);
 void print_complex_matrix(std::string filename, float * matrix_real, float * matrix_imag, size_t stride, size_t width, size_t height);
 void print_matrix(std::string filename, float * matrix, size_t stride, size_t width, size_t height);
-void init_p(float *p_real, float *p_imag, int start_x, int end_x, int start_y, int end_y);
 void memcpy2D(void * dst, size_t dstride, const void * src, size_t sstride, size_t width, size_t height);
 void get_quadrant_sample(const float * r00, const float * r01, const float * r10, const float * r11,
                          const float * i00, const float * i01, const float * i10, const float * i11,
@@ -45,4 +42,9 @@ void get_quadrant_sample_to_buffer(const float * r00, const float * r01, const f
                                    size_t src_stride, size_t dest_stride,
                                    size_t x, size_t y, size_t width, size_t height,
                                    float * dest_real, float * dest_imag);
+void stick_files(int N_files, int N_name, std::complex<float> *psi, const char *dirname, procs_topology var, int dim,
+				 int *periods, int halo_x, int halo_y);
+void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, float particle_mass, const char *dirname,
+				   procs_topology var, int *periods, int halo_x, int halo_y);
+
 #endif
