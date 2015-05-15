@@ -17,7 +17,8 @@
  *
  */
 
-
+#include <string>
+#include <sstream>
 #include <fstream>
 #include <unistd.h>
 #include <stdlib.h>
@@ -60,6 +61,7 @@ void init_pot_evolution_op(float * hamilt_pot, float * external_pot_real, float 
 
 //read potential form a file
 void read_pot(float *hamilt_pot, int dimx, int dimy, char *file_name, int halo_x, int halo_y, int *periods) {
+
     std::ifstream input(file_name);
 
     int in_width = dimx - 2 * periods[1] * halo_x;
@@ -108,6 +110,14 @@ void read_pot(float *hamilt_pot, int dimx, int dimy, char *file_name, int halo_x
 }
 
 void read_initial_state(float *p_real, float *p_imag, int dimx, int dimy, char *file_name, int halo_x, int halo_y, int *periods) {
+    /*std::stringstream filename;
+    filename.str("");
+    filename << file_name << "\0";
+    std::string filenames = filename.str();
+    std::cout << "\nciao\n";
+    //std::cout << "aa"<<file_name;
+    for(int i=0; i<20; i++)
+    std::cout << file_name[i];*/
     std::ifstream input(file_name);
 
     int in_width = dimx - 2 * periods[1] * halo_x;
@@ -230,12 +240,8 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
             }
             break;
         case 'n':
-            do {
-                file_name[cont] = optarg[cont];
-                cont++;
-            }
-            while(optarg[cont - 1] == ' ' || optarg[cont - 1] == '\n');
-            cont = 0;
+            for(int i = 0; i < strlen(optarg); i++)
+                file_name[i] = optarg[i];
             file_supplied = true;
             break;
         case 'a':
@@ -247,12 +253,8 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
             kinetic_par++;
             break;
         case 'p':
-            do {
-                pot_name[cont] = optarg[cont];
-                cont++;
-            }
-            while(optarg[cont - 1] == ' ' || optarg[cont - 1] == '\n');
-            cont = 0;
+            for(int i = 0; i < strlen(optarg); i++)
+                pot_name[i] = optarg[i];
             break;
         case '?':
             if (optopt == 'd' || optopt == 'i' || optopt == 'k' || optopt == 's') {
@@ -292,6 +294,8 @@ int main(int argc, char** argv) {
     bool show_time_sim = true;
     double h_a = 0.;
     double h_b = 0.;
+    for(int i = 0; i < 100; i++)
+        file_name[i] = '\0';
     char pot_name[100];
     for(int i = 0; i < 100; i++)
         pot_name[i] = '\0';
