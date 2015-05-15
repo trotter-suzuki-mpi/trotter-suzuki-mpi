@@ -146,17 +146,11 @@ void init_pot_evolution_op(float * hamilt_pot, float * external_pot_real, float 
 }
 
 int main(int argc, char** argv) {
-    int dim = 0, iterations = 0, snapshots = 0, kernel_type = 0;
+    int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, kernel_type = KERNEL_TYPE;
     int periods[2] = {1, 1};
     char file_name[100];
     file_name[0] = '\0';
-    bool values = true, test = true;
-    
-    dim = DIM;
-    iterations = ITERATIONS;
-    snapshots = SNAPSHOTS;
-    kernel_type = KERNEL_TYPE;
-    //process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, &values, file_name);
+    bool show_time_sim = false;
 
     // Get the top level suite from the registry
     CppUnit::Test *suite = CppUnit::TestFactoryRegistry::getRegistry().makeTest();
@@ -215,11 +209,16 @@ int main(int argc, char** argv) {
     else
         filenames = "./";
 
-    //std::cout << "Simulation running" << std::endl;
-    procs_topology var = trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str(), test);
+    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str(), show_time_sim);
 
-    if((values == true) && (var.rank == 0)) 
-        expect_values(dim, iterations, snapshots, hamilt_pot, particle_mass, filenames.c_str(), var, periods, halo_x, halo_y);
+    delete[] external_pot_real;
+    delete[] external_pot_imag;
+    delete[] p_real;
+    delete[] p_imag;
+
+    expect_values(dim, iterations, snapshots, hamilt_pot, particle_mass, filenames.c_str(), periods, halo_x, halo_y);
+
+    delete[] hamilt_pot;
 
     return 0;
 }
