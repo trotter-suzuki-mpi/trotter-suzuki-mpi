@@ -211,7 +211,6 @@ void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, f
     const float expected_Px = 0.;
     const float expected_Py = 0.;
 
-    std::complex<float> potential[DIM][DIM];
     std::complex<float> psi[DIM * DIM];
     std::complex<float> cost_E = -1. / (2.*particle_mass), cost_P;
     cost_P = std::complex<float>(0., -0.5);
@@ -223,12 +222,6 @@ void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, f
     filename << dirname << "/exp_val_D" << dim << "_I" << iterations << "_S" << snapshots << ".dat";
     filenames = filename.str();
     std::ofstream out(filenames.c_str());
-
-    for(int i = 0; i < DIM; i++) {
-        for(int j = 0; j < DIM; j++) {
-            potential[j][i] = std::complex<float> (hamilt_pot[i * DIM + j], 0.);
-        }
-    }
 
     out << "#time\tEnergy\t\tPx\tPy\tP**2\tnorm(psi(t))" << std::endl;
     for(int i = 0; i < N_files; i++) {
@@ -248,7 +241,7 @@ void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, f
 
         for(int j = 1; j < DIM - 1; j++) {
             for(int k = 1; k < DIM - 1; k++) {
-                sum_E += conj(psi[k + j * dim]) * (cost_E * (psi[k + 1 + j * dim] + psi[k - 1 + j * dim] + psi[k + (j + 1) * dim] + psi[k + (j - 1) * dim] - psi[k + j * dim] * std::complex<float> (4., 0.)) + potential[k][j] * psi[k + j * dim]) ;
+                sum_E += conj(psi[k + j * dim]) * (cost_E * (psi[k + 1 + j * dim] + psi[k - 1 + j * dim] + psi[k + (j + 1) * dim] + psi[k + (j - 1) * dim] - psi[k + j * dim] * std::complex<float> (4., 0.)) + psi[k + j * dim] * std::complex<float> (hamilt_pot[j * dim + k], 0.)) ;
                 sum_Px += conj(psi[k + j * dim]) * (psi[k + 1 + j * dim] - psi[k - 1 + j * dim]);
                 sum_Py += conj(psi[k + j * dim]) * (psi[k + (j + 1) * dim] - psi[k + (j - 1) * dim]);
                 sum_psi += conj(psi[k + j * dim]) * psi[k + j * dim];
