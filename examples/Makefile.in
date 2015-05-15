@@ -38,20 +38,20 @@ ifdef CUDA_LIBS
 	LIBOBJS+=$(srcdir)/cc2kernel.cu.co $(srcdir)/hybrid.cu.co
 endif
 
-BOX_OBJS_1 = $(LIBOBJS) particle_in_a_box_1.o
-BOX_OBJS_2 = $(LIBOBJS) particle_in_a_box_2.o
-BOX_OBJS_3 = $(LIBOBJS) particle_in_a_box_3.o
+BOX_OBJS_1 = $(LIBOBJS) gaussian-like_initial_state.o
+BOX_OBJS_2 = $(LIBOBJS) sinusoid_initial_state.o
+BOX_OBJS_3 = $(LIBOBJS) exponential_initial_state.o
 
 all example: box1 box2 box3
 
 box1: $(BOX_OBJS_1)
-	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o particle_in_a_box_1 $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} 
+	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o gaussian-like_initial_state $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} 
 
 box2: $(BOX_OBJS_2)
-	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o particle_in_a_box_2 $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} 
+	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o sinusoid_initial_state $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} 
 
 box3: $(BOX_OBJS_3)
-	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o particle_in_a_box_3 $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} 
+	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o exponential_initial_state $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} 
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -I$(srcdir) -o $@ -c $^ 
@@ -63,4 +63,4 @@ $(srcdir)/%.cu.co: $(srcdir)/%.cu
 	$(MAKE) -C $(srcdir) $@
 
 clean:
-	-rm -f particle_in_a_box $(BOX_OBJS) 1>/dev/null
+	-rm -f gaussian-like_initial_state sinusoid_initial_state exponential_initial_state $(BOX_OBJS_1) $(BOX_OBJS_2) $(BOX_OBJS_3) 1>/dev/null
