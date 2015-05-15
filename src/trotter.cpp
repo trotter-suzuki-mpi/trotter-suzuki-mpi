@@ -189,7 +189,7 @@ void trotter(double h_a, double h_b,
     gettimeofday(&end, NULL);
     if (coords[0] == 0 && coords[1] == 0 && show_time_sim == true) {
         long time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
-        std::cout << "TROTTER " << matrix_width << "x" << matrix_height << " " << kernel->get_name() << " " << nProcs << " " << time << std::endl;
+        std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " " << kernel->get_name() << " " << nProcs << " " << time << std::endl;
     }
     delete[] _p_real;
     delete[] _p_imag;
