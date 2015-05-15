@@ -23,6 +23,8 @@ for file in `ls *.cpp *.h *.cu`; do
             sed 's/MPI_FLOAT/MPI_DOUBLE/g' > $file.new
   mv $file.new $file
 done
+cat cpublocktest.cpp|sed 's/% 4; j += 4, idx1 += 4, idx2 += 4/% 2; j += 2, idx1 += 2, idx2 += 2/' > cpublocktest.cpp.new
+mv cpublocktest.cpp.new cpublocktest.cpp
 cd ..
 
 cd examples
