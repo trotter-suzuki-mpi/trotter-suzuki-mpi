@@ -102,7 +102,7 @@ void trotter(double h_a, double h_b,
         break;
 
     case 1:
-        kernel = new CPUBlockSSEKernel(_p_real, _p_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, cartcomm);
+        kernel = new CPUBlockSSEKernel(_p_real, _p_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm);
         break;
 
     case 2:
