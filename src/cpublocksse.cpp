@@ -289,7 +289,7 @@ void process_band_sse(size_t tile_width, size_t block_width, size_t block_height
     }
 }
 
-CPUBlockSSEKernel::CPUBlockSSEKernel(float *_p_real, float *_p_imag, float _a, float _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, MPI_Comm _cartcomm):
+CPUBlockSSEKernel::CPUBlockSSEKernel(float *_p_real, float *_p_imag, float _a, float _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *periods, MPI_Comm _cartcomm):
     p_real(_p_real),
     p_imag(_p_imag),
     a(_a),
@@ -300,7 +300,7 @@ CPUBlockSSEKernel::CPUBlockSSEKernel(float *_p_real, float *_p_imag, float _a, f
     cartcomm = _cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
-    int rank, coords[2], dims[2] = {0, 0}, periods[2] = {0, 0};
+    int rank, coords[2], dims[2] = {0, 0};
     MPI_Comm_rank(cartcomm, &rank);
     MPI_Cart_get(cartcomm, 2, dims, periods, coords);
     int inner_start_x = 0, end_x = 0, end_y = 0;
