@@ -17,7 +17,7 @@
  *
  */
 
-
+#include <fstream>
 
 #include <sstream>
 #include <string>
@@ -35,11 +35,11 @@
 #include "hybrid.h"
 #endif
 
-procs_topology trotter(double h_a, double h_b,
-					   float * external_pot_real, float * external_pot_imag,
-					   float * p_real, float * p_imag, const int matrix_width, 
-					   const int matrix_height, const int iterations, const int snapshots, const int kernel_type, 
-					   int *periods, int argc, char** argv, const char *dirname, bool test) {
+void trotter(double h_a, double h_b,
+             float * external_pot_real, float * external_pot_imag,
+             float * p_real, float * p_imag, const int matrix_width,
+             const int matrix_height, const int iterations, const int snapshots, const int kernel_type,
+             int *periods, int argc, char** argv, const char *dirname, bool show_time_sim) {
 
     MPI_Init(&argc, &argv);
 
@@ -50,15 +50,9 @@ procs_topology trotter(double h_a, double h_b,
         start_y, end_y, inner_start_y, inner_end_y;
 
     int coords[2], dims[2] = {0, 0};
-    //int periods[2] = {0, 0};
     int rank;
     int nProcs;
 
-
-    //MPI_Bcast(&matrix_width, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    //MPI_Bcast(&iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    //MPI_Bcast(&snapshots, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    //MPI_Bcast(&kernel_type, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Comm cartcomm;
     MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
     MPI_Dims_create(nProcs, 2, dims);  //partition all the processes (the size of MPI_COMM_WORLD's group) into an 2-dimensional topology
@@ -72,6 +66,7 @@ procs_topology trotter(double h_a, double h_b,
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     int width = end_x - start_x;
     int height = end_y - start_y;
+
 #ifdef DEBUG
     std::cout << "Coord_x: " << coords[1] << " start_x: " << start_x << \
               " end_x: " << end_x << " inner_start_x " << inner_start_x << " inner_end_x " << inner_end_x << "\n";
@@ -84,6 +79,15 @@ procs_topology trotter(double h_a, double h_b,
     _p_imag = new float[width * height];
     _external_pot_real = new float[width * height];
     _external_pot_imag = new float[width * height];
+    float * matr_real, * matr_imag;
+    float * matrix_snap_real;
+    float * matrix_snap_imag;
+    if(rank == 0) {
+        matr_real = new float [nProcs * (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y)];
+        matr_imag = new float [nProcs * (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y)];
+        matrix_snap_real = new float [(matrix_width - 2 * periods[1]*halo_x) * (matrix_height - 2 * periods[0]*halo_y)];
+        matrix_snap_imag = new float [(matrix_width - 2 * periods[1]*halo_x) * (matrix_height - 2 * periods[0]*halo_y)];
+    }
 
     memcpy2D(_p_real, width * sizeof(float), &p_real[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(float), width * sizeof(float), height);
     memcpy2D(_p_imag, width * sizeof(float), &p_imag[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(float), width * sizeof(float), height);
@@ -98,7 +102,7 @@ procs_topology trotter(double h_a, double h_b,
         break;
 
     case 1:
-        kernel = new CPUBlockSSEKernel(_p_real, _p_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, cartcomm);
+        kernel = new CPUBlockSSEKernel(_p_real, _p_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm);
         break;
 
     case 2:
@@ -134,16 +138,42 @@ procs_topology trotter(double h_a, double h_b,
     // Main loop
     for (int i = 0; i < iterations; i++) {
         if ( (snapshots > 0) && (i % snapshots == 0) ) {
-            kernel->get_sample(width, 0, 0, width, height, _p_real, _p_imag);
-            filename.str("");
-            filename << dirname << "/" << i << "-iter-" << coords[1] << "-" << coords[0] << "-real.dat";
-            print_matrix(filename.str(), _p_real + ((inner_start_y - start_y)*width + inner_start_x - start_x),
-                         width, inner_end_x - inner_start_x, inner_end_y - inner_start_y);
+            kernel->get_sample(inner_end_x - inner_start_x, inner_start_x - start_x, inner_start_y - start_y,
+                               inner_end_x - inner_start_x, inner_end_y - inner_start_y, _p_real, _p_imag);
+            MPI_Gather(_p_real, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_FLOAT,
+                       matr_real, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_FLOAT, 0, cartcomm);
+            MPI_Gather(_p_imag, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_FLOAT,
+                       matr_imag, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_FLOAT, 0, cartcomm);
 
-            filename.str("");
-            filename << dirname << "/" << i << "-iter-" << coords[1] << "-" << coords[0] << "-comp.dat";
-            print_complex_matrix(filename.str(), _p_real + ((inner_start_y - start_y)*width + inner_start_x - start_x),
-                                 _p_imag + ((inner_start_y - start_y)*width + inner_start_x - start_x), width, inner_end_x - inner_start_x, inner_end_y - inner_start_y);
+            if(rank == 0) {
+                int _start_x, _end_x, _inner_start_x, _inner_end_x,
+                    _start_y, _end_y, _inner_start_y, _inner_end_y;
+                int _coords[2];
+                int set = 0;
+
+                for(int _rank = 0; _rank < nProcs; _rank++) {
+                    MPI_Cart_coords(cartcomm, _rank, 2, _coords);
+                    calculate_borders(_coords[0], dims[0], &_start_y, &_end_y, &_inner_start_y, &_inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
+                    calculate_borders(_coords[1], dims[1], &_start_x, &_end_x, &_inner_start_x, &_inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
+                    for(int y = 0 ; y < _inner_end_y - _inner_start_y; y++) {
+                        for(int x = 0 ; x < _inner_end_x - _inner_start_x; x++) {
+                            matrix_snap_real[x + _inner_start_x + (y + _inner_start_y) * (matrix_width - 2 * periods[1]*halo_x)] = matr_real[set + x + y * (_inner_end_x - _inner_start_x)];
+                            matrix_snap_imag[x + _inner_start_x + (y + _inner_start_y) * (matrix_width - 2 * periods[1]*halo_x)] = matr_imag[set + x + y * (_inner_end_x - _inner_start_x)];
+                        }
+                    }
+                    set += (_inner_end_y - _inner_start_y) * (_inner_end_x - _inner_start_x);
+                }
+
+                filename.str("");
+                filename << dirname << "/" << i << "-iter-real.dat";
+                print_matrix(filename.str(), matrix_snap_real, matrix_width - 2 * periods[1]*halo_x,
+                             matrix_width - 2 * periods[1]*halo_x, matrix_height - 2 * periods[0]*halo_y);
+
+                filename.str("");
+                filename << dirname << "/" << i << "-iter-comp.dat";
+                print_complex_matrix(filename.str(), matrix_snap_real, matrix_snap_imag, matrix_width - 2 * periods[1]*halo_x,
+                                     matrix_width - 2 * periods[1]*halo_x, matrix_height - 2 * periods[0]*halo_y);
+            }
         }
         kernel->run_kernel_on_halo();
         if (i != iterations - 1) {
@@ -157,26 +187,15 @@ procs_topology trotter(double h_a, double h_b,
     }
 
     gettimeofday(&end, NULL);
-    if (coords[0] == 0 && coords[1] == 0 && test == false) {
+    if (coords[0] == 0 && coords[1] == 0 && show_time_sim == true) {
         long time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
-        std::cout << "TROTTER " << matrix_width << "x" << matrix_height << " " << kernel->get_name() << " " << nProcs << " " << time << std::endl;
+        std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " " << kernel->get_name() << " " << nProcs << " " << time << std::endl;
     }
     delete[] _p_real;
     delete[] _p_imag;
     delete[] _external_pot_real;
     delete[] _external_pot_imag;
-    delete[] external_pot_real;
-    delete[] external_pot_imag;
-    delete[] p_real;
-    delete[] p_imag;
     delete kernel;
 
     MPI_Finalize();
-
-    procs_topology var;
-    var.rank = rank;
-    var.dimsx = dims[1];
-    var.dimsy = dims[0];
-
-    return var;
 }

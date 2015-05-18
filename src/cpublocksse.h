@@ -44,7 +44,7 @@ void process_band_sse(size_t read_y, size_t read_height, size_t write_offset, si
 
 class CPUBlockSSEKernel: public ITrotterKernel {
 public:
-    CPUBlockSSEKernel(float *p_real, float *p_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, MPI_Comm cartcomm);
+    CPUBlockSSEKernel(float *p_real, float *p_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods, MPI_Comm cartcomm);
     ~CPUBlockSSEKernel();
     void run_kernel();
     void run_kernel_on_halo();
