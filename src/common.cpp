@@ -206,7 +206,7 @@ void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, f
     std::complex<float> sum_Px = 0, sum_Py = 0;
     std::complex<float> sum_psi = 0;
     float energy[N_files], momentum_x[N_files], momentum_y[N_files], norm[N_files];
-    const float threshold_E = 3, threshold_P = 1;
+    const float threshold_E = 3, threshold_P = 2;
     const float expected_E = (2. * M_PI / dim) * (2. * M_PI / dim);
     const float expected_Px = 0.;
     const float expected_Py = 0.;
