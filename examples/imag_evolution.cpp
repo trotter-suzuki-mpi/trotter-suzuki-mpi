@@ -62,7 +62,8 @@ void init_state(float *p_real, float *p_imag, int dimx, int dimy, int halo_x, in
 
     for (int y = 1; y <= dimy; y++) {
         for (int x = 1; x <= dimx; x++) {
-            std::complex<float> tmp = exp(std::complex<float>(0. , 2 * 3.14159 / L_x * (x - periods[1] * halo_x) + 2 * 3.14159 / L_y * (y - periods[0] * halo_y) ));
+            std::complex<float> tmp = exp(std::complex<float>(0. , 2. * 3.14159 / L_x * (x - periods[1] * halo_x))) +
+									  exp(std::complex<float>(0. , 10. * 2. * 3.14159 / L_x * (x - periods[1] * halo_x)));
 
             p_real[y * dimx + x] = real(tmp);
             p_imag[y * dimx + x] = imag(tmp);
@@ -71,14 +72,14 @@ void init_state(float *p_real, float *p_imag, int dimx, int dimy, int halo_x, in
 }
 
 //calculate potential part of evolution operator
-void init_pot_evolution_op(float * hamilt_pot, float * external_pot_real, float * external_pot_imag, int dimx, int dimy, double particle_mass, double time_single_it ) {
+void init_pot_evolution_op(float * hamilt_pot, float * external_pot_real, float * external_pot_imag, int dimx, int dimy, double particle_mass, double time_single_it) {
     float CONST_1 = -1. * time_single_it;
     float CONST_2 = 2. * time_single_it / particle_mass;		//CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
 
     std::complex<float> tmp;
     for(int i = 0; i < dimy; i++) {
         for(int j = 0; j < dimx; j++) {
-            tmp = exp(std::complex<float> (0., CONST_1 * hamilt_pot[i * dimx + j] + CONST_2));
+            tmp = exp(std::complex<float> (CONST_1 * hamilt_pot[i * dimx + j] + CONST_2, 0.));
             external_pot_real[i * dimx + j] = real(tmp);
             external_pot_imag[i * dimx + j] = imag(tmp);
         }
@@ -89,17 +90,18 @@ int main(int argc, char** argv) {
     int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, kernel_type = KERNEL_TYPE;
     int periods[2] = {1, 1};
     bool show_time_sim = true;
-    bool imag_time = false;
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
     int matrix_width = dim + periods[1] * 2 * halo_x;
     int matrix_height = dim + periods[0] * 2 * halo_y;
 
     std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
-    std::cout << "* It calculates the time-evolution of a particle in a box\n";
+    std::cout << "* It calculates the imaginary time-evolution of a free particle in a box\n";
     std::cout << "* with periodic boundary conditions, where the initial\n";
     std::cout << "* state is the following:\n";
-    std::cout << "* \texp(i2M_PI / L (x + y))\n\n";
+    std::cout << "* \texp(i2M_PI / L * x) + exp(i20M_PI / L * x)\n\n";
+    std::cout << "* The state will reach the eigenfunction of the Hamiltonian with the lowest\n";
+    std::cout << "* eigenvalue:   exp(i2M_PI / L * x)\n\n";
 
     //set hamiltonian variables
     const double particle_mass = 1.;
@@ -108,12 +110,12 @@ int main(int argc, char** argv) {
     potential_op_coord_representation(hamilt_pot, matrix_width, matrix_height, halo_x, halo_y, periods);	//set potential operator
 
     //set and calculate evolution operator variables from hamiltonian
-    const double time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
+    const double time_single_it = 8 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
     float *external_pot_real = new float[matrix_width * matrix_height];
     float *external_pot_imag = new float[matrix_width * matrix_height];
     init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it);	//calculate potential part of evolution operator
-    double h_a = cos(time_single_it / (2. * particle_mass));
-    double h_b = sin(time_single_it / (2. * particle_mass));
+    double h_a = cosh(time_single_it / (2. * particle_mass));
+    double h_b = sinh(time_single_it / (2. * particle_mass));
 
     //set initial state
     float *p_real = new float[matrix_width * matrix_height];
@@ -127,7 +129,7 @@ int main(int argc, char** argv) {
         int status;
 
         dirname.str("");
-        dirname << "D" << dim << "_I" << iterations << "_S" << snapshots << "";
+        dirname << "IMAG_EVO_D" << dim << "_I" << iterations << "_S" << snapshots << "";
         dirnames = dirname.str();
 
         status = mkdir(dirnames.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -138,7 +140,7 @@ int main(int argc, char** argv) {
     else
         dirnames = ".";
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, dirnames.c_str(), show_time_sim, imag_time);
+    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, dirnames.c_str(), show_time_sim, true);
 
     return 0;
 }

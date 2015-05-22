@@ -90,14 +90,14 @@ void merge_line(const float * evens, const float * odds, size_t x, size_t width,
 
     size_t dest_x = x;
     if (x % 2 == 1) {
-        dest[dest_x++] = *(odds_p++);
+        dest[dest_x++ - x] = *(odds_p++);
     }
     while (dest_x < (x + width) - (x + width) % 2) {
-        dest[dest_x++] = *(evens_p++);
-        dest[dest_x++] = *(odds_p++);
+        dest[dest_x++ - x] = *(evens_p++);
+        dest[dest_x++ - x] = *(odds_p++);
     }
     if (dest_x < x + width) {
-        dest[dest_x++] = *evens_p;
+        dest[dest_x++ - x] = *evens_p;
     }
     assert(dest_x == x + width);
 }
@@ -115,16 +115,16 @@ void get_quadrant_sample(const float * r00, const float * r01, const float * r10
         ++dest_y;
     }
     while (dest_y < (y + height) - (y + height) % 2) {
-        merge_line(&r00[(dest_y / 2) * src_stride], &r01[(dest_y / 2) * src_stride], x, width, &dest_real[dest_y * dest_stride]);
-        merge_line(&i00[(dest_y / 2) * src_stride], &i01[(dest_y / 2) * src_stride], x, width, &dest_imag[dest_y * dest_stride]);
+        merge_line(&r00[(dest_y / 2) * src_stride], &r01[(dest_y / 2) * src_stride], x, width, &dest_real[(dest_y - y) * dest_stride]);
+        merge_line(&i00[(dest_y / 2) * src_stride], &i01[(dest_y / 2) * src_stride], x, width, &dest_imag[(dest_y - y) * dest_stride]);
         ++dest_y;
-        merge_line(&r10[(dest_y / 2) * src_stride], &r11[(dest_y / 2) * src_stride], x, width, &dest_real[dest_y * dest_stride]);
-        merge_line(&i10[(dest_y / 2) * src_stride], &i11[(dest_y / 2) * src_stride], x, width, &dest_imag[dest_y * dest_stride]);
+        merge_line(&r10[(dest_y / 2) * src_stride], &r11[(dest_y / 2) * src_stride], x, width, &dest_real[(dest_y - y) * dest_stride]);
+        merge_line(&i10[(dest_y / 2) * src_stride], &i11[(dest_y / 2) * src_stride], x, width, &dest_imag[(dest_y - y) * dest_stride]);
         ++dest_y;
     }
     if (dest_y < y + height) {
-        merge_line(&r00[(dest_y / 2) * src_stride], &r01[(dest_y / 2) * src_stride], x, width, &dest_real[dest_y * dest_stride]);
-        merge_line(&i00[(dest_y / 2) * src_stride], &i01[(dest_y / 2) * src_stride], x, width, &dest_imag[dest_y * dest_stride]);
+        merge_line(&r00[(dest_y / 2) * src_stride], &r01[(dest_y / 2) * src_stride], x, width, &dest_real[(dest_y - y) * dest_stride]);
+        merge_line(&i00[(dest_y / 2) * src_stride], &i01[(dest_y / 2) * src_stride], x, width, &dest_imag[(dest_y - y) * dest_stride]);
     }
     assert (dest_y == y + height);
 }
@@ -185,7 +185,7 @@ void get_quadrant_sample_to_buffer(const float * r00, const float * r01, const f
 }
 
 void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, float particle_mass,
-                   const char *dirname, int *periods, int halo_x, int halo_y) {
+                   const char *dirname, int *periods, int halo_x, int halo_y, MAGIC_NUMBER th_values) {
 
     if(snapshots == 0)
         return;
@@ -206,7 +206,8 @@ void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, f
     std::complex<float> sum_Px = 0, sum_Py = 0;
     std::complex<float> sum_psi = 0;
     float energy[N_files], momentum_x[N_files], momentum_y[N_files], norm[N_files];
-    const float threshold_E = 3, threshold_P = 2;
+    
+    //const float threshold_E = 3, threshold_P = 2;
     const float expected_E = (2. * M_PI / dim) * (2. * M_PI / dim);
     const float expected_Px = 0.;
     const float expected_Py = 0.;
@@ -262,7 +263,7 @@ void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, f
         sum_psi = 0;
     }
 
-    //calculate sample variance
+    //calculate sample mean and sample variance
     float var_E = 0, var_Px = 0, var_Py = 0;
     float mean_E = 0, mean_Px = 0, mean_Py = 0;
 
@@ -290,18 +291,18 @@ void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, f
     //std::cout << "Sample mean Energy: " << mean_E << "  Sample variance Energy: " << var_E << std::endl;
     //std::cout << "Sample mean Momentum Px: " << mean_Px << "  Sample variance Momentum Px: " << var_Px << std::endl;
     //std::cout << "Sample mean Momentum Py: " << mean_Py << "  Sample variance Momentum Py: " << var_Py << std::endl;
-
-    if(std::abs(mean_E - expected_E) / var_E < threshold_E)
-        std::cout << "Energy -> OK\tsigma: " << std::abs(mean_E - expected_E) / var_E << std::endl;
+    
+    if(std::abs(mean_E - th_values.expected_E) / var_E < th_values.threshold_E)
+        std::cout << "Energy -> OK\tsigma: " << std::abs(mean_E - th_values.expected_E) / var_E << std::endl;
     else
-        std::cout << "Energy value is not the one theoretically expected: sigma " << std::abs(mean_E - expected_E) / var_E << std::endl;
-    if(std::abs(mean_Px - expected_Px) / var_Px < threshold_P)
-        std::cout << "Momentum Px -> OK\tsigma: " << std::abs(mean_Px - expected_Px) / var_Px << std::endl;
+        std::cout << "Energy value is not the one theoretically expected: sigma " << std::abs(mean_E - th_values.expected_E) / var_E << std::endl;
+    if(std::abs(mean_Px - th_values.expected_Px) / var_Px < th_values.threshold_P)
+        std::cout << "Momentum Px -> OK\tsigma: " << std::abs(mean_Px - th_values.expected_Px) / var_Px << std::endl;
     else
-        std::cout << "Momentum Px value is not the one theoretically expected: sigma " << std::abs(mean_Px - expected_Px) / var_Px << std::endl;
-    if(std::abs(mean_Py - expected_Py) / var_Py < threshold_P)
-        std::cout << "Momentum Py -> OK\tsigma: " << std::abs(mean_Py - expected_Py) / var_Py << std::endl;
+        std::cout << "Momentum Px value is not the one theoretically expected: sigma " << std::abs(mean_Px - th_values.expected_Px) / var_Px << std::endl;
+    if(std::abs(mean_Py - th_values.expected_Py) / var_Py < th_values.threshold_P)
+        std::cout << "Momentum Py -> OK\tsigma: " << std::abs(mean_Py - th_values.expected_Py) / var_Py << std::endl;
     else
-        std::cout << "Momentum Py value is not the one theoretically expected: sigma " << std::abs(mean_Py - expected_Py) / var_Py << std::endl;
+        std::cout << "Momentum Py value is not the one theoretically expected: sigma " << std::abs(mean_Py - th_values.expected_Py) / var_Py << std::endl;
 }
 

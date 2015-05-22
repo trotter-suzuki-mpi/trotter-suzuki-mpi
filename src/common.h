@@ -28,6 +28,14 @@
 #include <config.h>
 #endif
 
+struct MAGIC_NUMBER {
+	float threshold_E, threshold_P;
+    float expected_E;
+    float expected_Px;
+    float expected_Py;
+    MAGIC_NUMBER();
+};
+
 void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound);
 void print_complex_matrix(std::string filename, float * matrix_real, float * matrix_imag, size_t stride, size_t width, size_t height);
 void print_matrix(std::string filename, float * matrix, size_t stride, size_t width, size_t height);
@@ -44,6 +52,6 @@ void get_quadrant_sample_to_buffer(const float * r00, const float * r01, const f
                                    float * dest_real, float * dest_imag);
 
 void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, float particle_mass, const char *dirname,
-                   int *periods, int halo_x, int halo_y);
+                   int *periods, int halo_x, int halo_y, MAGIC_NUMBER th_values);
 
 #endif

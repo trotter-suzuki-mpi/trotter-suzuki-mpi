@@ -45,14 +45,17 @@ void potential_op_coord_representation(float *hamilt_pot, int dimx, int dimy, in
 }
 
 //calculate potential part of evolution operator
-void init_pot_evolution_op(float * hamilt_pot, float * external_pot_real, float * external_pot_imag, int dimx, int dimy, double particle_mass, double time_single_it ) {
+void init_pot_evolution_op(float * hamilt_pot, float * external_pot_real, float * external_pot_imag, int dimx, int dimy, double particle_mass, double time_single_it, bool imag_time) {
     float CONST_1 = -1. * time_single_it;
     float CONST_2 = 2. * time_single_it / particle_mass;		//CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
 
     std::complex<float> tmp;
     for(int i = 0; i < dimy; i++) {
         for(int j = 0; j < dimx; j++) {
-            tmp = exp(std::complex<float> (0., CONST_1 * hamilt_pot[i * dimx + j] + CONST_2));
+			if(imag_time)
+				tmp = exp(std::complex<float> (CONST_1 * hamilt_pot[i * dimx + j] + CONST_2, 0.));
+			else
+				tmp = exp(std::complex<float> (0., CONST_1 * hamilt_pot[i * dimx + j] + CONST_2));
             external_pot_real[i * dimx + j] = real(tmp);
             external_pot_imag[i * dimx + j] = imag(tmp);
         }
@@ -110,14 +113,6 @@ void read_pot(float *hamilt_pot, int dimx, int dimy, char *file_name, int halo_x
 }
 
 void read_initial_state(float *p_real, float *p_imag, int dimx, int dimy, char *file_name, int halo_x, int halo_y, int *periods) {
-    /*std::stringstream filename;
-    filename.str("");
-    filename << file_name << "\0";
-    std::string filenames = filename.str();
-    std::cout << "\nciao\n";
-    //std::cout << "aa"<<file_name;
-    for(int i=0; i<20; i++)
-    std::cout << file_name[i];*/
     std::ifstream input(file_name);
 
     int in_width = dimx - 2 * periods[1] * halo_x;
@@ -179,6 +174,7 @@ void print_usage() {
     std::cout << "Usage:\n" \
               "     trotter [OPTION] -n file_name\n" \
               "Arguments:\n" \
+              "     -g            Imaginary time evolution to evolve towards the ground state\n" \
               "     -d NUMBER     Matrix dimension (default: " << DIM << ")\n" \
               "     -i NUMBER     Number of iterations (default: " << ITERATIONS << ")\n" \
               "     -k NUMBER     Kernel type (default: " << KERNEL_TYPE << "): \n" \
@@ -194,7 +190,7 @@ void print_usage() {
               "     -p STRING     Name of file that stores the potential operator (in coordinate representation)\n";
 }
 
-void process_command_line(int argc, char** argv, int *dim, int *iterations, int *snapshots, int *kernel_type, char *file_name, double *h_a, double *h_b, char * pot_name) {
+void process_command_line(int argc, char** argv, int *dim, int *iterations, int *snapshots, int *kernel_type, char *file_name, double *h_a, double *h_b, char * pot_name, bool *imag_time) {
     // Setting default values
     *dim = DIM;
     *iterations = ITERATIONS;
@@ -205,8 +201,11 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
     int cont = 0;
     bool file_supplied = false;
     int kinetic_par = 0;
-    while ((c = getopt (argc, argv, "d:hi:k:s:n:a:b:p:")) != -1) {
+    while ((c = getopt (argc, argv, "gd:hi:k:s:n:a:b:p:")) != -1) {
         switch (c) {
+		case 'g':
+		    *imag_time = true;
+            break;
         case 'd':
             *dim = atoi(optarg);
             if (*dim <= 0) {
@@ -292,6 +291,7 @@ int main(int argc, char** argv) {
     int periods[2] = {1, 1};
     char file_name[100];
     bool show_time_sim = true;
+    bool imag_time = false;
     double h_a = 0.;
     double h_b = 0.;
     for(int i = 0; i < 100; i++)
@@ -300,7 +300,7 @@ int main(int argc, char** argv) {
     for(int i = 0; i < 100; i++)
         pot_name[i] = '\0';
 
-    process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, file_name, &h_a, &h_b, pot_name);
+    process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, file_name, &h_a, &h_b, pot_name, &imag_time);
 
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
@@ -316,21 +316,31 @@ int main(int argc, char** argv) {
         read_pot(hamilt_pot, matrix_width, matrix_height, pot_name, halo_x, halo_y, periods);	//set potential operator from file
 
     //set and calculate evolution operator variables from hamiltonian
-    const double time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
     float *external_pot_real = new float[matrix_width * matrix_height];
-    float *external_pot_imag = new float[matrix_width * matrix_height];
-    init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it);	//calculate potential part of evolution operator
-    if(h_a == 0. && h_b == 0.) {
-        h_a = cos(time_single_it / (2. * particle_mass));
-        h_b = sin(time_single_it / (2. * particle_mass));
-    }
+	float *external_pot_imag = new float[matrix_width * matrix_height];
+    if(imag_time) {
+		const double time_single_it = 8 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
+		init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it, true);	//calculate potential part of evolution operator
+		if(h_a == 0. && h_b == 0.) {
+			h_a = cosh(time_single_it / (2. * particle_mass));
+			h_b = sinh(time_single_it / (2. * particle_mass));
+		}
+	}
+	else {
+		const double time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
+		init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it, false);	//calculate potential part of evolution operator
+		if(h_a == 0. && h_b == 0.) {
+			h_a = cos(time_single_it / (2. * particle_mass));
+			h_b = sin(time_single_it / (2. * particle_mass));
+		}
+	}
 
     //set initial state
     float *p_real = new float[matrix_width * matrix_height];
     float *p_imag = new float[matrix_width * matrix_height];
     read_initial_state(p_real, p_imag, matrix_width, matrix_height, file_name, halo_x, halo_y, periods);
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, ".", show_time_sim);
+    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, ".", show_time_sim, imag_time);
 
     return 0;
 }

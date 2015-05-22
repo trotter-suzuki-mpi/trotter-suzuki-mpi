@@ -38,8 +38,12 @@
 
 #define DIM 640
 #define ITERATIONS 1000
-#define KERNEL_TYPE 0
+#define KERNEL_TYPE 1
 #define SNAPSHOTS 100
+
+
+MAGIC_NUMBER::MAGIC_NUMBER() : threshold_E(3), threshold_P(2),
+							   expected_E((2. * M_PI / DIM) * (2. * M_PI / DIM)), expected_Px(0), expected_Py(0) {}
 
 //external potential operator in coordinate representation
 void potential_op_coord_representation(float *hamilt_pot, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
@@ -56,13 +60,13 @@ void init_state(float *p_real, float *p_imag, int dimx, int dimy, int halo_x, in
     double L_x = dimx - periods[1] * 2 * halo_x;
     double L_y = dimy - periods[0] * 2 * halo_y;
     double n_x = 1., n_y = 1.;
-
+	
     for (int y = 1; y <= dimy; y++) {
         for (int x = 1; x <= dimx; x++) {
             //std::complex<float> tmp = std::complex<float>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
             //                      * exp(std::complex<float>(0.0, 0.4 * (x + y - 480.0)));
-
-            std::complex<float> tmp = std::complex<float> (sin(2 * 3.14159 / L_x * (x - periods[1] * halo_x)) * sin(2 * 3.14159 / L_y * (y - periods[0] * halo_y)), 0.0);
+			
+			std::complex<float>  tmp = std::complex<float> (sin(2 * 3.14159 / L_x * (x - periods[1] * halo_x)) * sin(2 * 3.14159 / L_y * (y - periods[0] * halo_y)), 0.0);
 
             //std::complex<float> tmp = exp(std::complex<float>(0. , 2 * 3.14159 / L_x * (x - periods[1]*halo_x) + 2 * 3.14159 / L_y * (y - periods[0]*halo_y) ));
 
@@ -131,7 +135,7 @@ void read_initial_state(float *p_real, float *p_imag, int dimx, int dimy, char *
 }
 
 //calculate potential part of evolution operator
-void init_pot_evolution_op(float * hamilt_pot, float * external_pot_real, float * external_pot_imag, int dimx, int dimy, double particle_mass, double time_single_it ) {
+void init_pot_evolution_op(float * hamilt_pot, float * external_pot_real, float * external_pot_imag, int dimx, int dimy, double particle_mass, double time_single_it) {
     float CONST_1 = -1. * time_single_it;
     float CONST_2 = 2. * time_single_it / particle_mass;		//CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
 
@@ -151,6 +155,7 @@ int main(int argc, char** argv) {
     char file_name[100];
     file_name[0] = '\0';
     bool show_time_sim = false;
+    bool imag_time = false;
 
     // Get the top level suite from the registry
     CppUnit::Test *suite = CppUnit::TestFactoryRegistry::getRegistry().makeTest();
@@ -209,10 +214,11 @@ int main(int argc, char** argv) {
     else
         filenames = "./";
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str(), show_time_sim);
-
-    expect_values(dim, iterations, snapshots, hamilt_pot, particle_mass, filenames.c_str(), periods, halo_x, halo_y);
-
+    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str(), show_time_sim, imag_time);
+	
+	MAGIC_NUMBER th_values;
+    expect_values(dim, iterations, snapshots, hamilt_pot, particle_mass, filenames.c_str(), periods, halo_x, halo_y, th_values);
+	
     delete[] hamilt_pot;
 
     return 0;

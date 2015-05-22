@@ -30,13 +30,16 @@
 void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, size_t height, float a, float b, float * p_real, float * p_imag);
 void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, size_t height, float a, float b, float * p_real, float * p_imag);
 
-void process_sides(size_t tile_width, size_t block_width, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, float * block_real, float * block_imag);
+void block_kernel_vertical_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
+void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
 
-void process_band(size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, int inner, int sides);
+void process_sides(size_t tile_width, size_t block_width, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, float * block_real, float * block_imag, bool imag_time);
+
+void process_band(size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, int inner, int sides, bool imag_time);
 
 class CPUBlock: public ITrotterKernel {
 public:
-    CPUBlock(float *p_real, float *p_imag, float *_external_pot_real, float *_external_pot_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods, MPI_Comm cartcomm);
+    CPUBlock(float *p_real, float *p_imag, float *_external_pot_real, float *_external_pot_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods, MPI_Comm cartcomm, bool imag_time);
     ~CPUBlock();
     void run_kernel();
     void run_kernel_on_halo();
@@ -57,7 +60,7 @@ public:
 
 private:
     void kernel8(const float *p_real, const float *p_imag, float * next_real, float * next_imag);
-
+    bool imag_time;
     float *p_real[2];
     float *p_imag[2];
     float *external_pot_real;

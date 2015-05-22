@@ -39,7 +39,7 @@ void trotter(double h_a, double h_b,
              float * external_pot_real, float * external_pot_imag,
              float * p_real, float * p_imag, const int matrix_width,
              const int matrix_height, const int iterations, const int snapshots, const int kernel_type,
-             int *periods, int argc, char** argv, const char *dirname, bool show_time_sim) {
+             int *periods, int argc, char** argv, const char *dirname, bool show_time_sim, bool imag_time) {
 
     MPI_Init(&argc, &argv);
 
@@ -98,7 +98,7 @@ void trotter(double h_a, double h_b,
     ITrotterKernel * kernel;
     switch (kernel_type) {
     case 0:
-        kernel = new CPUBlock(_p_real, _p_imag, _external_pot_real, _external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm);
+        kernel = new CPUBlock(_p_real, _p_imag, _external_pot_real, _external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
         break;
 
     case 1:
@@ -128,7 +128,7 @@ void trotter(double h_a, double h_b,
         break;
 
     default:
-        kernel = new CPUBlock(_p_real, _p_imag, _external_pot_real, _external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm);
+        kernel = new CPUBlock(_p_real, _p_imag, _external_pot_real, _external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
         break;
     }
 
@@ -144,7 +144,8 @@ void trotter(double h_a, double h_b,
                        matr_real, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_FLOAT, 0, cartcomm);
             MPI_Gather(_p_imag, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_FLOAT,
                        matr_imag, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_FLOAT, 0, cartcomm);
-
+			
+			
             if(rank == 0) {
                 int _start_x, _end_x, _inner_start_x, _inner_end_x,
                     _start_y, _end_y, _inner_start_y, _inner_end_y;
