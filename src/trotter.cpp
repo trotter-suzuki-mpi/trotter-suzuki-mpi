@@ -36,15 +36,13 @@
 #endif
 
 void trotter(double h_a, double h_b,
-             float * external_pot_real, float * external_pot_imag,
-             float * p_real, float * p_imag, const int matrix_width,
+             double * external_pot_real, double * external_pot_imag,
+             double * p_real, double * p_imag, const int matrix_width,
              const int matrix_height, const int iterations, const int snapshots, const int kernel_type,
-             int *periods, int argc, char** argv, const char *dirname, bool show_time_sim, bool imag_time) {
+             int *periods, int argc, char** argv, const char *dirname, bool show_time_sim, bool imag_time, int particle_tag) {
 
-    MPI_Init(&argc, &argv);
-
-    float *_p_real, *_p_imag;
-    float *_external_pot_real, *_external_pot_imag;
+    double *_p_real, *_p_imag;
+    double *_external_pot_real, *_external_pot_imag;
     std::stringstream filename;
     int start_x, end_x, inner_start_x, inner_end_x,
         start_y, end_y, inner_start_y, inner_end_y;
@@ -75,24 +73,24 @@ void trotter(double h_a, double h_b,
 #endif
 
     // Allocate matrices
-    _p_real = new float[width * height];
-    _p_imag = new float[width * height];
-    _external_pot_real = new float[width * height];
-    _external_pot_imag = new float[width * height];
-    float * matr_real, * matr_imag;
-    float * matrix_snap_real;
-    float * matrix_snap_imag;
+    _p_real = new double[width * height];
+    _p_imag = new double[width * height];
+    _external_pot_real = new double[width * height];
+    _external_pot_imag = new double[width * height];
+    double * matr_real, * matr_imag;
+    double * matrix_snap_real;
+    double * matrix_snap_imag;
     if(rank == 0) {
-        matr_real = new float [nProcs * (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y)];
-        matr_imag = new float [nProcs * (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y)];
-        matrix_snap_real = new float [(matrix_width - 2 * periods[1]*halo_x) * (matrix_height - 2 * periods[0]*halo_y)];
-        matrix_snap_imag = new float [(matrix_width - 2 * periods[1]*halo_x) * (matrix_height - 2 * periods[0]*halo_y)];
+        matr_real = new double [nProcs * (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y)];
+        matr_imag = new double [nProcs * (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y)];
+        matrix_snap_real = new double [(matrix_width - 2 * periods[1]*halo_x) * (matrix_height - 2 * periods[0]*halo_y)];
+        matrix_snap_imag = new double [(matrix_width - 2 * periods[1]*halo_x) * (matrix_height - 2 * periods[0]*halo_y)];
     }
 
-    memcpy2D(_p_real, width * sizeof(float), &p_real[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(float), width * sizeof(float), height);
-    memcpy2D(_p_imag, width * sizeof(float), &p_imag[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(float), width * sizeof(float), height);
-    memcpy2D(_external_pot_real, width * sizeof(float), &external_pot_real[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(float), width * sizeof(float), height);
-    memcpy2D(_external_pot_imag, width * sizeof(float), &external_pot_imag[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(float), width * sizeof(float), height);
+    memcpy2D(_p_real, width * sizeof(double), &p_real[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(double), width * sizeof(double), height);
+    memcpy2D(_p_imag, width * sizeof(double), &p_imag[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(double), width * sizeof(double), height);
+    memcpy2D(_external_pot_real, width * sizeof(double), &external_pot_real[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(double), width * sizeof(double), height);
+    memcpy2D(_external_pot_imag, width * sizeof(double), &external_pot_imag[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(double), width * sizeof(double), height);
 
     // Initialize kernel
     ITrotterKernel * kernel;
@@ -140,10 +138,10 @@ void trotter(double h_a, double h_b,
         if ( (snapshots > 0) && (i % snapshots == 0) ) {
             kernel->get_sample(inner_end_x - inner_start_x, inner_start_x - start_x, inner_start_y - start_y,
                                inner_end_x - inner_start_x, inner_end_y - inner_start_y, _p_real, _p_imag);
-            MPI_Gather(_p_real, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_FLOAT,
-                       matr_real, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_FLOAT, 0, cartcomm);
-            MPI_Gather(_p_imag, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_FLOAT,
-                       matr_imag, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_FLOAT, 0, cartcomm);
+            MPI_Gather(_p_real, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_DOUBLE,
+                       matr_real, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_DOUBLE, 0, cartcomm);
+            MPI_Gather(_p_imag, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_DOUBLE,
+                       matr_imag, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_DOUBLE, 0, cartcomm);
 			
 			
             if(rank == 0) {
@@ -166,12 +164,12 @@ void trotter(double h_a, double h_b,
                 }
 
                 filename.str("");
-                filename << dirname << "/" << i << "-iter-real.dat";
+                filename << dirname << "/" << particle_tag << "-" << i << "-iter-real.dat";
                 print_matrix(filename.str(), matrix_snap_real, matrix_width - 2 * periods[1]*halo_x,
                              matrix_width - 2 * periods[1]*halo_x, matrix_height - 2 * periods[0]*halo_y);
 
                 filename.str("");
-                filename << dirname << "/" << i << "-iter-comp.dat";
+                filename << dirname << "/" << particle_tag << "-" << i << "-iter-comp.dat";
                 print_complex_matrix(filename.str(), matrix_snap_real, matrix_snap_imag, matrix_width - 2 * periods[1]*halo_x,
                                      matrix_width - 2 * periods[1]*halo_x, matrix_height - 2 * periods[0]*halo_y);
             }
@@ -197,6 +195,4 @@ void trotter(double h_a, double h_b,
     delete[] _external_pot_real;
     delete[] _external_pot_imag;
     delete kernel;
-
-    MPI_Finalize();
 }

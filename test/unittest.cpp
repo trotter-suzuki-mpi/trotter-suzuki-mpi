@@ -38,7 +38,7 @@
 
 #define DIM 640
 #define ITERATIONS 1000
-#define KERNEL_TYPE 1
+#define KERNEL_TYPE 0
 #define SNAPSHOTS 100
 
 
@@ -46,8 +46,8 @@ MAGIC_NUMBER::MAGIC_NUMBER() : threshold_E(3), threshold_P(2),
 							   expected_E((2. * M_PI / DIM) * (2. * M_PI / DIM)), expected_Px(0), expected_Py(0) {}
 
 //external potential operator in coordinate representation
-void potential_op_coord_representation(float *hamilt_pot, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
-    float constant = 0.;
+void potential_op_coord_representation(double *hamilt_pot, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
+    double constant = 0.;
     for(int i = 0; i < dimy; i++) {
         for(int j = 0; j < dimx; j++) {
             hamilt_pot[i * dimx + j] = constant;
@@ -55,7 +55,7 @@ void potential_op_coord_representation(float *hamilt_pot, int dimx, int dimy, in
     }
 }
 
-void init_state(float *p_real, float *p_imag, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
+void init_state(double *p_real, double *p_imag, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
     double s = 64.0; // FIXME: y esto?
     double L_x = dimx - periods[1] * 2 * halo_x;
     double L_y = dimy - periods[0] * 2 * halo_y;
@@ -63,12 +63,12 @@ void init_state(float *p_real, float *p_imag, int dimx, int dimy, int halo_x, in
 	
     for (int y = 1; y <= dimy; y++) {
         for (int x = 1; x <= dimx; x++) {
-            //std::complex<float> tmp = std::complex<float>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
-            //                      * exp(std::complex<float>(0.0, 0.4 * (x + y - 480.0)));
+            //std::complex<double> tmp = std::complex<double>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
+            //                      * exp(std::complex<double>(0.0, 0.4 * (x + y - 480.0)));
 			
-			std::complex<float>  tmp = std::complex<float> (sin(2 * 3.14159 / L_x * (x - periods[1] * halo_x)) * sin(2 * 3.14159 / L_y * (y - periods[0] * halo_y)), 0.0);
+			std::complex<double>  tmp = std::complex<double> (sin(2 * 3.14159 / L_x * (x - periods[1] * halo_x)) * sin(2 * 3.14159 / L_y * (y - periods[0] * halo_y)), 0.0);
 
-            //std::complex<float> tmp = exp(std::complex<float>(0. , 2 * 3.14159 / L_x * (x - periods[1]*halo_x) + 2 * 3.14159 / L_y * (y - periods[0]*halo_y) ));
+            //std::complex<double> tmp = exp(std::complex<double>(0. , 2 * 3.14159 / L_x * (x - periods[1]*halo_x) + 2 * 3.14159 / L_y * (y - periods[0]*halo_y) ));
 
             p_real[y * dimx + x] = real(tmp);
             p_imag[y * dimx + x] = imag(tmp);
@@ -76,12 +76,12 @@ void init_state(float *p_real, float *p_imag, int dimx, int dimy, int halo_x, in
     }
 }
 
-void read_initial_state(float *p_real, float *p_imag, int dimx, int dimy, char *file_name, int halo_x, int halo_y, int *periods) {
+void read_initial_state(double *p_real, double *p_imag, int dimx, int dimy, char *file_name, int halo_x, int halo_y, int *periods) {
     std::ifstream input(file_name);
 
     int in_width = dimx - 2 * periods[1] * halo_x;
     int in_height = dimy - 2 * periods[0] * halo_y;
-    std::complex<float> tmp;
+    std::complex<double> tmp;
     for(int i = 0, idy = periods[0] * halo_y ; i < in_height; i++, idy++) {
         for(int j = 0, idx = periods[1] * halo_x ; j < in_width; j++, idx++) {
             input >> tmp;
@@ -135,14 +135,14 @@ void read_initial_state(float *p_real, float *p_imag, int dimx, int dimy, char *
 }
 
 //calculate potential part of evolution operator
-void init_pot_evolution_op(float * hamilt_pot, float * external_pot_real, float * external_pot_imag, int dimx, int dimy, double particle_mass, double time_single_it) {
-    float CONST_1 = -1. * time_single_it;
-    float CONST_2 = 2. * time_single_it / particle_mass;		//CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
+void init_pot_evolution_op(double * hamilt_pot, double * external_pot_real, double * external_pot_imag, int dimx, int dimy, double particle_mass, double time_single_it) {
+    double CONST_1 = -1. * time_single_it;
+    double CONST_2 = 2. * time_single_it / particle_mass;		//CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
 
-    std::complex<float> tmp;
+    std::complex<double> tmp;
     for(int i = 0; i < dimy; i++) {
         for(int j = 0; j < dimx; j++) {
-            tmp = exp(std::complex<float> (0., CONST_1 * hamilt_pot[i * dimx + j] + CONST_2));
+            tmp = exp(std::complex<double> (0., CONST_1 * hamilt_pot[i * dimx + j] + CONST_2));
             external_pot_real[i * dimx + j] = real(tmp);
             external_pot_imag[i * dimx + j] = imag(tmp);
         }
@@ -177,25 +177,29 @@ int main(int argc, char** argv) {
 
     //set hamiltonian variables
     const double particle_mass = 1.;
-    float *hamilt_pot = new float[matrix_width * matrix_height];
+    double *hamilt_pot = new double[matrix_width * matrix_height];
     potential_op_coord_representation(hamilt_pot, matrix_width, matrix_height, halo_x, halo_y, periods);	//set potential operator
 
     //set and calculate evolution operator variables from hamiltonian
     const double time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
-    float *external_pot_real = new float[matrix_width * matrix_height];
-    float *external_pot_imag = new float[matrix_width * matrix_height];
+    double *external_pot_real = new double[matrix_width * matrix_height];
+    double *external_pot_imag = new double[matrix_width * matrix_height];
     init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it);	//calculate potential part of evolution operator
     static const double h_a = cos(time_single_it / (2. * particle_mass));
     static const double h_b = sin(time_single_it / (2. * particle_mass));
 
     //set initial state
-    float *p_real = new float[matrix_width * matrix_height];
-    float *p_imag = new float[matrix_width * matrix_height];
+    double *p_real = new double[matrix_width * matrix_height];
+    double *p_imag = new double[matrix_width * matrix_height];
     if(file_name[0] == '\0')
         init_state(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, periods);
     else
         read_initial_state(p_real, p_imag, matrix_width, matrix_height, file_name, halo_x, halo_y, periods);
-
+	
+	MPI_Init(&argc, &argv);
+	int rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	
     //set file output directory
     std::stringstream filename;
     std::string filenames;
@@ -214,12 +218,15 @@ int main(int argc, char** argv) {
     else
         filenames = "./";
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str(), show_time_sim, imag_time);
+    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str(), show_time_sim, imag_time, 1);
 	
-	MAGIC_NUMBER th_values;
-    expect_values(dim, iterations, snapshots, hamilt_pot, particle_mass, filenames.c_str(), periods, halo_x, halo_y, th_values);
+	if(rank == 0) {
+		MAGIC_NUMBER th_values;
+		expect_values(dim, iterations, snapshots, hamilt_pot, particle_mass, filenames.c_str(), periods, halo_x, halo_y, th_values);
+	}
 	
     delete[] hamilt_pot;
 
+	MPI_Finalize();
     return 0;
 }
