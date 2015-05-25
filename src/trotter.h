@@ -1,6 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2012 Peter Wittek, 2010-2012 Carlos Bederián
+ * Copyright (C) 2012 Peter Wittek, 2010-2012 Carlos Bederián, 2015 Luca Calderaro
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 #define LEFT  2
 #define RIGHT 3
 
-void trotter(double h_a, double h_b, float * external_pot_real, float * external_pot_imag, float * p_real, float * p_imag, const int matrix_width, const int matrix_height, const int iterations, const int snapshots, const int kernel_type, int *periods, int argc, char** argv, const char *dirname, bool show_time_sim);
+void trotter(double h_a, double h_b, double * external_pot_real, double * external_pot_imag, double * p_real, double * p_imag, const int matrix_width, const int matrix_height, const int iterations, const int snapshots, const int kernel_type, int *periods, int argc, char** argv, const char *dirname, bool show_time_sim, bool imag_time, int particle_tag);
 
 class ITrotterKernel {
 public:
@@ -36,7 +36,7 @@ public:
     virtual void run_kernel() = 0;
     virtual void run_kernel_on_halo() = 0;
     virtual void wait_for_completion() = 0;
-    virtual void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const = 0;
+    virtual void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const = 0;
 
     virtual bool runs_in_place() const = 0;
     virtual std::string get_name() const = 0;

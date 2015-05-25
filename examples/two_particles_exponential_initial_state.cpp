@@ -19,8 +19,8 @@
 
 /**
  * This source provides an example of the trotter-suzuki program.
- * It calculates the time-evolution of a particle in a box, where the initial
- * state is the following:
+ * It calculates the time-evolution of two free particles in a box, where the initial
+ * state for each particle is the following:
  * 		exp(i2M_PI / L (x + y))
  */
 
@@ -42,6 +42,7 @@
 #define ITERATIONS 1000
 #define KERNEL_TYPE 0
 #define SNAPSHOTS 100
+#define PARTICLES_NUMBER 2
 
 //set external potential operator in coordinate representation
 void potential_op_coord_representation(double *hamilt_pot, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
@@ -54,20 +55,24 @@ void potential_op_coord_representation(double *hamilt_pot, int dimx, int dimy, i
 }
 
 //set initial state
-void init_state(double *p_real, double *p_imag, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
+void init_state(double *p_real, double *p_imag, int dimx, int dimy, int halo_x, int halo_y, int *periods, int Particles_number) {
     double s = 64.0; // FIXME: y esto?
     double L_x = dimx - periods[1] * 2 * halo_x;
     double L_y = dimy - periods[0] * 2 * halo_y;
     double n_x = 1., n_y = 1.;
 
-    for (int y = 1; y <= dimy; y++) {
-        for (int x = 1; x <= dimx; x++) {
-            std::complex<double> tmp = exp(std::complex<double>(0. , 2 * 3.14159 / L_x * (x - periods[1] * halo_x) + 2 * 3.14159 / L_y * (y - periods[0] * halo_y) ));
+    int offset = 0;
+    for (int i = 0; i < Particles_number; i++) {
+		for (int y = 1; y <= dimy; y++) {
+			for (int x = 1; x <= dimx; x++) {
+				std::complex<double> tmp = exp(std::complex<double>(0. , 2 * 3.14159 / L_x * (x - periods[1] * halo_x) + 2 * 3.14159 / L_y * (y - periods[0] * halo_y) ));
 
-            p_real[y * dimx + x] = real(tmp);
-            p_imag[y * dimx + x] = imag(tmp);
-        }
-    }
+				p_real[y * dimx + x + offset] = real(tmp);
+				p_imag[y * dimx + x + offset] = imag(tmp);
+			}
+		}
+		offset += dimx * dimy;
+	}
 }
 
 //calculate potential part of evolution operator
@@ -86,7 +91,7 @@ void init_pot_evolution_op(double * hamilt_pot, double * external_pot_real, doub
 }
 
 int main(int argc, char** argv) {
-    int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, kernel_type = KERNEL_TYPE;
+    int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, kernel_type = KERNEL_TYPE, Particles_number = PARTICLES_NUMBER;
     int periods[2] = {1, 1};
     bool show_time_sim = true;
     bool imag_time = false;
@@ -110,18 +115,18 @@ int main(int argc, char** argv) {
     double h_b = sin(time_single_it / (2. * particle_mass));
 
     //set initial state
-    double *p_real = new double[matrix_width * matrix_height];
-    double *p_imag = new double[matrix_width * matrix_height];
-    init_state(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, periods);
+    double *p_real = new double[Particles_number * matrix_width * matrix_height];
+    double *p_imag = new double[Particles_number * matrix_width * matrix_height];
+    init_state(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, periods, Particles_number);
 
     MPI_Init(&argc, &argv);
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     if(rank == 0) {
         std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
-        std::cout << "* It calculates the time-evolution of a particle in a box\n";
+        std::cout << "* It calculates the time-evolution of two free particles in a box\n";
         std::cout << "* with periodic boundary conditions, where the initial\n";
-        std::cout << "* state is the following:\n";
+        std::cout << "* state for each particle is the following:\n";
         std::cout << "* \texp(i2M_PI / L (x + y))\n\n";
     }
 
@@ -143,8 +148,9 @@ int main(int argc, char** argv) {
     else
         dirnames = ".";
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, dirnames.c_str(), show_time_sim, imag_time, 1);
-
+    for(int i = 0; i < Particles_number; i++)
+        trotter(h_a, h_b, external_pot_real, external_pot_imag, &p_real[i * matrix_width * matrix_height], &p_imag[i * matrix_width * matrix_height], matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, dirnames.c_str(), show_time_sim, imag_time, i + 1);
+    
     MPI_Finalize();
     return 0;
 }

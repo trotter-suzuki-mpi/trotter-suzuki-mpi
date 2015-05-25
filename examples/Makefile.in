@@ -41,8 +41,10 @@ endif
 BOX_OBJS_1 = $(LIBOBJS) gaussian-like_initial_state.o
 BOX_OBJS_2 = $(LIBOBJS) sinusoid_initial_state.o
 BOX_OBJS_3 = $(LIBOBJS) exponential_initial_state.o
+IMAG_EVO = $(LIBOBJS) imag_evolution.o
+2_PARTICLES_BOX = $(LIBOBJS) two_particles_exponential_initial_state.o
 
-all example: box1 box2 box3
+all example: box1 box2 box3 ievo twop
 
 box1: $(BOX_OBJS_1)
 	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o gaussian-like_initial_state $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} 
@@ -52,6 +54,12 @@ box2: $(BOX_OBJS_2)
 
 box3: $(BOX_OBJS_3)
 	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o exponential_initial_state $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} 
+
+ievo: $(IMAG_EVO)
+	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o imag_evolution $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} 
+
+twop: $(2_PARTICLES_BOX)
+	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o two_particles_exponential_initial_state $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} 
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -I$(srcdir) -o $@ -c $^ 
@@ -63,4 +71,4 @@ $(srcdir)/%.cu.co: $(srcdir)/%.cu
 	$(MAKE) -C $(srcdir) $@
 
 clean:
-	-rm -f gaussian-like_initial_state sinusoid_initial_state exponential_initial_state $(BOX_OBJS_1) $(BOX_OBJS_2) $(BOX_OBJS_3) 1>/dev/null
+	-rm -f gaussian-like_initial_state sinusoid_initial_state exponential_initial_state imag_evolution two_particles_exponential_initial_state $(BOX_OBJS_1) $(BOX_OBJS_2) $(BOX_OBJS_3) $(IMAG_EVO) $(2_PARTICLES_BOX) 1>/dev/null

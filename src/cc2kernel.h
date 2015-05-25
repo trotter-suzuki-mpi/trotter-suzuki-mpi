@@ -34,7 +34,7 @@
 // thread block / shared memory block width
 #define BLOCK_X 32
 // shared memory block height
-#define BLOCK_Y  (sizeof(float) == 8 ? 32 : 96)
+#define BLOCK_Y  (sizeof(double) == 8 ? 32 : 96)
 
 #define STRIDE_Y 16
 
@@ -55,17 +55,17 @@
   }
 
 void setDevice(int commRank, MPI_Comm cartcomm);
-void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, float a, float b, const float * __restrict__ pdev_real, const float * __restrict__ pdev_imag, float * __restrict__ pdev2_real, float * __restrict__ pdev2_imag, int inner, int horizontal, int vertical);
+void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, double a, double b, const double * __restrict__ pdev_real, const double * __restrict__ pdev_imag, double * __restrict__ pdev2_real, double * __restrict__ pdev2_imag, int inner, int horizontal, int vertical);
 
 class CC2Kernel: public ITrotterKernel {
 public:
-    CC2Kernel(float *p_real, float *p_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, MPI_Comm cartcomm);
+    CC2Kernel(double *p_real, double *p_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, MPI_Comm cartcomm);
     ~CC2Kernel();
     void run_kernel();
     void run_kernel_on_halo();
     void wait_for_completion();
     void copy_results();
-    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const;
+    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const;
 
     bool runs_in_place() const {
         return false;
@@ -82,34 +82,34 @@ private:
     dim3 threadsPerBlock;
     cudaStream_t stream1, stream2;
 
-    float *p_real;
-    float *p_imag;
-    float *pdev_real[2];
-    float *pdev_imag[2];
-    float a;
-    float b;
+    double *p_real;
+    double *p_imag;
+    double *pdev_real[2];
+    double *pdev_imag[2];
+    double a;
+    double b;
     int sense;
     size_t halo_x, halo_y, tile_width, tile_height;
 
     MPI_Comm cartcomm;
     int neighbors[4];
     int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
-    float *left_real_receive;
-    float *left_real_send;
-    float *right_real_receive;
-    float *right_real_send;
-    float *left_imag_receive;
-    float *left_imag_send;
-    float *right_imag_receive;
-    float *right_imag_send;
-    float *bottom_real_receive;
-    float *bottom_real_send;
-    float *top_real_receive;
-    float *top_real_send;
-    float *bottom_imag_receive;
-    float *bottom_imag_send;
-    float *top_imag_receive;
-    float *top_imag_send;
+    double *left_real_receive;
+    double *left_real_send;
+    double *right_real_receive;
+    double *right_real_send;
+    double *left_imag_receive;
+    double *left_imag_send;
+    double *right_imag_receive;
+    double *right_imag_send;
+    double *bottom_real_receive;
+    double *bottom_real_send;
+    double *top_real_receive;
+    double *top_real_send;
+    double *bottom_imag_receive;
+    double *bottom_imag_send;
+    double *top_imag_receive;
+    double *top_imag_send;
 
 };
 #endif
