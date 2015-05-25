@@ -41,6 +41,13 @@
 #define KERNEL_TYPE 0
 #define SNAPSHOTS 100
 
+struct MAGIC_NUMBER {
+	double threshold_E, threshold_P;
+    double expected_E;
+    double expected_Px;
+    double expected_Py;
+    MAGIC_NUMBER();
+};
 
 MAGIC_NUMBER::MAGIC_NUMBER() : threshold_E(3), threshold_P(2),
 							   expected_E((2. * M_PI / DIM) * (2. * M_PI / DIM)), expected_Px(0), expected_Py(0) {}
@@ -221,8 +228,23 @@ int main(int argc, char** argv) {
     trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str(), show_time_sim, imag_time, 1);
 	
 	if(rank == 0) {
-		MAGIC_NUMBER th_values;
-		expect_values(dim, iterations, snapshots, hamilt_pot, particle_mass, filenames.c_str(), periods, halo_x, halo_y, th_values);
+	MAGIC_NUMBER th_values;
+	STATISTIC sample;
+	expect_values(dim, iterations, snapshots, hamilt_pot, particle_mass, filenames.c_str(), periods, halo_x, halo_y, &sample);
+			
+	if(std::abs(sample.mean_E - th_values.expected_E) / sample.var_E < th_values.threshold_E)
+		std::cout << "Energy -> OK\tsigma: " << std::abs(sample.mean_E - th_values.expected_E) / sample.var_E << std::endl;
+        else
+          std::cout << "Energy value is not the one theoretically expected: sigma " << std::abs(sample.mean_E - th_values.expected_E) / sample.var_E << std::endl;
+    if(std::abs(sample.mean_Px - th_values.expected_Px) / sample.var_Px < th_values.threshold_P)
+        std::cout << "Momentum Px -> OK\tsigma: " << std::abs(sample.mean_Px - th_values.expected_Px) / sample.var_Px << std::endl;
+    else
+        std::cout << "Momentum Px value is not the one theoretically expected: sigma " << std::abs(sample.mean_Px - th_values.expected_Px) / sample.var_Px << std::endl;
+    if(std::abs(sample.mean_Py - th_values.expected_Py) / sample.var_Py < th_values.threshold_P)
+        std::cout << "Momentum Py -> OK\tsigma: " << std::abs(sample.mean_Py - th_values.expected_Py) / sample.var_Py << std::endl;
+    else
+        std::cout << "Momentum Py value is not the one theoretically expected: sigma " << std::abs(sample.mean_Py - th_values.expected_Py) / sample.var_Py << std::endl;
+		   
 	}
 	
     delete[] hamilt_pot;
