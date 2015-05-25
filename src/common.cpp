@@ -184,8 +184,8 @@ void get_quadrant_sample_to_buffer(const float * r00, const float * r01, const f
     assert (dest_y == y + height);
 }
 
-void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, float particle_mass,
-                   const char *dirname, int *periods, int halo_x, int halo_y, MAGIC_NUMBER th_values) {
+void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, double particle_mass,
+                   const char *dirname, int *periods, int halo_x, int halo_y, STATISTIC *sample) {
 
     if(snapshots == 0)
         return;
@@ -202,19 +202,19 @@ void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, f
         N_name[i] = N_name[i - 1] + snapshots;
     }
 
-    std::complex<float> sum_E = 0;
-    std::complex<float> sum_Px = 0, sum_Py = 0;
-    std::complex<float> sum_psi = 0;
-    float energy[N_files], momentum_x[N_files], momentum_y[N_files], norm[N_files];
+    std::complex<double> sum_E = 0;
+    std::complex<double> sum_Px = 0, sum_Py = 0;
+    std::complex<double> sum_pdi = 0;
+    double energy[N_files], momentum_x[N_files], momentum_y[N_files], norm[N_files];
     
-    //const float threshold_E = 3, threshold_P = 2;
-    const float expected_E = (2. * M_PI / dim) * (2. * M_PI / dim);
-    const float expected_Px = 0.;
-    const float expected_Py = 0.;
+    //const double threshold_E = 3, threshold_P = 2;
+    const double expected_E = (2. * M_PI / dim) * (2. * M_PI / dim);
+    const double expected_Px = 0.;
+    const double expected_Py = 0.;
 
-    std::complex<float> psi[DIM * DIM];
-    std::complex<float> cost_E = -1. / (2.*particle_mass), cost_P;
-    cost_P = std::complex<float>(0., -0.5);
+    std::complex<double> psi[DIM * DIM];
+    std::complex<double> cost_E = -1. / (2.*particle_mass), cost_P;
+    cost_P = std::complex<double>(0., -0.5);
 
     std::stringstream filename;
     std::string filenames;
@@ -242,67 +242,46 @@ void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, f
 
         for(int j = 1; j < DIM - 1; j++) {
             for(int k = 1; k < DIM - 1; k++) {
-                sum_E += conj(psi[k + j * dim]) * (cost_E * (psi[k + 1 + j * dim] + psi[k - 1 + j * dim] + psi[k + (j + 1) * dim] + psi[k + (j - 1) * dim] - psi[k + j * dim] * std::complex<float> (4., 0.)) + psi[k + j * dim] * std::complex<float> (hamilt_pot[j * dim + k], 0.)) ;
+                sum_E += conj(psi[k + j * dim]) * (cost_E * (psi[k + 1 + j * dim] + psi[k - 1 + j * dim] + psi[k + (j + 1) * dim] + psi[k + (j - 1) * dim] - psi[k + j * dim] * std::complex<double> (4., 0.)) + psi[k + j * dim] * std::complex<double> (hamilt_pot[j * dim + k], 0.)) ;
                 sum_Px += conj(psi[k + j * dim]) * (psi[k + 1 + j * dim] - psi[k - 1 + j * dim]);
                 sum_Py += conj(psi[k + j * dim]) * (psi[k + (j + 1) * dim] - psi[k + (j - 1) * dim]);
-                sum_psi += conj(psi[k + j * dim]) * psi[k + j * dim];
+                sum_pdi += conj(psi[k + j * dim]) * psi[k + j * dim];
             }
         }
 
-        out << N_name[i] << "\t" << real(sum_E / sum_psi) << "\t" << real(cost_P * sum_Px / sum_psi) << "\t" << real(cost_P * sum_Py / sum_psi) << "\t"
-            << real(cost_P * sum_Px / sum_psi)*real(cost_P * sum_Px / sum_psi) + real(cost_P * sum_Py / sum_psi)*real(cost_P * sum_Py / sum_psi) << "\t" << real(sum_psi) << std::endl;
+        out << N_name[i] << "\t" << real(sum_E / sum_pdi) << "\t" << real(cost_P * sum_Px / sum_pdi) << "\t" << real(cost_P * sum_Py / sum_pdi) << "\t"
+            << real(cost_P * sum_Px / sum_pdi)*real(cost_P * sum_Px / sum_pdi) + real(cost_P * sum_Py / sum_pdi)*real(cost_P * sum_Py / sum_pdi) << "\t" << real(sum_pdi) << std::endl;
 
-        energy[i] = real(sum_E / sum_psi);
-        momentum_x[i] = real(cost_P * sum_Px / sum_psi);
-        momentum_y[i] = real(cost_P * sum_Py / sum_psi);
-        norm[i] = real(cost_P * sum_Px / sum_psi) * real(cost_P * sum_Px / sum_psi) + real(cost_P * sum_Py / sum_psi) * real(cost_P * sum_Py / sum_psi);
+        energy[i] = real(sum_E / sum_pdi);
+        momentum_x[i] = real(cost_P * sum_Px / sum_pdi);
+        momentum_y[i] = real(cost_P * sum_Py / sum_pdi);
+        norm[i] = real(cost_P * sum_Px / sum_pdi) * real(cost_P * sum_Px / sum_pdi) + real(cost_P * sum_Py / sum_pdi) * real(cost_P * sum_Py / sum_pdi);
 
         sum_E = 0;
         sum_Px = 0;
         sum_Py = 0;
-        sum_psi = 0;
+        sum_pdi = 0;
     }
 
     //calculate sample mean and sample variance
-    float var_E = 0, var_Px = 0, var_Py = 0;
-    float mean_E = 0, mean_Px = 0, mean_Py = 0;
+    for(int i = 0; i < N_files; i++) {
+        sample->mean_E += energy[i];
+        sample->mean_Px += momentum_x[i];
+        sample->mean_Py += momentum_y[i];
+    }
+    sample->mean_E /= N_files;
+    sample->mean_Px /= N_files;
+    sample->mean_Py /= N_files;
 
     for(int i = 0; i < N_files; i++) {
-        mean_E += energy[i];
-        mean_Px += momentum_x[i];
-        mean_Py += momentum_y[i];
+        sample->var_E += (energy[i] - sample->mean_E) * (energy[i] - sample->mean_E);
+        sample->var_Px += (momentum_x[i] - sample->mean_Px) * (momentum_x[i] - sample->mean_Px);
+        sample->var_Py += (momentum_y[i] - sample->mean_Py) * (momentum_y[i] - sample->mean_Py);
     }
-    mean_E /= N_files;
-    mean_Px /= N_files;
-    mean_Py /= N_files;
-
-    for(int i = 0; i < N_files; i++) {
-        var_E += (energy[i] - mean_E) * (energy[i] - mean_E);
-        var_Px += (momentum_x[i] - mean_Px) * (momentum_x[i] - mean_Px);
-        var_Py += (momentum_y[i] - mean_Py) * (momentum_y[i] - mean_Py);
-    }
-    var_E /= N_files - 1;
-    var_E = sqrt(var_E);
-    var_Px /= N_files - 1;
-    var_Px = sqrt(var_Px);
-    var_Py /= N_files - 1;
-    var_Py = sqrt(var_Py);
-
-    //std::cout << "Sample mean Energy: " << mean_E << "  Sample variance Energy: " << var_E << std::endl;
-    //std::cout << "Sample mean Momentum Px: " << mean_Px << "  Sample variance Momentum Px: " << var_Px << std::endl;
-    //std::cout << "Sample mean Momentum Py: " << mean_Py << "  Sample variance Momentum Py: " << var_Py << std::endl;
-    
-    if(std::abs(mean_E - th_values.expected_E) / var_E < th_values.threshold_E)
-        std::cout << "Energy -> OK\tsigma: " << std::abs(mean_E - th_values.expected_E) / var_E << std::endl;
-    else
-        std::cout << "Energy value is not the one theoretically expected: sigma " << std::abs(mean_E - th_values.expected_E) / var_E << std::endl;
-    if(std::abs(mean_Px - th_values.expected_Px) / var_Px < th_values.threshold_P)
-        std::cout << "Momentum Px -> OK\tsigma: " << std::abs(mean_Px - th_values.expected_Px) / var_Px << std::endl;
-    else
-        std::cout << "Momentum Px value is not the one theoretically expected: sigma " << std::abs(mean_Px - th_values.expected_Px) / var_Px << std::endl;
-    if(std::abs(mean_Py - th_values.expected_Py) / var_Py < th_values.threshold_P)
-        std::cout << "Momentum Py -> OK\tsigma: " << std::abs(mean_Py - th_values.expected_Py) / var_Py << std::endl;
-    else
-        std::cout << "Momentum Py value is not the one theoretically expected: sigma " << std::abs(mean_Py - th_values.expected_Py) / var_Py << std::endl;
+    sample->var_E /= N_files - 1;
+    sample->var_E = sqrt(sample->var_E);
+    sample->var_Px /= N_files - 1;
+    sample->var_Px = sqrt(sample->var_Px);
+    sample->var_Py /= N_files - 1;
+    sample->var_Py = sqrt(sample->var_Py);
 }
-
