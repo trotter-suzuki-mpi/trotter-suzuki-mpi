@@ -28,12 +28,11 @@
 #include <config.h>
 #endif
 
-struct MAGIC_NUMBER {
-	float threshold_E, threshold_P;
-    float expected_E;
-    float expected_Px;
-    float expected_Py;
-    MAGIC_NUMBER();
+struct STATISTIC {
+	double mean_E, mean_Px, mean_Py;
+	double var_E, var_Px, var_Py;
+	STATISTIC() : mean_E(0.), mean_Px(0.), mean_Py(0.),
+				  var_E(0.), var_Px(0.), var_Py(0.) {}
 };
 
 void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound);
@@ -52,6 +51,6 @@ void get_quadrant_sample_to_buffer(const float * r00, const float * r01, const f
                                    float * dest_real, float * dest_imag);
 
 void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, float particle_mass, const char *dirname,
-                   int *periods, int halo_x, int halo_y, MAGIC_NUMBER th_values);
+                   int *periods, int halo_x, int halo_y, STATISTIC *sample);
 
 #endif
