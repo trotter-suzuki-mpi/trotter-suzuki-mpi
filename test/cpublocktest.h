@@ -45,13 +45,13 @@ public:
 
 class Matrix {
 public:
-    Matrix(float *matrix_real, float *matrix_imag, int width, int height);
+    Matrix(double *matrix_real, double *matrix_imag, int width, int height);
     void show_matrix();
     bool operator ==(const Matrix &other) const;
 
 private:
-    float *m_real;
-    float *m_imag;
+    double *m_real;
+    double *m_imag;
     int m_width, m_height;
 };
 #endif

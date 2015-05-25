@@ -30,12 +30,12 @@
 
 class HybridKernel: public ITrotterKernel {
 public:
-    HybridKernel(float *p_real, float *p_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, MPI_Comm cartcomm);
+    HybridKernel(double *p_real, double *p_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, MPI_Comm cartcomm);
     ~HybridKernel();
     void run_kernel();
     void run_kernel_on_halo();
     void wait_for_completion();
-    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const;
+    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const;
     bool runs_in_place() const {
         return false;
     }
@@ -56,12 +56,12 @@ private:
     dim3 threadsPerBlock;
     cudaStream_t stream;
 
-    float *p_real[2];
-    float *p_imag[2];
-    float *pdev_real[2];
-    float *pdev_imag[2];
-    float a;
-    float b;
+    double *p_real[2];
+    double *p_imag[2];
+    double *pdev_real[2];
+    double *pdev_imag[2];
+    double a;
+    double b;
     int sense;
     size_t halo_x, halo_y, tile_width, tile_height;
     static const size_t block_width = BLOCK_WIDTH;

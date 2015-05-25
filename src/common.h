@@ -36,21 +36,21 @@ struct STATISTIC {
 };
 
 void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound);
-void print_complex_matrix(std::string filename, float * matrix_real, float * matrix_imag, size_t stride, size_t width, size_t height);
-void print_matrix(std::string filename, float * matrix, size_t stride, size_t width, size_t height);
+void print_complex_matrix(std::string filename, double * matrix_real, double * matrix_imag, size_t stride, size_t width, size_t height);
+void print_matrix(std::string filename, double * matrix, size_t stride, size_t width, size_t height);
 void memcpy2D(void * dst, size_t dstride, const void * src, size_t sstride, size_t width, size_t height);
-void get_quadrant_sample(const float * r00, const float * r01, const float * r10, const float * r11,
-                         const float * i00, const float * i01, const float * i10, const float * i11,
+void get_quadrant_sample(const double * r00, const double * r01, const double * r10, const double * r11,
+                         const double * i00, const double * i01, const double * i10, const double * i11,
                          size_t src_stride, size_t dest_stride,
                          size_t x, size_t y, size_t width, size_t height,
-                         float * dest_real, float * dest_imag);
-void get_quadrant_sample_to_buffer(const float * r00, const float * r01, const float * r10, const float * r11,
-                                   const float * i00, const float * i01, const float * i10, const float * i11,
+                         double * dest_real, double * dest_imag);
+void get_quadrant_sample_to_buffer(const double * r00, const double * r01, const double * r10, const double * r11,
+                                   const double * i00, const double * i01, const double * i10, const double * i11,
                                    size_t src_stride, size_t dest_stride,
                                    size_t x, size_t y, size_t width, size_t height,
-                                   float * dest_real, float * dest_imag);
+                                   double * dest_real, double * dest_imag);
 
-void expect_values(int dim, int iterations, int snapshots, float * hamilt_pot, float particle_mass, const char *dirname,
+void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, double particle_mass, const char *dirname,
                    int *periods, int halo_x, int halo_y, STATISTIC *sample);
 
 #endif

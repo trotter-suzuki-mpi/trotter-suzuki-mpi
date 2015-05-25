@@ -27,24 +27,24 @@
 #define BLOCK_HEIGHT 128u
 
 //Helpers
-void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, size_t height, float a, float b, float * p_real, float * p_imag);
-void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, size_t height, float a, float b, float * p_real, float * p_imag);
+void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
+void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
 
 void block_kernel_vertical_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
 void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
 
-void process_sides(size_t tile_width, size_t block_width, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, float * block_real, float * block_imag, bool imag_time);
+void process_sides(size_t tile_width, size_t block_width, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b, const double * p_real, const double * p_imag, double * next_real, double * next_imag, double * block_real, double * block_imag, bool imag_time);
 
-void process_band(size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, int inner, int sides, bool imag_time);
+void process_band(size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b, const double * p_real, const double * p_imag, double * next_real, double * next_imag, int inner, int sides, bool imag_time);
 
 class CPUBlock: public ITrotterKernel {
 public:
-    CPUBlock(float *p_real, float *p_imag, float *_external_pot_real, float *_external_pot_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods, MPI_Comm cartcomm, bool imag_time);
+    CPUBlock(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods, MPI_Comm cartcomm, bool imag_time);
     ~CPUBlock();
     void run_kernel();
     void run_kernel_on_halo();
     void wait_for_completion();
-    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const;
+    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const;
 
     bool runs_in_place() const {
         return false;
@@ -59,14 +59,14 @@ public:
 
 
 private:
-    void kernel8(const float *p_real, const float *p_imag, float * next_real, float * next_imag);
+    void kernel8(const double *p_real, const double *p_imag, double * next_real, double * next_imag);
     bool imag_time;
-    float *p_real[2];
-    float *p_imag[2];
-    float *external_pot_real;
-    float *external_pot_imag;
-    float a;
-    float b;
+    double *p_real[2];
+    double *p_imag[2];
+    double *external_pot_real;
+    double *external_pot_imag;
+    double a;
+    double b;
     int sense;
     size_t halo_x, halo_y, tile_width, tile_height;
     static const size_t block_width = BLOCK_WIDTH;

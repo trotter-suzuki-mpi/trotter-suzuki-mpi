@@ -30,33 +30,33 @@ void CPUBlockTest::tearDown() {}
 
 //cpublocksse's functions
 template <int offset_y>
-inline void update_shifty_sse(size_t stride, size_t width, size_t height, float a, float b, float * __restrict__ r1, float * __restrict__ i1, float * __restrict__ r2, float * __restrict__ i2) {
-    __m128 aq, bq;
-    aq = _mm_load1_ps(&a);
-    bq = _mm_load1_ps(&b);
+inline void update_shifty_sse(size_t stride, size_t width, size_t height, double a, double b, double * __restrict__ r1, double * __restrict__ i1, double * __restrict__ r2, double * __restrict__ i2) {
+    __m128d aq, bq;
+    aq = _mm_load1_pd(&a);
+    bq = _mm_load1_pd(&b);
     for (size_t i = 0; i < height - offset_y; i++) {
         int idx1 = i * stride;
         int idx2 = (i + offset_y) * stride;
         size_t j = 0;
-        for (; j < width - width % 4; j += 4, idx1 += 4, idx2 += 4) {
-            __m128 r1q = _mm_load_ps(&r1[idx1]);
-            __m128 i1q = _mm_load_ps(&i1[idx1]);
-            __m128 r2q = _mm_load_ps(&r2[idx2]);
-            __m128 i2q = _mm_load_ps(&i2[idx2]);
-            __m128 next_r1q = _mm_sub_ps(_mm_mul_ps(r1q, aq), _mm_mul_ps(i2q, bq));
-            __m128 next_i1q = _mm_add_ps(_mm_mul_ps(i1q, aq), _mm_mul_ps(r2q, bq));
-            __m128 next_r2q = _mm_sub_ps(_mm_mul_ps(r2q, aq), _mm_mul_ps(i1q, bq));
-            __m128 next_i2q = _mm_add_ps(_mm_mul_ps(i2q, aq), _mm_mul_ps(r1q, bq));
-            _mm_store_ps(&r1[idx1], next_r1q);
-            _mm_store_ps(&i1[idx1], next_i1q);
-            _mm_store_ps(&r2[idx2], next_r2q);
-            _mm_store_ps(&i2[idx2], next_i2q);
+        for (; j < width - width % 2; j += 2, idx1 += 2, idx2 += 2) {
+            __m128d r1q = _mm_load_pd(&r1[idx1]);
+            __m128d i1q = _mm_load_pd(&i1[idx1]);
+            __m128d r2q = _mm_load_pd(&r2[idx2]);
+            __m128d i2q = _mm_load_pd(&i2[idx2]);
+            __m128d next_r1q = _mm_sub_pd(_mm_mul_pd(r1q, aq), _mm_mul_pd(i2q, bq));
+            __m128d next_i1q = _mm_add_pd(_mm_mul_pd(i1q, aq), _mm_mul_pd(r2q, bq));
+            __m128d next_r2q = _mm_sub_pd(_mm_mul_pd(r2q, aq), _mm_mul_pd(i1q, bq));
+            __m128d next_i2q = _mm_add_pd(_mm_mul_pd(i2q, aq), _mm_mul_pd(r1q, bq));
+            _mm_store_pd(&r1[idx1], next_r1q);
+            _mm_store_pd(&i1[idx1], next_i1q);
+            _mm_store_pd(&r2[idx2], next_r2q);
+            _mm_store_pd(&i2[idx2], next_i2q);
         }
         for (; j < width; ++j, ++idx1, ++idx2) {
-            float next_r1 = a * r1[idx1] - b * i2[idx2];
-            float next_i1 = a * i1[idx1] + b * r2[idx2];
-            float next_r2 = a * r2[idx2] - b * i1[idx1];
-            float next_i2 = a * i2[idx2] + b * r1[idx1];
+            double next_r1 = a * r1[idx1] - b * i2[idx2];
+            double next_i1 = a * i1[idx1] + b * r2[idx2];
+            double next_r2 = a * r2[idx2] - b * i1[idx1];
+            double next_i2 = a * i2[idx2] + b * r1[idx1];
             r1[idx1] = next_r1;
             i1[idx1] = next_i1;
             r2[idx2] = next_r2;
@@ -66,47 +66,47 @@ inline void update_shifty_sse(size_t stride, size_t width, size_t height, float 
 }
 
 template <int offset_x>
-inline void update_shiftx_sse(size_t stride, size_t width, size_t height, float a, float b, float * __restrict__ r1, float * __restrict__ i1, float * __restrict__ r2, float * __restrict__ i2) {
-    __m128 aq, bq;
-    aq = _mm_load1_ps(&a);
-    bq = _mm_load1_ps(&b);
+inline void update_shiftx_sse(size_t stride, size_t width, size_t height, double a, double b, double * __restrict__ r1, double * __restrict__ i1, double * __restrict__ r2, double * __restrict__ i2) {
+    __m128d aq, bq;
+    aq = _mm_load1_pd(&a);
+    bq = _mm_load1_pd(&b);
     for (size_t i = 0; i < height; i++) {
         int idx1 = i * stride;
         int idx2 = i * stride + offset_x;
         size_t j = 0;
-        for (; j < width - offset_x - (width - offset_x) % 4; j += 4, idx1 += 4, idx2 += 4) {
-            __m128 r1q = _mm_load_ps(&r1[idx1]);
-            __m128 i1q = _mm_load_ps(&i1[idx1]);
-            __m128 r2q;
-            __m128 i2q;
+        for (; j < width - offset_x - (width - offset_x) % 2; j += 2, idx1 += 2, idx2 += 2) {
+            __m128d r1q = _mm_load_pd(&r1[idx1]);
+            __m128d i1q = _mm_load_pd(&i1[idx1]);
+            __m128d r2q;
+            __m128d i2q;
             if (offset_x == 0) {
-                r2q = _mm_load_ps(&r2[idx2]);
-                i2q = _mm_load_ps(&i2[idx2]);
+                r2q = _mm_load_pd(&r2[idx2]);
+                i2q = _mm_load_pd(&i2[idx2]);
             }
             else {
-                r2q = _mm_loadu_ps(&r2[idx2]);
-                i2q = _mm_loadu_ps(&i2[idx2]);
+                r2q = _mm_loadu_pd(&r2[idx2]);
+                i2q = _mm_loadu_pd(&i2[idx2]);
             }
-            __m128 next_r1q = _mm_sub_ps(_mm_mul_ps(r1q, aq), _mm_mul_ps(i2q, bq));
-            __m128 next_i1q = _mm_add_ps(_mm_mul_ps(i1q, aq), _mm_mul_ps(r2q, bq));
-            __m128 next_r2q = _mm_sub_ps(_mm_mul_ps(r2q, aq), _mm_mul_ps(i1q, bq));
-            __m128 next_i2q = _mm_add_ps(_mm_mul_ps(i2q, aq), _mm_mul_ps(r1q, bq));
-            _mm_store_ps(&r1[idx1], next_r1q);
-            _mm_store_ps(&i1[idx1], next_i1q);
+            __m128d next_r1q = _mm_sub_pd(_mm_mul_pd(r1q, aq), _mm_mul_pd(i2q, bq));
+            __m128d next_i1q = _mm_add_pd(_mm_mul_pd(i1q, aq), _mm_mul_pd(r2q, bq));
+            __m128d next_r2q = _mm_sub_pd(_mm_mul_pd(r2q, aq), _mm_mul_pd(i1q, bq));
+            __m128d next_i2q = _mm_add_pd(_mm_mul_pd(i2q, aq), _mm_mul_pd(r1q, bq));
+            _mm_store_pd(&r1[idx1], next_r1q);
+            _mm_store_pd(&i1[idx1], next_i1q);
             if (offset_x == 0) {
-                _mm_store_ps(&r2[idx2], next_r2q);
-                _mm_store_ps(&i2[idx2], next_i2q);
+                _mm_store_pd(&r2[idx2], next_r2q);
+                _mm_store_pd(&i2[idx2], next_i2q);
             }
             else {
-                _mm_storeu_ps(&r2[idx2], next_r2q);
-                _mm_storeu_ps(&i2[idx2], next_i2q);
+                _mm_storeu_pd(&r2[idx2], next_r2q);
+                _mm_storeu_pd(&i2[idx2], next_i2q);
             }
         }
         for (; j < width - offset_x; ++j, ++idx1, ++idx2) {
-            float next_r1 = a * r1[idx1] - b * i2[idx2];
-            float next_i1 = a * i1[idx1] + b * r2[idx2];
-            float next_r2 = a * r2[idx2] - b * i1[idx1];
-            float next_i2 = a * i2[idx2] + b * r1[idx1];
+            double next_r1 = a * r1[idx1] - b * i2[idx2];
+            double next_i1 = a * i1[idx1] + b * r2[idx2];
+            double next_r2 = a * r2[idx2] - b * i1[idx1];
+            double next_i2 = a * i2[idx2] + b * r1[idx1];
             r1[idx1] = next_r1;
             i1[idx1] = next_i1;
             r2[idx2] = next_r2;
@@ -120,12 +120,12 @@ void CPUBlockTest::test_block_kernel_vertical() {
     //Set Up
     int DIM = 640;
     int offset = 0;
-    float a = h_a, b = h_b;
+    double a = h_a, b = h_b;
 
-    float *block_real = new float[DIM * DIM];
-    float *block_imag = new float[DIM * DIM];
-    float *block_real_expected = new float[DIM * DIM];
-    float *block_imag_expected = new float[DIM * DIM];
+    double *block_real = new double[DIM * DIM];
+    double *block_imag = new double[DIM * DIM];
+    double *block_real_expected = new double[DIM * DIM];
+    double *block_imag_expected = new double[DIM * DIM];
 
     //initialize block_real, block_imag
     for(int i = 0; i < DIM; i++) {
@@ -164,11 +164,11 @@ void CPUBlockTest::test_block_kernel_horizontal() {
     //Set Up
     int DIM = 640;
     int offset = 0;
-    float a = h_a, b = h_b;
-    float *block_real = new float[DIM * DIM];
-    float *block_imag = new float[DIM * DIM];
-    float *block_real_expected = new float[DIM * DIM];
-    float *block_imag_expected = new float[DIM * DIM];
+    double a = h_a, b = h_b;
+    double *block_real = new double[DIM * DIM];
+    double *block_imag = new double[DIM * DIM];
+    double *block_real_expected = new double[DIM * DIM];
+    double *block_imag_expected = new double[DIM * DIM];
 
     //initialize block_real, block_imag
     for(int i = 0; i < DIM; i++) {
@@ -209,15 +209,15 @@ void CPUBlockTest::test_update_shifty_sse() {
     //Set Up
     int DIM = 640;
     int offset = 0;
-    float a = h_a, b = h_b;
-    float *block_r00 = new float[DIM * DIM];
-    float *block_i00 = new float[DIM * DIM];
-    float *block_r10 = new float[DIM * DIM];
-    float *block_i10 = new float[DIM * DIM];
-    float *block_r00_expected = new float[DIM * DIM];
-    float *block_i00_expected = new float[DIM * DIM];
-    float *block_r10_expected = new float[DIM * DIM];
-    float *block_i10_expected = new float[DIM * DIM];
+    double a = h_a, b = h_b;
+    double *block_r00 = new double[DIM * DIM];
+    double *block_i00 = new double[DIM * DIM];
+    double *block_r10 = new double[DIM * DIM];
+    double *block_i10 = new double[DIM * DIM];
+    double *block_r00_expected = new double[DIM * DIM];
+    double *block_i00_expected = new double[DIM * DIM];
+    double *block_r10_expected = new double[DIM * DIM];
+    double *block_i10_expected = new double[DIM * DIM];
 
     //initialize block_r00, block_i00, block_r10, block_i10
     for(int i = 0; i < DIM; i++) {
@@ -257,15 +257,15 @@ void CPUBlockTest::test_update_shiftx_sse() {
     //Set Up
     int DIM = 640;
     int offset = 0;
-    float a = h_a, b = h_b;
-    float *block_r00 = new float[DIM * DIM];
-    float *block_i00 = new float[DIM * DIM];
-    float *block_r10 = new float[DIM * DIM];
-    float *block_i10 = new float[DIM * DIM];
-    float *block_r00_expected = new float[DIM * DIM];
-    float *block_i00_expected = new float[DIM * DIM];
-    float *block_r10_expected = new float[DIM * DIM];
-    float *block_i10_expected = new float[DIM * DIM];
+    double a = h_a, b = h_b;
+    double *block_r00 = new double[DIM * DIM];
+    double *block_i00 = new double[DIM * DIM];
+    double *block_r10 = new double[DIM * DIM];
+    double *block_i10 = new double[DIM * DIM];
+    double *block_r00_expected = new double[DIM * DIM];
+    double *block_i00_expected = new double[DIM * DIM];
+    double *block_r10_expected = new double[DIM * DIM];
+    double *block_i10_expected = new double[DIM * DIM];
 
     //initialize block_r00, block_i00, block_r10, block_i10
     for(int i = 0; i < DIM; i++) {
@@ -303,9 +303,9 @@ void CPUBlockTest::test_update_shiftx_sse() {
 
 
 //Members of class Matrix
-Matrix::Matrix(float *matrix_real, float *matrix_imag, int width, int height) {
-    m_real = new float[width * height];
-    m_imag = new float[width * height];
+Matrix::Matrix(double *matrix_real, double *matrix_imag, int width, int height) {
+    m_real = new double[width * height];
+    m_imag = new double[width * height];
     m_width = width;
     m_height = height;
 

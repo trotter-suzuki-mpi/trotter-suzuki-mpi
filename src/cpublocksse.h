@@ -34,22 +34,22 @@
 #define BLOCK_HEIGHT 128u
 
 template <int offset_y>
-inline void update_shifty_sse(size_t stride, size_t width, size_t height, float a, float b, float * __restrict__ r1, float * __restrict__ i1, float * __restrict__ r2, float * __restrict__ i2);
+inline void update_shifty_sse(size_t stride, size_t width, size_t height, double a, double b, double * __restrict__ r1, double * __restrict__ i1, double * __restrict__ r2, double * __restrict__ i2);
 template <int offset_x>
-inline void update_shiftx_sse(size_t stride, size_t width, size_t height, float a, float b, float * __restrict__ r1, float * __restrict__ i1, float * __restrict__ r2, float * __restrict__ i2);
+inline void update_shiftx_sse(size_t stride, size_t width, size_t height, double a, double b, double * __restrict__ r1, double * __restrict__ i1, double * __restrict__ r2, double * __restrict__ i2);
 
-void process_sides_sse(size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * r00, const float * r01, const float * r10, const float * r11, const float * i00, const float * i01, const float * i10, const float * i11, float * next_r00, float * next_r01, float * next_r10, float * next_r11, float * next_i00, float * next_i01, float * next_i10, float * next_i11, float * block_r00, float * block_r01, float * block_r10, float * block_r11, float * block_i00, float * block_i01, float * block_i10, float * block_i11);
+void process_sides_sse(size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b, const double * r00, const double * r01, const double * r10, const double * r11, const double * i00, const double * i01, const double * i10, const double * i11, double * next_r00, double * next_r01, double * next_r10, double * next_r11, double * next_i00, double * next_i01, double * next_i10, double * next_i11, double * block_r00, double * block_r01, double * block_r10, double * block_r11, double * block_i00, double * block_i01, double * block_i10, double * block_i11);
 
-void process_band_sse(size_t read_y, size_t read_height, size_t write_offset, size_t write_height, size_t block_width, size_t block_height, size_t tile_width, size_t halo_x, float a, float b, const float * r00, const float * r01, const float * r10, const float * r11, const float * i00, const float * i01, const float * i10, const float * i11, float * next_r00, float * next_r01, float * next_r10, float * next_r11, float * next_i00, float * next_i01, float * next_i10, float * next_i11, int inner, int sides);
+void process_band_sse(size_t read_y, size_t read_height, size_t write_offset, size_t write_height, size_t block_width, size_t block_height, size_t tile_width, size_t halo_x, double a, double b, const double * r00, const double * r01, const double * r10, const double * r11, const double * i00, const double * i01, const double * i10, const double * i11, double * next_r00, double * next_r01, double * next_r10, double * next_r11, double * next_i00, double * next_i01, double * next_i10, double * next_i11, int inner, int sides);
 
 class CPUBlockSSEKernel: public ITrotterKernel {
 public:
-    CPUBlockSSEKernel(float *p_real, float *p_imag, float a, float b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods, MPI_Comm cartcomm);
+    CPUBlockSSEKernel(double *p_real, double *p_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods, MPI_Comm cartcomm);
     ~CPUBlockSSEKernel();
     void run_kernel();
     void run_kernel_on_halo();
     void wait_for_completion();
-    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const;
+    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const;
 
     bool runs_in_place() const {
         return false;
@@ -63,12 +63,12 @@ public:
 
 
 private:
-    float *p_real;
-    float *p_imag;
-    float *r00[2], *r01[2], *r10[2], *r11[2];
-    float *i00[2], *i01[2], *i10[2], *i11[2];
-    float a;
-    float b;
+    double *p_real;
+    double *p_imag;
+    double *r00[2], *r01[2], *r10[2], *r11[2];
+    double *i00[2], *i01[2], *i10[2], *i11[2];
+    double a;
+    double b;
     int sense;
     size_t halo_x, halo_y, tile_width, tile_height;
     // NOTE: block rows must be 16 byte aligned

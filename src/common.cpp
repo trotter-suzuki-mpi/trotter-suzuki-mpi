@@ -51,7 +51,7 @@ void calculate_borders(int coord, int dim, int * start, int *end, int *inner_sta
         *inner_end = ( *end == length ? *end : *end - halo );
 }
 
-void print_complex_matrix(std::string filename, float * matrix_real, float * matrix_imag, size_t stride, size_t width, size_t height) {
+void print_complex_matrix(std::string filename, double * matrix_real, double * matrix_imag, size_t stride, size_t width, size_t height) {
     std::ofstream out(filename.c_str(), std::ios::out | std::ios::trunc);
     for (size_t i = 0; i < height; ++i) {
         for (size_t j = 0; j < width; ++j) {
@@ -62,7 +62,7 @@ void print_complex_matrix(std::string filename, float * matrix_real, float * mat
     out.close();
 }
 
-void print_matrix(std::string filename, float * matrix, size_t stride, size_t width, size_t height) {
+void print_matrix(std::string filename, double * matrix, size_t stride, size_t width, size_t height) {
     std::ofstream out(filename.c_str(), std::ios::out | std::ios::trunc);
     for (size_t i = 0; i < height; ++i) {
         for (size_t j = 0; j < width; ++j) {
@@ -83,10 +83,10 @@ void memcpy2D(void * dst, size_t dstride, const void * src, size_t sstride, size
     }
 }
 
-void merge_line(const float * evens, const float * odds, size_t x, size_t width, float * dest) {
+void merge_line(const double * evens, const double * odds, size_t x, size_t width, double * dest) {
 
-    const float * odds_p = odds + (x / 2);
-    const float * evens_p = evens + (x / 2);
+    const double * odds_p = odds + (x / 2);
+    const double * evens_p = evens + (x / 2);
 
     size_t dest_x = x;
     if (x % 2 == 1) {
@@ -103,11 +103,11 @@ void merge_line(const float * evens, const float * odds, size_t x, size_t width,
 }
 
 
-void get_quadrant_sample(const float * r00, const float * r01, const float * r10, const float * r11,
-                         const float * i00, const float * i01, const float * i10, const float * i11,
+void get_quadrant_sample(const double * r00, const double * r01, const double * r10, const double * r11,
+                         const double * i00, const double * i01, const double * i10, const double * i11,
                          size_t src_stride, size_t dest_stride,
                          size_t x, size_t y, size_t width, size_t height,
-                         float * dest_real, float * dest_imag) {
+                         double * dest_real, double * dest_imag) {
     size_t dest_y = y;
     if (y % 2 == 1) {
         merge_line(&r10[(y / 2) * src_stride], &r11[(y / 2) * src_stride], x, width, dest_real);
@@ -129,10 +129,10 @@ void get_quadrant_sample(const float * r00, const float * r01, const float * r10
     assert (dest_y == y + height);
 }
 
-void merge_line_to_buffer(const float * evens, const float * odds, size_t x, size_t width, float * dest) {
+void merge_line_to_buffer(const double * evens, const double * odds, size_t x, size_t width, double * dest) {
 
-    const float * odds_p = odds + (x / 2);
-    const float * evens_p = evens + (x / 2);
+    const double * odds_p = odds + (x / 2);
+    const double * evens_p = evens + (x / 2);
 
     size_t dest_x = x;
     size_t buffer_x = 0;
@@ -154,11 +154,11 @@ void merge_line_to_buffer(const float * evens, const float * odds, size_t x, siz
 }
 
 
-void get_quadrant_sample_to_buffer(const float * r00, const float * r01, const float * r10, const float * r11,
-                                   const float * i00, const float * i01, const float * i10, const float * i11,
+void get_quadrant_sample_to_buffer(const double * r00, const double * r01, const double * r10, const double * r11,
+                                   const double * i00, const double * i01, const double * i10, const double * i11,
                                    size_t src_stride, size_t dest_stride,
                                    size_t x, size_t y, size_t width, size_t height,
-                                   float * dest_real, float * dest_imag) {
+                                   double * dest_real, double * dest_imag) {
     size_t dest_y = y;
     size_t buffer_y = 0;
     if (y % 2 == 1) {
@@ -228,7 +228,7 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
     for(int i = 0; i < N_files; i++) {
 
         filename.str("");
-        filename << dirname << "/" << N_name[i] << "-iter-comp.dat";
+        filename << dirname << "/" << "1-" << N_name[i] << "-iter-comp.dat";
         filenames = filename.str();
         std::ifstream in_compl(filenames.c_str());
 

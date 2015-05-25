@@ -23,7 +23,7 @@
 #include "hybrid.h"
 
 // Class methods
-HybridKernel::HybridKernel(float *_p_real, float *_p_imag, float _a, float _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, MPI_Comm _cartcomm):
+HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, MPI_Comm _cartcomm):
     threadsPerBlock(BLOCK_X, STRIDE_Y),
     a(_a),
     b(_b),
@@ -61,7 +61,7 @@ HybridKernel::HybridKernel(float *_p_real, float *_p_imag, float _a, float _b, i
     // single or double precision, further divided by fixed horizontal width.
     // Also, not the entire device memory is available for the users. 90 %
     // is an estimate.
-    size_t max_gpu_rows = 0.9 * deviceProp.totalGlobalMem / (2 * 2 * sizeof(float) * gpu_tile_width);
+    size_t max_gpu_rows = 0.9 * deviceProp.totalGlobalMem / (2 * 2 * sizeof(double) * gpu_tile_width);
     // The halos must be accounted for
     max_gpu_rows -= 2 * 2 * 2;
     int n_cpu_rows = tile_height - block_height - last_block_height + 2 * halo_y - max_gpu_rows;
@@ -81,20 +81,20 @@ HybridKernel::HybridKernel(float *_p_real, float *_p_imag, float _a, float _b, i
     printf("%d %d %d %d\n", gpu_start_x, gpu_tile_width, gpu_start_y, gpu_tile_height);
 #endif
 
-    p_real[0] = new float[tile_width * tile_height];
-    p_real[1] = new float[tile_width * tile_height];
-    p_imag[0] = new float[tile_width * tile_height];
-    p_imag[1] = new float[tile_width * tile_height];
+    p_real[0] = new double[tile_width * tile_height];
+    p_real[1] = new double[tile_width * tile_height];
+    p_imag[0] = new double[tile_width * tile_height];
+    p_imag[1] = new double[tile_width * tile_height];
 
-    memcpy(p_real[0], _p_real, tile_width * tile_height * sizeof(float));
-    memcpy(p_imag[0], _p_imag, tile_width * tile_height * sizeof(float));
+    memcpy(p_real[0], _p_real, tile_width * tile_height * sizeof(double));
+    memcpy(p_imag[0], _p_imag, tile_width * tile_height * sizeof(double));
 
-    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[0]), gpu_tile_width * gpu_tile_height * sizeof(float)));
-    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[1]), gpu_tile_width * gpu_tile_height * sizeof(float)));
-    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[0]), gpu_tile_width * gpu_tile_height * sizeof(float)));
-    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[1]), gpu_tile_width * gpu_tile_height * sizeof(float)));
-    CUDA_SAFE_CALL(cudaMemcpy2D(pdev_real[0], gpu_tile_width * sizeof(float), &(p_real[0][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(float), gpu_tile_width * sizeof(float), gpu_tile_height, cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy2D(pdev_imag[0], gpu_tile_width * sizeof(float), &(p_imag[0][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(float), gpu_tile_width * sizeof(float), gpu_tile_height, cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[0]), gpu_tile_width * gpu_tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[1]), gpu_tile_width * gpu_tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[0]), gpu_tile_width * gpu_tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[1]), gpu_tile_width * gpu_tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMemcpy2D(pdev_real[0], gpu_tile_width * sizeof(double), &(p_real[0][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy2D(pdev_imag[0], gpu_tile_width * sizeof(double), &(p_imag[0][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyHostToDevice));
     cudaStreamCreate(&stream);
 
     // Halo exchange uses wave pattern to communicate
@@ -103,13 +103,13 @@ HybridKernel::HybridKernel(float *_p_real, float *_p_imag, float _a, float _b, i
     int count = inner_end_y - inner_start_y;	// The number of rows in the halo submatrix
     int block_length = halo_x;	// The number of columns in the halo submatrix
     int stride = tile_width;	// The combined width of the matrix with the halo
-    MPI_Type_vector (count, block_length, stride, MPI_FLOAT, &verticalBorder);
+    MPI_Type_vector (count, block_length, stride, MPI_DOUBLE, &verticalBorder);
     MPI_Type_commit (&verticalBorder);
 
     count = halo_y;	// The vertical halo in rows
     block_length = tile_width;	// The number of columns of the matrix
     stride = tile_width;	// The combined width of the matrix with the halo
-    MPI_Type_vector (count, block_length, stride, MPI_FLOAT, &horizontalBorder);
+    MPI_Type_vector (count, block_length, stride, MPI_DOUBLE, &horizontalBorder);
     MPI_Type_commit (&horizontalBorder);
 
 }
@@ -227,18 +227,18 @@ void HybridKernel::wait_for_completion() {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
 }
 
-void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const {
+void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const {
     if ( (x != 0) || (y != 0) || (width != tile_width) || (height != tile_height)) {
         printf("Only full tile samples are implemented!\n");
         return;
     }
-    memcpy2D(dest_real, dest_stride * sizeof(float), &(p_real[sense][y * tile_width + x]), tile_width * sizeof(float), width * sizeof(float), height);
-    memcpy2D(dest_imag, dest_stride * sizeof(float), &(p_imag[sense][y * tile_width + x]), tile_width * sizeof(float), width * sizeof(float), height);
+    memcpy2D(dest_real, dest_stride * sizeof(double), &(p_real[sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
+    memcpy2D(dest_imag, dest_stride * sizeof(double), &(p_imag[sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
 
     // Inner part
 
-    CUDA_SAFE_CALL(cudaMemcpy2D(&(dest_real[(gpu_start_y + halo_y) * tile_width + gpu_start_x + halo_x]), dest_stride * sizeof(float), &(pdev_real[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(float), (gpu_tile_width - 2 * halo_x) * sizeof(float), gpu_tile_height - 2 * halo_y, cudaMemcpyDeviceToHost));
-    CUDA_SAFE_CALL(cudaMemcpy2D(&(dest_imag[(gpu_start_y + halo_y) * tile_width + gpu_start_x + halo_x]), dest_stride * sizeof(float), &(pdev_imag[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(float), (gpu_tile_width - 2 * halo_x) * sizeof(float), gpu_tile_height - 2 * halo_y, cudaMemcpyDeviceToHost));
+    CUDA_SAFE_CALL(cudaMemcpy2D(&(dest_real[(gpu_start_y + halo_y) * tile_width + gpu_start_x + halo_x]), dest_stride * sizeof(double), &(pdev_real[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), (gpu_tile_width - 2 * halo_x) * sizeof(double), gpu_tile_height - 2 * halo_y, cudaMemcpyDeviceToHost));
+    CUDA_SAFE_CALL(cudaMemcpy2D(&(dest_imag[(gpu_start_y + halo_y) * tile_width + gpu_start_x + halo_x]), dest_stride * sizeof(double), &(pdev_imag[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), (gpu_tile_width - 2 * halo_x) * sizeof(double), gpu_tile_height - 2 * halo_y, cudaMemcpyDeviceToHost));
 }
 
 
@@ -288,14 +288,14 @@ void HybridKernel::finish_halo_exchange() {
     // Left
     size_t offset_x = gpu_start_x; // block_width-2*halo_x;
     size_t offset_y = gpu_start_y + halo_y; // block_height-halo_y;
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][halo_y * gpu_tile_width]), gpu_tile_width * sizeof(float), &(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream));
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][halo_y * gpu_tile_width]), gpu_tile_width * sizeof(float), &(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][halo_y * gpu_tile_width]), gpu_tile_width * sizeof(double), &(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][halo_y * gpu_tile_width]), gpu_tile_width * sizeof(double), &(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream));
 
     // Right
     offset_x = gpu_start_x + gpu_tile_width - halo_x; // tile_width-last_block_width+halo_x;
     offset_y = gpu_start_y + halo_y; // block_height-halo_y;
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][halo_y * gpu_tile_width + gpu_tile_width - halo_x]), gpu_tile_width * sizeof(float), &(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream));
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][halo_y * gpu_tile_width + gpu_tile_width - halo_x]), gpu_tile_width * sizeof(float), &(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][halo_y * gpu_tile_width + gpu_tile_width - halo_x]), gpu_tile_width * sizeof(double), &(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][halo_y * gpu_tile_width + gpu_tile_width - halo_x]), gpu_tile_width * sizeof(double), &(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream));
 
 
     // Horizontal
@@ -305,15 +305,15 @@ void HybridKernel::finish_halo_exchange() {
     // Top
     offset_x = gpu_start_x; //block_width-2*halo_x;
     offset_y = gpu_start_y; //block_height-2*halo_y;
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][0]), gpu_tile_width * sizeof(float), &(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream));
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][0]), gpu_tile_width * sizeof(float), &(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][0]), gpu_tile_width * sizeof(double), &(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][0]), gpu_tile_width * sizeof(double), &(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream));
 
 
     // Bottom
     offset_x = gpu_start_x; // block_width-2*halo_x;
     offset_y = gpu_start_y + gpu_tile_height - halo_y; //tile_height-last_block_height+halo_y;
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][(gpu_tile_height - halo_y)*gpu_tile_width]), gpu_tile_width * sizeof(float), &(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream));
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][(gpu_tile_height - halo_y)*gpu_tile_width]), gpu_tile_width * sizeof(float), &(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice, stream));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][(gpu_tile_height - halo_y)*gpu_tile_width]), gpu_tile_width * sizeof(double), &(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][(gpu_tile_height - halo_y)*gpu_tile_width]), gpu_tile_width * sizeof(double), &(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream));
 
     // Copy the internal halos to the CPU memory
 
@@ -324,14 +324,14 @@ void HybridKernel::finish_halo_exchange() {
     // Left
     offset_x = gpu_start_x + halo_x; //block_width-halo_x;
     offset_y = gpu_start_y + 2 * halo_y; //block_height;
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(float), &(pdev_real[sense][(2 * halo_y)*gpu_tile_width + halo_x]), gpu_tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyDeviceToHost, stream));
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(float), &(pdev_imag[sense][(2 * halo_y)*gpu_tile_width + halo_x]), gpu_tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyDeviceToHost, stream));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), &(pdev_real[sense][(2 * halo_y)*gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), &(pdev_imag[sense][(2 * halo_y)*gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream));
 
     // Right
     offset_x = gpu_start_x + gpu_tile_width - 2 * halo_x; //tile_width-last_block_width;
     offset_y = gpu_start_y + 2 * halo_y; //block_height;
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(float), &(pdev_real[sense][(2 * halo_y)*gpu_tile_width + gpu_tile_width - 2 * halo_x]), gpu_tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyDeviceToHost, stream));
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(float), &(pdev_imag[sense][(2 * halo_y)*gpu_tile_width + gpu_tile_width - 2 * halo_x]), gpu_tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyDeviceToHost, stream));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), &(pdev_real[sense][(2 * halo_y)*gpu_tile_width + gpu_tile_width - 2 * halo_x]), gpu_tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), &(pdev_imag[sense][(2 * halo_y)*gpu_tile_width + gpu_tile_width - 2 * halo_x]), gpu_tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream));
 
     // Horizontal
     height = halo_y;
@@ -340,14 +340,14 @@ void HybridKernel::finish_halo_exchange() {
     // Top
     offset_x = gpu_start_x + halo_x; // block_width-halo_x;
     offset_y = gpu_start_y + halo_y; // block_height-halo_y;
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(float), &(pdev_real[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyDeviceToHost, stream));
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(float), &(pdev_imag[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyDeviceToHost, stream));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), &(pdev_real[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), &(pdev_imag[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream));
 
     // Bottom
     offset_x = gpu_start_x + halo_x; // block_width-halo_x;
     offset_y = gpu_start_y + gpu_tile_height - 2 * halo_y; //tile_height-last_block_height;
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(float), &(pdev_real[sense][(gpu_tile_height - 2 * halo_y)*gpu_tile_width + halo_x]), gpu_tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyDeviceToHost, stream));
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(float), &(pdev_imag[sense][(gpu_tile_height - 2 * halo_y)*gpu_tile_width + halo_x]), gpu_tile_width * sizeof(float), width * sizeof(float), height, cudaMemcpyDeviceToHost, stream));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), &(pdev_real[sense][(gpu_tile_height - 2 * halo_y)*gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), &(pdev_imag[sense][(gpu_tile_height - 2 * halo_y)*gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream));
 
     MPI_Waitall(8, req, statuses);
 }
