@@ -63,7 +63,7 @@ void init_state(double *p_real, double *p_imag, int dimx, int dimy, int halo_x, 
     for (int y = 1; y <= dimy; y++) {
         for (int x = 1; x <= dimx; x++) {
             std::complex<double> tmp = exp(std::complex<double>(0. , 2. * 3.14159 / L_x * (x - periods[1] * halo_x))) +
-									  exp(std::complex<double>(0. , 10. * 2. * 3.14159 / L_x * (x - periods[1] * halo_x)));
+                                       exp(std::complex<double>(0. , 10. * 2. * 3.14159 / L_x * (x - periods[1] * halo_x)));
 
             p_real[y * dimx + x] = real(tmp);
             p_imag[y * dimx + x] = imag(tmp);
@@ -113,20 +113,20 @@ int main(int argc, char** argv) {
     double *p_real = new double[matrix_width * matrix_height];
     double *p_imag = new double[matrix_width * matrix_height];
     init_state(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, periods);
-	
-	MPI_Init(&argc, &argv);
-	int rank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	if(rank == 0) {
-		std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
-		std::cout << "* It calculates the imaginary time-evolution of a free particle in a box\n";
-		std::cout << "* with periodic boundary conditions, where the initial\n";
-		std::cout << "* state is the following:\n";
-		std::cout << "* \texp(i2M_PI / L * x) + exp(i20M_PI / L * x)\n\n";
-		std::cout << "* The state will reach the eigenfunction of the Hamiltonian with the lowest\n";
-		std::cout << "* eigenvalue:   exp(i2M_PI / L * x)\n\n";
-	}
-	
+
+    MPI_Init(&argc, &argv);
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if(rank == 0) {
+        std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
+        std::cout << "* It calculates the imaginary time-evolution of a free particle in a box\n";
+        std::cout << "* with periodic boundary conditions, where the initial\n";
+        std::cout << "* state is the following:\n";
+        std::cout << "* \texp(i2M_PI / L * x) + exp(i20M_PI / L * x)\n\n";
+        std::cout << "* The state will reach the eigenfunction of the Hamiltonian with the lowest\n";
+        std::cout << "* eigenvalue:   exp(i2M_PI / L * x)\n\n";
+    }
+
     //set file output directory
     std::stringstream dirname;
     std::string dirnames;
@@ -147,6 +147,6 @@ int main(int argc, char** argv) {
 
     trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, dirnames.c_str(), show_time_sim, true, 1);
 
-	MPI_Finalize();
+    MPI_Finalize();
     return 0;
 }

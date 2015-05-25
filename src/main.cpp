@@ -53,10 +53,10 @@ void init_pot_evolution_op(double * hamilt_pot, double * external_pot_real, doub
     std::complex<double> tmp;
     for(int i = 0; i < dimy; i++) {
         for(int j = 0; j < dimx; j++) {
-			if(imag_time)
-				tmp = exp(std::complex<double> (CONST_1 * hamilt_pot[i * dimx + j] + CONST_2, 0.));
-			else
-				tmp = exp(std::complex<double> (0., CONST_1 * hamilt_pot[i * dimx + j] + CONST_2));
+            if(imag_time)
+                tmp = exp(std::complex<double> (CONST_1 * hamilt_pot[i * dimx + j] + CONST_2, 0.));
+            else
+                tmp = exp(std::complex<double> (0., CONST_1 * hamilt_pot[i * dimx + j] + CONST_2));
             external_pot_real[i * dimx + j] = real(tmp);
             external_pot_imag[i * dimx + j] = imag(tmp);
         }
@@ -120,56 +120,56 @@ void read_initial_state(double *p_real, double *p_imag, int dimx, int dimy, char
     int in_height = dimy - 2 * periods[0] * halo_y;
     std::complex<double> tmp;
     for(int offset = 0; offset < Particles_number * dimx * dimy; offset += dimx * dimy) {
-		for(int i = 0, idy = periods[0] * halo_y ; i < in_height; i++, idy++) {
-			for(int j = 0, idx = periods[1] * halo_x ; j < in_width; j++, idx++) {
-				input >> tmp;
-				p_real[idy * dimx + idx + offset] = real(tmp);
-				p_imag[idy * dimx + idx + offset] = imag(tmp);
+        for(int i = 0, idy = periods[0] * halo_y ; i < in_height; i++, idy++) {
+            for(int j = 0, idx = periods[1] * halo_x ; j < in_width; j++, idx++) {
+                input >> tmp;
+                p_real[idy * dimx + idx + offset] = real(tmp);
+                p_imag[idy * dimx + idx + offset] = imag(tmp);
 
-				//Down band
-				if(i < halo_y && periods[0] != 0) {
-					p_real[(idy + in_height) * dimx + idx + offset] = real(tmp);
-					p_imag[(idy + in_height) * dimx + idx + offset] = imag(tmp);
-					//Down right corner
-					if(j < halo_x && periods[1] != 0) {
-						p_real[(idy + in_height) * dimx + idx + in_width + offset] = real(tmp);
-						p_imag[(idy + in_height) * dimx + idx + in_width + offset] = imag(tmp);
-					}
-					//Down left corner
-					if(j >= in_width - halo_x && periods[1] != 0) {
-						p_real[(idy + in_height) * dimx + idx - in_width + offset] = real(tmp);
-						p_imag[(idy + in_height) * dimx + idx - in_width + offset] = imag(tmp);
-					}
-				}
+                //Down band
+                if(i < halo_y && periods[0] != 0) {
+                    p_real[(idy + in_height) * dimx + idx + offset] = real(tmp);
+                    p_imag[(idy + in_height) * dimx + idx + offset] = imag(tmp);
+                    //Down right corner
+                    if(j < halo_x && periods[1] != 0) {
+                        p_real[(idy + in_height) * dimx + idx + in_width + offset] = real(tmp);
+                        p_imag[(idy + in_height) * dimx + idx + in_width + offset] = imag(tmp);
+                    }
+                    //Down left corner
+                    if(j >= in_width - halo_x && periods[1] != 0) {
+                        p_real[(idy + in_height) * dimx + idx - in_width + offset] = real(tmp);
+                        p_imag[(idy + in_height) * dimx + idx - in_width + offset] = imag(tmp);
+                    }
+                }
 
-				//Upper band
-				if(i >= in_height - halo_y && periods[0] != 0) {
-					p_real[(idy - in_height) * dimx + idx + offset] = real(tmp);
-					p_imag[(idy - in_height) * dimx + idx + offset] = imag(tmp);
-					//Up right corner
-					if(j < halo_x && periods[1] != 0) {
-						p_real[(idy - in_height) * dimx + idx + in_width + offset] = real(tmp);
-						p_imag[(idy - in_height) * dimx + idx + in_width + offset] = imag(tmp);
-					}
-					//Up left corner
-					if(j >= in_width - halo_x && periods[1] != 0) {
-						p_real[(idy - in_height) * dimx + idx - in_width + offset] = real(tmp);
-						p_imag[(idy - in_height) * dimx + idx - in_width + offset] = imag(tmp);
-					}
-				}
-				//Right band
-				if(j < halo_x && periods[1] != 0) {
-					p_real[idy * dimx + idx + in_width + offset] = real(tmp);
-					p_imag[idy * dimx + idx + in_width + offset] = imag(tmp);
-				}
-				//Left band
-				if(j >= in_width - halo_x && periods[1] != 0) {
-					p_real[idy * dimx + idx - in_width + offset] = real(tmp);
-					p_imag[idy * dimx + idx - in_width + offset] = imag(tmp);
-				}
-			}
-		}
-	}
+                //Upper band
+                if(i >= in_height - halo_y && periods[0] != 0) {
+                    p_real[(idy - in_height) * dimx + idx + offset] = real(tmp);
+                    p_imag[(idy - in_height) * dimx + idx + offset] = imag(tmp);
+                    //Up right corner
+                    if(j < halo_x && periods[1] != 0) {
+                        p_real[(idy - in_height) * dimx + idx + in_width + offset] = real(tmp);
+                        p_imag[(idy - in_height) * dimx + idx + in_width + offset] = imag(tmp);
+                    }
+                    //Up left corner
+                    if(j >= in_width - halo_x && periods[1] != 0) {
+                        p_real[(idy - in_height) * dimx + idx - in_width + offset] = real(tmp);
+                        p_imag[(idy - in_height) * dimx + idx - in_width + offset] = imag(tmp);
+                    }
+                }
+                //Right band
+                if(j < halo_x && periods[1] != 0) {
+                    p_real[idy * dimx + idx + in_width + offset] = real(tmp);
+                    p_imag[idy * dimx + idx + in_width + offset] = imag(tmp);
+                }
+                //Left band
+                if(j >= in_width - halo_x && periods[1] != 0) {
+                    p_real[idy * dimx + idx - in_width + offset] = real(tmp);
+                    p_imag[idy * dimx + idx - in_width + offset] = imag(tmp);
+                }
+            }
+        }
+    }
     input.close();
 }
 
@@ -208,8 +208,8 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
     int kinetic_par = 0;
     while ((c = getopt (argc, argv, "gd:hi:k:s:n:a:b:p:N:")) != -1) {
         switch (c) {
-		case 'g':
-		    *imag_time = true;
+        case 'g':
+            *imag_time = true;
             break;
         case 'd':
             *dim = atoi(optarg);
@@ -311,8 +311,8 @@ int main(int argc, char** argv) {
     char pot_name[100];
     for(int i = 0; i < 100; i++)
         pot_name[i] = '\0';
-	
-	MPI_Init(&argc, &argv);
+
+    MPI_Init(&argc, &argv);
     process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, file_name, &h_a, &h_b, pot_name, &imag_time, &Particles_number);
 
     int halo_x = (kernel_type == 2 ? 3 : 4);
@@ -330,32 +330,32 @@ int main(int argc, char** argv) {
 
     //set and calculate evolution operator variables from hamiltonian
     double *external_pot_real = new double[matrix_width * matrix_height];
-	double *external_pot_imag = new double[matrix_width * matrix_height];
+    double *external_pot_imag = new double[matrix_width * matrix_height];
     if(imag_time) {
-		const double time_single_it = 8 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
-		init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it, true);	//calculate potential part of evolution operator
-		if(h_a == 0. && h_b == 0.) {
-			h_a = cosh(time_single_it / (2. * particle_mass));
-			h_b = sinh(time_single_it / (2. * particle_mass));
-		}
-	}
-	else {
-		const double time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
-		init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it, false);	//calculate potential part of evolution operator
-		if(h_a == 0. && h_b == 0.) {
-			h_a = cos(time_single_it / (2. * particle_mass));
-			h_b = sin(time_single_it / (2. * particle_mass));
-		}
-	}
+        const double time_single_it = 8 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
+        init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it, true);	//calculate potential part of evolution operator
+        if(h_a == 0. && h_b == 0.) {
+            h_a = cosh(time_single_it / (2. * particle_mass));
+            h_b = sinh(time_single_it / (2. * particle_mass));
+        }
+    }
+    else {
+        const double time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
+        init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it, false);	//calculate potential part of evolution operator
+        if(h_a == 0. && h_b == 0.) {
+            h_a = cos(time_single_it / (2. * particle_mass));
+            h_b = sin(time_single_it / (2. * particle_mass));
+        }
+    }
 
     //set initial state
     double *p_real = new double[Particles_number * matrix_width * matrix_height];
     double *p_imag = new double[Particles_number * matrix_width * matrix_height];
     read_initial_state(p_real, p_imag, matrix_width, matrix_height, file_name, halo_x, halo_y, periods, Particles_number);
-	
-	for(int i = 0; i < Particles_number; i++)
-		trotter(h_a, h_b, external_pot_real, external_pot_imag, &p_real[i * matrix_width * matrix_height], &p_imag[i * matrix_width * matrix_height], matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, ".", show_time_sim, imag_time, i + 1);
-	
-	MPI_Finalize();
+
+    for(int i = 0; i < Particles_number; i++)
+        trotter(h_a, h_b, external_pot_real, external_pot_imag, &p_real[i * matrix_width * matrix_height], &p_imag[i * matrix_width * matrix_height], matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, ".", show_time_sim, imag_time, i + 1);
+
+    MPI_Finalize();
     return 0;
 }

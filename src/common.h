@@ -29,10 +29,10 @@
 #endif
 
 struct STATISTIC {
-	double mean_E, mean_Px, mean_Py;
-	double var_E, var_Px, var_Py;
-	STATISTIC() : mean_E(0.), mean_Px(0.), mean_Py(0.),
-				  var_E(0.), var_Px(0.), var_Py(0.) {}
+    double mean_E, mean_Px, mean_Py;
+    double var_E, var_Px, var_Py;
+    STATISTIC() : mean_E(0.), mean_Px(0.), mean_Py(0.),
+        var_E(0.), var_Px(0.), var_Py(0.) {}
 };
 
 void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound);

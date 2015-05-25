@@ -42,7 +42,7 @@
 #define SNAPSHOTS 100
 
 struct MAGIC_NUMBER {
-	double threshold_E, threshold_P;
+    double threshold_E, threshold_P;
     double expected_E;
     double expected_Px;
     double expected_Py;
@@ -50,7 +50,7 @@ struct MAGIC_NUMBER {
 };
 
 MAGIC_NUMBER::MAGIC_NUMBER() : threshold_E(3), threshold_P(2),
-							   expected_E((2. * M_PI / DIM) * (2. * M_PI / DIM)), expected_Px(0), expected_Py(0) {}
+    expected_E((2. * M_PI / DIM) * (2. * M_PI / DIM)), expected_Px(0), expected_Py(0) {}
 
 //external potential operator in coordinate representation
 void potential_op_coord_representation(double *hamilt_pot, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
@@ -67,13 +67,13 @@ void init_state(double *p_real, double *p_imag, int dimx, int dimy, int halo_x, 
     double L_x = dimx - periods[1] * 2 * halo_x;
     double L_y = dimy - periods[0] * 2 * halo_y;
     double n_x = 1., n_y = 1.;
-	
+
     for (int y = 1; y <= dimy; y++) {
         for (int x = 1; x <= dimx; x++) {
             //std::complex<double> tmp = std::complex<double>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
             //                      * exp(std::complex<double>(0.0, 0.4 * (x + y - 480.0)));
-			
-			std::complex<double>  tmp = std::complex<double> (sin(2 * 3.14159 / L_x * (x - periods[1] * halo_x)) * sin(2 * 3.14159 / L_y * (y - periods[0] * halo_y)), 0.0);
+
+            std::complex<double>  tmp = std::complex<double> (sin(2 * 3.14159 / L_x * (x - periods[1] * halo_x)) * sin(2 * 3.14159 / L_y * (y - periods[0] * halo_y)), 0.0);
 
             //std::complex<double> tmp = exp(std::complex<double>(0. , 2 * 3.14159 / L_x * (x - periods[1]*halo_x) + 2 * 3.14159 / L_y * (y - periods[0]*halo_y) ));
 
@@ -202,11 +202,11 @@ int main(int argc, char** argv) {
         init_state(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, periods);
     else
         read_initial_state(p_real, p_imag, matrix_width, matrix_height, file_name, halo_x, halo_y, periods);
-	
-	MPI_Init(&argc, &argv);
-	int rank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	
+
+    MPI_Init(&argc, &argv);
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     //set file output directory
     std::stringstream filename;
     std::string filenames;
@@ -226,29 +226,29 @@ int main(int argc, char** argv) {
         filenames = "./";
 
     trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str(), show_time_sim, imag_time, 1);
-	
-	if(rank == 0) {
-	MAGIC_NUMBER th_values;
-	STATISTIC sample;
-	expect_values(dim, iterations, snapshots, hamilt_pot, particle_mass, filenames.c_str(), periods, halo_x, halo_y, &sample);
-			
-	if(std::abs(sample.mean_E - th_values.expected_E) / sample.var_E < th_values.threshold_E)
-		std::cout << "Energy -> OK\tsigma: " << std::abs(sample.mean_E - th_values.expected_E) / sample.var_E << std::endl;
+
+    if(rank == 0) {
+        MAGIC_NUMBER th_values;
+        STATISTIC sample;
+        expect_values(dim, iterations, snapshots, hamilt_pot, particle_mass, filenames.c_str(), periods, halo_x, halo_y, &sample);
+
+        if(std::abs(sample.mean_E - th_values.expected_E) / sample.var_E < th_values.threshold_E)
+            std::cout << "Energy -> OK\tsigma: " << std::abs(sample.mean_E - th_values.expected_E) / sample.var_E << std::endl;
         else
-          std::cout << "Energy value is not the one theoretically expected: sigma " << std::abs(sample.mean_E - th_values.expected_E) / sample.var_E << std::endl;
-    if(std::abs(sample.mean_Px - th_values.expected_Px) / sample.var_Px < th_values.threshold_P)
-        std::cout << "Momentum Px -> OK\tsigma: " << std::abs(sample.mean_Px - th_values.expected_Px) / sample.var_Px << std::endl;
-    else
-        std::cout << "Momentum Px value is not the one theoretically expected: sigma " << std::abs(sample.mean_Px - th_values.expected_Px) / sample.var_Px << std::endl;
-    if(std::abs(sample.mean_Py - th_values.expected_Py) / sample.var_Py < th_values.threshold_P)
-        std::cout << "Momentum Py -> OK\tsigma: " << std::abs(sample.mean_Py - th_values.expected_Py) / sample.var_Py << std::endl;
-    else
-        std::cout << "Momentum Py value is not the one theoretically expected: sigma " << std::abs(sample.mean_Py - th_values.expected_Py) / sample.var_Py << std::endl;
-		   
-	}
-	
+            std::cout << "Energy value is not the one theoretically expected: sigma " << std::abs(sample.mean_E - th_values.expected_E) / sample.var_E << std::endl;
+        if(std::abs(sample.mean_Px - th_values.expected_Px) / sample.var_Px < th_values.threshold_P)
+            std::cout << "Momentum Px -> OK\tsigma: " << std::abs(sample.mean_Px - th_values.expected_Px) / sample.var_Px << std::endl;
+        else
+            std::cout << "Momentum Px value is not the one theoretically expected: sigma " << std::abs(sample.mean_Px - th_values.expected_Px) / sample.var_Px << std::endl;
+        if(std::abs(sample.mean_Py - th_values.expected_Py) / sample.var_Py < th_values.threshold_P)
+            std::cout << "Momentum Py -> OK\tsigma: " << std::abs(sample.mean_Py - th_values.expected_Py) / sample.var_Py << std::endl;
+        else
+            std::cout << "Momentum Py value is not the one theoretically expected: sigma " << std::abs(sample.mean_Py - th_values.expected_Py) / sample.var_Py << std::endl;
+
+    }
+
     delete[] hamilt_pot;
 
-	MPI_Finalize();
+    MPI_Finalize();
     return 0;
 }

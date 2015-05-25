@@ -113,18 +113,18 @@ int main(int argc, char** argv) {
     double *p_real = new double[matrix_width * matrix_height];
     double *p_imag = new double[matrix_width * matrix_height];
     init_state(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, periods);
-	
-	MPI_Init(&argc, &argv);
-	int rank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	if(rank == 0) {
-		std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
-		std::cout << "* It calculates the time-evolution of a particle in a box\n";
-		std::cout << "* with periodic boundary conditions, where the initial\n";
-		std::cout << "* state is the following:\n";
-		std::cout << "* \texp(i2M_PI / L (x + y))\n\n";
-	}
-	
+
+    MPI_Init(&argc, &argv);
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if(rank == 0) {
+        std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
+        std::cout << "* It calculates the time-evolution of a particle in a box\n";
+        std::cout << "* with periodic boundary conditions, where the initial\n";
+        std::cout << "* state is the following:\n";
+        std::cout << "* \texp(i2M_PI / L (x + y))\n\n";
+    }
+
     //set file output directory
     std::stringstream dirname;
     std::string dirnames;
@@ -145,6 +145,6 @@ int main(int argc, char** argv) {
 
     trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, dirnames.c_str(), show_time_sim, imag_time, 1);
 
-	MPI_Finalize();
+    MPI_Finalize();
     return 0;
 }

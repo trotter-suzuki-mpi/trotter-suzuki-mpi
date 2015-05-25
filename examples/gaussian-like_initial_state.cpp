@@ -63,7 +63,7 @@ void init_state(double *p_real, double *p_imag, int dimx, int dimy, int halo_x, 
     for (int y = 1; y <= dimy; y++) {
         for (int x = 1; x <= dimx; x++) {
             std::complex<double> tmp = std::complex<double>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
-                                      * exp(std::complex<double>(0.0, 0.4 * (x + y - 480.0)));
+                                       * exp(std::complex<double>(0.0, 0.4 * (x + y - 480.0)));
 
             p_real[y * dimx + x] = real(tmp);
             p_imag[y * dimx + x] = imag(tmp);
@@ -114,17 +114,17 @@ int main(int argc, char** argv) {
     double *p_real = new double[matrix_width * matrix_height];
     double *p_imag = new double[matrix_width * matrix_height];
     init_state(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, periods);
-	
-	MPI_Init(&argc, &argv);
-	int rank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	if(rank == 0) {
-		std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
-		std::cout << "* It calculates the time-evolution of a particle in a box, where the initial\n";
-		std::cout << "* state is the following:\n";
-		std::cout << "* \texp(-( (x - 180)² + (y - 300)² )/ 2s²)* exp(0.4j * (x + y - 480.))\n\n";
-	}
-	
+
+    MPI_Init(&argc, &argv);
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if(rank == 0) {
+        std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
+        std::cout << "* It calculates the time-evolution of a particle in a box, where the initial\n";
+        std::cout << "* state is the following:\n";
+        std::cout << "* \texp(-( (x - 180)² + (y - 300)² )/ 2s²)* exp(0.4j * (x + y - 480.))\n\n";
+    }
+
     //set file output directory
     std::stringstream dirname;
     std::string dirnames;
@@ -145,6 +145,6 @@ int main(int argc, char** argv) {
 
     trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, dirnames.c_str(), show_time_sim, imag_time, 1);
 
-	MPI_Finalize();
+    MPI_Finalize();
     return 0;
 }
