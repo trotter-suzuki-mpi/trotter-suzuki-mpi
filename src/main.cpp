@@ -187,7 +187,8 @@ void print_usage() {
               "                      3: Hybrid (experimental) \n" \
               "     -s NUMBER     Snapshots are taken at every NUMBER of iterations.\n" \
               "                   Zero means no snapshots. Default: " << SNAPSHOTS << ".\n"\
-              "     -n STRING     Name of file that defines the initial state.\n"
+              "     -n STRING     Name of file that defines the initial state.\n"\
+              "     -N NUMBER     Number of particles of the system.\n"\
               "     -a NUMBER     Parameter h_a of kinetic evolution operator\n"\
               "     -b NUMBER     Parameter h_b of kinetic evolution operator\n"\
               "     -p STRING     Name of file that stores the potential operator (in coordinate representation)\n";
