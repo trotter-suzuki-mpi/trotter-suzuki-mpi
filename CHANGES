@@ -1,11 +1,18 @@
-Since 1.0:
- - Build system revised, CUDA is no longer necessary.
- - Main program now accepts an initial state from the command line as a file.
- - Examples split into separate folder.
- - Better testing of MPI dependencies by configure script.
- - Improved treatment of Intel compilers.
- - Unit testing of CPU kernel.
+Since 1.1:
+ - New: Imaginary time evolution to find ground state (CPU kernel).
+ - New: Periodic boundary conditions are possible (CPU & SSE kernels).
+ - New: Arbitrary stationary potential function can be defined (CPU kernel).
+ - New: CLI for specifying the files of the initial state and the potential,
+        and the parameters of the Hamiltonian.
+ - New: Unit testing framework.
+ - Changed: Defaulted to double-precision calculations.
+ - Changed: Examples split into separate folder.
+ - Changed: Better testing of MPI dependencies by configure script.
+ - Changed: Improved treatment of Intel compilers.
+ 
+Version 1.1: 2014-06-12
+ - New: Build system revised, CUDA is no longer necessary.
  
 Version 1.0: 2012-06-28
 
-  - Initial release.
+ - Initial release.

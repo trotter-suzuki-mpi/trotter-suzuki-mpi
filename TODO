@@ -1,3 +1,4 @@
   - Add padding to support matrices of arbitrary size.
-  - Extend kernels to include potential terms.
-  - Make periodic boundary conditions possible.
+  - Move SSE kernel to AVX, bring feature parity with CPU kernel.
+  - Update CUDA and hybrid kernels.
+  
