@@ -28,10 +28,10 @@
 #include <config.h>
 #endif
 
-struct STATISTIC {
+struct energy_momentum_statistics {
     double mean_E, mean_Px, mean_Py;
     double var_E, var_Px, var_Py;
-    STATISTIC() : mean_E(0.), mean_Px(0.), mean_Py(0.),
+    energy_momentum_statistics() : mean_E(0.), mean_Px(0.), mean_Py(0.),
         var_E(0.), var_Px(0.), var_Py(0.) {}
 };
 
@@ -51,6 +51,6 @@ void get_quadrant_sample_to_buffer(const double * r00, const double * r01, const
                                    double * dest_real, double * dest_imag);
 
 void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, double particle_mass, const char *dirname,
-                   int *periods, int halo_x, int halo_y, STATISTIC *sample);
+                   int *periods, int halo_x, int halo_y, energy_momentum_statistics *sample);
 
 #endif

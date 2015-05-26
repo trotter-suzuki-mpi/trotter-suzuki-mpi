@@ -185,7 +185,7 @@ void get_quadrant_sample_to_buffer(const double * r00, const double * r01, const
 }
 
 void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, double particle_mass,
-                   const char *dirname, int *periods, int halo_x, int halo_y, STATISTIC *sample) {
+                   const char *dirname, int *periods, int halo_x, int halo_y, energy_momentum_statistics *sample) {
 
     if(snapshots == 0)
         return;
