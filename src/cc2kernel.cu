@@ -274,7 +274,7 @@ void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, s
     CUT_CHECK_ERROR("Kernel error in cc2kernel_wrapper");
 }
 
-CC2Kernel::CC2Kernel(double *_p_real, double *_p_imag, double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, MPI_Comm _cartcomm):
+CC2Kernel::CC2Kernel(double *_p_real, double *_p_imag, double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *periods, MPI_Comm _cartcomm):
     p_real(_p_real),
     p_imag(_p_imag),
     threadsPerBlock(BLOCK_X, STRIDE_Y),
@@ -287,7 +287,7 @@ CC2Kernel::CC2Kernel(double *_p_real, double *_p_imag, double _a, double _b, int
     cartcomm = _cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
-    int rank, coords[2], dims[2] = {0, 0}, periods[2] = {0, 0};
+    int rank, coords[2], dims[2] = {0, 0};
     MPI_Comm_rank(cartcomm, &rank);
     MPI_Cart_get(cartcomm, 2, dims, periods, coords);
     int inner_start_x = 0, end_x = 0, end_y = 0;

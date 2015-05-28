@@ -59,7 +59,7 @@ void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, s
 
 class CC2Kernel: public ITrotterKernel {
 public:
-    CC2Kernel(double *p_real, double *p_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, MPI_Comm cartcomm);
+    CC2Kernel(double *p_real, double *p_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods, MPI_Comm cartcomm);
     ~CC2Kernel();
     void run_kernel();
     void run_kernel_on_halo();

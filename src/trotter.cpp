@@ -105,7 +105,7 @@ void trotter(double h_a, double h_b,
 
     case 2:
 #ifdef CUDA
-        kernel = new CC2Kernel(_p_real, _p_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, cartcomm);
+        kernel = new CC2Kernel(_p_real, _p_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm);
 #else
         if (coords[0] == 0 && coords[1] == 0) {
             std::cerr << "Compiled without CUDA\n";
@@ -116,7 +116,7 @@ void trotter(double h_a, double h_b,
 
     case 3:
 #ifdef CUDA
-        kernel = new HybridKernel(_p_real, _p_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, cartcomm);
+        kernel = new HybridKernel(_p_real, _p_imag, _external_pot_real, _external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, cartcomm);
 #else
         if (coords[0] == 0 && coords[1] == 0) {
             std::cerr << "Compiled without CUDA\n";
