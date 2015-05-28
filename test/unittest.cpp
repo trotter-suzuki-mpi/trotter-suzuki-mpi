@@ -229,7 +229,7 @@ int main(int argc, char** argv) {
 
     if(rank == 0) {
         MAGIC_NUMBER th_values;
-        STATISTIC sample;
+        energy_momentum_statistics sample;
         expect_values(dim, iterations, snapshots, hamilt_pot, particle_mass, filenames.c_str(), periods, halo_x, halo_y, &sample);
 
         if(std::abs(sample.mean_E - th_values.expected_E) / sample.var_E < th_values.threshold_E)
