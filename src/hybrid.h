@@ -62,6 +62,8 @@ private:
     double *pdev_imag[2];
     double *external_pot_real;
     double *external_pot_imag;
+    double *dev_external_pot_real;
+    double *dev_external_pot_imag;
     double a;
     double b;
     int sense;
