@@ -47,14 +47,15 @@ void potential_op_coord_representation(double *hamilt_pot, int dimx, int dimy, i
 
 //calculate potential part of evolution operator
 void init_pot_evolution_op(double * hamilt_pot, double * external_pot_real, double * external_pot_imag, int dimx, int dimy, double particle_mass, double time_single_it, bool imag_time) {
-    double CONST_1 = -1. * time_single_it;
-    double CONST_2 = 2. * time_single_it / particle_mass;		//CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
+    double order_approx = 2.;
+    double CONST_1 = -1. * time_single_it * order_approx;
+    double CONST_2 = 2. * time_single_it / particle_mass * order_approx;		//CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
 
     std::complex<double> tmp;
     for(int i = 0; i < dimy; i++) {
         for(int j = 0; j < dimx; j++) {
             if(imag_time)
-                tmp = exp(std::complex<double> (CONST_1 * hamilt_pot[i * dimx + j] + CONST_2, 0.));
+                tmp = exp(std::complex<double> (CONST_1 * hamilt_pot[i * dimx + j] , CONST_2));
             else
                 tmp = exp(std::complex<double> (0., CONST_1 * hamilt_pot[i * dimx + j] + CONST_2));
             external_pot_real[i * dimx + j] = real(tmp);
