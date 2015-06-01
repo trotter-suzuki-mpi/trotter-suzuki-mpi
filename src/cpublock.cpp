@@ -99,9 +99,9 @@ void block_kernel_potential(size_t stride, size_t width, size_t height, double a
             p_real[idx] = external_pot_real[idx_pot] * tmp - external_pot_imag[idx_pot] * p_imag[idx];
             p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx] + external_pot_imag[idx_pot] * tmp;
 
-            tmp = p_real[idx];
+/*          tmp = p_real[idx];
             p_real[idx] = external_pot_real[idx_pot] * tmp - external_pot_imag[idx_pot] * p_imag[idx];
-            p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx] + external_pot_imag[idx_pot] * tmp;
+            p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx] + external_pot_imag[idx_pot] * tmp;*/
         }
     }
 }
@@ -113,8 +113,8 @@ void block_kernel_potential_imaginary(size_t stride, size_t width, size_t height
             p_real[idx] = external_pot_real[idx_pot] * p_real[idx];
             p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx];
 
-            p_real[idx] = external_pot_real[idx_pot] * p_real[idx];
-            p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx];
+            //p_real[idx] = external_pot_real[idx_pot] * p_real[idx];
+            //p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx];
         }
     }
 }
