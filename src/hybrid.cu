@@ -161,7 +161,7 @@ void HybridKernel::run_kernel_on_halo() {
     numBlocks.x = (gpu_tile_width  + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x);
     numBlocks.y = (gpu_tile_height + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y);
 
-    cc2kernel_wrapper(gpu_tile_width, gpu_tile_height, -BLOCK_X + 3 * halo_x, -BLOCK_Y + 3 * halo_y, halo_x, halo_y, numBlocks, threadsPerBlock, stream,  a, b, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
+    cc2kernel_wrapper(gpu_tile_width, gpu_tile_height, -BLOCK_X + 3 * halo_x, -BLOCK_Y + 3 * halo_y, halo_x, halo_y, numBlocks, threadsPerBlock, stream,  a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
 
     // The CPU calculates the halo
     inner = 0;
