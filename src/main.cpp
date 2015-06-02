@@ -333,11 +333,12 @@ int main(int argc, char** argv) {
     double *external_pot_real = new double[matrix_width * matrix_height];
     double *external_pot_imag = new double[matrix_width * matrix_height];
     if(imag_time) {
+        double constant = 6.;
         const double time_single_it = 8 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
         init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it, true);	//calculate potential part of evolution operator
         if(h_a == 0. && h_b == 0.) {
-            h_a = cosh(time_single_it / (2. * particle_mass));
-            h_b = sinh(time_single_it / (2. * particle_mass));
+            h_a = cosh(time_single_it / (2. * particle_mass)) / constant;
+            h_b = sinh(time_single_it / (2. * particle_mass)) / constant;
         }
     }
     else {

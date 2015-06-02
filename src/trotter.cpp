@@ -182,7 +182,7 @@ void trotter(double h_a, double h_b,
         if (i != iterations - 1) {
             kernel->finish_halo_exchange();
         }
-        kernel->wait_for_completion();
+        kernel->wait_for_completion(i, snapshots);
     }
 
     gettimeofday(&end, NULL);

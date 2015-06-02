@@ -73,9 +73,9 @@ void init_state(double *p_real, double *p_imag, int dimx, int dimy, int halo_x, 
             //std::complex<double> tmp = std::complex<double>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
             //                      * exp(std::complex<double>(0.0, 0.4 * (x + y - 480.0)));
 
-            //std::complex<double>  tmp = std::complex<double> (sin(2 * 3.14159 / L_x * (x - periods[1] * halo_x)) * sin(2 * 3.14159 / L_y * (y - periods[0] * halo_y)), 0.0);
+            std::complex<double>  tmp = std::complex<double> (sin(2 * 3.14159 / L_x * (x - periods[1] * halo_x)) * sin(2 * 3.14159 / L_y * (y - periods[0] * halo_y)), 0.0);
 
-            std::complex<double> tmp = exp(std::complex<double>(0. , 2 * 3.14159 / L_x * (x - periods[1]*halo_x))) + exp(std::complex<double>(0., 20 * 3.14159 / L_x * (x - periods[1]*halo_x) ));
+            //std::complex<double> tmp = exp(std::complex<double>(0. , 2 * 3.14159 / L_x * (x - periods[1]*halo_x))) + exp(std::complex<double>(0., 20 * 3.14159 / L_x * (x - periods[1]*halo_x) ));
 
             p_real[y * dimx + x] = real(tmp);
             p_imag[y * dimx + x] = imag(tmp);
@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
     char file_name[100];
     file_name[0] = '\0';
     bool show_time_sim = false;
-    bool imag_time = true;
+    bool imag_time = false;
     double h_a = 0.;
     double h_b = 0.;
 
@@ -202,11 +202,12 @@ int main(int argc, char** argv) {
     //static const double h_b = sin(time_single_it / (2. * particle_mass));
     
     if(imag_time) {
+        double constant = 6.;
         const double time_single_it = 8 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
         init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it, true);	//calculate potential part of evolution operator
         if(h_a == 0. && h_b == 0.) {
-            h_a = cosh(time_single_it / (2. * particle_mass));
-            h_b = sinh(time_single_it / (2. * particle_mass));
+            h_a = cosh(time_single_it / (2. * particle_mass)) / constant;
+            h_b = sinh(time_single_it / (2. * particle_mass)) / constant;
         }
     }
     else {

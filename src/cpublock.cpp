@@ -298,8 +298,8 @@ void CPUBlock::run_kernel_on_halo() {
     }
 }
 
-void CPUBlock::wait_for_completion() {
-    if(imag_time) {
+void CPUBlock::wait_for_completion(int iteration, int snapshots) {
+    if(imag_time && ((iteration % 100) == 0 || ((snapshots > 0) && (iteration + 1) % snapshots == 0))) {
         //normalization
         int nProcs;
         MPI_Comm_size(cartcomm, &nProcs);

@@ -419,7 +419,7 @@ void CPUBlockSSEKernel::run_kernel() {
 }
 
 
-void CPUBlockSSEKernel::wait_for_completion() {
+void CPUBlockSSEKernel::wait_for_completion(int iteration, int snapshots) {
 }
 
 

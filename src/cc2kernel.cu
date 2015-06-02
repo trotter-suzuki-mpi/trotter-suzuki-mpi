@@ -99,6 +99,17 @@ void setDevice(int commRank, MPI_Comm cartcomm) {
     CUDA_SAFE_CALL(cudaSetDevice(deviceNum));
     MPI_Barrier(cartcomm);
 }
+/*
+__global__ void calc_square_norm(size_t tile_width, size_t tile_height, double * sum, const double * __restrict__ p_real, const double * __restrict__ p_imag) {
+    __shared__ partial_sums[numofthreads];
+    
+    int py = threadIdx.y * block_height;
+    int px = threadIdx.x * block_width;
+    
+    for(int i = 0; i < block_height; i++) {
+        for(int j = 0; j < block_width; j++) {
+            if()
+*/
 
 //REAL TIME functions
 
@@ -678,10 +689,11 @@ void CC2Kernel::run_kernel() {
     CUT_CHECK_ERROR("Kernel error in CC2Kernel::run_kernel");
 }
 
-void CC2Kernel::wait_for_completion() {
+void CC2Kernel::wait_for_completion(int iteration, int snapshots) {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
     //normalization
-    if(imag_time){
+    if(imag_time && ((iteration % 100) == 0 || ((snapshots > 0) && (iteration + 1) % snapshots == 0))){
+    
         CUDA_SAFE_CALL(cudaMemcpy(p_real, pdev_real[sense], tile_width * tile_height * sizeof(double), cudaMemcpyDeviceToHost));
         CUDA_SAFE_CALL(cudaMemcpy(p_imag, pdev_imag[sense], tile_width * tile_height * sizeof(double), cudaMemcpyDeviceToHost));
         
@@ -695,6 +707,7 @@ void CC2Kernel::wait_for_completion() {
                 sum += p_real[j + i * tile_width] * p_real[j + i * tile_width] + p_imag[j + i * tile_width] * p_imag[j + i * tile_width];
             }
         }
+        
         MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
         double tot_sum = 0.;
         for(int i = 0; i < nProcs; i++)

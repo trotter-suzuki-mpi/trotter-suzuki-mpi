@@ -229,7 +229,7 @@ void HybridKernel::run_kernel_on_halo() {
     }
 }
 
-void HybridKernel::wait_for_completion() {
+void HybridKernel::wait_for_completion(int iteration, int snapshots) {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
 }
 
