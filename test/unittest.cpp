@@ -38,7 +38,7 @@
 
 #define DIM 640
 #define ITERATIONS 1000
-#define KERNEL_TYPE 0
+#define KERNEL_TYPE 3
 #define SNAPSHOTS 100
 
 struct MAGIC_NUMBER {

@@ -30,7 +30,8 @@
 
 class HybridKernel: public ITrotterKernel {
 public:
-    HybridKernel(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, MPI_Comm cartcomm);
+    HybridKernel(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b,
+                 int matrix_width, int matrix_height, int halo_x, int halo_y, int * periods, MPI_Comm cartcomm, bool _imag_time);
     ~HybridKernel();
     void run_kernel();
     void run_kernel_on_halo();
@@ -56,6 +57,7 @@ private:
     dim3 threadsPerBlock;
     cudaStream_t stream;
 
+    bool imag_time;
     double *p_real[2];
     double *p_imag[2];
     double *pdev_real[2];

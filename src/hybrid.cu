@@ -23,17 +23,20 @@
 #include "hybrid.h"
 
 // Class methods
-HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, MPI_Comm _cartcomm):
+HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int * periods, MPI_Comm _cartcomm, bool _imag_time):
     threadsPerBlock(BLOCK_X, STRIDE_Y),
     a(_a),
     b(_b),
+    external_pot_real(_external_pot_real),
+    external_pot_imag(_external_pot_imag),
     sense(0),
     halo_x(_halo_x),
-    halo_y(_halo_y) {
+    halo_y(_halo_y),
+    imag_time(_imag_time) {
     cartcomm = _cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
-    int rank, coords[2], dims[2] = {0, 0}, periods[2] = {0, 0};
+    int rank, coords[2], dims[2] = {0, 0};
     MPI_Comm_rank(cartcomm, &rank);
     MPI_Cart_get(cartcomm, 2, dims, periods, coords);
     int inner_start_x = 0, end_x = 0, end_y = 0;
@@ -99,6 +102,10 @@ HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_p
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[1]), gpu_tile_width * gpu_tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[0]), gpu_tile_width * gpu_tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[1]), gpu_tile_width * gpu_tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_real), gpu_tile_width * gpu_tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_imag), gpu_tile_width * gpu_tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMemcpy2D(dev_external_pot_real, gpu_tile_width * sizeof(double), &(external_pot_real[gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy2D(dev_external_pot_imag, gpu_tile_width * sizeof(double), &(external_pot_imag[gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy2D(pdev_real[0], gpu_tile_width * sizeof(double), &(p_real[0][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy2D(pdev_imag[0], gpu_tile_width * sizeof(double), &(p_imag[0][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyHostToDevice));
     cudaStreamCreate(&stream);
@@ -125,11 +132,15 @@ HybridKernel::~HybridKernel() {
     delete[] p_real[1];
     delete[] p_imag[0];
     delete[] p_imag[1];
+    delete[] external_pot_real;
+    delete[] external_pot_imag;
 
     CUDA_SAFE_CALL(cudaFree(pdev_real[0]));
     CUDA_SAFE_CALL(cudaFree(pdev_real[1]));
     CUDA_SAFE_CALL(cudaFree(pdev_imag[0]));
     CUDA_SAFE_CALL(cudaFree(pdev_imag[1]));
+    CUDA_SAFE_CALL(cudaFree(dev_external_pot_real));
+    CUDA_SAFE_CALL(cudaFree(dev_external_pot_imag));
 
     cudaStreamDestroy(stream);
 }
@@ -243,8 +254,11 @@ void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t wid
 
     // Inner part
 
-    CUDA_SAFE_CALL(cudaMemcpy2D(&(dest_real[(gpu_start_y + halo_y) * tile_width + gpu_start_x + halo_x]), dest_stride * sizeof(double), &(pdev_real[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), (gpu_tile_width - 2 * halo_x) * sizeof(double), gpu_tile_height - 2 * halo_y, cudaMemcpyDeviceToHost));
-    CUDA_SAFE_CALL(cudaMemcpy2D(&(dest_imag[(gpu_start_y + halo_y) * tile_width + gpu_start_x + halo_x]), dest_stride * sizeof(double), &(pdev_imag[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), (gpu_tile_width - 2 * halo_x) * sizeof(double), gpu_tile_height - 2 * halo_y, cudaMemcpyDeviceToHost));
+    //CUDA_SAFE_CALL(cudaMemcpy2D(&(dest_real[(gpu_start_y + halo_y) * tile_width + gpu_start_x + halo_x]), dest_stride * sizeof(double), &(pdev_real[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), (gpu_tile_width - 2 * halo_x) * sizeof(double), gpu_tile_height - 2 * halo_y, cudaMemcpyDeviceToHost));
+    //CUDA_SAFE_CALL(cudaMemcpy2D(&(dest_imag[(gpu_start_y + halo_y) * tile_width + gpu_start_x + halo_x]), dest_stride * sizeof(double), &(pdev_imag[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), (gpu_tile_width - 2 * halo_x) * sizeof(double), gpu_tile_height - 2 * halo_y, cudaMemcpyDeviceToHost));
+    
+    CUDA_SAFE_CALL(cudaMemcpy2D(&(dest_real[(gpu_start_y + halo_y - y) * dest_stride + gpu_start_x + halo_x - x]), dest_stride * sizeof(double), &(pdev_real[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), (gpu_tile_width - 2 * halo_x) * sizeof(double), gpu_tile_height - 2 * halo_y, cudaMemcpyDeviceToHost));
+    CUDA_SAFE_CALL(cudaMemcpy2D(&(dest_imag[(gpu_start_y + halo_y - y) * dest_stride + gpu_start_x + halo_x - x]), dest_stride * sizeof(double), &(pdev_imag[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), (gpu_tile_width - 2 * halo_x) * sizeof(double), gpu_tile_height - 2 * halo_y, cudaMemcpyDeviceToHost));
 }
 
 
