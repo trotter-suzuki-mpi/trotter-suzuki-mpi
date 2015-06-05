@@ -194,9 +194,6 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
     int N_name[N_files];
     int DIM = dim;
 
-    int start_x, end_x, inner_start_x, inner_end_x,
-        start_y, end_y, inner_start_y, inner_end_y;
-
     N_name[0] = 0;
     for(int i = 1; i < N_files; i++) {
         N_name[i] = N_name[i - 1] + snapshots;
@@ -206,11 +203,6 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
     std::complex<double> sum_Px = 0, sum_Py = 0;
     std::complex<double> sum_pdi = 0;
     double energy[N_files], momentum_x[N_files], momentum_y[N_files], norm[N_files];
-
-    //const double threshold_E = 3, threshold_P = 2;
-    const double expected_E = (2. * M_PI / dim) * (2. * M_PI / dim);
-    const double expected_Px = 0.;
-    const double expected_Py = 0.;
 
     std::complex<double> psi[DIM * DIM];
     std::complex<double> cost_E = -1. / (2.*particle_mass), cost_P;

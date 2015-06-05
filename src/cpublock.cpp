@@ -98,10 +98,6 @@ void block_kernel_potential(size_t stride, size_t width, size_t height, double a
             double tmp = p_real[idx];
             p_real[idx] = external_pot_real[idx_pot] * tmp - external_pot_imag[idx_pot] * p_imag[idx];
             p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx] + external_pot_imag[idx_pot] * tmp;
-
-            tmp = p_real[idx];
-            p_real[idx] = external_pot_real[idx_pot] * tmp - external_pot_imag[idx_pot] * p_imag[idx];
-            p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx] + external_pot_imag[idx_pot] * tmp;
         }
     }
 }
@@ -110,9 +106,6 @@ void block_kernel_potential(size_t stride, size_t width, size_t height, double a
 void block_kernel_potential_imaginary(size_t stride, size_t width, size_t height, double a, double b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, double * p_real, double * p_imag) {
     for (size_t y = 0; y < height; ++y) {
         for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
-            p_real[idx] = external_pot_real[idx_pot] * p_real[idx];
-            p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx];
-
             p_real[idx] = external_pot_real[idx_pot] * p_real[idx];
             p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx];
         }
@@ -212,7 +205,6 @@ CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real,
     halo_x(_halo_x),
     halo_y(_halo_y),
     imag_time(_imag_time) {
-
     cartcomm = _cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
@@ -298,8 +290,8 @@ void CPUBlock::run_kernel_on_halo() {
     }
 }
 
-void CPUBlock::wait_for_completion() {
-    if(imag_time) {
+void CPUBlock::wait_for_completion(int iteration, int snapshots) {
+    if(imag_time && ((iteration % 20) == 0 || ((snapshots > 0) && (iteration + 1) % snapshots == 0))) {
         //normalization
         int nProcs;
         MPI_Comm_size(cartcomm, &nProcs);
@@ -317,8 +309,8 @@ void CPUBlock::wait_for_completion() {
             tot_sum += sums[i];
         double norm = sqrt(tot_sum);
 
-        for(int i = 0; i < tile_height; i++) {
-            for(int j = 0; j < tile_width; j++) {
+        for(size_t i = 0; i < tile_height; i++) {
+            for(size_t j = 0; j < tile_width; j++) {
                 p_real[sense][j + i * tile_width] /= norm;
                 p_imag[sense][j + i * tile_width] /= norm;
             }

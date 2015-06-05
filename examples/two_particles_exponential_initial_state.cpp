@@ -56,23 +56,21 @@ void potential_op_coord_representation(double *hamilt_pot, int dimx, int dimy, i
 
 //set initial state
 void init_state(double *p_real, double *p_imag, int dimx, int dimy, int halo_x, int halo_y, int *periods, int Particles_number) {
-    double s = 64.0; // FIXME: y esto?
     double L_x = dimx - periods[1] * 2 * halo_x;
     double L_y = dimy - periods[0] * 2 * halo_y;
-    double n_x = 1., n_y = 1.;
 
     int offset = 0;
     for (int i = 0; i < Particles_number; i++) {
-		for (int y = 1; y <= dimy; y++) {
-			for (int x = 1; x <= dimx; x++) {
-				std::complex<double> tmp = exp(std::complex<double>(0. , 2 * 3.14159 / L_x * (x - periods[1] * halo_x) + 2 * 3.14159 / L_y * (y - periods[0] * halo_y) ));
+        for (int y = 1; y <= dimy; y++) {
+            for (int x = 1; x <= dimx; x++) {
+                std::complex<double> tmp = exp(std::complex<double>(0. , 2 * 3.14159 / L_x * (x - periods[1] * halo_x) + 2 * 3.14159 / L_y * (y - periods[0] * halo_y) ));
 
-				p_real[y * dimx + x + offset] = real(tmp);
-				p_imag[y * dimx + x + offset] = imag(tmp);
-			}
-		}
-		offset += dimx * dimy;
-	}
+                p_real[y * dimx + x + offset] = real(tmp);
+                p_imag[y * dimx + x + offset] = imag(tmp);
+            }
+        }
+        offset += dimx * dimy;
+    }
 }
 
 //calculate potential part of evolution operator
@@ -150,7 +148,7 @@ int main(int argc, char** argv) {
 
     for(int i = 0; i < Particles_number; i++)
         trotter(h_a, h_b, external_pot_real, external_pot_imag, &p_real[i * matrix_width * matrix_height], &p_imag[i * matrix_width * matrix_height], matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, dirnames.c_str(), show_time_sim, imag_time, i + 1);
-    
+
     MPI_Finalize();
     return 0;
 }

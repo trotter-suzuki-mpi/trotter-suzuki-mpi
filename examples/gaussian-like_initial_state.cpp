@@ -56,9 +56,6 @@ void potential_op_coord_representation(double *hamilt_pot, int dimx, int dimy, i
 //set initial state
 void init_state(double *p_real, double *p_imag, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
     double s = 64.0; // FIXME: y esto?
-    double L_x = dimx - periods[1] * 2 * halo_x;
-    double L_y = dimy - periods[0] * 2 * halo_y;
-    double n_x = 1., n_y = 1.;
 
     for (int y = 1; y <= dimy; y++) {
         for (int x = 1; x <= dimx; x++) {
