@@ -55,10 +55,7 @@ void potential_op_coord_representation(double *hamilt_pot, int dimx, int dimy, i
 
 //set initial state
 void init_state(double *p_real, double *p_imag, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
-    double s = 64.0; // FIXME: y esto?
     double L_x = dimx - periods[1] * 2 * halo_x;
-    double L_y = dimy - periods[0] * 2 * halo_y;
-    double n_x = 1., n_y = 1.;
 
     for (int y = 1; y <= dimy; y++) {
         for (int x = 1; x <= dimx; x++) {
@@ -106,8 +103,9 @@ int main(int argc, char** argv) {
     double *external_pot_real = new double[matrix_width * matrix_height];
     double *external_pot_imag = new double[matrix_width * matrix_height];
     init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it);	//calculate potential part of evolution operator
-    double h_a = cosh(time_single_it / (2. * particle_mass));
-    double h_b = sinh(time_single_it / (2. * particle_mass));
+    double constant = 6.;
+    double h_a = cosh(time_single_it / (2. * particle_mass)) / constant;
+    double h_b = sinh(time_single_it / (2. * particle_mass)) / constant;
 
     //set initial state
     double *p_real = new double[matrix_width * matrix_height];

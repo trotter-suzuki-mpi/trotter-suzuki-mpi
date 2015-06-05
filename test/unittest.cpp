@@ -66,7 +66,6 @@ void init_state(double *p_real, double *p_imag, int dimx, int dimy, int halo_x, 
     double s = 64.0; // FIXME: y esto?
     double L_x = dimx - periods[1] * 2 * halo_x;
     double L_y = dimy - periods[0] * 2 * halo_y;
-    double n_x = 1., n_y = 1.;
 
     for (int y = 1; y <= dimy; y++) {
         for (int x = 1; x <= dimx; x++) {
@@ -75,7 +74,7 @@ void init_state(double *p_real, double *p_imag, int dimx, int dimy, int halo_x, 
 
             std::complex<double>  tmp = std::complex<double> (sin(2 * 3.14159 / L_x * (x - periods[1] * halo_x)) * sin(2 * 3.14159 / L_y * (y - periods[0] * halo_y)), 0.0);
 
-            //std::complex<double> tmp = exp(std::complex<double>(0. , 2 * 3.14159 / L_x * (x - periods[1]*halo_x) + 2 * 3.14159 / L_y * (y - periods[0]*halo_y) ));
+            //std::complex<double> tmp = exp(std::complex<double>(0. , 2 * 3.14159 / L_x * (x - periods[1]*halo_x))) + exp(std::complex<double>(0., 20 * 3.14159 / L_x * (x - periods[1]*halo_x) ));
 
             p_real[y * dimx + x] = real(tmp);
             p_imag[y * dimx + x] = imag(tmp);
@@ -142,14 +141,18 @@ void read_initial_state(double *p_real, double *p_imag, int dimx, int dimy, char
 }
 
 //calculate potential part of evolution operator
-void init_pot_evolution_op(double * hamilt_pot, double * external_pot_real, double * external_pot_imag, int dimx, int dimy, double particle_mass, double time_single_it) {
-    double CONST_1 = -1. * time_single_it;
-    double CONST_2 = 2. * time_single_it / particle_mass;		//CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
+void init_pot_evolution_op(double * hamilt_pot, double * external_pot_real, double * external_pot_imag, int dimx, int dimy, double particle_mass, double time_single_it, bool imag_time) {
+    double order_approx = 2.;
+    double CONST_1 = -1. * time_single_it * order_approx;
+    double CONST_2 = 2. * time_single_it / particle_mass * order_approx;		//CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
 
     std::complex<double> tmp;
     for(int i = 0; i < dimy; i++) {
         for(int j = 0; j < dimx; j++) {
-            tmp = exp(std::complex<double> (0., CONST_1 * hamilt_pot[i * dimx + j] + CONST_2));
+            if(imag_time)
+                tmp = exp(std::complex<double> (CONST_1 * hamilt_pot[i * dimx + j] , CONST_2));
+            else
+                tmp = exp(std::complex<double> (0., CONST_1 * hamilt_pot[i * dimx + j] + CONST_2));
             external_pot_real[i * dimx + j] = real(tmp);
             external_pot_imag[i * dimx + j] = imag(tmp);
         }
@@ -163,6 +166,8 @@ int main(int argc, char** argv) {
     file_name[0] = '\0';
     bool show_time_sim = false;
     bool imag_time = false;
+    double h_a = 0.;
+    double h_b = 0.;
 
     // Get the top level suite from the registry
     CppUnit::Test *suite = CppUnit::TestFactoryRegistry::getRegistry().makeTest();
@@ -188,12 +193,30 @@ int main(int argc, char** argv) {
     potential_op_coord_representation(hamilt_pot, matrix_width, matrix_height, halo_x, halo_y, periods);	//set potential operator
 
     //set and calculate evolution operator variables from hamiltonian
-    const double time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
+    //const double time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
     double *external_pot_real = new double[matrix_width * matrix_height];
     double *external_pot_imag = new double[matrix_width * matrix_height];
-    init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it);	//calculate potential part of evolution operator
-    static const double h_a = cos(time_single_it / (2. * particle_mass));
-    static const double h_b = sin(time_single_it / (2. * particle_mass));
+    //init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it);	//calculate potential part of evolution operator
+    //static const double h_a = cos(time_single_it / (2. * particle_mass));
+    //static const double h_b = sin(time_single_it / (2. * particle_mass));
+
+    if(imag_time) {
+        double constant = 6.;
+        const double time_single_it = 8 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
+        init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it, true);	//calculate potential part of evolution operator
+        if(h_a == 0. && h_b == 0.) {
+            h_a = cosh(time_single_it / (2. * particle_mass)) / constant;
+            h_b = sinh(time_single_it / (2. * particle_mass)) / constant;
+        }
+    }
+    else {
+        const double time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
+        init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it, false);	//calculate potential part of evolution operator
+        if(h_a == 0. && h_b == 0.) {
+            h_a = cos(time_single_it / (2. * particle_mass));
+            h_b = sin(time_single_it / (2. * particle_mass));
+        }
+    }
 
     //set initial state
     double *p_real = new double[matrix_width * matrix_height];

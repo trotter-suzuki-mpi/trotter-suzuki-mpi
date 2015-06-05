@@ -47,14 +47,15 @@ void potential_op_coord_representation(double *hamilt_pot, int dimx, int dimy, i
 
 //calculate potential part of evolution operator
 void init_pot_evolution_op(double * hamilt_pot, double * external_pot_real, double * external_pot_imag, int dimx, int dimy, double particle_mass, double time_single_it, bool imag_time) {
-    double CONST_1 = -1. * time_single_it;
-    double CONST_2 = 2. * time_single_it / particle_mass;		//CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
+    double order_approx = 2.;
+    double CONST_1 = -1. * time_single_it * order_approx;
+    double CONST_2 = 2. * time_single_it / particle_mass * order_approx;		//CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
 
     std::complex<double> tmp;
     for(int i = 0; i < dimy; i++) {
         for(int j = 0; j < dimx; j++) {
             if(imag_time)
-                tmp = exp(std::complex<double> (CONST_1 * hamilt_pot[i * dimx + j] + CONST_2, 0.));
+                tmp = exp(std::complex<double> (CONST_1 * hamilt_pot[i * dimx + j] , CONST_2));
             else
                 tmp = exp(std::complex<double> (0., CONST_1 * hamilt_pot[i * dimx + j] + CONST_2));
             external_pot_real[i * dimx + j] = real(tmp);
@@ -203,7 +204,6 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
     *Particles_number = PARTICLES_NUMBER;
 
     int c;
-    int cont = 0;
     bool file_supplied = false;
     int kinetic_par = 0;
     while ((c = getopt (argc, argv, "gd:hi:k:s:n:a:b:p:N:")) != -1) {
@@ -244,7 +244,7 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
             }
             break;
         case 'n':
-            for(int i = 0; i < strlen(optarg); i++)
+            for(size_t i = 0; i < strlen(optarg); i++)
                 file_name[i] = optarg[i];
             file_supplied = true;
             break;
@@ -257,7 +257,7 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
             kinetic_par++;
             break;
         case 'p':
-            for(int i = 0; i < strlen(optarg); i++)
+            for(size_t i = 0; i < strlen(optarg); i++)
                 pot_name[i] = optarg[i];
             break;
         case 'N':
@@ -332,11 +332,12 @@ int main(int argc, char** argv) {
     double *external_pot_real = new double[matrix_width * matrix_height];
     double *external_pot_imag = new double[matrix_width * matrix_height];
     if(imag_time) {
+        double constant = 6.;
         const double time_single_it = 8 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
         init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it, true);	//calculate potential part of evolution operator
         if(h_a == 0. && h_b == 0.) {
-            h_a = cosh(time_single_it / (2. * particle_mass));
-            h_b = sinh(time_single_it / (2. * particle_mass));
+            h_a = cosh(time_single_it / (2. * particle_mass)) / constant;
+            h_b = sinh(time_single_it / (2. * particle_mass)) / constant;
         }
     }
     else {
