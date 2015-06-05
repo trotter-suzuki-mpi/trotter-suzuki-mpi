@@ -204,7 +204,6 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
     *Particles_number = PARTICLES_NUMBER;
 
     int c;
-    int cont = 0;
     bool file_supplied = false;
     int kinetic_par = 0;
     while ((c = getopt (argc, argv, "gd:hi:k:s:n:a:b:p:N:")) != -1) {
@@ -245,7 +244,7 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
             }
             break;
         case 'n':
-            for(int i = 0; i < strlen(optarg); i++)
+            for(size_t i = 0; i < strlen(optarg); i++)
                 file_name[i] = optarg[i];
             file_supplied = true;
             break;
@@ -258,7 +257,7 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
             kinetic_par++;
             break;
         case 'p':
-            for(int i = 0; i < strlen(optarg); i++)
+            for(size_t i = 0; i < strlen(optarg); i++)
                 pot_name[i] = optarg[i];
             break;
         case 'N':

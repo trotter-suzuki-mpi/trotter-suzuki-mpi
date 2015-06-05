@@ -40,9 +40,9 @@ inline void update_shiftx_sse(size_t stride, size_t width, size_t height, double
 
 void process_sides_sse( double *var, size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b,
                         const double *ext_pot_r00, const double *ext_pot_r01, const double *ext_pot_r10, const double *ext_pot_r11,
-                       const double *ext_pot_i00, const double *ext_pot_i01, const double *ext_pot_i10, const double *ext_pot_i11,
-                       double *block_ext_pot_r00, double *block_ext_pot_r01, double *block_ext_pot_r10, double *block_ext_pot_r11,
-                       double *block_ext_pot_i00, double *block_ext_pot_i01, double *block_ext_pot_i10, double *block_ext_pot_i11,
+                        const double *ext_pot_i00, const double *ext_pot_i01, const double *ext_pot_i10, const double *ext_pot_i11,
+                        double *block_ext_pot_r00, double *block_ext_pot_r01, double *block_ext_pot_r10, double *block_ext_pot_r11,
+                        double *block_ext_pot_i00, double *block_ext_pot_i01, double *block_ext_pot_i10, double *block_ext_pot_i11,
                         const double * r00, const double * r01, const double * r10, const double * r11,
                         const double * i00, const double * i01, const double * i10, const double * i11,
                         double * next_r00, double * next_r01, double * next_r10, double * next_r11,
@@ -51,12 +51,12 @@ void process_sides_sse( double *var, size_t tile_width, size_t block_width, size
                         double * block_i00, double * block_i01, double * block_i10, double * block_i11);
 
 void process_band_sse(double *var,   size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b,
-                    const double *ext_pot_r00, const double *ext_pot_r01, const double *ext_pot_r10, const double *ext_pot_r11,
-                    const double *ext_pot_i00, const double *ext_pot_i01, const double *ext_pot_i10, const double *ext_pot_i11,
-                    const double * r00, const double * r01, const double * r10, const double * r11,
-                    const double * i00, const double * i01, const double * i10, const double * i11,
-                    double * next_r00, double * next_r01, double * next_r10, double * next_r11,
-                    double * next_i00, double * next_i01, double * next_i10, double * next_i11, int inner, int sides);
+                      const double *ext_pot_r00, const double *ext_pot_r01, const double *ext_pot_r10, const double *ext_pot_r11,
+                      const double *ext_pot_i00, const double *ext_pot_i01, const double *ext_pot_i10, const double *ext_pot_i11,
+                      const double * r00, const double * r01, const double * r10, const double * r11,
+                      const double * i00, const double * i01, const double * i10, const double * i11,
+                      double * next_r00, double * next_r01, double * next_r10, double * next_r11,
+                      double * next_i00, double * next_i01, double * next_i10, double * next_i11, int inner, int sides);
 
 
 class CPUBlockSSEKernel: public ITrotterKernel {

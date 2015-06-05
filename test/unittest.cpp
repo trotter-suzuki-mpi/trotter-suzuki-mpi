@@ -38,7 +38,7 @@
 
 #define DIM 640
 #define ITERATIONS 1000
-#define KERNEL_TYPE 3
+#define KERNEL_TYPE 0
 #define SNAPSHOTS 100
 
 struct MAGIC_NUMBER {
@@ -66,7 +66,6 @@ void init_state(double *p_real, double *p_imag, int dimx, int dimy, int halo_x, 
     double s = 64.0; // FIXME: y esto?
     double L_x = dimx - periods[1] * 2 * halo_x;
     double L_y = dimy - periods[0] * 2 * halo_y;
-    double n_x = 1., n_y = 1.;
 
     for (int y = 1; y <= dimy; y++) {
         for (int x = 1; x <= dimx; x++) {
@@ -200,7 +199,7 @@ int main(int argc, char** argv) {
     //init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it);	//calculate potential part of evolution operator
     //static const double h_a = cos(time_single_it / (2. * particle_mass));
     //static const double h_b = sin(time_single_it / (2. * particle_mass));
-    
+
     if(imag_time) {
         double constant = 6.;
         const double time_single_it = 8 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
@@ -218,7 +217,7 @@ int main(int argc, char** argv) {
             h_b = sin(time_single_it / (2. * particle_mass));
         }
     }
-    
+
     //set initial state
     double *p_real = new double[matrix_width * matrix_height];
     double *p_imag = new double[matrix_width * matrix_height];

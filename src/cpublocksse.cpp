@@ -212,7 +212,7 @@ void update_ext_pot_sse(size_t stride, size_t width, size_t height, double * __r
 }
 
 void update_ext_pot_sse_imaginary(size_t stride, size_t width, size_t height, double * __restrict__ pot_r, double * __restrict__ pot_i, double * __restrict__ real,
-                        double * __restrict__ imag) {
+                                  double * __restrict__ imag) {
     for (size_t i = 0; i < height; i++) {
         for (size_t j = 0; j < width; j++) {
             size_t idx = i * stride + j;
@@ -222,11 +222,11 @@ void update_ext_pot_sse_imaginary(size_t stride, size_t width, size_t height, do
     }
 }
 
-void full_step_sse(size_t stride, size_t width, size_t height, double a, double b, 
-                    double *ext_pot_r00, double *ext_pot_r01, double *ext_pot_r10, double *ext_pot_r11,
+void full_step_sse(size_t stride, size_t width, size_t height, double a, double b,
+                   double *ext_pot_r00, double *ext_pot_r01, double *ext_pot_r10, double *ext_pot_r11,
                    double *ext_pot_i00, double *ext_pot_i01, double *ext_pot_i10, double *ext_pot_i11,
-                    double * r00, double * r01, double * r10, double * r11, 
-                    double * i00, double * i01, double * i10, double * i11) {
+                   double * r00, double * r01, double * r10, double * r11,
+                   double * i00, double * i01, double * i10, double * i11) {
     // 1
     update_shifty_sse<0>(stride, width, height, a, b, r00, i00, r10, i10);
     update_shifty_sse<1>(stride, width, height, a, b, r11, i11, r01, i01);
@@ -259,10 +259,10 @@ void full_step_sse(size_t stride, size_t width, size_t height, double a, double 
 }
 
 void full_step_sse_imaginary(size_t stride, size_t width, size_t height, double a, double b,
-                    double *ext_pot_r00, double *ext_pot_r01, double *ext_pot_r10, double *ext_pot_r11,
-                   double *ext_pot_i00, double *ext_pot_i01, double *ext_pot_i10, double *ext_pot_i11,
-                    double * r00, double * r01, double * r10, double * r11,
-                    double * i00, double * i01, double * i10, double * i11) {
+                             double *ext_pot_r00, double *ext_pot_r01, double *ext_pot_r10, double *ext_pot_r11,
+                             double *ext_pot_i00, double *ext_pot_i01, double *ext_pot_i10, double *ext_pot_i11,
+                             double * r00, double * r01, double * r10, double * r11,
+                             double * i00, double * i01, double * i10, double * i11) {
     // 1
     update_shifty_sse_imaginary<0>(stride, width, height, a, b, r00, i00, r10, i10);
     update_shifty_sse_imaginary<1>(stride, width, height, a, b, r11, i11, r01, i01);
@@ -296,100 +296,9 @@ void full_step_sse_imaginary(size_t stride, size_t width, size_t height, double 
 
 void process_sides_sse( size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b,
                         const double *ext_pot_r00, const double *ext_pot_r01, const double *ext_pot_r10, const double *ext_pot_r11,
-                       const double *ext_pot_i00, const double *ext_pot_i01, const double *ext_pot_i10, const double *ext_pot_i11,
-                       double *block_ext_pot_r00, double *block_ext_pot_r01, double *block_ext_pot_r10, double *block_ext_pot_r11,
-                       double *block_ext_pot_i00, double *block_ext_pot_i01, double *block_ext_pot_i10, double *block_ext_pot_i11,
-                        const double * r00, const double * r01, const double * r10, const double * r11, 
-                        const double * i00, const double * i01, const double * i10, const double * i11, 
-                        double * next_r00, double * next_r01, double * next_r10, double * next_r11, 
-                        double * next_i00, double * next_i01, double * next_i10, double * next_i11, 
-                        double * block_r00, double * block_r01, double * block_r10, double * block_r11,
-                        double * block_i00, double * block_i01, double * block_i10, double * block_i11) {
-    size_t read_idx;
-    size_t read_width;
-    size_t block_read_idx;
-    size_t write_idx;
-    size_t write_width;
-
-    size_t block_stride = (block_width / 2) * sizeof(double);
-    size_t matrix_stride = (tile_width / 2) * sizeof(double);
-
-    // First block [0..block_width - halo_x]
-    read_idx = (read_y / 2) * (tile_width / 2);
-    read_width = (block_width / 2) * sizeof(double);
-    memcpy2D(block_r00, block_stride, &r00[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_i00, block_stride, &i00[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_r01, block_stride, &r01[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_i01, block_stride, &i01[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_r10, block_stride, &r10[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_i10, block_stride, &i10[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_r11, block_stride, &r11[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_i11, block_stride, &i11[read_idx], matrix_stride, read_width, read_height / 2);
-    
-    memcpy2D(block_ext_pot_r00, block_stride, &ext_pot_r00[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_ext_pot_i00, block_stride, &ext_pot_i00[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_ext_pot_r01, block_stride, &ext_pot_r01[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_ext_pot_i01, block_stride, &ext_pot_i01[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_ext_pot_r10, block_stride, &ext_pot_r10[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_ext_pot_i10, block_stride, &ext_pot_i10[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_ext_pot_r11, block_stride, &ext_pot_r11[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_ext_pot_i11, block_stride, &ext_pot_i11[read_idx], matrix_stride, read_width, read_height / 2);
-
-    full_step_sse(block_width / 2, block_width / 2, read_height / 2, a, b,
-                block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11, 
-                block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
-                block_r00, block_r01, block_r10, block_r11, 
-                block_i00, block_i01, block_i10, block_i11);
-
-    block_read_idx = (write_offset / 2) * (block_width / 2);
-    write_idx = (read_y / 2 + write_offset / 2) * (tile_width / 2);
-    write_width = ((block_width - halo_x) / 2) * sizeof(double);
-    memcpy2D(&next_r00[write_idx], matrix_stride, &block_r00[block_read_idx], block_stride, write_width, write_height / 2);
-    memcpy2D(&next_i00[write_idx], matrix_stride, &block_i00[block_read_idx], block_stride, write_width, write_height / 2);
-    memcpy2D(&next_r01[write_idx], matrix_stride, &block_r01[block_read_idx], block_stride, write_width, write_height / 2);
-    memcpy2D(&next_i01[write_idx], matrix_stride, &block_i01[block_read_idx], block_stride, write_width, write_height / 2);
-    memcpy2D(&next_r10[write_idx], matrix_stride, &block_r10[block_read_idx], block_stride, write_width, write_height / 2);
-    memcpy2D(&next_i10[write_idx], matrix_stride, &block_i10[block_read_idx], block_stride, write_width, write_height / 2);
-    memcpy2D(&next_r11[write_idx], matrix_stride, &block_r11[block_read_idx], block_stride, write_width, write_height / 2);
-    memcpy2D(&next_i11[write_idx], matrix_stride, &block_i11[block_read_idx], block_stride, write_width, write_height / 2);
-
-    // Last block
-    size_t block_start = ((tile_width - block_width) / (block_width - 2 * halo_x) + 1) * (block_width - 2 * halo_x);
-    read_idx = (read_y / 2) * (tile_width / 2) + block_start / 2;
-    read_width = (tile_width / 2 - block_start / 2) * sizeof(double);
-    memcpy2D(block_r00, block_stride, &r00[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_i00, block_stride, &i00[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_r01, block_stride, &r01[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_i01, block_stride, &i01[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_r10, block_stride, &r10[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_i10, block_stride, &i10[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_r11, block_stride, &r11[read_idx], matrix_stride, read_width, read_height / 2);
-    memcpy2D(block_i11, block_stride, &i11[read_idx], matrix_stride, read_width, read_height / 2);
-
-    full_step_sse(block_width / 2, tile_width / 2 - block_start / 2, read_height / 2, a, b,
-					block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
-					block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
-					block_r00, block_r01, block_r10, block_r11,
-					block_i00, block_i01, block_i10, block_i11);
-
-    block_read_idx = (write_offset / 2) * (block_width / 2) + halo_x / 2;
-    write_idx = (read_y / 2 + write_offset / 2) * (tile_width / 2) + (block_start + halo_x) / 2;
-    write_width = (tile_width / 2 - block_start / 2 - halo_x / 2) * sizeof(double);
-    memcpy2D(&next_r00[write_idx], matrix_stride, &block_r00[block_read_idx], block_stride, write_width, write_height / 2);
-    memcpy2D(&next_i00[write_idx], matrix_stride, &block_i00[block_read_idx], block_stride, write_width, write_height / 2);
-    memcpy2D(&next_r01[write_idx], matrix_stride, &block_r01[block_read_idx], block_stride, write_width, write_height / 2);
-    memcpy2D(&next_i01[write_idx], matrix_stride, &block_i01[block_read_idx], block_stride, write_width, write_height / 2);
-    memcpy2D(&next_r10[write_idx], matrix_stride, &block_r10[block_read_idx], block_stride, write_width, write_height / 2);
-    memcpy2D(&next_i10[write_idx], matrix_stride, &block_i10[block_read_idx], block_stride, write_width, write_height / 2);
-    memcpy2D(&next_r11[write_idx], matrix_stride, &block_r11[block_read_idx], block_stride, write_width, write_height / 2);
-    memcpy2D(&next_i11[write_idx], matrix_stride, &block_i11[block_read_idx], block_stride, write_width, write_height / 2);
-}
-
-void process_sides_sse_imaginary( size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b,
-                        const double *ext_pot_r00, const double *ext_pot_r01, const double *ext_pot_r10, const double *ext_pot_r11,
-                       const double *ext_pot_i00, const double *ext_pot_i01, const double *ext_pot_i10, const double *ext_pot_i11,
-                       double *block_ext_pot_r00, double *block_ext_pot_r01, double *block_ext_pot_r10, double *block_ext_pot_r11,
-                       double *block_ext_pot_i00, double *block_ext_pot_i01, double *block_ext_pot_i10, double *block_ext_pot_i11,
+                        const double *ext_pot_i00, const double *ext_pot_i01, const double *ext_pot_i10, const double *ext_pot_i11,
+                        double *block_ext_pot_r00, double *block_ext_pot_r01, double *block_ext_pot_r10, double *block_ext_pot_r11,
+                        double *block_ext_pot_i00, double *block_ext_pot_i01, double *block_ext_pot_i10, double *block_ext_pot_i11,
                         const double * r00, const double * r01, const double * r10, const double * r11,
                         const double * i00, const double * i01, const double * i10, const double * i11,
                         double * next_r00, double * next_r01, double * next_r10, double * next_r11,
@@ -426,11 +335,102 @@ void process_sides_sse_imaginary( size_t tile_width, size_t block_width, size_t 
     memcpy2D(block_ext_pot_r11, block_stride, &ext_pot_r11[read_idx], matrix_stride, read_width, read_height / 2);
     memcpy2D(block_ext_pot_i11, block_stride, &ext_pot_i11[read_idx], matrix_stride, read_width, read_height / 2);
 
+    full_step_sse(block_width / 2, block_width / 2, read_height / 2, a, b,
+                  block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
+                  block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
+                  block_r00, block_r01, block_r10, block_r11,
+                  block_i00, block_i01, block_i10, block_i11);
+
+    block_read_idx = (write_offset / 2) * (block_width / 2);
+    write_idx = (read_y / 2 + write_offset / 2) * (tile_width / 2);
+    write_width = ((block_width - halo_x) / 2) * sizeof(double);
+    memcpy2D(&next_r00[write_idx], matrix_stride, &block_r00[block_read_idx], block_stride, write_width, write_height / 2);
+    memcpy2D(&next_i00[write_idx], matrix_stride, &block_i00[block_read_idx], block_stride, write_width, write_height / 2);
+    memcpy2D(&next_r01[write_idx], matrix_stride, &block_r01[block_read_idx], block_stride, write_width, write_height / 2);
+    memcpy2D(&next_i01[write_idx], matrix_stride, &block_i01[block_read_idx], block_stride, write_width, write_height / 2);
+    memcpy2D(&next_r10[write_idx], matrix_stride, &block_r10[block_read_idx], block_stride, write_width, write_height / 2);
+    memcpy2D(&next_i10[write_idx], matrix_stride, &block_i10[block_read_idx], block_stride, write_width, write_height / 2);
+    memcpy2D(&next_r11[write_idx], matrix_stride, &block_r11[block_read_idx], block_stride, write_width, write_height / 2);
+    memcpy2D(&next_i11[write_idx], matrix_stride, &block_i11[block_read_idx], block_stride, write_width, write_height / 2);
+
+    // Last block
+    size_t block_start = ((tile_width - block_width) / (block_width - 2 * halo_x) + 1) * (block_width - 2 * halo_x);
+    read_idx = (read_y / 2) * (tile_width / 2) + block_start / 2;
+    read_width = (tile_width / 2 - block_start / 2) * sizeof(double);
+    memcpy2D(block_r00, block_stride, &r00[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_i00, block_stride, &i00[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_r01, block_stride, &r01[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_i01, block_stride, &i01[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_r10, block_stride, &r10[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_i10, block_stride, &i10[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_r11, block_stride, &r11[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_i11, block_stride, &i11[read_idx], matrix_stride, read_width, read_height / 2);
+
+    full_step_sse(block_width / 2, tile_width / 2 - block_start / 2, read_height / 2, a, b,
+                  block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
+                  block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
+                  block_r00, block_r01, block_r10, block_r11,
+                  block_i00, block_i01, block_i10, block_i11);
+
+    block_read_idx = (write_offset / 2) * (block_width / 2) + halo_x / 2;
+    write_idx = (read_y / 2 + write_offset / 2) * (tile_width / 2) + (block_start + halo_x) / 2;
+    write_width = (tile_width / 2 - block_start / 2 - halo_x / 2) * sizeof(double);
+    memcpy2D(&next_r00[write_idx], matrix_stride, &block_r00[block_read_idx], block_stride, write_width, write_height / 2);
+    memcpy2D(&next_i00[write_idx], matrix_stride, &block_i00[block_read_idx], block_stride, write_width, write_height / 2);
+    memcpy2D(&next_r01[write_idx], matrix_stride, &block_r01[block_read_idx], block_stride, write_width, write_height / 2);
+    memcpy2D(&next_i01[write_idx], matrix_stride, &block_i01[block_read_idx], block_stride, write_width, write_height / 2);
+    memcpy2D(&next_r10[write_idx], matrix_stride, &block_r10[block_read_idx], block_stride, write_width, write_height / 2);
+    memcpy2D(&next_i10[write_idx], matrix_stride, &block_i10[block_read_idx], block_stride, write_width, write_height / 2);
+    memcpy2D(&next_r11[write_idx], matrix_stride, &block_r11[block_read_idx], block_stride, write_width, write_height / 2);
+    memcpy2D(&next_i11[write_idx], matrix_stride, &block_i11[block_read_idx], block_stride, write_width, write_height / 2);
+}
+
+void process_sides_sse_imaginary( size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b,
+                                  const double *ext_pot_r00, const double *ext_pot_r01, const double *ext_pot_r10, const double *ext_pot_r11,
+                                  const double *ext_pot_i00, const double *ext_pot_i01, const double *ext_pot_i10, const double *ext_pot_i11,
+                                  double *block_ext_pot_r00, double *block_ext_pot_r01, double *block_ext_pot_r10, double *block_ext_pot_r11,
+                                  double *block_ext_pot_i00, double *block_ext_pot_i01, double *block_ext_pot_i10, double *block_ext_pot_i11,
+                                  const double * r00, const double * r01, const double * r10, const double * r11,
+                                  const double * i00, const double * i01, const double * i10, const double * i11,
+                                  double * next_r00, double * next_r01, double * next_r10, double * next_r11,
+                                  double * next_i00, double * next_i01, double * next_i10, double * next_i11,
+                                  double * block_r00, double * block_r01, double * block_r10, double * block_r11,
+                                  double * block_i00, double * block_i01, double * block_i10, double * block_i11) {
+    size_t read_idx;
+    size_t read_width;
+    size_t block_read_idx;
+    size_t write_idx;
+    size_t write_width;
+
+    size_t block_stride = (block_width / 2) * sizeof(double);
+    size_t matrix_stride = (tile_width / 2) * sizeof(double);
+
+    // First block [0..block_width - halo_x]
+    read_idx = (read_y / 2) * (tile_width / 2);
+    read_width = (block_width / 2) * sizeof(double);
+    memcpy2D(block_r00, block_stride, &r00[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_i00, block_stride, &i00[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_r01, block_stride, &r01[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_i01, block_stride, &i01[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_r10, block_stride, &r10[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_i10, block_stride, &i10[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_r11, block_stride, &r11[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_i11, block_stride, &i11[read_idx], matrix_stride, read_width, read_height / 2);
+
+    memcpy2D(block_ext_pot_r00, block_stride, &ext_pot_r00[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_ext_pot_i00, block_stride, &ext_pot_i00[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_ext_pot_r01, block_stride, &ext_pot_r01[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_ext_pot_i01, block_stride, &ext_pot_i01[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_ext_pot_r10, block_stride, &ext_pot_r10[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_ext_pot_i10, block_stride, &ext_pot_i10[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_ext_pot_r11, block_stride, &ext_pot_r11[read_idx], matrix_stride, read_width, read_height / 2);
+    memcpy2D(block_ext_pot_i11, block_stride, &ext_pot_i11[read_idx], matrix_stride, read_width, read_height / 2);
+
     full_step_sse_imaginary(block_width / 2, block_width / 2, read_height / 2, a, b,
-							block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
-							block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
-							block_r00, block_r01, block_r10, block_r11,
-							block_i00, block_i01, block_i10, block_i11);
+                            block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
+                            block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
+                            block_r00, block_r01, block_r10, block_r11,
+                            block_i00, block_i01, block_i10, block_i11);
 
     block_read_idx = (write_offset / 2) * (block_width / 2);
     write_idx = (read_y / 2 + write_offset / 2) * (tile_width / 2);
@@ -458,10 +458,10 @@ void process_sides_sse_imaginary( size_t tile_width, size_t block_width, size_t 
     memcpy2D(block_i11, block_stride, &i11[read_idx], matrix_stride, read_width, read_height / 2);
 
     full_step_sse_imaginary(block_width / 2, tile_width / 2 - block_start / 2, read_height / 2, a, b,
-							block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
-							block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
-							block_r00, block_r01, block_r10, block_r11,
-							block_i00, block_i01, block_i10, block_i11);
+                            block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
+                            block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
+                            block_r00, block_r01, block_r10, block_r11,
+                            block_i00, block_i01, block_i10, block_i11);
 
     block_read_idx = (write_offset / 2) * (block_width / 2) + halo_x / 2;
     write_idx = (read_y / 2 + write_offset / 2) * (tile_width / 2) + (block_start + halo_x) / 2;
@@ -477,12 +477,12 @@ void process_sides_sse_imaginary( size_t tile_width, size_t block_width, size_t 
 }
 
 void process_band_sse(size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b,
-                    const double *ext_pot_r00, const double *ext_pot_r01, const double *ext_pot_r10, const double *ext_pot_r11,
-                    const double *ext_pot_i00, const double *ext_pot_i01, const double *ext_pot_i10, const double *ext_pot_i11,
-                    const double * r00, const double * r01, const double * r10, const double * r11, 
-                    const double * i00, const double * i01, const double * i10, const double * i11, 
-                    double * next_r00, double * next_r01, double * next_r10, double * next_r11,
-                    double * next_i00, double * next_i01, double * next_i10, double * next_i11, int inner, int sides, bool imag_time) {
+                      const double *ext_pot_r00, const double *ext_pot_r01, const double *ext_pot_r10, const double *ext_pot_r11,
+                      const double *ext_pot_i00, const double *ext_pot_i01, const double *ext_pot_i10, const double *ext_pot_i11,
+                      const double * r00, const double * r01, const double * r10, const double * r11,
+                      const double * i00, const double * i01, const double * i10, const double * i11,
+                      double * next_r00, double * next_r01, double * next_r10, double * next_r11,
+                      double * next_i00, double * next_i01, double * next_i10, double * next_i11, int inner, int sides, bool imag_time) {
     double block_r00[(block_height / 2) * (block_width / 2)];
     double block_r01[(block_height / 2) * (block_width / 2)];
     double block_r10[(block_height / 2) * (block_width / 2)];
@@ -491,7 +491,7 @@ void process_band_sse(size_t tile_width, size_t block_width, size_t block_height
     double block_i01[(block_height / 2) * (block_width / 2)];
     double block_i10[(block_height / 2) * (block_width / 2)];
     double block_i11[(block_height / 2) * (block_width / 2)];
-    
+
     double block_ext_pot_r00[(block_height / 2) * (block_width / 2)];
     double block_ext_pot_r01[(block_height / 2) * (block_width / 2)];
     double block_ext_pot_r10[(block_height / 2) * (block_width / 2)];
@@ -523,7 +523,7 @@ void process_band_sse(size_t tile_width, size_t block_width, size_t block_height
             memcpy2D(block_i10, block_stride, &i10[read_idx], matrix_stride, read_width, read_height / 2);
             memcpy2D(block_r11, block_stride, &r11[read_idx], matrix_stride, read_width, read_height / 2);
             memcpy2D(block_i11, block_stride, &i11[read_idx], matrix_stride, read_width, read_height / 2);
-            
+
             memcpy2D(block_ext_pot_r00, block_stride, &ext_pot_r00[read_idx], matrix_stride, read_width, read_height / 2);
             memcpy2D(block_ext_pot_i00, block_stride, &ext_pot_i00[read_idx], matrix_stride, read_width, read_height / 2);
             memcpy2D(block_ext_pot_r01, block_stride, &ext_pot_r01[read_idx], matrix_stride, read_width, read_height / 2);
@@ -534,18 +534,18 @@ void process_band_sse(size_t tile_width, size_t block_width, size_t block_height
             memcpy2D(block_ext_pot_i11, block_stride, &ext_pot_i11[read_idx], matrix_stride, read_width, read_height / 2);
 
             if(imag_time) {
-				full_step_sse_imaginary(block_width / 2, tile_width / 2, read_height / 2, a, b,
-										block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
-										block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
-										block_r00, block_r01, block_r10, block_r11,
-										block_i00, block_i01, block_i10, block_i11);
+                full_step_sse_imaginary(block_width / 2, tile_width / 2, read_height / 2, a, b,
+                                        block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
+                                        block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
+                                        block_r00, block_r01, block_r10, block_r11,
+                                        block_i00, block_i01, block_i10, block_i11);
             }
             else {
-            	full_step_sse(block_width / 2, tile_width / 2, read_height / 2, a, b,
-								block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
-								block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
-								block_r00, block_r01, block_r10, block_r11,
-								block_i00, block_i01, block_i10, block_i11);
+                full_step_sse(block_width / 2, tile_width / 2, read_height / 2, a, b,
+                              block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
+                              block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
+                              block_r00, block_r01, block_r10, block_r11,
+                              block_i00, block_i01, block_i10, block_i11);
             }
 
             block_read_idx = (write_offset / 2) * (block_width / 2);
@@ -563,32 +563,32 @@ void process_band_sse(size_t tile_width, size_t block_width, size_t block_height
     }
     else {
         if (sides) {
-        	if(imag_time) {
-        		process_sides_sse_imaginary(tile_width, block_width, block_height, halo_x, read_y, read_height, write_offset, write_height, a, b,
-                            ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11, 
-                            ext_pot_i00, ext_pot_i10, ext_pot_i01, ext_pot_i11,
-                            block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
-                            block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
-                            r00, r01, r10, r11, 
-                            i00, i01, i10, i11, 
-                            next_r00, next_r01, next_r10, next_r11, 
-                            next_i00, next_i01, next_i10, next_i11, 
-                            block_r00, block_r01, block_r10, block_r11, 
-                            block_i00, block_i01, block_i10, block_i11);
-        	}
-        	else {
-        		process_sides_sse(tile_width, block_width, block_height, halo_x, read_y, read_height, write_offset, write_height, a, b,
-        		                            ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11,
-        		                            ext_pot_i00, ext_pot_i10, ext_pot_i01, ext_pot_i11,
-        		                            block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
-        		                            block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
-        		                            r00, r01, r10, r11,
-        		                            i00, i01, i10, i11,
-        		                            next_r00, next_r01, next_r10, next_r11,
-        		                            next_i00, next_i01, next_i10, next_i11,
-        		                            block_r00, block_r01, block_r10, block_r11,
-        		                            block_i00, block_i01, block_i10, block_i11);
-        	}
+            if(imag_time) {
+                process_sides_sse_imaginary(tile_width, block_width, block_height, halo_x, read_y, read_height, write_offset, write_height, a, b,
+                                            ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11,
+                                            ext_pot_i00, ext_pot_i10, ext_pot_i01, ext_pot_i11,
+                                            block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
+                                            block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
+                                            r00, r01, r10, r11,
+                                            i00, i01, i10, i11,
+                                            next_r00, next_r01, next_r10, next_r11,
+                                            next_i00, next_i01, next_i10, next_i11,
+                                            block_r00, block_r01, block_r10, block_r11,
+                                            block_i00, block_i01, block_i10, block_i11);
+            }
+            else {
+                process_sides_sse(tile_width, block_width, block_height, halo_x, read_y, read_height, write_offset, write_height, a, b,
+                                  ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11,
+                                  ext_pot_i00, ext_pot_i10, ext_pot_i01, ext_pot_i11,
+                                  block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
+                                  block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
+                                  r00, r01, r10, r11,
+                                  i00, i01, i10, i11,
+                                  next_r00, next_r01, next_r10, next_r11,
+                                  next_i00, next_i01, next_i10, next_i11,
+                                  block_r00, block_r01, block_r10, block_r11,
+                                  block_i00, block_i01, block_i10, block_i11);
+            }
         }
         if (inner) {
             // Regular blocks in the middle
@@ -606,7 +606,7 @@ void process_band_sse(size_t tile_width, size_t block_width, size_t block_height
                 memcpy2D(block_i10, block_stride, &i10[read_idx], matrix_stride, read_width, read_height / 2);
                 memcpy2D(block_r11, block_stride, &r11[read_idx], matrix_stride, read_width, read_height / 2);
                 memcpy2D(block_i11, block_stride, &i11[read_idx], matrix_stride, read_width, read_height / 2);
-                
+
                 memcpy2D(block_ext_pot_r00, block_stride, &ext_pot_r00[read_idx], matrix_stride, read_width, read_height / 2);
                 memcpy2D(block_ext_pot_i00, block_stride, &ext_pot_i00[read_idx], matrix_stride, read_width, read_height / 2);
                 memcpy2D(block_ext_pot_r01, block_stride, &ext_pot_r01[read_idx], matrix_stride, read_width, read_height / 2);
@@ -617,18 +617,18 @@ void process_band_sse(size_t tile_width, size_t block_width, size_t block_height
                 memcpy2D(block_ext_pot_i11, block_stride, &ext_pot_i11[read_idx], matrix_stride, read_width, read_height / 2);
 
                 if(imag_time) {
-                	full_step_sse_imaginary(block_width / 2, block_width / 2, read_height / 2, a, b,
-											block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
-											block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
-											block_r00, block_r01, block_r10, block_r11,
-											block_i00, block_i01, block_i10, block_i11);
+                    full_step_sse_imaginary(block_width / 2, block_width / 2, read_height / 2, a, b,
+                                            block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
+                                            block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
+                                            block_r00, block_r01, block_r10, block_r11,
+                                            block_i00, block_i01, block_i10, block_i11);
                 }
                 else {
-                	full_step_sse(block_width / 2, block_width / 2, read_height / 2, a, b,
-									block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
-									block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
-									block_r00, block_r01, block_r10, block_r11,
-									block_i00, block_i01, block_i10, block_i11);
+                    full_step_sse(block_width / 2, block_width / 2, read_height / 2, a, b,
+                                  block_ext_pot_r00, block_ext_pot_r10, block_ext_pot_r01, block_ext_pot_r11,
+                                  block_ext_pot_i00, block_ext_pot_i10, block_ext_pot_i01, block_ext_pot_i11,
+                                  block_r00, block_r01, block_r10, block_r11,
+                                  block_i00, block_i01, block_i10, block_i11);
                 }
 
                 write_idx = (read_y / 2 + write_offset / 2) * (tile_width / 2) + (block_start + halo_x) / 2;
@@ -646,8 +646,8 @@ void process_band_sse(size_t tile_width, size_t block_width, size_t block_height
 }
 
 CPUBlockSSEKernel::CPUBlockSSEKernel(double *_p_real, double *_p_imag, double *external_potential_real, double *external_potential_imag,
-									double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *periods,
-									MPI_Comm _cartcomm, bool _imag_time):
+                                     double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *periods,
+                                     MPI_Comm _cartcomm, bool _imag_time):
     p_real(_p_real),
     p_imag(_p_imag),
     a(_a),
@@ -687,7 +687,7 @@ CPUBlockSSEKernel::CPUBlockSSEKernel(double *_p_real, double *_p_imag, double *e
     posix_memalign(reinterpret_cast<void**>(&i10[1]), 64, ((tile_width * tile_height) / 4) * sizeof(double));
     posix_memalign(reinterpret_cast<void**>(&i11[0]), 64, ((tile_width * tile_height) / 4) * sizeof(double));
     posix_memalign(reinterpret_cast<void**>(&i11[1]), 64, ((tile_width * tile_height) / 4) * sizeof(double));
-    
+
     posix_memalign(reinterpret_cast<void**>(&ext_pot_r00), 64, ((tile_width * tile_height) / 4) * sizeof(double));
     posix_memalign(reinterpret_cast<void**>(&ext_pot_r01), 64, ((tile_width * tile_height) / 4) * sizeof(double));
     posix_memalign(reinterpret_cast<void**>(&ext_pot_r10), 64, ((tile_width * tile_height) / 4) * sizeof(double));
@@ -696,14 +696,14 @@ CPUBlockSSEKernel::CPUBlockSSEKernel(double *_p_real, double *_p_imag, double *e
     posix_memalign(reinterpret_cast<void**>(&ext_pot_i01), 64, ((tile_width * tile_height) / 4) * sizeof(double));
     posix_memalign(reinterpret_cast<void**>(&ext_pot_i10), 64, ((tile_width * tile_height) / 4) * sizeof(double));
     posix_memalign(reinterpret_cast<void**>(&ext_pot_i11), 64, ((tile_width * tile_height) / 4) * sizeof(double));
-    
+
     for (size_t i = 0; i < tile_height / 2; i++) {
         for (size_t j = 0; j < tile_width / 2; j++) {
             r00[0][i * tile_width / 2 + j] = p_real[2 * i * tile_width + 2 * j];
             i00[0][i * tile_width / 2 + j] = p_imag[2 * i * tile_width + 2 * j];
             r01[0][i * tile_width / 2 + j] = p_real[2 * i * tile_width + 2 * j + 1];
             i01[0][i * tile_width / 2 + j] = p_imag[2 * i * tile_width + 2 * j + 1];
-            
+
             ext_pot_r00[i * tile_width / 2 + j] = external_potential_real[2 * i * tile_width + 2 * j];
             ext_pot_i00[i * tile_width / 2 + j] = external_potential_imag[2 * i * tile_width + 2 * j];
             ext_pot_r01[i * tile_width / 2 + j] = external_potential_real[2 * i * tile_width + 2 * j + 1];
@@ -714,7 +714,7 @@ CPUBlockSSEKernel::CPUBlockSSEKernel(double *_p_real, double *_p_imag, double *e
             i10[0][i * tile_width / 2 + j] = p_imag[(2 * i + 1) * tile_width + 2 * j];
             r11[0][i * tile_width / 2 + j] = p_real[(2 * i + 1) * tile_width + 2 * j + 1];
             i11[0][i * tile_width / 2 + j] = p_imag[(2 * i + 1) * tile_width + 2 * j + 1];
-            
+
             ext_pot_r10[i * tile_width / 2 + j] = external_potential_real[(2 * i + 1) * tile_width + 2 * j];
             ext_pot_i10[i * tile_width / 2 + j] = external_potential_imag[(2 * i + 1) * tile_width + 2 * j];
             ext_pot_r11[i * tile_width / 2 + j] = external_potential_real[(2 * i + 1) * tile_width + 2 * j + 1];
@@ -765,12 +765,12 @@ void CPUBlockSSEKernel::run_kernel_on_halo() {
         inner = 1;
         sides = 1;
         process_band_sse( tile_width, block_width, block_height, halo_x, 0, tile_height, 0, tile_height, a, b,
-                        ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11, 
-                        ext_pot_i00, ext_pot_i10, ext_pot_i01, ext_pot_i11,
-                        r00[sense], r01[sense], r10[sense], r11[sense], 
-                        i00[sense], i01[sense], i10[sense], i11[sense], 
-                        r00[1 - sense], r01[1 - sense], r10[1 - sense], r11[1 - sense], 
-                        i00[1 - sense], i01[1 - sense], i10[1 - sense], i11[1 - sense], inner, sides, imag_time);
+                          ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11,
+                          ext_pot_i00, ext_pot_i10, ext_pot_i01, ext_pot_i11,
+                          r00[sense], r01[sense], r10[sense], r11[sense],
+                          i00[sense], i01[sense], i10[sense], i11[sense],
+                          r00[1 - sense], r01[1 - sense], r10[1 - sense], r11[1 - sense],
+                          i00[1 - sense], i01[1 - sense], i10[1 - sense], i11[1 - sense], inner, sides, imag_time);
     }
     else {
 
@@ -780,35 +780,35 @@ void CPUBlockSSEKernel::run_kernel_on_halo() {
         size_t block_start;
         for (block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
             process_band_sse(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b,
-                            ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11, 
-                         ext_pot_i00, ext_pot_i10, ext_pot_i01, ext_pot_i11,
-                            r00[sense], r01[sense], r10[sense], r11[sense], 
-                            i00[sense], i01[sense], i10[sense], i11[sense], 
-                            r00[1 - sense], r01[1 - sense], r10[1 - sense], r11[1 - sense], 
-                            i00[1 - sense], i01[1 - sense], i10[1 - sense], i11[1 - sense], inner, sides, imag_time);
+                             ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11,
+                             ext_pot_i00, ext_pot_i10, ext_pot_i01, ext_pot_i11,
+                             r00[sense], r01[sense], r10[sense], r11[sense],
+                             i00[sense], i01[sense], i10[sense], i11[sense],
+                             r00[1 - sense], r01[1 - sense], r10[1 - sense], r11[1 - sense],
+                             i00[1 - sense], i01[1 - sense], i10[1 - sense], i11[1 - sense], inner, sides, imag_time);
         }
 
         // First band
         inner = 1;
         sides = 1;
         process_band_sse(tile_width, block_width, block_height, halo_x,  0, block_height, 0, block_height - halo_y, a, b,
-                        ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11, 
+                         ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11,
                          ext_pot_i00, ext_pot_i10, ext_pot_i01, ext_pot_i11,
-                        r00[sense], r01[sense], r10[sense], r11[sense], 
-                        i00[sense], i01[sense], i10[sense], i11[sense], 
-                        r00[1 - sense], r01[1 - sense], r10[1 - sense], r11[1 - sense], 
-                        i00[1 - sense], i01[1 - sense], i10[1 - sense], i11[1 - sense], inner, sides, imag_time);
+                         r00[sense], r01[sense], r10[sense], r11[sense],
+                         i00[sense], i01[sense], i10[sense], i11[sense],
+                         r00[1 - sense], r01[1 - sense], r10[1 - sense], r11[1 - sense],
+                         i00[1 - sense], i01[1 - sense], i10[1 - sense], i11[1 - sense], inner, sides, imag_time);
 
         // Last band
         inner = 1;
         sides = 1;
         process_band_sse(tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a, b,
-                        ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11, 
+                         ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11,
                          ext_pot_i00, ext_pot_i10, ext_pot_i01, ext_pot_i11,
-                        r00[sense], r01[sense], r10[sense], r11[sense], 
-                        i00[sense], i01[sense], i10[sense], i11[sense], 
-                        r00[1 - sense], r01[1 - sense], r10[1 - sense], r11[1 - sense], 
-                        i00[1 - sense], i01[1 - sense], i10[1 - sense], i11[1 - sense], inner, sides, imag_time);
+                         r00[sense], r01[sense], r10[sense], r11[sense],
+                         i00[sense], i01[sense], i10[sense], i11[sense],
+                         r00[1 - sense], r01[1 - sense], r10[1 - sense], r11[1 - sense],
+                         i00[1 - sense], i01[1 - sense], i10[1 - sense], i11[1 - sense], inner, sides, imag_time);
     }
 
 }
@@ -817,54 +817,54 @@ void CPUBlockSSEKernel::run_kernel() {
     int inner = 1, sides = 0;
     for (size_t block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
         process_band_sse(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b,
-                        ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11, 
+                         ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11,
                          ext_pot_i00, ext_pot_i10, ext_pot_i01, ext_pot_i11,
-                        r00[sense], r01[sense], r10[sense], r11[sense], 
-                        i00[sense], i01[sense], i10[sense], i11[sense], 
-                        r00[1 - sense], r01[1 - sense], r10[1 - sense], r11[1 - sense], 
-                        i00[1 - sense], i01[1 - sense], i10[1 - sense], i11[1 - sense], inner, sides, imag_time);
+                         r00[sense], r01[sense], r10[sense], r11[sense],
+                         i00[sense], i01[sense], i10[sense], i11[sense],
+                         r00[1 - sense], r01[1 - sense], r10[1 - sense], r11[1 - sense],
+                         i00[1 - sense], i01[1 - sense], i10[1 - sense], i11[1 - sense], inner, sides, imag_time);
     }
     sense = 1 - sense;
 }
 
 
 void CPUBlockSSEKernel::wait_for_completion(int iteration, int snapshots) {
-	if(imag_time && ((iteration % 20) == 0 || ((snapshots > 0) && (iteration + 1) % snapshots == 0))) {
-	        //normalization
-	        int nProcs;
-	        MPI_Comm_size(cartcomm, &nProcs);
-	        int height = (tile_height - halo_y) / 2;
-	        int width = (tile_width - halo_x) / 2;
-	        double sum = 0., sums[nProcs];
-	        for(int i = halo_y / 2; i < height; i++) {
-	            for(int j = halo_x / 2; j < width; j++) {
-	            	int idx = j + i * tile_width/2;
-	                sum += r00[sense][idx] * r00[sense][idx] + i00[sense][idx] * i00[sense][idx] +
-	                	   r10[sense][idx] * r10[sense][idx] + i10[sense][idx] * i10[sense][idx] +
-	                	   r01[sense][idx] * r01[sense][idx] + i01[sense][idx] * i01[sense][idx] +
-	                	   r11[sense][idx] * r11[sense][idx] + i11[sense][idx] * i11[sense][idx];
-	            }
-	        }
-	        MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
-	        double tot_sum = 0.;
-	        for(int i = 0; i < nProcs; i++)
-	            tot_sum += sums[i];
-	        double norm = sqrt(tot_sum);
+    if(imag_time && ((iteration % 20) == 0 || ((snapshots > 0) && (iteration + 1) % snapshots == 0))) {
+        //normalization
+        int nProcs;
+        MPI_Comm_size(cartcomm, &nProcs);
+        int height = (tile_height - halo_y) / 2;
+        int width = (tile_width - halo_x) / 2;
+        double sum = 0., sums[nProcs];
+        for(int i = halo_y / 2; i < height; i++) {
+            for(int j = halo_x / 2; j < width; j++) {
+                int idx = j + i * tile_width / 2;
+                sum += r00[sense][idx] * r00[sense][idx] + i00[sense][idx] * i00[sense][idx] +
+                       r10[sense][idx] * r10[sense][idx] + i10[sense][idx] * i10[sense][idx] +
+                       r01[sense][idx] * r01[sense][idx] + i01[sense][idx] * i01[sense][idx] +
+                       r11[sense][idx] * r11[sense][idx] + i11[sense][idx] * i11[sense][idx];
+            }
+        }
+        MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
+        double tot_sum = 0.;
+        for(int i = 0; i < nProcs; i++)
+            tot_sum += sums[i];
+        double norm = sqrt(tot_sum);
 
-	        for(size_t i = 0; i < tile_height / 2; i++) {
-	            for(size_t j = 0; j < tile_width / 2; j++) {
-	            	int idx = j + i * tile_width / 2;
-	                r00[sense][idx] /= norm;
-	                i00[sense][idx] /= norm;
-	                r10[sense][idx] /= norm;
-	                i10[sense][idx] /= norm;
-	                r01[sense][idx] /= norm;
-					i01[sense][idx] /= norm;
-					r11[sense][idx] /= norm;
-					i11[sense][idx] /= norm;
-	            }
-	        }
-	    }
+        for(size_t i = 0; i < tile_height / 2; i++) {
+            for(size_t j = 0; j < tile_width / 2; j++) {
+                int idx = j + i * tile_width / 2;
+                r00[sense][idx] /= norm;
+                i00[sense][idx] /= norm;
+                r10[sense][idx] /= norm;
+                i10[sense][idx] /= norm;
+                r01[sense][idx] /= norm;
+                i01[sense][idx] /= norm;
+                r11[sense][idx] /= norm;
+                i11[sense][idx] /= norm;
+            }
+        }
+    }
 }
 
 

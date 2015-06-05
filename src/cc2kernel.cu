@@ -155,21 +155,21 @@ static  inline __device__ void trotter_horz_pair_flexible_nosync(double a, doubl
 
 template<int BLOCK_WIDTH, int BLOCK_HEIGHT>
 static  inline __device__ void trotter_external_pot_nosync(int tile_width, int tile_height, double &cell_r, double &cell_i,
-                            int kx, int ky, int px, int py,
-                            double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH],
-                            double pot_r[BLOCK_HEIGHT][BLOCK_WIDTH], double pot_i[BLOCK_HEIGHT][BLOCK_WIDTH]) {
+        int kx, int ky, int px, int py,
+        double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH],
+        double pot_r[BLOCK_HEIGHT][BLOCK_WIDTH], double pot_i[BLOCK_HEIGHT][BLOCK_WIDTH]) {
     double var;
     double peer_r;
     double peer_i;
     double pot_cell_r, pot_cell_i, pot_peer_r, pot_peer_i;
 
-    const int ky_peer = ky + 1 - 2 *(kx % 2);
-    if(ky >= 0 && ky < BLOCK_HEIGHT && ky_peer >= 0 && ky_peer < BLOCK_HEIGHT && kx >= 0 && kx < BLOCK_WIDTH){
+    const int ky_peer = ky + 1 - 2 * (kx % 2);
+    if(ky >= 0 && ky < BLOCK_HEIGHT && ky_peer >= 0 && ky_peer < BLOCK_HEIGHT && kx >= 0 && kx < BLOCK_WIDTH) {
         pot_cell_r = pot_r[ky][kx];
         pot_cell_i = pot_i[ky][kx];
         pot_peer_r = pot_r[ky_peer][kx];
         pot_peer_i = pot_i[ky_peer][kx];
-        
+
         peer_r = rl[ky_peer][kx];
         peer_i = im[ky_peer][kx];
 
@@ -177,7 +177,7 @@ static  inline __device__ void trotter_external_pot_nosync(int tile_width, int t
         var = cell_r;
         cell_r = pot_cell_r * var - pot_cell_i * cell_i;
         cell_i = pot_cell_r * cell_i + pot_cell_i * var;
-        
+
         rl[ky_peer][kx] = pot_peer_r * peer_r - pot_peer_i * peer_i;
         im[ky_peer][kx] = pot_peer_r * peer_i + pot_peer_i * peer_r;
 #else
@@ -186,7 +186,7 @@ static  inline __device__ void trotter_external_pot_nosync(int tile_width, int t
         var = cell_r;
         cell_r = __dadd_rn(pot_cell_r * var, - pot_cell_i * cell_i);
         cell_i = __dadd_rn(pot_cell_r * cell_i, pot_cell_i * var);
-        
+
         rl[ky_peer][kx] = __dadd_rn(pot_peer_r * peer_r, - pot_peer_i * peer_i);
         im[ky_peer][kx] = __dadd_rn(pot_peer_r * peer_i, pot_peer_i * peer_r);
 #endif
@@ -199,7 +199,7 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x
                           const double * __restrict__ p_real, const double * __restrict__ p_imag,
                           double * __restrict__ p2_real, double * __restrict__ p2_imag,
                           int inner, int horizontal, int vertical) {
-                          
+
     __shared__ double rl[BLOCK_Y][BLOCK_X];
     __shared__ double im[BLOCK_Y][BLOCK_X];
     __shared__ double pot_r[BLOCK_Y][BLOCK_X];
@@ -226,7 +226,7 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x
     }
 
     __syncthreads();
-    
+
     // Place threads along the black cells of a checkerboard pattern
     int sx = threadIdx.x;
     int sy;
@@ -279,7 +279,7 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x
         trotter_external_pot_nosync<BLOCK_X, BLOCK_Y>(tile_width, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, checkerboard_py + part * 2 * STRIDE_Y, rl, im, pot_r, pot_i);
     }
     __syncthreads();
-    
+
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
         trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
@@ -381,25 +381,22 @@ static  inline __device__ void imag_trotter_horz_pair_flexible_nosync(double a, 
 
 template<int BLOCK_WIDTH, int BLOCK_HEIGHT>
 static  inline __device__ void imag_trotter_external_pot_nosync(int tile_width, int tile_height, double &cell_r, double &cell_i,
-                            int kx, int ky, int px, int py,
-                            double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH],
-                            double pot_r[BLOCK_HEIGHT][BLOCK_WIDTH], double pot_i[BLOCK_HEIGHT][BLOCK_WIDTH]) {
-    double var;
+        int kx, int ky, int px, int py,
+        double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH],
+        double pot_r[BLOCK_HEIGHT][BLOCK_WIDTH]) {
     double peer_r;
     double peer_i;
-    double pot_cell_r, pot_cell_i, pot_peer_r, pot_peer_i;
+    double pot_cell_r, pot_peer_r;
 
-    const int ky_peer = ky + 1 - 2 *(kx % 2);
-    if(ky >= 0 && ky < BLOCK_HEIGHT && ky_peer >= 0 && ky_peer < BLOCK_HEIGHT && kx >= 0 && kx < BLOCK_WIDTH){
+    const int ky_peer = ky + 1 - 2 * (kx % 2);
+    if(ky >= 0 && ky < BLOCK_HEIGHT && ky_peer >= 0 && ky_peer < BLOCK_HEIGHT && kx >= 0 && kx < BLOCK_WIDTH) {
         pot_cell_r = pot_r[ky][kx];
-        pot_cell_i = pot_i[ky][kx];
         pot_peer_r = pot_r[ky_peer][kx];
-        pot_peer_i = pot_i[ky_peer][kx];
         peer_r = rl[ky_peer][kx];
         peer_i = im[ky_peer][kx];
 
         cell_r = pot_cell_r * cell_r;
-        cell_i = pot_cell_r * cell_i;        
+        cell_i = pot_cell_r * cell_i;
         rl[ky_peer][kx] = pot_peer_r * peer_r;
         im[ky_peer][kx] = pot_peer_r * peer_i;
     }
@@ -407,15 +404,14 @@ static  inline __device__ void imag_trotter_external_pot_nosync(int tile_width, 
 
 __launch_bounds__(BLOCK_X * STRIDE_Y)
 __global__ void imag_cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y,
-                          double a, double b, const double * __restrict__ external_pot_real, const double * __restrict__ external_pot_imag,
-                          const double * __restrict__ p_real, const double * __restrict__ p_imag,
-                          double * __restrict__ p2_real, double * __restrict__ p2_imag,
-                          int inner, int horizontal, int vertical) {
-                          
+                               double a, double b, const double * __restrict__ external_pot_real, const double * __restrict__ external_pot_imag,
+                               const double * __restrict__ p_real, const double * __restrict__ p_imag,
+                               double * __restrict__ p2_real, double * __restrict__ p2_imag,
+                               int inner, int horizontal, int vertical) {
+
     __shared__ double rl[BLOCK_Y][BLOCK_X];
     __shared__ double im[BLOCK_Y][BLOCK_X];
     __shared__ double pot_r[BLOCK_Y][BLOCK_X];
-    __shared__ double pot_i[BLOCK_Y][BLOCK_X];
 
     int blockIdxx = inner * (blockIdx.x + 1) + horizontal * (blockIdx.x) + vertical * (blockIdx.x * ((tile_width + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x) - 1));
     int blockIdxy = inner * (blockIdx.y + 1) + horizontal * (blockIdx.y * ((tile_height + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y) - 1)) + vertical * (blockIdx.y + 1);
@@ -432,13 +428,12 @@ __global__ void imag_cc2kernel(size_t tile_width, size_t tile_height, size_t off
                 rl[threadIdx.y + i * STRIDE_Y][threadIdx.x] = p_real[pidx];
                 im[threadIdx.y + i * STRIDE_Y][threadIdx.x] = p_imag[pidx];
                 pot_r[threadIdx.y + i * STRIDE_Y][threadIdx.x] = external_pot_real[pidx];
-                pot_i[threadIdx.y + i * STRIDE_Y][threadIdx.x] = external_pot_imag[pidx];
             }
         }
     }
 
     __syncthreads();
-    
+
     // Place threads along the black cells of a checkerboard pattern
     int sx = threadIdx.x;
     int sy;
@@ -488,10 +483,10 @@ __global__ void imag_cc2kernel(size_t tile_width, size_t tile_height, size_t off
 //potential
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_trotter_external_pot_nosync<BLOCK_X, BLOCK_Y>(tile_width, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, checkerboard_py + part * 2 * STRIDE_Y, rl, im, pot_r, pot_i);
+        imag_trotter_external_pot_nosync<BLOCK_X, BLOCK_Y>(tile_width, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, checkerboard_py + part * 2 * STRIDE_Y, rl, im, pot_r);
     }
     __syncthreads();
-    
+
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
         imag_trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
@@ -578,7 +573,7 @@ CC2Kernel::CC2Kernel(double *_p_real, double *_p_imag, double *_external_pot_rea
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_imag), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_real, external_pot_real, tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_imag, external_pot_imag, tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
-    
+
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[0]), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[1]), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[0]), tile_width * tile_height * sizeof(double)));
@@ -684,11 +679,11 @@ void CC2Kernel::run_kernel() {
 void CC2Kernel::wait_for_completion(int iteration, int snapshots) {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
     //normalization
-    if(imag_time && ((iteration % 20) == 0 || ((snapshots > 0) && (iteration + 1) % snapshots == 0))){
-    
+    if(imag_time && ((iteration % 20) == 0 || ((snapshots > 0) && (iteration + 1) % snapshots == 0))) {
+
         CUDA_SAFE_CALL(cudaMemcpy(p_real, pdev_real[sense], tile_width * tile_height * sizeof(double), cudaMemcpyDeviceToHost));
         CUDA_SAFE_CALL(cudaMemcpy(p_imag, pdev_imag[sense], tile_width * tile_height * sizeof(double), cudaMemcpyDeviceToHost));
-        
+
         int nProcs;
         MPI_Comm_size(cartcomm, &nProcs);
         int height = tile_height - halo_y;
@@ -699,7 +694,7 @@ void CC2Kernel::wait_for_completion(int iteration, int snapshots) {
                 sum += p_real[j + i * tile_width] * p_real[j + i * tile_width] + p_imag[j + i * tile_width] * p_imag[j + i * tile_width];
             }
         }
-        
+
         MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
         double tot_sum = 0.;
         for(int i = 0; i < nProcs; i++)

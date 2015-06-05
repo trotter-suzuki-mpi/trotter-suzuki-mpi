@@ -92,10 +92,10 @@ HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_p
 
     external_pot_real = new double[tile_width * tile_height];
     external_pot_imag = new double[tile_width * tile_height];
-    
+
     memcpy(p_real[0], _p_real, tile_width * tile_height * sizeof(double));
     memcpy(p_imag[0], _p_imag, tile_width * tile_height * sizeof(double));
-    
+
     memcpy(external_pot_real, _external_pot_real, tile_width * tile_height * sizeof(double));
     memcpy(external_pot_imag, _external_pot_imag, tile_width * tile_height * sizeof(double));
 
@@ -247,7 +247,7 @@ void HybridKernel::wait_for_completion(int iteration, int snapshots) {
     if(imag_time && ((iteration % 20) == 0 || ((snapshots > 0) && (iteration + 1) % snapshots == 0))) {
         CUDA_SAFE_CALL(cudaMemcpy2D(&(p_real[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), pdev_real[sense], gpu_tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyDeviceToHost));
         CUDA_SAFE_CALL(cudaMemcpy2D(&(p_imag[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), pdev_imag[sense], gpu_tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyDeviceToHost));
-        
+
         int nProcs;
         MPI_Comm_size(cartcomm, &nProcs);
         int height = tile_height - halo_y;
@@ -284,7 +284,7 @@ void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t wid
     memcpy2D(dest_imag, dest_stride * sizeof(double), &(p_imag[sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
 
     // Inner part
-    
+
     CUDA_SAFE_CALL(cudaMemcpy2D(&(dest_real[(gpu_start_y + halo_y - y) * dest_stride + gpu_start_x + halo_x - x]), dest_stride * sizeof(double), &(pdev_real[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), (gpu_tile_width - 2 * halo_x) * sizeof(double), gpu_tile_height - 2 * halo_y, cudaMemcpyDeviceToHost));
     CUDA_SAFE_CALL(cudaMemcpy2D(&(dest_imag[(gpu_start_y + halo_y - y) * dest_stride + gpu_start_x + halo_x - x]), dest_stride * sizeof(double), &(pdev_imag[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), (gpu_tile_width - 2 * halo_x) * sizeof(double), gpu_tile_height - 2 * halo_y, cudaMemcpyDeviceToHost));
 }

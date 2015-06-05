@@ -309,8 +309,8 @@ void CPUBlock::wait_for_completion(int iteration, int snapshots) {
             tot_sum += sums[i];
         double norm = sqrt(tot_sum);
 
-        for(int i = 0; i < tile_height; i++) {
-            for(int j = 0; j < tile_width; j++) {
+        for(size_t i = 0; i < tile_height; i++) {
+            for(size_t j = 0; j < tile_width; j++) {
                 p_real[sense][j + i * tile_width] /= norm;
                 p_imag[sense][j + i * tile_width] /= norm;
             }

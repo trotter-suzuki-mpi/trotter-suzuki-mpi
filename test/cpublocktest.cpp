@@ -208,7 +208,6 @@ void CPUBlockTest::test_block_kernel_horizontal() {
 void CPUBlockTest::test_update_shifty_sse() {
     //Set Up
     int DIM = 640;
-    int offset = 0;
     double a = h_a, b = h_b;
     double *block_r00 = new double[DIM * DIM];
     double *block_i00 = new double[DIM * DIM];
@@ -256,7 +255,6 @@ void CPUBlockTest::test_update_shifty_sse() {
 void CPUBlockTest::test_update_shiftx_sse() {
     //Set Up
     int DIM = 640;
-    int offset = 0;
     double a = h_a, b = h_b;
     double *block_r00 = new double[DIM * DIM];
     double *block_i00 = new double[DIM * DIM];
