@@ -100,7 +100,7 @@ void trotter(double h_a, double h_b,
         break;
 
     case 1:
-        kernel = new CPUBlockSSEKernel(_p_real, _p_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm);
+        kernel = new CPUBlockSSEKernel(_p_real, _p_imag, _external_pot_real, _external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
         break;
 
     case 2:
@@ -142,8 +142,7 @@ void trotter(double h_a, double h_b,
                        matr_real, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_DOUBLE, 0, cartcomm);
             MPI_Gather(_p_imag, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_DOUBLE,
                        matr_imag, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_DOUBLE, 0, cartcomm);
-
-
+                         
             if(rank == 0) {
                 int _start_x, _end_x, _inner_start_x, _inner_end_x,
                     _start_y, _end_y, _inner_start_y, _inner_end_y;

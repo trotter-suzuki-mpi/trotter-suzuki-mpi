@@ -18,6 +18,7 @@
  */
 
 #include <mpi.h>
+#include <iostream>
 
 #include "common.h"
 #include "hybrid.h"
@@ -158,7 +159,7 @@ void HybridKernel::run_kernel() {
     {
         #pragma omp for schedule(runtime) nowait
         for (block_start = block_height - 2 * halo_y; block_start < (int)last_band; block_start += block_height - 2 * halo_y) {
-            process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, false);
+            process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
         }
     }
     #pragma omp barrier
@@ -172,7 +173,7 @@ void HybridKernel::run_kernel_on_halo() {
     numBlocks.x = (gpu_tile_width  + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x);
     numBlocks.y = (gpu_tile_height + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y);
 
-    cc2kernel_wrapper(gpu_tile_width, gpu_tile_height, -BLOCK_X + 3 * halo_x, -BLOCK_Y + 3 * halo_y, halo_x, halo_y, numBlocks, threadsPerBlock, stream,  a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
+    cc2kernel_wrapper(gpu_tile_width, gpu_tile_height, -BLOCK_X + 3 * halo_x, -BLOCK_Y + 3 * halo_y, halo_x, halo_y, numBlocks, threadsPerBlock, stream,  a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical, imag_time);
 
     // The CPU calculates the halo
     inner = 0;
@@ -181,7 +182,7 @@ void HybridKernel::run_kernel_on_halo() {
         // One full band
         inner = 1;
         sides = 1;
-        process_band(tile_width, block_width, block_height, halo_x, 0, tile_height, 0, tile_height, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, false);
+        process_band(tile_width, block_width, block_height, halo_x, 0, tile_height, 0, tile_height, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
     }
     else {
 #ifdef _OPENMP
@@ -195,7 +196,7 @@ void HybridKernel::run_kernel_on_halo() {
                     // First band
                     inner = 1;
                     sides = 1;
-                    process_band(tile_width, block_width, block_height, halo_x, 0, block_height, 0, block_height - halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, false);
+                    process_band(tile_width, block_width, block_height, halo_x, 0, block_height, 0, block_height - halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
 
                 }
                 #pragma omp section
@@ -204,7 +205,7 @@ void HybridKernel::run_kernel_on_halo() {
                     block_start = ((tile_height - block_height) / (block_height - 2 * halo_y) + 1) * (block_height - 2 * halo_y);
                     inner = 1;
                     sides = 1;
-                    process_band(tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, false);
+                    process_band(tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
 
                 }
             }
@@ -213,7 +214,7 @@ void HybridKernel::run_kernel_on_halo() {
             for (block_start = block_height - 2 * halo_y; block_start < (int)(tile_height - block_height); block_start += block_height - 2 * halo_y) {
                 inner = 0;
                 sides = 1;
-                process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, false);
+                process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
             }
 
             #pragma omp barrier
@@ -225,37 +226,64 @@ void HybridKernel::run_kernel_on_halo() {
         sides = 1;
         int block_start;
         for (block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
-            process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, false);
+            process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
         }
         // First band
         inner = 1;
         sides = 1;
-        process_band(tile_width, block_width, block_height, halo_x, 0, block_height, 0, block_height - halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, false);
+        process_band(tile_width, block_width, block_height, halo_x, 0, block_height, 0, block_height - halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
 
         // Last band
         inner = 1;
         sides = 1;
-        process_band(tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, false);
+        process_band(tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
 #endif /* _OPENMP */
     }
 }
 
 void HybridKernel::wait_for_completion(int iteration, int snapshots) {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
+    //normalization for imaginary time evolution
+    if(imag_time && ((iteration % 20) == 0 || ((snapshots > 0) && (iteration + 1) % snapshots == 0))) {
+        CUDA_SAFE_CALL(cudaMemcpy2D(&(p_real[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), pdev_real[sense], gpu_tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyDeviceToHost));
+        CUDA_SAFE_CALL(cudaMemcpy2D(&(p_imag[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), pdev_imag[sense], gpu_tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyDeviceToHost));
+        
+        int nProcs;
+        MPI_Comm_size(cartcomm, &nProcs);
+        int height = tile_height - halo_y;
+        int width = tile_width - halo_x;
+        double sum = 0., sums[nProcs];
+        for(int i = halo_y; i < height; i++) {
+            for(int j = halo_x; j < width; j++) {
+                sum += p_real[sense][j + i * tile_width] * p_real[sense][j + i * tile_width] + p_imag[sense][j + i * tile_width] * p_imag[sense][j + i * tile_width];
+            }
+        }
+        MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
+        double tot_sum = 0.;
+        for(int i = 0; i < nProcs; i++)
+            tot_sum += sums[i];
+        double norm = sqrt(tot_sum);
+
+        for(int i = 0; i < tile_height; i++) {
+            for(int j = 0; j < tile_width; j++) {
+                p_real[sense][j + i * tile_width] /= norm;
+                p_imag[sense][j + i * tile_width] /= norm;
+            }
+        }
+        CUDA_SAFE_CALL(cudaMemcpy2D(pdev_real[sense], gpu_tile_width * sizeof(double), &(p_real[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyHostToDevice));
+        CUDA_SAFE_CALL(cudaMemcpy2D(pdev_imag[sense], gpu_tile_width * sizeof(double), &(p_imag[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyHostToDevice));
+    }
 }
 
 void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const {
     if ( (x != 0) || (y != 0) || (width != tile_width) || (height != tile_height)) {
-        printf("Only full tile samples are implemented!\n");
-        return;
+        //printf("Only full tile samples are implementedaaa!\n");
+        //return;
     }
     memcpy2D(dest_real, dest_stride * sizeof(double), &(p_real[sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
     memcpy2D(dest_imag, dest_stride * sizeof(double), &(p_imag[sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
 
     // Inner part
-
-    //CUDA_SAFE_CALL(cudaMemcpy2D(&(dest_real[(gpu_start_y + halo_y) * tile_width + gpu_start_x + halo_x]), dest_stride * sizeof(double), &(pdev_real[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), (gpu_tile_width - 2 * halo_x) * sizeof(double), gpu_tile_height - 2 * halo_y, cudaMemcpyDeviceToHost));
-    //CUDA_SAFE_CALL(cudaMemcpy2D(&(dest_imag[(gpu_start_y + halo_y) * tile_width + gpu_start_x + halo_x]), dest_stride * sizeof(double), &(pdev_imag[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), (gpu_tile_width - 2 * halo_x) * sizeof(double), gpu_tile_height - 2 * halo_y, cudaMemcpyDeviceToHost));
     
     CUDA_SAFE_CALL(cudaMemcpy2D(&(dest_real[(gpu_start_y + halo_y - y) * dest_stride + gpu_start_x + halo_x - x]), dest_stride * sizeof(double), &(pdev_real[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), (gpu_tile_width - 2 * halo_x) * sizeof(double), gpu_tile_height - 2 * halo_y, cudaMemcpyDeviceToHost));
     CUDA_SAFE_CALL(cudaMemcpy2D(&(dest_imag[(gpu_start_y + halo_y - y) * dest_stride + gpu_start_x + halo_x - x]), dest_stride * sizeof(double), &(pdev_imag[sense][halo_y * gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), (gpu_tile_width - 2 * halo_x) * sizeof(double), gpu_tile_height - 2 * halo_y, cudaMemcpyDeviceToHost));

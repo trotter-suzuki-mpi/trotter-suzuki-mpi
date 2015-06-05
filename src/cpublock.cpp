@@ -98,10 +98,6 @@ void block_kernel_potential(size_t stride, size_t width, size_t height, double a
             double tmp = p_real[idx];
             p_real[idx] = external_pot_real[idx_pot] * tmp - external_pot_imag[idx_pot] * p_imag[idx];
             p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx] + external_pot_imag[idx_pot] * tmp;
-
-/*          tmp = p_real[idx];
-            p_real[idx] = external_pot_real[idx_pot] * tmp - external_pot_imag[idx_pot] * p_imag[idx];
-            p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx] + external_pot_imag[idx_pot] * tmp;*/
         }
     }
 }
@@ -112,9 +108,6 @@ void block_kernel_potential_imaginary(size_t stride, size_t width, size_t height
         for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
             p_real[idx] = external_pot_real[idx_pot] * p_real[idx];
             p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx];
-
-            //p_real[idx] = external_pot_real[idx_pot] * p_real[idx];
-            //p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx];
         }
     }
 }
@@ -212,7 +205,6 @@ CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real,
     halo_x(_halo_x),
     halo_y(_halo_y),
     imag_time(_imag_time) {
-
     cartcomm = _cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
@@ -299,7 +291,7 @@ void CPUBlock::run_kernel_on_halo() {
 }
 
 void CPUBlock::wait_for_completion(int iteration, int snapshots) {
-    if(imag_time && ((iteration % 100) == 0 || ((snapshots > 0) && (iteration + 1) % snapshots == 0))) {
+    if(imag_time && ((iteration % 20) == 0 || ((snapshots > 0) && (iteration + 1) % snapshots == 0))) {
         //normalization
         int nProcs;
         MPI_Comm_size(cartcomm, &nProcs);

@@ -38,13 +38,30 @@ inline void update_shifty_sse(size_t stride, size_t width, size_t height, double
 template <int offset_x>
 inline void update_shiftx_sse(size_t stride, size_t width, size_t height, double a, double b, double * __restrict__ r1, double * __restrict__ i1, double * __restrict__ r2, double * __restrict__ i2);
 
-void process_sides_sse(size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b, const double * r00, const double * r01, const double * r10, const double * r11, const double * i00, const double * i01, const double * i10, const double * i11, double * next_r00, double * next_r01, double * next_r10, double * next_r11, double * next_i00, double * next_i01, double * next_i10, double * next_i11, double * block_r00, double * block_r01, double * block_r10, double * block_r11, double * block_i00, double * block_i01, double * block_i10, double * block_i11);
+void process_sides_sse( double *var, size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b,
+                        const double *ext_pot_r00, const double *ext_pot_r01, const double *ext_pot_r10, const double *ext_pot_r11,
+                       const double *ext_pot_i00, const double *ext_pot_i01, const double *ext_pot_i10, const double *ext_pot_i11,
+                       double *block_ext_pot_r00, double *block_ext_pot_r01, double *block_ext_pot_r10, double *block_ext_pot_r11,
+                       double *block_ext_pot_i00, double *block_ext_pot_i01, double *block_ext_pot_i10, double *block_ext_pot_i11,
+                        const double * r00, const double * r01, const double * r10, const double * r11,
+                        const double * i00, const double * i01, const double * i10, const double * i11,
+                        double * next_r00, double * next_r01, double * next_r10, double * next_r11,
+                        double * next_i00, double * next_i01, double * next_i10, double * next_i11,
+                        double * block_r00, double * block_r01, double * block_r10, double * block_r11,
+                        double * block_i00, double * block_i01, double * block_i10, double * block_i11);
 
-void process_band_sse(size_t read_y, size_t read_height, size_t write_offset, size_t write_height, size_t block_width, size_t block_height, size_t tile_width, size_t halo_x, double a, double b, const double * r00, const double * r01, const double * r10, const double * r11, const double * i00, const double * i01, const double * i10, const double * i11, double * next_r00, double * next_r01, double * next_r10, double * next_r11, double * next_i00, double * next_i01, double * next_i10, double * next_i11, int inner, int sides);
+void process_band_sse(double *var,   size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b,
+                    const double *ext_pot_r00, const double *ext_pot_r01, const double *ext_pot_r10, const double *ext_pot_r11,
+                    const double *ext_pot_i00, const double *ext_pot_i01, const double *ext_pot_i10, const double *ext_pot_i11,
+                    const double * r00, const double * r01, const double * r10, const double * r11,
+                    const double * i00, const double * i01, const double * i10, const double * i11,
+                    double * next_r00, double * next_r01, double * next_r10, double * next_r11,
+                    double * next_i00, double * next_i01, double * next_i10, double * next_i11, int inner, int sides);
+
 
 class CPUBlockSSEKernel: public ITrotterKernel {
 public:
-    CPUBlockSSEKernel(double *p_real, double *p_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods, MPI_Comm cartcomm);
+    CPUBlockSSEKernel(double *p_real, double *p_imag, double *external_potential_real, double *external_potential_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods, MPI_Comm cartcomm, bool _imag_time);
     ~CPUBlockSSEKernel();
     void run_kernel();
     void run_kernel_on_halo();
@@ -63,10 +80,13 @@ public:
 
 
 private:
+    bool imag_time;
     double *p_real;
     double *p_imag;
     double *r00[2], *r01[2], *r10[2], *r11[2];
     double *i00[2], *i01[2], *i10[2], *i11[2];
+    double *ext_pot_r00, *ext_pot_r01, *ext_pot_r10, *ext_pot_r11;
+    double *ext_pot_i00, *ext_pot_i01, *ext_pot_i10, *ext_pot_i11;
     double a;
     double b;
     int sense;
