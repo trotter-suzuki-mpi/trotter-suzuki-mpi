@@ -55,11 +55,12 @@
   }
 
 void setDevice(int commRank, MPI_Comm cartcomm);
-void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, double a, double b, const double * __restrict__ dev_external_pot_real, const double * __restrict__ dev_external_pot_imag, const double * __restrict__ pdev_real, const double * __restrict__ pdev_imag, double * __restrict__ pdev2_real, double * __restrict__ pdev2_imag, int inner, int horizontal, int vertical);
+void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, double a, double b, const double * __restrict__ dev_external_pot_real, const double * __restrict__ dev_external_pot_imag, const double * __restrict__ pdev_real, const double * __restrict__ pdev_imag, double * __restrict__ pdev2_real, double * __restrict__ pdev2_imag, int inner, int horizontal, int vertical, bool imag_time);
 
 class CC2Kernel: public ITrotterKernel {
 public:
-    CC2Kernel(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods, MPI_Comm cartcomm, bool _imag_time);
+    CC2Kernel(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b,
+              int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods, MPI_Comm cartcomm, bool _imag_time);
     ~CC2Kernel();
     void run_kernel();
     void run_kernel_on_halo();

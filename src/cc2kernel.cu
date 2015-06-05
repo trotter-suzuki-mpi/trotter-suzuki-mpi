@@ -99,17 +99,6 @@ void setDevice(int commRank, MPI_Comm cartcomm) {
     CUDA_SAFE_CALL(cudaSetDevice(deviceNum));
     MPI_Barrier(cartcomm);
 }
-/*
-__global__ void calc_square_norm(size_t tile_width, size_t tile_height, double * sum, const double * __restrict__ p_real, const double * __restrict__ p_imag) {
-    __shared__ partial_sums[numofthreads];
-    
-    int py = threadIdx.y * block_height;
-    int px = threadIdx.x * block_width;
-    
-    for(int i = 0; i < block_height; i++) {
-        for(int j = 0; j < block_width; j++) {
-            if()
-*/
 
 //REAL TIME functions
 
@@ -550,8 +539,11 @@ __global__ void imag_cc2kernel(size_t tile_width, size_t tile_height, size_t off
 }
 
 // Wrapper function for the hybrid kernel
-void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, double a, double b, const double * __restrict__ dev_external_pot_real, const double * __restrict__ dev_external_pot_imag, const double * __restrict__ pdev_real, const double * __restrict__ pdev_imag, double * __restrict__ pdev2_real, double * __restrict__ pdev2_imag, int inner, int horizontal, int vertical) {
-    cc2kernel <<< numBlocks, threadsPerBlock, 0, stream>>>(tile_width, tile_height, offset_x, offset_y, halo_x, halo_y, a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real, pdev_imag, pdev2_real, pdev2_imag, inner, horizontal, vertical);
+void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, double a, double b, const double * __restrict__ dev_external_pot_real, const double * __restrict__ dev_external_pot_imag, const double * __restrict__ pdev_real, const double * __restrict__ pdev_imag, double * __restrict__ pdev2_real, double * __restrict__ pdev2_imag, int inner, int horizontal, int vertical, bool imag_time) {
+    if(imag_time)
+        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream>>>(tile_width, tile_height, offset_x, offset_y, halo_x, halo_y, a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real, pdev_imag, pdev2_real, pdev2_imag, inner, horizontal, vertical);
+    else
+        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream>>>(tile_width, tile_height, offset_x, offset_y, halo_x, halo_y, a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real, pdev_imag, pdev2_real, pdev2_imag, inner, horizontal, vertical);
     CUT_CHECK_ERROR("Kernel error in cc2kernel_wrapper");
 }
 
@@ -692,7 +684,7 @@ void CC2Kernel::run_kernel() {
 void CC2Kernel::wait_for_completion(int iteration, int snapshots) {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
     //normalization
-    if(imag_time && ((iteration % 100) == 0 || ((snapshots > 0) && (iteration + 1) % snapshots == 0))){
+    if(imag_time && ((iteration % 20) == 0 || ((snapshots > 0) && (iteration + 1) % snapshots == 0))){
     
         CUDA_SAFE_CALL(cudaMemcpy(p_real, pdev_real[sense], tile_width * tile_height * sizeof(double), cudaMemcpyDeviceToHost));
         CUDA_SAFE_CALL(cudaMemcpy(p_imag, pdev_imag[sense], tile_width * tile_height * sizeof(double), cudaMemcpyDeviceToHost));
