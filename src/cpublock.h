@@ -59,7 +59,6 @@ public:
 
 private:
     void kernel8(const double *p_real, const double *p_imag, double * next_real, double * next_imag);
-    bool imag_time;
     double *p_real[2];
     double *p_imag[2];
     double *external_pot_real;
@@ -68,6 +67,7 @@ private:
     double b;
     int sense;
     size_t halo_x, halo_y, tile_width, tile_height;
+    bool imag_time;
     static const size_t block_width = BLOCK_WIDTH;
     static const size_t block_height = BLOCK_HEIGHT;
 

@@ -80,7 +80,6 @@ public:
 
 
 private:
-    bool imag_time;
     double *p_real;
     double *p_imag;
     double *r00[2], *r01[2], *r10[2], *r11[2];
@@ -91,6 +90,7 @@ private:
     double b;
     int sense;
     size_t halo_x, halo_y, tile_width, tile_height;
+    bool imag_time;
     // NOTE: block rows must be 16 byte aligned
     //       block height must be even
     static const size_t block_width = BLOCK_WIDTH;
