@@ -33,7 +33,8 @@
 #define ITERATIONS 1000
 #define KERNEL_TYPE 0
 #define SNAPSHOTS 0
-#define PARTICLES_NUMBER 1
+#define N_PARTICLES 1
+#define FILENAME_LENGTH 255
 
 //external potential operator in coordinate representation
 void potential_op_coord_representation(double *hamilt_pot, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
@@ -65,9 +66,9 @@ void init_pot_evolution_op(double * hamilt_pot, double * external_pot_real, doub
 }
 
 //read potential form a file
-void read_pot(double *hamilt_pot, int dimx, int dimy, char *file_name, int halo_x, int halo_y, int *periods) {
+void read_pot(double *hamilt_pot, int dimx, int dimy, char *filename, int halo_x, int halo_y, int *periods) {
 
-    std::ifstream input(file_name);
+    std::ifstream input(filename);
 
     int in_width = dimx - 2 * periods[1] * halo_x;
     int in_height = dimy - 2 * periods[0] * halo_y;
@@ -114,13 +115,13 @@ void read_pot(double *hamilt_pot, int dimx, int dimy, char *file_name, int halo_
     input.close();
 }
 
-void read_initial_state(double *p_real, double *p_imag, int dimx, int dimy, char *file_name, int halo_x, int halo_y, int *periods, int Particles_number) {
-    std::ifstream input(file_name);
+void read_initial_state(double *p_real, double *p_imag, int dimx, int dimy, char *filename, int halo_x, int halo_y, int *periods, int n_particles) {
+    std::ifstream input(filename);
 
     int in_width = dimx - 2 * periods[1] * halo_x;
     int in_height = dimy - 2 * periods[0] * halo_y;
     std::complex<double> tmp;
-    for(int offset = 0; offset < Particles_number * dimx * dimy; offset += dimx * dimy) {
+    for(int offset = 0; offset < n_particles * dimx * dimy; offset += dimx * dimy) {
         for(int i = 0, idy = periods[0] * halo_y ; i < in_height; i++, idy++) {
             for(int j = 0, idx = periods[1] * halo_x ; j < in_width; j++, idx++) {
                 input >> tmp;
@@ -176,7 +177,7 @@ void read_initial_state(double *p_real, double *p_imag, int dimx, int dimy, char
 
 void print_usage() {
     std::cout << "Usage:\n" \
-              "     trotter [OPTION] -n file_name\n" \
+              "     trotter [OPTION] -n filename\n" \
               "Arguments:\n" \
               "     -g            Imaginary time evolution to evolve towards the ground state\n" \
               "     -d NUMBER     Matrix dimension (default: " << DIM << ")\n" \
@@ -195,13 +196,13 @@ void print_usage() {
               "     -p STRING     Name of file that stores the potential operator (in coordinate representation)\n";
 }
 
-void process_command_line(int argc, char** argv, int *dim, int *iterations, int *snapshots, int *kernel_type, char *file_name, double *h_a, double *h_b, char * pot_name, bool *imag_time, int *Particles_number) {
+void process_command_line(int argc, char** argv, int *dim, int *iterations, int *snapshots, int *kernel_type, char *filename, double *h_a, double *h_b, char * pot_name, bool *imag_time, int *n_particles) {
     // Setting default values
     *dim = DIM;
     *iterations = ITERATIONS;
     *snapshots = SNAPSHOTS;
     *kernel_type = KERNEL_TYPE;
-    *Particles_number = PARTICLES_NUMBER;
+    *n_particles = N_PARTICLES;
 
     int c;
     bool file_supplied = false;
@@ -245,7 +246,7 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
             break;
         case 'n':
             for(size_t i = 0; i < strlen(optarg); i++)
-                file_name[i] = optarg[i];
+                filename[i] = optarg[i];
             file_supplied = true;
             break;
         case 'a':
@@ -261,8 +262,8 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
                 pot_name[i] = optarg[i];
             break;
         case 'N':
-            *Particles_number = atoi(optarg);
-            if (*Particles_number <= 0) {
+            *n_particles = atoi(optarg);
+            if (*n_particles <= 0) {
                 fprintf (stderr, "The argument of option -N should be a positive integer.\n");
                 abort ();
             }
@@ -299,21 +300,15 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
 }
 
 int main(int argc, char** argv) {
-    int dim = 0, iterations = 0, snapshots = 0, kernel_type = 0, Particles_number = 0;
+    int dim = 0, iterations = 0, snapshots = 0, kernel_type = 0, n_particles = 0;
     int periods[2] = {1, 1};
-    char file_name[100];
-    bool show_time_sim = true;
-    bool imag_time = false;
-    double h_a = 0.;
-    double h_b = 0.;
-    for(int i = 0; i < 100; i++)
-        file_name[i] = '\0';
-    char pot_name[100];
-    for(int i = 0; i < 100; i++)
-        pot_name[i] = '\0';
+    char filename[FILENAME_LENGTH] = "";
+    char pot_name[FILENAME_LENGTH] = "";
+    bool show_time_sim = true, imag_time = false;
+    double h_a = .0, h_b = .0;
 
     MPI_Init(&argc, &argv);
-    process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, file_name, &h_a, &h_b, pot_name, &imag_time, &Particles_number);
+    process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, filename, &h_a, &h_b, pot_name, &imag_time, &n_particles);
 
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
@@ -350,11 +345,11 @@ int main(int argc, char** argv) {
     }
 
     //set initial state
-    double *p_real = new double[Particles_number * matrix_width * matrix_height];
-    double *p_imag = new double[Particles_number * matrix_width * matrix_height];
-    read_initial_state(p_real, p_imag, matrix_width, matrix_height, file_name, halo_x, halo_y, periods, Particles_number);
+    double *p_real = new double[n_particles * matrix_width * matrix_height];
+    double *p_imag = new double[n_particles * matrix_width * matrix_height];
+    read_initial_state(p_real, p_imag, matrix_width, matrix_height, filename, halo_x, halo_y, periods, n_particles);
 
-    for(int i = 0; i < Particles_number; i++)
+    for(int i = 0; i < n_particles; i++)
         trotter(h_a, h_b, external_pot_real, external_pot_imag, &p_real[i * matrix_width * matrix_height], &p_imag[i * matrix_width * matrix_height], matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, ".", show_time_sim, imag_time, i + 1);
 
     MPI_Finalize();
