@@ -15,7 +15,11 @@ bindir	 = @bindir@
 srcdir         = @srcdir@
 VPATH          = @srcdir@
 
-all clean:
+all:
+	$(MAKE) -C src $@
+	$(MAKE) -C examples $@
+
+clean:
 	$(MAKE) -C src $@
 	$(MAKE) -C examples $@
 	$(MAKE) -C test $@
@@ -26,7 +30,7 @@ trotter install uninstall lib:
 example:
 	$(MAKE) -C examples $@
 
-check:
+check test: trotter
 	$(MAKE) -C test $@
 
 dist: $(distdir).tar.gz
@@ -68,4 +72,4 @@ FORCE:
 	-rm -rf $(distdir) &>/dev/null
 	-rm $(distdir).tar.gz &>/dev/null
 
-.PHONY: FORCE all clean check dist distcheck install uninstall
+.PHONY: FORCE all clean check dist distcheck install uninstall test

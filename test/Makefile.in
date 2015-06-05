@@ -43,7 +43,7 @@ TEST_OBJS=$(LIBOBJS) cpublocktest.o unittest.o
 
 all: check
 
-check: $(TEST_OBJS)
+test check: $(TEST_OBJS)
 	$(CXX) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o unittest $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} $(TEST_LIBS)
 
 %.o: %.cpp
