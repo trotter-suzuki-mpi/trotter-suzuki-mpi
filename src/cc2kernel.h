@@ -21,8 +21,6 @@
 #ifndef __CC2KERNEL_H
 #define __CC2KERNEL_H
 
-#include <cstdio>
-
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <mpi.h>

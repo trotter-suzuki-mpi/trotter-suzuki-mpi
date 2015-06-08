@@ -27,15 +27,10 @@
 
 #include <string>
 #include <sstream>
-#include <fstream>
 #include <iostream>
 #include <complex>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <mpi.h>
-#include "common.h"
 #include "trotter.h"
 
 #define DIM 640

@@ -31,8 +31,6 @@ class CPUBlockTest: public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE( CPUBlockTest );
     CPPUNIT_TEST( test_block_kernel_vertical );
     CPPUNIT_TEST( test_block_kernel_horizontal );
-    CPPUNIT_TEST( test_update_shifty_sse );
-    CPPUNIT_TEST( test_update_shiftx_sse );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -40,8 +38,6 @@ public:
     void tearDown();
     void test_block_kernel_vertical();
     void test_block_kernel_horizontal();
-    void test_update_shifty_sse();
-    void test_update_shiftx_sse();
 };
 
 class Matrix {

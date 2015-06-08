@@ -21,12 +21,6 @@
 #ifndef __CPUBLOCKSSE_H
 #define __CPUBLOCKSSE_H
 
-#include <iostream>
-#include <sstream>
-#include <cassert>
-#include <cstdlib>
-#include <xmmintrin.h>
-#include <emmintrin.h>
 #include <mpi.h>
 
 #include "kernel.h"

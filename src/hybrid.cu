@@ -18,7 +18,6 @@
  */
 
 #include <mpi.h>
-#include <iostream>
 
 #include "common.h"
 #include "hybrid.h"

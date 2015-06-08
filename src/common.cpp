@@ -22,10 +22,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-
 #include <sstream>
-#include <unistd.h>
-#include <complex>
 #include <cmath>
 
 #include "common.h"
@@ -220,7 +217,7 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
     for(int i = 0; i < N_files; i++) {
 
         filename.str("");
-        filename << dirname << "/" << "1-" << N_name[i] << "-iter-comp.dat";
+        filename << dirname << "/" << "1-" << N_name[i] << "-iter-imag.dat";
         filenames = filename.str();
         std::ifstream in_compl(filenames.c_str());
 

@@ -19,7 +19,7 @@
  */
 
 #include <cassert>
-
+#include <emmintrin.h>
 #include <mpi.h>
 
 #include "common.h"

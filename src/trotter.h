@@ -46,8 +46,6 @@
     @param imag_time          Optional parameter to calculate imaginary time evolution
     @param particle_tage      Optional parameter to tag a particle in the snapshots
   
-    @return a bar code of the digit using "|" as the long
-    bar and "," as the half bar.
 */
 void trotter(double h_a, double h_b, 
              double * external_pot_real, double * external_pot_imag, 

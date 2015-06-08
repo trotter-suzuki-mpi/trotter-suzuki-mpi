@@ -18,17 +18,11 @@
  *
  */
 
-#include <fstream>
-
 #include <sstream>
-#include <string>
-
 #include <sys/time.h>
 #include <mpi.h>
-#include <unistd.h>
 
 #include "common.h"
-#include "kernel.h"
 #include "trotter.h"
 #include "cpublock.h"
 #include "cpublocksse.h"

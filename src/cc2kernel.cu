@@ -21,7 +21,6 @@
 #undef _GLIBCXX_ATOMIC_BUILTINS
 #include <cassert>
 #include <vector>
-#include <iostream>
 
 #include "cc2kernel.h"
 #include "common.h"

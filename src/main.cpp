@@ -18,16 +18,12 @@
  *
  */
 
-#include <string>
-#include <sstream>
 #include <fstream>
 #include <unistd.h>
 #include <stdlib.h>
 #include <iostream>
 #include <complex>
-#include <stdio.h>
 #include <mpi.h>
-#include "common.h"
 #include "trotter.h"
 
 #define DIM 640
