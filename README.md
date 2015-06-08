@@ -1,7 +1,9 @@
 Massively Parallel Trotter-Suzuki Solver
 ========================================
 
-The Trotter-Suzuki approximation leads to an efficient algorithm for solving the time-dependent Schödinger equation. This library provides a scalable, high-precision implementation that uses parallel and distributed computational resources. The implementation built on [single-node parallel kernels](https://bitbucket.org/zzzoom/trottersuzuki) [1], extending them to use distributed resources [2], and generalizing the kernels to be able to tackle a wider range of problems in quantum physics. The key features are as follows:
+The Trotter-Suzuki approximation leads to an efficient algorithm for solving the time-dependent Schödinger equation. This library provides a scalable, high-precision implementation that uses parallel and distributed computational resources. The implementation built on [single-node parallel kernels](https://bitbucket.org/zzzoom/trottersuzuki) [1], extending them to use distributed resources [2], and generalizing the kernels to be able to tackle a wider range of problems in quantum physics. 
+
+Key features:
 
   - Arbitrary single-body initial state with closed and periodic boundary conditions.
   - Many-body simulations with non-interacting particles.
@@ -17,7 +19,7 @@ Usage
 
 **Command-line Interface**
 
-Usage: trotter [OPTIONS] -n filename 
+Usage: `trotter [OPTIONS] -n filename`
 
 The file specified contains the complex matrix describing the initial state in the position picture.
 

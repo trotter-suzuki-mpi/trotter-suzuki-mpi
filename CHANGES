@@ -1,4 +1,5 @@
-Since 1.1:
+Version 1.2: 2015-06-08
+
  - New: Imaginary time evolution to find ground state.
  - New: Periodic boundary conditions are possible.
  - New: Arbitrary stationary potential function can be defined.
@@ -7,12 +8,13 @@ Since 1.1:
  - New: API added through the `trotter` function.
  - New: Convenience function to get expectation values (`expect_values`).
  - New: Unit testing framework.
- - Changed: Single-precision calculations were removed.
+ - Changed: Single-precision calculations were removed entirely.
  - Changed: Examples split into separate folder.
  - Changed: Better testing of MPI dependencies by configure script.
  - Changed: Improved treatment of Intel compilers.
  
 Version 1.1: 2014-06-12
+
  - New: Build system revised, CUDA is no longer necessary.
  
 Version 1.0: 2012-06-28
