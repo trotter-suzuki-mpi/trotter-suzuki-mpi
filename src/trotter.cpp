@@ -39,7 +39,8 @@ void trotter(double h_a, double h_b,
              double * external_pot_real, double * external_pot_imag,
              double * p_real, double * p_imag, const int matrix_width,
              const int matrix_height, const int iterations, const int snapshots, const int kernel_type,
-             int *periods, const char *dirname, bool show_time_sim, bool imag_time, int particle_tag) {
+             int *periods, const char *output_folder, bool verbose, 
+             bool imag_time, int particle_tag) {
 
     double *_p_real, *_p_imag;
     double *_external_pot_real, *_external_pot_imag;
@@ -163,12 +164,12 @@ void trotter(double h_a, double h_b,
                 }
 
                 filename.str("");
-                filename << dirname << "/" << particle_tag << "-" << i << "-iter-real.dat";
+                filename << output_folder << "/" << particle_tag << "-" << i << "-iter-real.dat";
                 print_matrix(filename.str(), matrix_snap_real, matrix_width - 2 * periods[1]*halo_x,
                              matrix_width - 2 * periods[1]*halo_x, matrix_height - 2 * periods[0]*halo_y);
 
                 filename.str("");
-                filename << dirname << "/" << particle_tag << "-" << i << "-iter-comp.dat";
+                filename << output_folder << "/" << particle_tag << "-" << i << "-iter-imag.dat";
                 print_complex_matrix(filename.str(), matrix_snap_real, matrix_snap_imag, matrix_width - 2 * periods[1]*halo_x,
                                      matrix_width - 2 * periods[1]*halo_x, matrix_height - 2 * periods[0]*halo_y);
             }
@@ -185,7 +186,7 @@ void trotter(double h_a, double h_b,
     }
 
     gettimeofday(&end, NULL);
-    if (coords[0] == 0 && coords[1] == 0 && show_time_sim == true) {
+    if (coords[0] == 0 && coords[1] == 0 && verbose == true) {
         long time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
         std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " " << kernel->get_name() << " " << nProcs << " " << time << std::endl;
     }

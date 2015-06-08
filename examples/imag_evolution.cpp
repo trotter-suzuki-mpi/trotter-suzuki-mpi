@@ -86,7 +86,7 @@ void init_pot_evolution_op(double * hamilt_pot, double * external_pot_real, doub
 int main(int argc, char** argv) {
     int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, kernel_type = KERNEL_TYPE;
     int periods[2] = {1, 1};
-    bool show_time_sim = true;
+    bool verbose = true;
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
     int matrix_width = dim + periods[1] * 2 * halo_x;
@@ -143,7 +143,7 @@ int main(int argc, char** argv) {
     else
         dirnames = ".";
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, dirnames.c_str(), show_time_sim, true, 1);
+    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, dirnames.c_str(), verbose, true);
 
     MPI_Finalize();
     return 0;

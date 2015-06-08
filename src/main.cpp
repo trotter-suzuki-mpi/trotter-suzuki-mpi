@@ -304,7 +304,7 @@ int main(int argc, char** argv) {
     int periods[2] = {1, 1};
     char filename[FILENAME_LENGTH] = "";
     char pot_name[FILENAME_LENGTH] = "";
-    bool show_time_sim = true, imag_time = false;
+    bool verbose = true, imag_time = false;
     double h_a = .0, h_b = .0;
 
     MPI_Init(&argc, &argv);
@@ -350,7 +350,7 @@ int main(int argc, char** argv) {
     read_initial_state(p_real, p_imag, matrix_width, matrix_height, filename, halo_x, halo_y, periods, n_particles);
 
     for(int i = 0; i < n_particles; i++)
-        trotter(h_a, h_b, external_pot_real, external_pot_imag, &p_real[i * matrix_width * matrix_height], &p_imag[i * matrix_width * matrix_height], matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, ".", show_time_sim, imag_time, i + 1);
+        trotter(h_a, h_b, external_pot_real, external_pot_imag, &p_real[i * matrix_width * matrix_height], &p_imag[i * matrix_width * matrix_height], matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, ".", verbose, imag_time, i + 1);
 
     MPI_Finalize();
     return 0;
