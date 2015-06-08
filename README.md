@@ -15,7 +15,7 @@ The Trotter-Suzuki approximation leads to an efficient algorithm for solving the
 Usage
 -----
 
-*Command-line Interface*
+**Command-line Interface**
 
 Usage: trotter [OPTIONS] -n filename 
 
@@ -35,9 +35,10 @@ Arguments:
                     3: Hybrid CPU-GPU (experimental)                    
     -s NUMBER     Snapshots are taken at every NUMBER of iterations.
                     Zero means no snapshots. Default: 0.
-    -n filename   The initial state.
+    -n FILENAME   The initial state.
     -N NUMBER     Number of particles of the system.
-    -p STRING     Name of file that stores the potential operator (in coordinate representation)
+    -p FILENAME     Name of file that stores the potential operator 
+                  (in coordinate representation)
 
 Examples:
 
@@ -57,7 +58,7 @@ The hybrid kernel is experimental. It splits the work between the GPU and the CP
 
     OMP_NUM_THREADS=6 mpirun -np 2 build/trotter -k 3 -i 100 -d 14000 -n psi0.dat
 
-*Application Programming Interface*
+**Application Programming Interface**
 
 If the command-line interface is not flexible enough, the function that performs the evolution is exposed as an API:
 
@@ -69,7 +70,7 @@ If the command-line interface is not flexible enough, the function that performs
                  int *periods, const char *output_folder, 
                  bool verbose = false, bool imag_time = false, int particle_tag = 1);
 
-where the parameters are as follows
+where the parameters are as follows:
 
     h_a               Kinetic term of the Hamiltonian (cosine part)
     h_b               Kinetic term of the Hamiltonian (sine part)
@@ -95,11 +96,11 @@ where the parameters are as follows
   
 MPI must be initialized before the function is called. Examples of using the API are included in the source tree. The respective files are in the examples folder:
 
-  - exponential_initial_state.cpp: Time evolution of a particle in a box with an exponential initial state with periodic boundary conditions.
-  - gaussian-like_initial_state.cpp: Time evolution of a particle in a box with a Gaussian-like initial state with closed boundary conditions.
-  - imag_evolution.cpp: Imaginary time evolution of an exponential initial state with periodic boundary conditions.
-  - sinusoid_initial_state.cpp: Time evolution of a particle in a box with a sinusoid initial state with periodic boundary conditions.
-  - two_particles_exponential_initial_state.cpp: Time evolution of two free particles in a box with periodic boundary conditions.
+  - `exponential_initial_state.cpp`: Time evolution of a particle in a box with an exponential initial state with periodic boundary conditions.
+  - `gaussian-like_initial_state.cpp`: Time evolution of a particle in a box with a Gaussian-like initial state with closed boundary conditions.
+  - `imag_evolution.cpp`: Imaginary time evolution of an exponential initial state with periodic boundary conditions.
+  - `sinusoid_initial_state.cpp`: Time evolution of a particle in a box with a sinusoid initial state with periodic boundary conditions.
+  - `two_particles_exponential_initial_state.cpp`: Time evolution of two free particles in a box with periodic boundary conditions.
 
 
 Compilation & Installation
