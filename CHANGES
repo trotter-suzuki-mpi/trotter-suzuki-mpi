@@ -4,10 +4,10 @@ Since 1.1:
  - New: Arbitrary stationary potential function can be defined.
  - New: CLI for specifying the files of the initial state and the potential,
         and the parameters of the Hamiltonian.
- - New: API through the `trotter` function.
+ - New: API added through the `trotter` function.
  - New: Convenience function to get expectation values (`expect_values`).
  - New: Unit testing framework.
- - Changed: Defaulted to double-precision calculations.
+ - Changed: Single-precision calculations were removed.
  - Changed: Examples split into separate folder.
  - Changed: Better testing of MPI dependencies by configure script.
  - Changed: Improved treatment of Intel compilers.

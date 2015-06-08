@@ -176,8 +176,10 @@ void print_usage() {
     std::cout << "Usage:\n" \
               "     trotter [OPTION] -n filename\n" \
               "Arguments:\n" \
-              "     -g            Imaginary time evolution to evolve towards the ground state\n" \
+              "     -a NUMBER     Parameter h_a of kinetic evolution operator (cosine part)\n"\
+              "     -b NUMBER     Parameter h_b of kinetic evolution operator (sine part)\n"\
               "     -d NUMBER     Matrix dimension (default: " << DIM << ")\n" \
+              "     -g            Imaginary time evolution to evolve towards the ground state\n" \
               "     -i NUMBER     Number of iterations (default: " << ITERATIONS << ")\n" \
               "     -k NUMBER     Kernel type (default: " << KERNEL_TYPE << "): \n" \
               "                      0: CPU, cache-optimized\n" \
@@ -188,8 +190,6 @@ void print_usage() {
               "                   Zero means no snapshots. Default: " << SNAPSHOTS << ".\n"\
               "     -n STRING     Name of file that defines the initial state.\n"\
               "     -N NUMBER     Number of particles of the system.\n"\
-              "     -a NUMBER     Parameter h_a of kinetic evolution operator\n"\
-              "     -b NUMBER     Parameter h_b of kinetic evolution operator\n"\
               "     -p STRING     Name of file that stores the potential operator (in coordinate representation)\n";
 }
 

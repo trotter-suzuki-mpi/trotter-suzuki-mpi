@@ -24,8 +24,8 @@
 /**
     API call to calculate the evolution through the Trotter-Suzuki decomposition.
 
-    @param h_a               Kinetic term of the Hamiltonian
-    @param h_b               Kinetic term of the Hamiltonian
+    @param h_a               Kinetic term of the Hamiltonian (cosine part)
+    @param h_b               Kinetic term of the Hamiltonian (sine part)
     @param external_pot_real External potential, real part
     @param external_pot_imag External potential, imaginary part
     @param p_real            Initial state, real part
@@ -44,7 +44,7 @@
     @param output_folder      The folder to write the snapshots in
     @param verbose            Optional verbosity parameter
     @param imag_time          Optional parameter to calculate imaginary time evolution
-    @param particle_tage      Optional parameter to tag a particle in the snapshots
+    @param particle_tag       Optional parameter to tag a particle in the snapshots
   
 */
 void trotter(double h_a, double h_b, 
