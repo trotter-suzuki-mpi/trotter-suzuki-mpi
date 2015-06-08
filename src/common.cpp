@@ -29,7 +29,6 @@
 #include <cmath>
 
 #include "common.h"
-#include "trotter.h"
 
 void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound) {
     int inner = (int)ceil((double)length / (double)dim);

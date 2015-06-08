@@ -21,8 +21,8 @@
 #ifndef __CPUBLOCKTEST_H
 #define __CPUBLOCKTEST_H
 
-#include <cppunit/extensions/HelperMacros.h>
 #include <cmath>
+#include <cppunit/extensions/HelperMacros.h>
 
 static const double h_a = cos(0.02);
 static const double h_b = sin(0.02);

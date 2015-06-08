@@ -18,33 +18,43 @@
  *
  */
 
-#ifndef __TROTTERKERNEL_H
-#define __TROTTERKERNEL_H
+#ifndef __TROTTER_H
+#define __TROTTER_H
 
-#include <string>
+/**
+    API call to calculate the evolution through the Trotter-Suzuki decomposition.
 
-//These are for the MPI NEIGHBOURS
-#define UP    0
-#define DOWN  1
-#define LEFT  2
-#define RIGHT 3
-
-void trotter(double h_a, double h_b, double * external_pot_real, double * external_pot_imag, double * p_real, double * p_imag, const int matrix_width, const int matrix_height, const int iterations, const int snapshots, const int kernel_type, int *periods, const char *output_folder, bool verbose = false, bool imag_time = false, int particle_tag = 1);
-
-class ITrotterKernel {
-public:
-    virtual ~ITrotterKernel() {};
-    virtual void run_kernel() = 0;
-    virtual void run_kernel_on_halo() = 0;
-    virtual void wait_for_completion(int iteration, int snapshots) = 0;
-    virtual void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const = 0;
-
-    virtual bool runs_in_place() const = 0;
-    virtual std::string get_name() const = 0;
-
-    virtual void start_halo_exchange() = 0;
-    virtual void finish_halo_exchange() = 0;
-
-};
+    @param h_a               Kinetic term of the Hamiltonian
+    @param h_b               Kinetic term of the Hamiltonian
+    @param external_pot_real External potential, real part
+    @param external_pot_imag External potential, imaginary part
+    @param p_real            Initial state, real part
+    @param p_imag            Initial state, imaginary part
+    @param matrix_width      The width of the initial state
+    @param matrix_height     The height of the initial state
+    @param iterations        Number of iterations to be calculated
+    @param snapshots         Number of iterations between taking snapshots 
+                             (0 means no snapshots)
+    @param kernel_type       The kernel type:
+                              0: CPU block kernel
+                              1: CPU SSE block kernel
+                              2: GPU kernel
+                              3: Hybrid kernel
+    @param periods            Whether the grid is periodic in any of the directions
+    @param output_folder      The folder to write the snapshots in
+    @param verbose            Optional verbosity parameter
+    @param imag_time          Optional parameter to calculate imaginary time evolution
+    @param particle_tage      Optional parameter to tag a particle in the snapshots
+  
+    @return a bar code of the digit using "|" as the long
+    bar and "," as the half bar.
+*/
+void trotter(double h_a, double h_b, 
+             double * external_pot_real, double * external_pot_imag, 
+             double * p_real, double * p_imag, 
+             const int matrix_width, const int matrix_height, 
+             const int iterations, const int snapshots, const int kernel_type, 
+             int *periods, const char *output_folder, 
+             bool verbose = false, bool imag_time = false, int particle_tag = 1);
 
 #endif

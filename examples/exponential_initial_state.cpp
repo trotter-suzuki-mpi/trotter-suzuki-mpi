@@ -25,17 +25,16 @@
  * 		exp(i2M_PI / L (x + y))
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <string>
 #include <sstream>
-
 #include <fstream>
-#include <unistd.h>
-#include <stdlib.h>
 #include <iostream>
 #include <complex>
-#include "mpi.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <mpi.h>
 #include "common.h"
 #include "trotter.h"
 

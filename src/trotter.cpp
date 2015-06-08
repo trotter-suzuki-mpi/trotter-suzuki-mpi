@@ -27,8 +27,9 @@
 #include <mpi.h>
 #include <unistd.h>
 
-#include "trotter.h"
 #include "common.h"
+#include "kernel.h"
+#include "trotter.h"
 #include "cpublock.h"
 #include "cpublocksse.h"
 #ifdef CUDA

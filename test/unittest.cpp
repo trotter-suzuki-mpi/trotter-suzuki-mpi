@@ -32,9 +32,10 @@
 #include <stdlib.h>
 #include <iostream>
 #include <complex>
-#include "mpi.h"
+#include <mpi.h>
 
 #include "trotter.h"
+#include "kernel.h"
 #include "common.h"
 
 #define DIM 640

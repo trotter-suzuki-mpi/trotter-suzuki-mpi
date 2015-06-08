@@ -18,11 +18,11 @@
  *
  */
 
+#include <iostream>
 #include "cpublocktest.h"
 #include "cpublocksse.h"
 #include "cpublock.h"
 #include "common.h"
-#include <iostream>
 
 CPPUNIT_TEST_SUITE_REGISTRATION( CPUBlockTest );
 

@@ -23,7 +23,6 @@
 
 #include <string>
 #include <complex>
-#include "trotter.h"
 
 #if HAVE_CONFIG_H
 #include <config.h>

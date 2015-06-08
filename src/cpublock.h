@@ -21,8 +21,8 @@
 #ifndef __CPUBLOCK_H
 #define __CPUBLOCK_H
 
-#include "trotter.h"
 #include <mpi.h>
+#include "kernel.h"
 
 #define BLOCK_WIDTH 128u
 #define BLOCK_HEIGHT 128u

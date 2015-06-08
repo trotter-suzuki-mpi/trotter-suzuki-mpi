@@ -26,7 +26,7 @@
 #include <iostream>
 #include <complex>
 #include <stdio.h>
-#include "mpi.h"
+#include <mpi.h>
 #include "common.h"
 #include "trotter.h"
 

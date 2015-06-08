@@ -29,7 +29,7 @@
 #include <emmintrin.h>
 #include <mpi.h>
 
-#include "trotter.h"
+#include "kernel.h"
 
 #define BLOCK_WIDTH 128u
 #define BLOCK_HEIGHT 128u
