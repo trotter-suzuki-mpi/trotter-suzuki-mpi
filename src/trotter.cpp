@@ -39,7 +39,7 @@ void trotter(double h_a, double h_b,
              double * external_pot_real, double * external_pot_imag,
              double * p_real, double * p_imag, const int matrix_width,
              const int matrix_height, const int iterations, const int snapshots, const int kernel_type,
-             int *periods, int argc, char** argv, const char *dirname, bool show_time_sim, bool imag_time, int particle_tag) {
+             int *periods, const char *dirname, bool show_time_sim, bool imag_time, int particle_tag) {
 
     double *_p_real, *_p_imag;
     double *_external_pot_real, *_external_pot_imag;

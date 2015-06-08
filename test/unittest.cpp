@@ -248,7 +248,7 @@ int main(int argc, char** argv) {
     else
         filenames = "./";
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str(), show_time_sim, imag_time, 1);
+    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, filenames.c_str(), show_time_sim, imag_time, 1);
 
     if(rank == 0) {
         MAGIC_NUMBER th_values;

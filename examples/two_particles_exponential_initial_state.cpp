@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
         dirnames = ".";
 
     for(int i = 0; i < Particles_number; i++)
-        trotter(h_a, h_b, external_pot_real, external_pot_imag, &p_real[i * matrix_width * matrix_height], &p_imag[i * matrix_width * matrix_height], matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, dirnames.c_str(), show_time_sim, imag_time, i + 1);
+        trotter(h_a, h_b, external_pot_real, external_pot_imag, &p_real[i * matrix_width * matrix_height], &p_imag[i * matrix_width * matrix_height], matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, dirnames.c_str(), show_time_sim, imag_time, i + 1);
 
     MPI_Finalize();
     return 0;
