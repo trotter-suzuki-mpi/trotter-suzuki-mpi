@@ -13,6 +13,7 @@ Key features:
   - Cache optimized multi-core, SSE, GPU, and hybrid kernels.
   - Near-linear scaling across multiple nodes with computations overlapping communication.
 
+The current stable version is 1.2. Download it [here](https://github.com/peterwittek/trotter-suzuki-mpi/releases/download/1.2/trotter-suzuki-1.2.tar.gz). The development version is [available on GitHub](https://github.com/peterwittek/trotter-suzuki-mpi).
 
 Usage
 -----
