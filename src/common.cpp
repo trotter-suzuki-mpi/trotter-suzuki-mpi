@@ -1,6 +1,7 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2012 Peter Wittek, 2010-2012 Carlos Bederián, 2015 Luca Calderaro
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,14 +22,10 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-
 #include <sstream>
-#include <unistd.h>
-#include <complex>
 #include <cmath>
 
 #include "common.h"
-#include "trotter.h"
 
 void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound) {
     int inner = (int)ceil((double)length / (double)dim);
@@ -202,7 +199,7 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
     std::complex<double> sum_E = 0;
     std::complex<double> sum_Px = 0, sum_Py = 0;
     std::complex<double> sum_pdi = 0;
-    double energy[N_files], momentum_x[N_files], momentum_y[N_files], norm[N_files];
+    double energy[N_files], momentum_x[N_files], momentum_y[N_files];
 
     std::complex<double> psi[DIM * DIM];
     std::complex<double> cost_E = -1. / (2.*particle_mass), cost_P;
@@ -220,7 +217,7 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
     for(int i = 0; i < N_files; i++) {
 
         filename.str("");
-        filename << dirname << "/" << "1-" << N_name[i] << "-iter-comp.dat";
+        filename << dirname << "/" << "1-" << N_name[i] << "-iter-imag.dat";
         filenames = filename.str();
         std::ifstream in_compl(filenames.c_str());
 
@@ -247,8 +244,7 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
         energy[i] = real(sum_E / sum_pdi);
         momentum_x[i] = real(cost_P * sum_Px / sum_pdi);
         momentum_y[i] = real(cost_P * sum_Py / sum_pdi);
-        norm[i] = real(cost_P * sum_Px / sum_pdi) * real(cost_P * sum_Px / sum_pdi) + real(cost_P * sum_Py / sum_pdi) * real(cost_P * sum_Py / sum_pdi);
-
+        
         sum_E = 0;
         sum_Px = 0;
         sum_Py = 0;

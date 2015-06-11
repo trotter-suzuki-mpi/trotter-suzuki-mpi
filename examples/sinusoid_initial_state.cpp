@@ -1,6 +1,7 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2012 Peter Wittek, 2010-2012 Carlos Bederián, 2015 Luca Calderaro
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,18 +25,12 @@
  * 		sin(2M_PI / L * x) * sin(2M_PI / L * y)
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <string>
 #include <sstream>
-
-#include <fstream>
-#include <unistd.h>
-#include <stdlib.h>
 #include <iostream>
 #include <complex>
-#include "mpi.h"
-#include "common.h"
+#include <sys/stat.h>
+#include <mpi.h>
 #include "trotter.h"
 
 #define DIM 640
@@ -86,8 +81,7 @@ void init_pot_evolution_op(double * hamilt_pot, double * external_pot_real, doub
 int main(int argc, char** argv) {
     int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, kernel_type = KERNEL_TYPE;
     int periods[2] = {1, 1};
-    bool show_time_sim = true;
-    bool imag_time = false;
+    bool verbose = true;
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
     int matrix_width = dim + periods[1] * 2 * halo_x;
@@ -141,7 +135,7 @@ int main(int argc, char** argv) {
     else
         dirnames = ".";
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, dirnames.c_str(), show_time_sim, imag_time, 1);
+    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, dirnames.c_str(), verbose);
 
     MPI_Finalize();
     return 0;

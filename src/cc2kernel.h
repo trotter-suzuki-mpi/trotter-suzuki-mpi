@@ -1,6 +1,7 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2012 Peter Wittek, 2010-2012 Carlos Bederián
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,13 +21,11 @@
 #ifndef __CC2KERNEL_H
 #define __CC2KERNEL_H
 
-#include <cstdio>
-
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <mpi.h>
 
-#include "trotter.h"
+#include "kernel.h"
 
 #define DISABLE_FMA
 

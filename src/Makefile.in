@@ -10,6 +10,7 @@ distdir	= $(tarname)-$(version)
 prefix	 = @prefix@
 exec_prefix    = @exec_prefix@
 bindir	 = @bindir@
+incdir	 = @includedir@
 libdir	 = @libdir@
 
 # Tool-related substitution variables
@@ -41,7 +42,7 @@ endif
 
 OBJS=$(LIBOBJS) main.o
 
-all: trotter
+all: trotter lib
 
 lib: $(LIBOBJS)
 	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -shared -o trotter.so $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
@@ -58,11 +59,14 @@ trotter: $(OBJS)
 clean:
 	-rm -f trotter $(OBJS) 1>/dev/null
 
-install:
+install: all
 	$(INSTALL) -d $(DESTDIR)$(bindir)
 	$(INSTALL_PROGRAM) -m 0755 trotter \
 	 $(DESTDIR)$(bindir)
-	 
+	$(INSTALL_PROGRAM) -m 0755 trotter.so \
+	 $(DESTDIR)$(libdir)
+	$(INSTALL_PROGRAM) -m 0644 trotter.h $(DESTDIR)$(incdir)	 
+
 uninstall:
 	-rm $(DESTDIR)$(bindir)/trotter &>/dev/null
 

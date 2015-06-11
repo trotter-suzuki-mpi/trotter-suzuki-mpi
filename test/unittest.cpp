@@ -1,6 +1,7 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2012 Peter Wittek, 2010-2012 Carlos Bederián, 2015 Luca Calderaro
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,20 +21,16 @@
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
-
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <string>
 #include <sstream>
-
 #include <fstream>
-#include <unistd.h>
-#include <stdlib.h>
 #include <iostream>
 #include <complex>
-#include "mpi.h"
+#include <sys/stat.h>
+#include <mpi.h>
 
 #include "trotter.h"
+#include "kernel.h"
 #include "common.h"
 
 #define DIM 640
@@ -248,7 +245,7 @@ int main(int argc, char** argv) {
     else
         filenames = "./";
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, argc, argv, filenames.c_str(), show_time_sim, imag_time, 1);
+    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, filenames.c_str(), show_time_sim, imag_time);
 
     if(rank == 0) {
         MAGIC_NUMBER th_values;

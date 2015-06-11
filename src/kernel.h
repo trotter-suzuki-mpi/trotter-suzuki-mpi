@@ -18,37 +18,31 @@
  *
  */
 
-#ifndef __CPUBLOCKTEST_H
-#define __CPUBLOCKTEST_H
+#ifndef __KERNEL_H
+#define __KERNEL_H
 
-#include <cmath>
-#include <cppunit/extensions/HelperMacros.h>
+#include <string>
 
-static const double h_a = cos(0.02);
-static const double h_b = sin(0.02);
+//These are for the MPI NEIGHBOURS
+#define UP    0
+#define DOWN  1
+#define LEFT  2
+#define RIGHT 3
 
-class CPUBlockTest: public CppUnit::TestFixture {
-    CPPUNIT_TEST_SUITE( CPUBlockTest );
-    CPPUNIT_TEST( test_block_kernel_vertical );
-    CPPUNIT_TEST( test_block_kernel_horizontal );
-    CPPUNIT_TEST_SUITE_END();
-
+class ITrotterKernel {
 public:
-    void setUp();
-    void tearDown();
-    void test_block_kernel_vertical();
-    void test_block_kernel_horizontal();
+    virtual ~ITrotterKernel() {};
+    virtual void run_kernel() = 0;
+    virtual void run_kernel_on_halo() = 0;
+    virtual void wait_for_completion(int iteration, int snapshots) = 0;
+    virtual void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const = 0;
+
+    virtual bool runs_in_place() const = 0;
+    virtual std::string get_name() const = 0;
+
+    virtual void start_halo_exchange() = 0;
+    virtual void finish_halo_exchange() = 0;
+
 };
 
-class Matrix {
-public:
-    Matrix(double *matrix_real, double *matrix_imag, int width, int height);
-    void show_matrix();
-    bool operator ==(const Matrix &other) const;
-
-private:
-    double *m_real;
-    double *m_imag;
-    int m_width, m_height;
-};
 #endif

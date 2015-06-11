@@ -1,6 +1,7 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2012 Peter Wittek, 2010-2012 Carlos Bederián, 2015 Luca Calderaro
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,15 +21,9 @@
 #ifndef __CPUBLOCKSSE_H
 #define __CPUBLOCKSSE_H
 
-#include <iostream>
-#include <sstream>
-#include <cassert>
-#include <cstdlib>
-#include <xmmintrin.h>
-#include <emmintrin.h>
 #include <mpi.h>
 
-#include "trotter.h"
+#include "kernel.h"
 
 #define BLOCK_WIDTH 128u
 #define BLOCK_HEIGHT 128u
@@ -80,7 +75,6 @@ public:
 
 
 private:
-    bool imag_time;
     double *p_real;
     double *p_imag;
     double *r00[2], *r01[2], *r10[2], *r11[2];
@@ -91,6 +85,7 @@ private:
     double b;
     int sense;
     size_t halo_x, halo_y, tile_width, tile_height;
+    bool imag_time;
     // NOTE: block rows must be 16 byte aligned
     //       block height must be even
     static const size_t block_width = BLOCK_WIDTH;

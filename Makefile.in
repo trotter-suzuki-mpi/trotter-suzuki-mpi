@@ -15,7 +15,11 @@ bindir	 = @bindir@
 srcdir         = @srcdir@
 VPATH          = @srcdir@
 
-all clean:
+all:
+	$(MAKE) -C src $@
+	$(MAKE) -C examples $@
+
+clean:
 	$(MAKE) -C src $@
 	$(MAKE) -C examples $@
 	$(MAKE) -C test $@
@@ -26,7 +30,7 @@ trotter install uninstall lib:
 example:
 	$(MAKE) -C examples $@
 
-check:
+check test: trotter
 	$(MAKE) -C test $@
 
 dist: $(distdir).tar.gz
@@ -36,19 +40,21 @@ $(distdir).tar.gz: FORCE $(distdir)
 	rm -rf $(distdir)
 
 $(distdir):
+	mkdir -p $(distdir)/examples
 	mkdir -p $(distdir)/src
-	mkdir -p $(distdir)/data
+	mkdir -p $(distdir)/test
 	cp $(srcdir)/configure $(distdir)
 	cp $(srcdir)/config.h.in $(distdir)
 	cp $(srcdir)/install-sh $(distdir)
 	cp $(srcdir)/Makefile.in $(distdir)
 	cp $(srcdir)/README.md $(distdir)
-	cp $(srcdir)/LICENSE $(distdir)  
+	cp $(srcdir)/COPYING $(distdir)  
 	cp $(srcdir)/TODO $(distdir)
 	cp $(srcdir)/CHANGES $(distdir)
+	cp $(srcdir)/examples/Makefile.in $(srcdir)/examples/*cpp $(distdir)/examples
 	cp $(srcdir)/src/Makefile.in $(distdir)/src
 	cp $(srcdir)/src/*.c* $(srcdir)/src/*.h $(distdir)/src
-	cp $(srcdir)/data/rgbs.* $(distdir)/data
+	cp $(srcdir)/test/*.c* $(srcdir)/test/*.h $(srcdir)/test/Makefile.in $(distdir)/test
 
 distcheck: $(distdir).tar.gz
 	gzip -cd $+ | tar xvf -
@@ -66,6 +72,6 @@ config.status: configure
 
 FORCE:
 	-rm -rf $(distdir) &>/dev/null
-	-rm $(distdir).tar.gz &>/dev/null
+	-rm -rf $(distdir).tar.gz &>/dev/null
 
-.PHONY: FORCE all clean check dist distcheck install uninstall
+.PHONY: FORCE all clean check dist distcheck install uninstall test

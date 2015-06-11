@@ -1,6 +1,7 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2012 Peter Wittek, 2010-2012 Carlos Bederián, 2015 Luca Calderaro
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,104 +18,15 @@
  *
  */
 
+#include <iostream>
 #include "cpublocktest.h"
-#include "cpublocksse.h"
 #include "cpublock.h"
 #include "common.h"
-#include <iostream>
 
 CPPUNIT_TEST_SUITE_REGISTRATION( CPUBlockTest );
 
 void CPUBlockTest::setUp() {}
 void CPUBlockTest::tearDown() {}
-
-//cpublocksse's functions
-template <int offset_y>
-inline void update_shifty_sse(size_t stride, size_t width, size_t height, double a, double b, double * __restrict__ r1, double * __restrict__ i1, double * __restrict__ r2, double * __restrict__ i2) {
-    __m128d aq, bq;
-    aq = _mm_load1_pd(&a);
-    bq = _mm_load1_pd(&b);
-    for (size_t i = 0; i < height - offset_y; i++) {
-        int idx1 = i * stride;
-        int idx2 = (i + offset_y) * stride;
-        size_t j = 0;
-        for (; j < width - width % 2; j += 2, idx1 += 2, idx2 += 2) {
-            __m128d r1q = _mm_load_pd(&r1[idx1]);
-            __m128d i1q = _mm_load_pd(&i1[idx1]);
-            __m128d r2q = _mm_load_pd(&r2[idx2]);
-            __m128d i2q = _mm_load_pd(&i2[idx2]);
-            __m128d next_r1q = _mm_sub_pd(_mm_mul_pd(r1q, aq), _mm_mul_pd(i2q, bq));
-            __m128d next_i1q = _mm_add_pd(_mm_mul_pd(i1q, aq), _mm_mul_pd(r2q, bq));
-            __m128d next_r2q = _mm_sub_pd(_mm_mul_pd(r2q, aq), _mm_mul_pd(i1q, bq));
-            __m128d next_i2q = _mm_add_pd(_mm_mul_pd(i2q, aq), _mm_mul_pd(r1q, bq));
-            _mm_store_pd(&r1[idx1], next_r1q);
-            _mm_store_pd(&i1[idx1], next_i1q);
-            _mm_store_pd(&r2[idx2], next_r2q);
-            _mm_store_pd(&i2[idx2], next_i2q);
-        }
-        for (; j < width; ++j, ++idx1, ++idx2) {
-            double next_r1 = a * r1[idx1] - b * i2[idx2];
-            double next_i1 = a * i1[idx1] + b * r2[idx2];
-            double next_r2 = a * r2[idx2] - b * i1[idx1];
-            double next_i2 = a * i2[idx2] + b * r1[idx1];
-            r1[idx1] = next_r1;
-            i1[idx1] = next_i1;
-            r2[idx2] = next_r2;
-            i2[idx2] = next_i2;
-        }
-    }
-}
-
-template <int offset_x>
-inline void update_shiftx_sse(size_t stride, size_t width, size_t height, double a, double b, double * __restrict__ r1, double * __restrict__ i1, double * __restrict__ r2, double * __restrict__ i2) {
-    __m128d aq, bq;
-    aq = _mm_load1_pd(&a);
-    bq = _mm_load1_pd(&b);
-    for (size_t i = 0; i < height; i++) {
-        int idx1 = i * stride;
-        int idx2 = i * stride + offset_x;
-        size_t j = 0;
-        for (; j < width - offset_x - (width - offset_x) % 2; j += 2, idx1 += 2, idx2 += 2) {
-            __m128d r1q = _mm_load_pd(&r1[idx1]);
-            __m128d i1q = _mm_load_pd(&i1[idx1]);
-            __m128d r2q;
-            __m128d i2q;
-            if (offset_x == 0) {
-                r2q = _mm_load_pd(&r2[idx2]);
-                i2q = _mm_load_pd(&i2[idx2]);
-            }
-            else {
-                r2q = _mm_loadu_pd(&r2[idx2]);
-                i2q = _mm_loadu_pd(&i2[idx2]);
-            }
-            __m128d next_r1q = _mm_sub_pd(_mm_mul_pd(r1q, aq), _mm_mul_pd(i2q, bq));
-            __m128d next_i1q = _mm_add_pd(_mm_mul_pd(i1q, aq), _mm_mul_pd(r2q, bq));
-            __m128d next_r2q = _mm_sub_pd(_mm_mul_pd(r2q, aq), _mm_mul_pd(i1q, bq));
-            __m128d next_i2q = _mm_add_pd(_mm_mul_pd(i2q, aq), _mm_mul_pd(r1q, bq));
-            _mm_store_pd(&r1[idx1], next_r1q);
-            _mm_store_pd(&i1[idx1], next_i1q);
-            if (offset_x == 0) {
-                _mm_store_pd(&r2[idx2], next_r2q);
-                _mm_store_pd(&i2[idx2], next_i2q);
-            }
-            else {
-                _mm_storeu_pd(&r2[idx2], next_r2q);
-                _mm_storeu_pd(&i2[idx2], next_i2q);
-            }
-        }
-        for (; j < width - offset_x; ++j, ++idx1, ++idx2) {
-            double next_r1 = a * r1[idx1] - b * i2[idx2];
-            double next_i1 = a * i1[idx1] + b * r2[idx2];
-            double next_r2 = a * r2[idx2] - b * i1[idx1];
-            double next_i2 = a * i2[idx2] + b * r1[idx1];
-            r1[idx1] = next_r1;
-            i1[idx1] = next_i1;
-            r2[idx2] = next_r2;
-            i2[idx2] = next_i2;
-        }
-    }
-}
-
 
 void CPUBlockTest::test_block_kernel_vertical() {
     //Set Up
@@ -203,101 +115,6 @@ void CPUBlockTest::test_block_kernel_horizontal() {
     std::cout << "TEST FUNCTION: block_kernel_horizontal -> PASSED! " << std::endl;
 }
 
-//TEST cpublocksse
-
-void CPUBlockTest::test_update_shifty_sse() {
-    //Set Up
-    int DIM = 640;
-    double a = h_a, b = h_b;
-    double *block_r00 = new double[DIM * DIM];
-    double *block_i00 = new double[DIM * DIM];
-    double *block_r10 = new double[DIM * DIM];
-    double *block_i10 = new double[DIM * DIM];
-    double *block_r00_expected = new double[DIM * DIM];
-    double *block_i00_expected = new double[DIM * DIM];
-    double *block_r10_expected = new double[DIM * DIM];
-    double *block_i10_expected = new double[DIM * DIM];
-
-    //initialize block_r00, block_i00, block_r10, block_i10
-    for(int i = 0; i < DIM; i++) {
-        for(int j = 0; j < DIM; j++) {
-            block_r00[i * DIM + j] = 1.;
-            block_i00[i * DIM + j] = 0.;
-            block_r10[i * DIM + j] = 1.;
-            block_i10[i * DIM + j] = 0.;
-        }
-    }
-
-    //inizialize block_r00_expected, block_i00_expected
-    for(int i = 0; i < DIM; i++) {
-        for(int j = 0; j < DIM; j++) {
-            block_r00_expected[i * DIM + j] = a;
-            block_i00_expected[i * DIM + j] = b;
-            block_r10_expected[i * DIM + j] = a;
-            block_i10_expected[i * DIM + j] = b;
-        }
-    }
-
-    //Process block_r00, block_i00, block_r10, block_i10
-    update_shifty_sse<0>(DIM, DIM, DIM, a, b, block_r00, block_i00, block_r10, block_i10);
-
-    Matrix matrix_00_processed(block_r00, block_i00, DIM, DIM);
-    Matrix matrix_10_processed(block_r10, block_i10, DIM, DIM);
-    Matrix matrix_00_expected(block_r00_expected, block_i00_expected, DIM, DIM);
-    Matrix matrix_10_expected(block_r10_expected, block_i10_expected, DIM, DIM);
-
-    //Check
-    CPPUNIT_ASSERT( matrix_00_processed == matrix_00_expected );
-    CPPUNIT_ASSERT( matrix_10_processed == matrix_10_expected );
-    std::cout << "TEST FUNCTION: update_shifty_sse -> PASSED! " << std::endl;
-}
-
-void CPUBlockTest::test_update_shiftx_sse() {
-    //Set Up
-    int DIM = 640;
-    double a = h_a, b = h_b;
-    double *block_r00 = new double[DIM * DIM];
-    double *block_i00 = new double[DIM * DIM];
-    double *block_r10 = new double[DIM * DIM];
-    double *block_i10 = new double[DIM * DIM];
-    double *block_r00_expected = new double[DIM * DIM];
-    double *block_i00_expected = new double[DIM * DIM];
-    double *block_r10_expected = new double[DIM * DIM];
-    double *block_i10_expected = new double[DIM * DIM];
-
-    //initialize block_r00, block_i00, block_r10, block_i10
-    for(int i = 0; i < DIM; i++) {
-        for(int j = 0; j < DIM; j++) {
-            block_r00[i * DIM + j] = 1.;
-            block_i00[i * DIM + j] = 0.;
-            block_r10[i * DIM + j] = 1.;
-            block_i10[i * DIM + j] = 0.;
-        }
-    }
-
-    //inizialize block_r00_expected, block_i00_expected
-    for(int i = 0; i < DIM; i++) {
-        for(int j = 0; j < DIM; j++) {
-            block_r00_expected[i * DIM + j] = a;
-            block_i00_expected[i * DIM + j] = b;
-            block_r10_expected[i * DIM + j] = a;
-            block_i10_expected[i * DIM + j] = b;
-        }
-    }
-
-    //Process block_r00, block_i00, block_r10, block_i10
-    update_shiftx_sse<0>(DIM, DIM, DIM, a, b, block_r00, block_i00, block_r10, block_i10);
-
-    Matrix matrix_00_processed(block_r00, block_i00, DIM, DIM);
-    Matrix matrix_10_processed(block_r10, block_i10, DIM, DIM);
-    Matrix matrix_00_expected(block_r00_expected, block_i00_expected, DIM, DIM);
-    Matrix matrix_10_expected(block_r10_expected, block_i10_expected, DIM, DIM);
-
-    //Check
-    CPPUNIT_ASSERT( matrix_00_processed == matrix_00_expected );
-    CPPUNIT_ASSERT( matrix_10_processed == matrix_10_expected );
-    std::cout << "TEST FUNCTION: update_shiftx_sse -> PASSED! " << std::endl;
-}
 
 
 //Members of class Matrix
@@ -337,4 +154,3 @@ bool Matrix::operator ==(const Matrix &other) const {
     }
     return var;
 }
-
