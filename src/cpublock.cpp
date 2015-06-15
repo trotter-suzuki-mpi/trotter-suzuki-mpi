@@ -25,6 +25,7 @@
 
 // Helpers
 void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag) {
+    //#pragma omp parallel for
     for (size_t idx = start_offset, peer = idx + stride; idx < width; idx += 2, peer += 2) {
         double tmp_real = p_real[idx];
         double tmp_imag = p_imag[idx];
@@ -33,6 +34,7 @@ void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, siz
         p_real[peer] = a * p_real[peer] - b * tmp_imag;
         p_imag[peer] = a * p_imag[peer] + b * tmp_real;
     }
+    #pragma omp parallel for
     for (size_t y = 1; y < height - 1; ++y) {
         for (size_t idx = y * stride + (start_offset + y) % 2, peer = idx + stride; idx < y * stride + width; idx += 2, peer += 2) {
             double tmp_real = p_real[idx];
@@ -46,6 +48,7 @@ void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, siz
 }
 
 void block_kernel_vertical_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag) {
+    //#pragma omp parallel for
     for (size_t idx = start_offset, peer = idx + stride; idx < width; idx += 2, peer += 2) {
         double tmp_real = p_real[idx];
         double tmp_imag = p_imag[idx];
@@ -54,6 +57,7 @@ void block_kernel_vertical_imaginary(size_t start_offset, size_t stride, size_t 
         p_real[peer] = a * p_real[peer] + b * tmp_real;
         p_imag[peer] = a * p_imag[peer] + b * tmp_imag;
     }
+    #pragma omp parallel for
     for (size_t y = 1; y < height - 1; ++y) {
         for (size_t idx = y * stride + (start_offset + y) % 2, peer = idx + stride; idx < y * stride + width; idx += 2, peer += 2) {
             double tmp_real = p_real[idx];
@@ -67,6 +71,7 @@ void block_kernel_vertical_imaginary(size_t start_offset, size_t stride, size_t 
 }
 
 void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag) {
+    #pragma omp parallel for
     for (size_t y = 0; y < height; ++y) {
         for (size_t idx = y * stride + (start_offset + y) % 2, peer = idx + 1; idx < y * stride + width - 1; idx += 2, peer += 2) {
             double tmp_real = p_real[idx];
@@ -80,6 +85,7 @@ void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, s
 }
 
 void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag) {
+    #pragma omp parallel for
     for (size_t y = 0; y < height; ++y) {
         for (size_t idx = y * stride + (start_offset + y) % 2, peer = idx + 1; idx < y * stride + width - 1; idx += 2, peer += 2) {
             double tmp_real = p_real[idx];
@@ -94,6 +100,7 @@ void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_
 
 //double time potential
 void block_kernel_potential(size_t stride, size_t width, size_t height, double a, double b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, double * p_real, double * p_imag) {
+    #pragma omp parallel for
     for (size_t y = 0; y < height; ++y) {
         for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
             double tmp = p_real[idx];
@@ -105,6 +112,7 @@ void block_kernel_potential(size_t stride, size_t width, size_t height, double a
 
 //double time potential
 void block_kernel_potential_imaginary(size_t stride, size_t width, size_t height, double a, double b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, double * p_real, double * p_imag) {
+    #pragma omp parallel for
     for (size_t y = 0; y < height; ++y) {
         for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
             p_real[idx] = external_pot_real[idx_pot] * p_real[idx];

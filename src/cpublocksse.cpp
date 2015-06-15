@@ -33,6 +33,7 @@ inline void update_shifty_sse(size_t stride, size_t width, size_t height, double
     __m128d aq, bq;
     aq = _mm_load1_pd(&a);
     bq = _mm_load1_pd(&b);
+    #pragma omp parallel for
     for (size_t i = 0; i < height - offset_y; i++) {
         int idx1 = i * stride;
         int idx2 = (i + offset_y) * stride;
@@ -69,6 +70,7 @@ inline void update_shifty_sse_imaginary(size_t stride, size_t width, size_t heig
     __m128d aq, bq;
     aq = _mm_load1_pd(&a);
     bq = _mm_load1_pd(&b);
+    #pragma omp parallel for
     for (size_t i = 0; i < height - offset_y; i++) {
         int idx1 = i * stride;
         int idx2 = (i + offset_y) * stride;
@@ -105,6 +107,7 @@ inline void update_shiftx_sse(size_t stride, size_t width, size_t height, double
     __m128d aq, bq;
     aq = _mm_load1_pd(&a);
     bq = _mm_load1_pd(&b);
+    #pragma omp parallel for
     for (size_t i = 0; i < height; i++) {
         int idx1 = i * stride;
         int idx2 = i * stride + offset_x;
@@ -155,6 +158,7 @@ inline void update_shiftx_sse_imaginary(size_t stride, size_t width, size_t heig
     __m128d aq, bq;
     aq = _mm_load1_pd(&a);
     bq = _mm_load1_pd(&b);
+    #pragma omp parallel for
     for (size_t i = 0; i < height; i++) {
         int idx1 = i * stride;
         int idx2 = i * stride + offset_x;
@@ -202,6 +206,7 @@ inline void update_shiftx_sse_imaginary(size_t stride, size_t width, size_t heig
 
 void update_ext_pot_sse(size_t stride, size_t width, size_t height, double * __restrict__ pot_r, double * __restrict__ pot_i, double * __restrict__ real,
                         double * __restrict__ imag) {
+    #pragma omp parallel for
     for (size_t i = 0; i < height; i++) {
 		size_t j = 0;
         for (; j < width - width % 2; j += 2) {
@@ -229,6 +234,7 @@ void update_ext_pot_sse(size_t stride, size_t width, size_t height, double * __r
 
 void update_ext_pot_sse_imaginary(size_t stride, size_t width, size_t height, double * __restrict__ pot_r, double * __restrict__ pot_i, double * __restrict__ real,
                                   double * __restrict__ imag) {
+    #pragma omp parallel for
     for (size_t i = 0; i < height; i++) {
 		size_t j = 0;
         for (; j < width - width % 2; j += 2) {
