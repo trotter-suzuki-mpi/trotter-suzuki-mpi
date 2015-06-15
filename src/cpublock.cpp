@@ -320,9 +320,16 @@ void CPUBlock::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, 
 void CPUBlock::kernel8(const double *p_real, const double *p_imag, double * next_real, double * next_imag) {
     // Inner part
     int inner = 1, sides = 0;
-    #pragma omp parallel for
-    for (size_t block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
-        process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, external_pot_real, external_pot_imag, p_real, p_imag, next_real, next_imag, inner, sides, imag_time);
+#ifndef HAVE_MPI
+    #pragma omp parallel default(shared)
+#endif
+    {
+#ifndef HAVE_MPI
+        #pragma omp for
+#endif 
+        for (size_t block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
+            process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, external_pot_real, external_pot_imag, p_real, p_imag, next_real, next_imag, inner, sides, imag_time);
+        }
     }
 }
 

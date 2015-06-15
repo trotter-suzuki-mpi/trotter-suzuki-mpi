@@ -845,15 +845,22 @@ void CPUBlockSSEKernel::run_kernel_on_halo() {
 
 void CPUBlockSSEKernel::run_kernel() {
     int inner = 1, sides = 0;
-    #pragma omp parallel for
-    for (size_t block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
-        process_band_sse(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b,
-                         ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11,
-                         ext_pot_i00, ext_pot_i10, ext_pot_i01, ext_pot_i11,
-                         r00[sense], r01[sense], r10[sense], r11[sense],
-                         i00[sense], i01[sense], i10[sense], i11[sense],
-                         r00[1 - sense], r01[1 - sense], r10[1 - sense], r11[1 - sense],
-                         i00[1 - sense], i01[1 - sense], i10[1 - sense], i11[1 - sense], inner, sides, imag_time);
+    #ifndef HAVE_MPI
+    #pragma omp parallel default(shared)
+#endif
+    {
+#ifndef HAVE_MPI
+        #pragma omp for
+#endif 
+        for (size_t block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
+            process_band_sse(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b,
+                             ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11,
+                             ext_pot_i00, ext_pot_i10, ext_pot_i01, ext_pot_i11,
+                             r00[sense], r01[sense], r10[sense], r11[sense],
+                             i00[sense], i01[sense], i10[sense], i11[sense],
+                             r00[1 - sense], r01[1 - sense], r10[1 - sense], r11[1 - sense],
+                             i00[1 - sense], i01[1 - sense], i10[1 - sense], i11[1 - sense], inner, sides, imag_time);
+        }
     }
     sense = 1 - sense;
 }
