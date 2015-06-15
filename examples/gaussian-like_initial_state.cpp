@@ -32,83 +32,65 @@
 #include <sys/stat.h>
 #include <mpi.h>
 #include "trotter.h"
+#include "common.h"
 
 #define DIM 640
 #define ITERATIONS 1000
 #define KERNEL_TYPE 0
 #define SNAPSHOTS 100
 
-//set external potential operator in coordinate representation
-void potential_op_coord_representation(double *hamilt_pot, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
-    double constant = 0.;
-    for(int i = 0; i < dimy; i++) {
-        for(int j = 0; j < dimx; j++) {
-            hamilt_pot[i * dimx + j] = constant;
-        }
-    }
-}
-
-//set initial state
-void init_state(double *p_real, double *p_imag, int dimx, int dimy, int halo_x, int halo_y, int *periods) {
-    double s = 64.0; // FIXME: y esto?
-
-    for (int y = 1; y <= dimy; y++) {
-        for (int x = 1; x <= dimx; x++) {
-            std::complex<double> tmp = std::complex<double>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
-                                       * exp(std::complex<double>(0.0, 0.4 * (x + y - 480.0)));
-
-            p_real[y * dimx + x] = real(tmp);
-            p_imag[y * dimx + x] = imag(tmp);
-        }
-    }
-}
-
-//calculate potential part of evolution operator
-void init_pot_evolution_op(double * hamilt_pot, double * external_pot_real, double * external_pot_imag, int dimx, int dimy, double particle_mass, double time_single_it ) {
-    double CONST_1 = -1. * time_single_it;
-    double CONST_2 = 2. * time_single_it / particle_mass;		//CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
-
-    std::complex<double> tmp;
-    for(int i = 0; i < dimy; i++) {
-        for(int j = 0; j < dimx; j++) {
-            tmp = exp(std::complex<double> (0., CONST_1 * hamilt_pot[i * dimx + j] + CONST_2));
-            external_pot_real[i * dimx + j] = real(tmp);
-            external_pot_imag[i * dimx + j] = imag(tmp);
-        }
-    }
-}
-
 int main(int argc, char** argv) {
     int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, kernel_type = KERNEL_TYPE;
     int periods[2] = {0, 0};
     bool verbose = true;
+    char filename[1] = "";
+    char pot_name[1] = "";
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
     int matrix_width = dim + periods[1] * 2 * halo_x;
     int matrix_height = dim + periods[0] * 2 * halo_y;
-
-    //set hamiltonian variables
-    const double particle_mass = 1.;
-    double *hamilt_pot = new double[matrix_width * matrix_height];
-
-    potential_op_coord_representation(hamilt_pot, matrix_width, matrix_height, halo_x, halo_y, periods);	//set potential operator
-
+    
+    MPI_Init(&argc, &argv);
+    //define the topology
+    int coords[2], dims[2] = {0, 0};
+    int rank;
+    int nProcs;
+    MPI_Comm cartcomm;
+    MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
+    MPI_Dims_create(nProcs, 2, dims);  //partition all the processes (the size of MPI_COMM_WORLD's group) into an 2-dimensional topology
+    MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, 0, &cartcomm);
+    MPI_Comm_rank(cartcomm, &rank);
+    MPI_Cart_coords(cartcomm, rank, 2, coords);
+    
+    //set dimension of tiles and offsets
+    int start_x, end_x, inner_start_x, inner_end_x,
+        start_y, end_y, inner_start_y, inner_end_y;
+    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
+    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
+    int tile_width = end_x - start_x;
+    int tile_height = end_y - start_y;
+    
     //set and calculate evolution operator variables from hamiltonian
-    const double time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
-    double *external_pot_real = new double[matrix_width * matrix_height];
-    double *external_pot_imag = new double[matrix_width * matrix_height];
-    init_pot_evolution_op(hamilt_pot, external_pot_real, external_pot_imag, matrix_width, matrix_height, particle_mass, time_single_it);	//calculate potential part of evolution operator
+    const double particle_mass = 1.;
+    double *external_pot_real = new double[tile_width*tile_height];
+    double *external_pot_imag = new double[tile_width*tile_height];
+    double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
+    hamiltonian_pot = const_potential;
+    double time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
     double h_a = cos(time_single_it / (2. * particle_mass));
     double h_b = sin(time_single_it / (2. * particle_mass));
+    
+    initialize_exp_potential(external_pot_real, external_pot_imag, pot_name, hamiltonian_pot, tile_width, tile_height, matrix_width, matrix_height,
+                         start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, false);
 
     //set initial state
-    double *p_real = new double[matrix_width * matrix_height];
-    double *p_imag = new double[matrix_width * matrix_height];
-    init_state(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, periods);
+    double *p_real = new double[tile_width*tile_height];
+    double *p_imag = new double[tile_width*tile_height];
+    std::complex<double> (*ini_state)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
+    ini_state = gauss_state;
+    initialize_state(p_real, p_imag, filename, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,
+                     periods, coords, dims, halo_x, halo_y);
 
-    MPI_Init(&argc, &argv);
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     if(rank == 0) {
         std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
         std::cout << "* It calculates the time-evolution of a particle in a box, where the initial\n";

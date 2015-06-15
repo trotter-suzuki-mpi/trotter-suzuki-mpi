@@ -83,20 +83,22 @@ HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_p
 #ifdef DEBUG
     printf("%d %d %d %d\n", gpu_start_x, gpu_tile_width, gpu_start_y, gpu_tile_height);
 #endif
-
-    p_real[0] = new double[tile_width * tile_height];
+    
+    p_real[0] = _p_real;
+    p_imag[0] = _p_imag;
+    //p_real[0] = new double[tile_width * tile_height];
     p_real[1] = new double[tile_width * tile_height];
-    p_imag[0] = new double[tile_width * tile_height];
+    //p_imag[0] = new double[tile_width * tile_height];
     p_imag[1] = new double[tile_width * tile_height];
 
-    external_pot_real = new double[tile_width * tile_height];
-    external_pot_imag = new double[tile_width * tile_height];
+    //external_pot_real = new double[tile_width * tile_height];
+    //external_pot_imag = new double[tile_width * tile_height];
 
-    memcpy(p_real[0], _p_real, tile_width * tile_height * sizeof(double));
-    memcpy(p_imag[0], _p_imag, tile_width * tile_height * sizeof(double));
+    //memcpy(p_real[0], _p_real, tile_width * tile_height * sizeof(double));
+    //memcpy(p_imag[0], _p_imag, tile_width * tile_height * sizeof(double));
 
-    memcpy(external_pot_real, _external_pot_real, tile_width * tile_height * sizeof(double));
-    memcpy(external_pot_imag, _external_pot_imag, tile_width * tile_height * sizeof(double));
+    //memcpy(external_pot_real, _external_pot_real, tile_width * tile_height * sizeof(double));
+    //memcpy(external_pot_imag, _external_pot_imag, tile_width * tile_height * sizeof(double));
 
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[0]), gpu_tile_width * gpu_tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[1]), gpu_tile_width * gpu_tile_height * sizeof(double)));

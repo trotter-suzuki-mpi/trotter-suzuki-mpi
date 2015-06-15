@@ -217,7 +217,7 @@ CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real,
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     tile_width = end_x - start_x;
     tile_height = end_y - start_y;
-
+/*
     p_real[0] = new double[tile_width * tile_height];
     p_real[1] = new double[tile_width * tile_height];
     p_imag[0] = new double[tile_width * tile_height];
@@ -231,7 +231,14 @@ CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real,
 
     memcpy(external_pot_real, _external_pot_real, tile_width * tile_height * sizeof(double));
     memcpy(external_pot_imag, _external_pot_imag, tile_width * tile_height * sizeof(double));
-
+*/
+    p_real[0] = _p_real;
+    p_imag[0] = _p_imag;
+    p_real[1] = new double[tile_width * tile_height];
+    p_imag[1] = new double[tile_width * tile_height];
+    external_pot_real = _external_pot_real;
+    external_pot_imag = _external_pot_imag;
+    
     // Halo exchange uses wave pattern to communicate
     // halo_x-wide inner rows are sent first to left and right
     // Then full length rows are exchanged to the top and bottom
