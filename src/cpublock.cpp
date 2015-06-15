@@ -25,7 +25,6 @@
 
 // Helpers
 void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag) {
-    //#pragma omp parallel for
     for (size_t idx = start_offset, peer = idx + stride; idx < width; idx += 2, peer += 2) {
         double tmp_real = p_real[idx];
         double tmp_imag = p_imag[idx];
@@ -34,7 +33,6 @@ void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, siz
         p_real[peer] = a * p_real[peer] - b * tmp_imag;
         p_imag[peer] = a * p_imag[peer] + b * tmp_real;
     }
-    #pragma omp parallel for
     for (size_t y = 1; y < height - 1; ++y) {
         for (size_t idx = y * stride + (start_offset + y) % 2, peer = idx + stride; idx < y * stride + width; idx += 2, peer += 2) {
             double tmp_real = p_real[idx];
@@ -48,7 +46,6 @@ void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, siz
 }
 
 void block_kernel_vertical_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag) {
-    //#pragma omp parallel for
     for (size_t idx = start_offset, peer = idx + stride; idx < width; idx += 2, peer += 2) {
         double tmp_real = p_real[idx];
         double tmp_imag = p_imag[idx];
@@ -57,7 +54,6 @@ void block_kernel_vertical_imaginary(size_t start_offset, size_t stride, size_t 
         p_real[peer] = a * p_real[peer] + b * tmp_real;
         p_imag[peer] = a * p_imag[peer] + b * tmp_imag;
     }
-    #pragma omp parallel for
     for (size_t y = 1; y < height - 1; ++y) {
         for (size_t idx = y * stride + (start_offset + y) % 2, peer = idx + stride; idx < y * stride + width; idx += 2, peer += 2) {
             double tmp_real = p_real[idx];
@@ -71,7 +67,6 @@ void block_kernel_vertical_imaginary(size_t start_offset, size_t stride, size_t 
 }
 
 void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag) {
-    #pragma omp parallel for
     for (size_t y = 0; y < height; ++y) {
         for (size_t idx = y * stride + (start_offset + y) % 2, peer = idx + 1; idx < y * stride + width - 1; idx += 2, peer += 2) {
             double tmp_real = p_real[idx];
@@ -85,7 +80,6 @@ void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, s
 }
 
 void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag) {
-    #pragma omp parallel for
     for (size_t y = 0; y < height; ++y) {
         for (size_t idx = y * stride + (start_offset + y) % 2, peer = idx + 1; idx < y * stride + width - 1; idx += 2, peer += 2) {
             double tmp_real = p_real[idx];
@@ -100,7 +94,6 @@ void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_
 
 //double time potential
 void block_kernel_potential(size_t stride, size_t width, size_t height, double a, double b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, double * p_real, double * p_imag) {
-    #pragma omp parallel for
     for (size_t y = 0; y < height; ++y) {
         for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
             double tmp = p_real[idx];
@@ -112,7 +105,6 @@ void block_kernel_potential(size_t stride, size_t width, size_t height, double a
 
 //double time potential
 void block_kernel_potential_imaginary(size_t stride, size_t width, size_t height, double a, double b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, double * p_real, double * p_imag) {
-    #pragma omp parallel for
     for (size_t y = 0; y < height; ++y) {
         for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
             p_real[idx] = external_pot_real[idx_pot] * p_real[idx];
@@ -225,21 +217,7 @@ CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real,
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     tile_width = end_x - start_x;
     tile_height = end_y - start_y;
-/*
-    p_real[0] = new double[tile_width * tile_height];
-    p_real[1] = new double[tile_width * tile_height];
-    p_imag[0] = new double[tile_width * tile_height];
-    p_imag[1] = new double[tile_width * tile_height];
 
-    external_pot_real = new double[tile_width * tile_height];
-    external_pot_imag = new double[tile_width * tile_height];
-
-    memcpy(p_real[0], _p_real, tile_width * tile_height * sizeof(double));
-    memcpy(p_imag[0], _p_imag, tile_width * tile_height * sizeof(double));
-
-    memcpy(external_pot_real, _external_pot_real, tile_width * tile_height * sizeof(double));
-    memcpy(external_pot_imag, _external_pot_imag, tile_width * tile_height * sizeof(double));
-*/
     p_real[0] = _p_real;
     p_imag[0] = _p_imag;
     p_real[1] = new double[tile_width * tile_height];
@@ -285,7 +263,7 @@ void CPUBlock::run_kernel_on_halo() {
         process_band(tile_width, block_width, block_height, halo_x, 0, tile_height, 0, tile_height, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
     }
     else {
-
+        
         // Sides
         inner = 0;
         sides = 1;
@@ -293,12 +271,12 @@ void CPUBlock::run_kernel_on_halo() {
         for (block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
             process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
         }
-
+        
         // First band
         inner = 1;
         sides = 1;
         process_band(tile_width, block_width, block_height, halo_x, 0, block_height, 0, block_height - halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
-
+        
         // Last band
         inner = 1;
         sides = 1;
@@ -342,6 +320,7 @@ void CPUBlock::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, 
 void CPUBlock::kernel8(const double *p_real, const double *p_imag, double * next_real, double * next_imag) {
     // Inner part
     int inner = 1, sides = 0;
+    #pragma omp parallel for
     for (size_t block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
         process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, external_pot_real, external_pot_imag, p_real, p_imag, next_real, next_imag, inner, sides, imag_time);
     }
