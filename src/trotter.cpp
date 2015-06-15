@@ -18,6 +18,8 @@
  *
  */
 
+#include <cstring>
+#include <string>
 #include <sstream>
 #include <sys/time.h>
 #include <mpi.h>
@@ -38,9 +40,7 @@ void trotter(double h_a, double h_b,
              int *periods, const char *output_folder, bool verbose, 
              bool imag_time, int particle_tag) {
 
-    double *_p_real, *_p_imag;
-    double *_external_pot_real, *_external_pot_imag;
-    std::stringstream filename;
+    
     int start_x, end_x, inner_start_x, inner_end_x,
         start_y, end_y, inner_start_y, inner_end_y;
 
@@ -61,7 +61,41 @@ void trotter(double h_a, double h_b,
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     int width = end_x - start_x;
     int height = end_y - start_y;
-
+    
+    // Set variables for mpi output
+    char *data_as_txt, *filename;
+    filename = new char[strlen(output_folder) + 50];
+    double *_p_real, *_p_imag;
+    int count;
+    
+    MPI_File   file;
+    MPI_Status status;
+    
+    // each number is represented by charspernum chars 
+    const int chars_per_complex_num=30;
+    MPI_Datatype complex_num_as_string;
+    MPI_Type_contiguous(chars_per_complex_num, MPI_CHAR, &complex_num_as_string); 
+    MPI_Type_commit(&complex_num_as_string);
+    
+    const int charspernum=14;
+    MPI_Datatype num_as_string;
+    MPI_Type_contiguous(charspernum, MPI_CHAR, &num_as_string); 
+    MPI_Type_commit(&num_as_string);
+    
+    // create a type describing our piece of the array 
+    int globalsizes[2] = {matrix_height - 2 * periods[0]*halo_y, matrix_width - 2 * periods[1]*halo_x};
+    int localsizes [2] = {inner_end_y - inner_start_y, inner_end_x - inner_start_x};
+    int starts[2]      = {inner_start_y, inner_start_x};
+    int order          = MPI_ORDER_C;
+	
+	MPI_Datatype complex_localarray;
+    MPI_Type_create_subarray(2, globalsizes, localsizes, starts, order, complex_num_as_string, &complex_localarray);
+    MPI_Type_commit(&complex_localarray);
+    
+    MPI_Datatype localarray;
+    MPI_Type_create_subarray(2, globalsizes, localsizes, starts, order, num_as_string, &localarray);
+    MPI_Type_commit(&localarray);
+    
 #ifdef DEBUG
     std::cout << "Coord_x: " << coords[1] << " start_x: " << start_x << \
               " end_x: " << end_x << " inner_start_x " << inner_start_x << " inner_end_x " << inner_end_x << "\n";
@@ -69,40 +103,20 @@ void trotter(double h_a, double h_b,
               " end_y: " << end_y << " inner_start_y " << inner_start_y << " inner_end_y " << inner_end_y << "\n";
 #endif
 
-    // Allocate matrices
-    _p_real = new double[width * height];
-    _p_imag = new double[width * height];
-    _external_pot_real = new double[width * height];
-    _external_pot_imag = new double[width * height];
-    double * matr_real, * matr_imag;
-    double * matrix_snap_real;
-    double * matrix_snap_imag;
-    if(rank == 0) {
-        matr_real = new double [nProcs * (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y)];
-        matr_imag = new double [nProcs * (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y)];
-        matrix_snap_real = new double [(matrix_width - 2 * periods[1]*halo_x) * (matrix_height - 2 * periods[0]*halo_y)];
-        matrix_snap_imag = new double [(matrix_width - 2 * periods[1]*halo_x) * (matrix_height - 2 * periods[0]*halo_y)];
-    }
-
-    memcpy2D(_p_real, width * sizeof(double), &p_real[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(double), width * sizeof(double), height);
-    memcpy2D(_p_imag, width * sizeof(double), &p_imag[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(double), width * sizeof(double), height);
-    memcpy2D(_external_pot_real, width * sizeof(double), &external_pot_real[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(double), width * sizeof(double), height);
-    memcpy2D(_external_pot_imag, width * sizeof(double), &external_pot_imag[(start_y + periods[0]*halo_y) * matrix_width + start_x + periods[1]*halo_x], matrix_width * sizeof(double), width * sizeof(double), height);
-
     // Initialize kernel
     ITrotterKernel * kernel;
     switch (kernel_type) {
     case 0:
-        kernel = new CPUBlock(_p_real, _p_imag, _external_pot_real, _external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
+        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
         break;
 
     case 1:
-        kernel = new CPUBlockSSEKernel(_p_real, _p_imag, _external_pot_real, _external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
+        kernel = new CPUBlockSSEKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
         break;
 
     case 2:
 #ifdef CUDA
-        kernel = new CC2Kernel(_p_real, _p_imag, _external_pot_real, _external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
+        kernel = new CC2Kernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
 #else
         if (coords[0] == 0 && coords[1] == 0) {
             std::cerr << "Compiled without CUDA\n";
@@ -113,7 +127,7 @@ void trotter(double h_a, double h_b,
 
     case 3:
 #ifdef CUDA
-        kernel = new HybridKernel(_p_real, _p_imag, _external_pot_real, _external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
+        kernel = new HybridKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
 #else
         if (coords[0] == 0 && coords[1] == 0) {
             std::cerr << "Compiled without CUDA\n";
@@ -123,7 +137,7 @@ void trotter(double h_a, double h_b,
         break;
 
     default:
-        kernel = new CPUBlock(_p_real, _p_imag, _external_pot_real, _external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
+        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
         break;
     }
 
@@ -133,42 +147,90 @@ void trotter(double h_a, double h_b,
     // Main loop
     for (int i = 0; i < iterations; i++) {
         if ( (snapshots > 0) && (i % snapshots == 0) ) {
+            
+            _p_real = new double[(inner_end_x - inner_start_x) * (inner_end_y - inner_start_y)];
+            _p_imag = new double[(inner_end_x - inner_start_x) * (inner_end_y - inner_start_y)];
             kernel->get_sample(inner_end_x - inner_start_x, inner_start_x - start_x, inner_start_y - start_y,
                                inner_end_x - inner_start_x, inner_end_y - inner_start_y, _p_real, _p_imag);
-            MPI_Gather(_p_real, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_DOUBLE,
-                       matr_real, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_DOUBLE, 0, cartcomm);
-            MPI_Gather(_p_imag, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_DOUBLE,
-                       matr_imag, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), MPI_DOUBLE, 0, cartcomm);
+            
+            // output complex matrix
+			// conversion
+			data_as_txt = new char[(inner_end_x - inner_start_x)*( inner_end_y - inner_start_y)*chars_per_complex_num];
+			count = 0;
+			for (int j=0; j<(inner_end_y - inner_start_y); j++) {
+				for (int k=0; k<(inner_end_x - inner_start_x)-1; k++) {
+					sprintf(&data_as_txt[count*chars_per_complex_num], "(%+.6e,%+.6e) ", _p_real[j*(inner_end_x - inner_start_x) + k], _p_imag[j*(inner_end_x - inner_start_x) + k]);
+					count++;
+				}
+				if(coords[1] == dims[1]-1) {
+					sprintf(&data_as_txt[count*chars_per_complex_num], "(%+.6e,%+.6e)\n", _p_real[j*(inner_end_x - inner_start_x) + (inner_end_x - inner_start_x)-1], _p_imag[j*(inner_end_x - inner_start_x) + (inner_end_x - inner_start_x)-1]);
+					count++;
+				}
+				else {
+					sprintf(&data_as_txt[count*chars_per_complex_num], "(%+.6e,%+.6e) ", _p_real[j*(inner_end_x - inner_start_x) + (inner_end_x - inner_start_x)-1], _p_imag[j*(inner_end_x - inner_start_x) + (inner_end_x - inner_start_x)-1]);
+					count++;
+				}
+			}
 
-            if(rank == 0) {
-                int _start_x, _end_x, _inner_start_x, _inner_end_x,
-                    _start_y, _end_y, _inner_start_y, _inner_end_y;
-                int _coords[2];
-                int set = 0;
+			// open the file, and set the view 
+            sprintf(filename, "%s/%i-%i-iter-comp.dat", output_folder, particle_tag, i);
+			MPI_File_open(cartcomm, filename, 
+						  MPI_MODE_CREATE|MPI_MODE_WRONLY,
+						  MPI_INFO_NULL, &file);
 
-                for(int _rank = 0; _rank < nProcs; _rank++) {
-                    MPI_Cart_coords(cartcomm, _rank, 2, _coords);
-                    calculate_borders(_coords[0], dims[0], &_start_y, &_end_y, &_inner_start_y, &_inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
-                    calculate_borders(_coords[1], dims[1], &_start_x, &_end_x, &_inner_start_x, &_inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
-                    for(int y = 0 ; y < _inner_end_y - _inner_start_y; y++) {
-                        for(int x = 0 ; x < _inner_end_x - _inner_start_x; x++) {
-                            matrix_snap_real[x + _inner_start_x + (y + _inner_start_y) * (matrix_width - 2 * periods[1]*halo_x)] = matr_real[set + x + y * (_inner_end_x - _inner_start_x)];
-                            matrix_snap_imag[x + _inner_start_x + (y + _inner_start_y) * (matrix_width - 2 * periods[1]*halo_x)] = matr_imag[set + x + y * (_inner_end_x - _inner_start_x)];
-                        }
-                    }
-                    set += (_inner_end_y - _inner_start_y) * (_inner_end_x - _inner_start_x);
-                }
+			MPI_File_set_view(file, 0,  MPI_CHAR, complex_localarray, 
+								   "native", MPI_INFO_NULL);
 
-                filename.str("");
-                filename << output_folder << "/" << particle_tag << "-" << i << "-iter-real.dat";
-                print_matrix(filename.str(), matrix_snap_real, matrix_width - 2 * periods[1]*halo_x,
-                             matrix_width - 2 * periods[1]*halo_x, matrix_height - 2 * periods[0]*halo_y);
+			MPI_File_write_all(file, data_as_txt, (inner_end_x - inner_start_x)*( inner_end_y - inner_start_y), complex_num_as_string, &status);
+			MPI_File_close(&file);
+			delete [] data_as_txt;
+			
+			// output real matrix
+			//conversion
+			data_as_txt = new char[(inner_end_x - inner_start_x)*( inner_end_y - inner_start_y)*charspernum];
+			count = 0;
+			for (int j=0; j<(inner_end_y - inner_start_y); j++) {
+				for (int k=0; k<(inner_end_x - inner_start_x)-1; k++) {
+					sprintf(&data_as_txt[count*charspernum], "%+.6e ", _p_real[j*(inner_end_x - inner_start_x) + k]);
+					count++;
+				}
+				if(coords[1] == dims[1]-1) {
+					sprintf(&data_as_txt[count*charspernum], "%+.6e\n", _p_real[j*(inner_end_x - inner_start_x) + (inner_end_x - inner_start_x)-1]);
+					count++;
+				}
+				else {
+					sprintf(&data_as_txt[count*charspernum], "%+.6e ", _p_real[j*(inner_end_x - inner_start_x) + (inner_end_x - inner_start_x)-1]);
+					count++;
+				}
+			}
+			
+			// open the file, and set the view 
+            sprintf(filename, "%s/%i-%i-iter-real.dat", output_folder, particle_tag, i);
+			MPI_File_open(cartcomm, filename, 
+						  MPI_MODE_CREATE|MPI_MODE_WRONLY,
+						  MPI_INFO_NULL, &file);
 
-                filename.str("");
-                filename << output_folder << "/" << particle_tag << "-" << i << "-iter-imag.dat";
-                print_complex_matrix(filename.str(), matrix_snap_real, matrix_snap_imag, matrix_width - 2 * periods[1]*halo_x,
-                                     matrix_width - 2 * periods[1]*halo_x, matrix_height - 2 * periods[0]*halo_y);
-            }
+			MPI_File_set_view(file, 0,  MPI_CHAR, localarray, 
+								   "native", MPI_INFO_NULL);
+
+			MPI_File_write_all(file, data_as_txt, (inner_end_x - inner_start_x)*( inner_end_y - inner_start_y), num_as_string, &status);
+			MPI_File_close(&file);
+			delete [] data_as_txt;
+            
+			/*
+			//NO MPI
+			
+			sprintf(filename, "%s/%i-%i-iter-real.dat", output_folder, particle_tag, i);
+			print_matrix(filename, _p_real, matrix_width - 2 * periods[1]*halo_x,
+						 matrix_width - 2 * periods[1]*halo_x, matrix_height - 2 * periods[0]*halo_y);
+
+			sprintf(filename, "%s/%i-%i-iter-comp.dat", output_folder, particle_tag, i);
+			print_complex_matrix(filename, _p_real, _p_imag, matrix_width - 2 * periods[1]*halo_x,
+								 matrix_width - 2 * periods[1]*halo_x, matrix_height - 2 * periods[0]*halo_y);
+            
+            */
+            delete [] _p_real;
+            delete [] _p_imag;
         }
         kernel->run_kernel_on_halo();
         if (i != iterations - 1) {
@@ -186,9 +248,11 @@ void trotter(double h_a, double h_b,
         long time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
         std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " " << kernel->get_name() << " " << nProcs << " " << time << std::endl;
     }
-    delete[] _p_real;
-    delete[] _p_imag;
-    delete[] _external_pot_real;
-    delete[] _external_pot_imag;
+    
+    MPI_Type_free(&localarray);
+    MPI_Type_free(&num_as_string);
+    MPI_Type_free(&complex_localarray);
+    MPI_Type_free(&complex_num_as_string);
+    
     delete kernel;
 }

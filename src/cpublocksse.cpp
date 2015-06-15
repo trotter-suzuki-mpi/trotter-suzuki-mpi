@@ -203,7 +203,22 @@ inline void update_shiftx_sse_imaginary(size_t stride, size_t width, size_t heig
 void update_ext_pot_sse(size_t stride, size_t width, size_t height, double * __restrict__ pot_r, double * __restrict__ pot_i, double * __restrict__ real,
                         double * __restrict__ imag) {
     for (size_t i = 0; i < height; i++) {
-        for (size_t j = 0; j < width; j++) {
+		size_t j = 0;
+        for (; j < width - width % 2; j += 2) {
+            size_t idx = i * stride + j;
+            __m128d rq = _mm_load_pd(&real[idx]);
+            __m128d iq = _mm_load_pd(&imag[idx]);
+            __m128d potrq = _mm_load_pd(&pot_r[idx]);
+            __m128d potiq = _mm_load_pd(&pot_i[idx]);
+            
+            __m128d next_rq = _mm_sub_pd(_mm_mul_pd(rq, potrq), _mm_mul_pd(iq, potiq));
+            __m128d next_iq = _mm_add_pd(_mm_mul_pd(iq, potrq), _mm_mul_pd(rq, potiq));
+            
+            _mm_store_pd(&real[idx], next_rq);
+            _mm_store_pd(&imag[idx], next_iq);
+		}
+	
+        for (; j < width; j++) {
             size_t idx = i * stride + j;
             double tmp = real[idx];
             real[idx] = pot_r[idx] * tmp - pot_i[idx] * imag[idx];
@@ -215,7 +230,20 @@ void update_ext_pot_sse(size_t stride, size_t width, size_t height, double * __r
 void update_ext_pot_sse_imaginary(size_t stride, size_t width, size_t height, double * __restrict__ pot_r, double * __restrict__ pot_i, double * __restrict__ real,
                                   double * __restrict__ imag) {
     for (size_t i = 0; i < height; i++) {
-        for (size_t j = 0; j < width; j++) {
+		size_t j = 0;
+        for (; j < width - width % 2; j += 2) {
+            size_t idx = i * stride + j;
+            __m128d rq = _mm_load_pd(&real[idx]);
+            __m128d iq = _mm_load_pd(&imag[idx]);
+            __m128d potrq = _mm_load_pd(&pot_r[idx]);
+            
+            __m128d next_rq = _mm_mul_pd(rq, potrq);
+            __m128d next_iq = _mm_mul_pd(iq, potrq);
+            
+            _mm_store_pd(&real[idx], next_rq);
+            _mm_store_pd(&imag[idx], next_iq);
+		}
+        for (; j < width; j++) {
             size_t idx = i * stride + j;
             real[idx] = pot_r[idx] * real[idx];
             imag[idx] = pot_r[idx] * imag[idx];
