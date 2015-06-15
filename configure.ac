@@ -94,7 +94,7 @@ AC_ARG_WITH([mpi],
 
 mpi_enabled=no
 if test x"$with_mpi" = x"no" ; then	
-	AC_MSG_ERROR([YOU MUST USE MPI COMPILER: Please do not give configure the option --without-mpi or --with-mpi=no])
+    #AC_MSG_ERROR([YOU MUST USE MPI COMPILER: Please do not give configure the option --without-mpi or --with-mpi=no])
 else   
     AX_MPI_OPTIONS
     if test x"$MPI_CXX" != x"none"; then

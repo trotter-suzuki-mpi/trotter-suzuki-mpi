@@ -22,7 +22,10 @@
 #include <string>
 #include <sstream>
 #include <sys/time.h>
+
+#ifdef HAVE_MPI
 #include <mpi.h>
+#endif
 
 #include "common.h"
 #include "trotter.h"
@@ -48,12 +51,19 @@ void trotter(double h_a, double h_b,
     int rank;
     int nProcs;
 
+#ifdef HAVE_MPI
     MPI_Comm cartcomm;
     MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
     MPI_Dims_create(nProcs, 2, dims);  //partition all the processes (the size of MPI_COMM_WORLD's group) into an 2-dimensional topology
     MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, 0, &cartcomm);
     MPI_Comm_rank(cartcomm, &rank);
     MPI_Cart_coords(cartcomm, rank, 2, coords); //Determines process coords in cartesian topology given rank in group
+#else
+    nProcs = 1;
+    rank = 0;
+    dims[0] = dims[1] = 1;
+    coords[0] = coords[1] = 0;
+#endif
 
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
@@ -62,10 +72,13 @@ void trotter(double h_a, double h_b,
     int width = end_x - start_x;
     int height = end_y - start_y;
     
-    // Set variables for mpi output
-    char *data_as_txt, *filename;
-    filename = new char[strlen(output_folder) + 50];
     double *_p_real, *_p_imag;
+    char * filename;
+    filename = new char[strlen(output_folder) + 50];
+
+#ifdef HAVE_MPI
+    // Set variables for mpi output
+    char *data_as_txt;
     int count;
     
     MPI_File   file;
@@ -95,7 +108,8 @@ void trotter(double h_a, double h_b,
     MPI_Datatype localarray;
     MPI_Type_create_subarray(2, globalsizes, localsizes, starts, order, num_as_string, &localarray);
     MPI_Type_commit(&localarray);
-    
+#endif
+
 #ifdef DEBUG
     std::cout << "Coord_x: " << coords[1] << " start_x: " << start_x << \
               " end_x: " << end_x << " inner_start_x " << inner_start_x << " inner_end_x " << inner_end_x << "\n";
@@ -107,37 +121,65 @@ void trotter(double h_a, double h_b,
     ITrotterKernel * kernel;
     switch (kernel_type) {
     case 0:
-        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
+        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods,
+#ifdef HAVE_MPI
+                              cartcomm,
+#endif
+                              imag_time);
         break;
 
     case 1:
-        kernel = new CPUBlockSSEKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
+        kernel = new CPUBlockSSEKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods,
+#ifdef HAVE_MPI
+                              cartcomm,
+#endif
+                              imag_time);
         break;
 
     case 2:
 #ifdef CUDA
-        kernel = new CC2Kernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
+        kernel = new CC2Kernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods,
+#ifdef HAVE_MPI
+                              cartcomm,
+#endif
+                              imag_time);
 #else
         if (coords[0] == 0 && coords[1] == 0) {
             std::cerr << "Compiled without CUDA\n";
         }
+#ifdef HAVE_MPI
         MPI_Abort(MPI_COMM_WORLD, 2);
+#else
+        abort();
+#endif
 #endif
         break;
 
     case 3:
 #ifdef CUDA
-        kernel = new HybridKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
+        kernel = new HybridKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods,
+#ifdef HAVE_MPI
+                              cartcomm,
+#endif
+                              imag_time);
 #else
         if (coords[0] == 0 && coords[1] == 0) {
             std::cerr << "Compiled without CUDA\n";
         }
+#ifdef HAVE_MPI
         MPI_Abort(MPI_COMM_WORLD, 2);
+#else
+        abort();
+#endif
 #endif
         break;
 
     default:
-        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, cartcomm, imag_time);
+        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods,
+#ifdef HAVE_MPI
+                              cartcomm,
+#endif
+                              imag_time);
         break;
     }
 
@@ -152,7 +194,7 @@ void trotter(double h_a, double h_b,
             _p_imag = new double[(inner_end_x - inner_start_x) * (inner_end_y - inner_start_y)];
             kernel->get_sample(inner_end_x - inner_start_x, inner_start_x - start_x, inner_start_y - start_y,
                                inner_end_x - inner_start_x, inner_end_y - inner_start_y, _p_real, _p_imag);
-            
+#ifdef HAVE_MPI
             // output complex matrix
 			// conversion
 			data_as_txt = new char[(inner_end_x - inner_start_x)*( inner_end_y - inner_start_y)*chars_per_complex_num];
@@ -216,10 +258,7 @@ void trotter(double h_a, double h_b,
 			MPI_File_write_all(file, data_as_txt, (inner_end_x - inner_start_x)*( inner_end_y - inner_start_y), num_as_string, &status);
 			MPI_File_close(&file);
 			delete [] data_as_txt;
-            
-			/*
-			//NO MPI
-			
+#else
 			sprintf(filename, "%s/%i-%i-iter-real.dat", output_folder, particle_tag, i);
 			print_matrix(filename, _p_real, matrix_width - 2 * periods[1]*halo_x,
 						 matrix_width - 2 * periods[1]*halo_x, matrix_height - 2 * periods[0]*halo_y);
@@ -227,18 +266,21 @@ void trotter(double h_a, double h_b,
 			sprintf(filename, "%s/%i-%i-iter-comp.dat", output_folder, particle_tag, i);
 			print_complex_matrix(filename, _p_real, _p_imag, matrix_width - 2 * periods[1]*halo_x,
 								 matrix_width - 2 * periods[1]*halo_x, matrix_height - 2 * periods[0]*halo_y);
-            
-            */
+#endif
             delete [] _p_real;
             delete [] _p_imag;
         }
         kernel->run_kernel_on_halo();
         if (i != iterations - 1) {
+#ifdef HAVE_MPI
             kernel->start_halo_exchange();
+#endif
         }
         kernel->run_kernel();
         if (i != iterations - 1) {
+#ifdef HAVE_MPI
             kernel->finish_halo_exchange();
+#endif
         }
         kernel->wait_for_completion(i, snapshots);
     }
@@ -248,11 +290,11 @@ void trotter(double h_a, double h_b,
         long time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
         std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " " << kernel->get_name() << " " << nProcs << " " << time << std::endl;
     }
-    
+#ifdef HAVE_MPI    
     MPI_Type_free(&localarray);
     MPI_Type_free(&num_as_string);
     MPI_Type_free(&complex_localarray);
     MPI_Type_free(&complex_num_as_string);
-    
+#endif
     delete kernel;
 }

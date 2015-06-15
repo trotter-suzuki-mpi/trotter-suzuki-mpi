@@ -21,7 +21,9 @@
 #ifndef __CPUBLOCK_H
 #define __CPUBLOCK_H
 
+#ifdef HAVE_MPI
 #include <mpi.h>
+#endif
 #include "kernel.h"
 
 #define BLOCK_WIDTH 128u
@@ -39,7 +41,11 @@ void process_band(size_t tile_width, size_t block_width, size_t block_height, si
 
 class CPUBlock: public ITrotterKernel {
 public:
-    CPUBlock(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods, MPI_Comm cartcomm, bool imag_time);
+    CPUBlock(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods,
+#ifdef HAVE_MPI
+             MPI_Comm cartcomm, 
+#endif
+             bool imag_time);
     ~CPUBlock();
     void run_kernel();
     void run_kernel_on_halo();
@@ -72,12 +78,14 @@ private:
     static const size_t block_width = BLOCK_WIDTH;
     static const size_t block_height = BLOCK_HEIGHT;
 
+    int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
+#ifdef HAVE_MPI
     MPI_Comm cartcomm;
     int neighbors[4];
-    int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
     MPI_Request req[8];
     MPI_Status statuses[8];
     MPI_Datatype horizontalBorder, verticalBorder;
+#endif
 };
 
 #endif

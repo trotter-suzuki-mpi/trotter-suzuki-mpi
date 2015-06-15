@@ -30,7 +30,9 @@
 #include <iostream>
 #include <complex>
 #include <sys/stat.h>
+#ifdef HAVE_MPI
 #include <mpi.h>
+#endif
 #include "trotter.h"
 #include "common.h"
 
@@ -52,18 +54,26 @@ int main(int argc, char** argv) {
     int matrix_width = dim + periods[1] * 2 * halo_x;
     int matrix_height = dim + periods[0] * 2 * halo_y;
     
+#ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
-    
+#endif    
     //define the topology
     int coords[2], dims[2] = {0, 0};
     int rank;
     int nProcs;
+#ifdef HAVE_MPI
     MPI_Comm cartcomm;
     MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
     MPI_Dims_create(nProcs, 2, dims);  //partition all the processes (the size of MPI_COMM_WORLD's group) into an 2-dimensional topology
     MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, 0, &cartcomm);
     MPI_Comm_rank(cartcomm, &rank);
     MPI_Cart_coords(cartcomm, rank, 2, coords);
+#else
+    nProcs = 1;
+    rank = 0;
+    dims[0] = dims[1] = 1;
+    coords[0] = coords[1] = 0;
+#endif
     
     if(rank == 0) {
         std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
@@ -124,6 +134,8 @@ int main(int argc, char** argv) {
         trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, dirnames.c_str(), verbose, imag_time, i + 1);
     }
     
+#ifdef HAVE_MPI
     MPI_Finalize();
+#endif
     return 0;
 }
