@@ -17,13 +17,19 @@
  *
  */
 
+#ifdef HAVE_MPI
 #include <mpi.h>
+#endif
 
 #include "common.h"
 #include "hybrid.h"
 
 // Class methods
-HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int * periods, MPI_Comm _cartcomm, bool _imag_time):
+HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int * periods,
+#ifdef HAVE_MPI
+                           MPI_Comm _cartcomm,
+#endif
+                           bool _imag_time):
     threadsPerBlock(BLOCK_X, STRIDE_Y),
     a(_a),
     b(_b),
@@ -33,12 +39,19 @@ HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_p
     halo_x(_halo_x),
     halo_y(_halo_y),
     imag_time(_imag_time) {
+    
+    int rank, coords[2], dims[2] = {0, 0};
+#ifdef HAVE_MPI        
     cartcomm = _cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
-    int rank, coords[2], dims[2] = {0, 0};
     MPI_Comm_rank(cartcomm, &rank);
     MPI_Cart_get(cartcomm, 2, dims, periods, coords);
+#else
+    dims[0] = dims[1] = 1;
+    rank = 0;
+    coords[0] = coords[1] = 0;     
+#endif    
     int inner_start_x = 0, end_x = 0, end_y = 0;
     calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
@@ -112,6 +125,7 @@ HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_p
     CUDA_SAFE_CALL(cudaMemcpy2D(pdev_imag[0], gpu_tile_width * sizeof(double), &(p_imag[0][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyHostToDevice));
     cudaStreamCreate(&stream);
 
+#ifdef HAVE_MPI
     // Halo exchange uses wave pattern to communicate
     // halo_x-wide inner rows are sent first to left and right
     // Then full length rows are exchanged to the top and bottom
@@ -126,7 +140,7 @@ HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_p
     stride = tile_width;	// The combined width of the matrix with the halo
     MPI_Type_vector (count, block_length, stride, MPI_DOUBLE, &horizontalBorder);
     MPI_Type_commit (&horizontalBorder);
-
+#endif
 }
 
 HybridKernel::~HybridKernel() {
@@ -249,8 +263,10 @@ void HybridKernel::wait_for_completion(int iteration, int snapshots) {
         CUDA_SAFE_CALL(cudaMemcpy2D(&(p_real[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), pdev_real[sense], gpu_tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyDeviceToHost));
         CUDA_SAFE_CALL(cudaMemcpy2D(&(p_imag[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), pdev_imag[sense], gpu_tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyDeviceToHost));
 
-        int nProcs;
+        int nProcs = 1;
+#ifdef HAVE_MPI        
         MPI_Comm_size(cartcomm, &nProcs);
+#endif        
         int height = tile_height - halo_y;
         int width = tile_width - halo_x;
         double sum = 0., sums[nProcs];
@@ -259,7 +275,11 @@ void HybridKernel::wait_for_completion(int iteration, int snapshots) {
                 sum += p_real[sense][j + i * tile_width] * p_real[sense][j + i * tile_width] + p_imag[sense][j + i * tile_width] * p_imag[sense][j + i * tile_width];
             }
         }
+#ifdef HAVE_MPI        
         MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
+#else
+        sums[1] = sum;
+#endif        
         double tot_sum = 0.;
         for(int i = 0; i < nProcs; i++)
             tot_sum += sums[i];
@@ -293,6 +313,7 @@ void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t wid
 
 void HybridKernel::start_halo_exchange() {
     // Halo exchange: LEFT/RIGHT
+#ifndef HAVE_MPI    
     int offset = (inner_start_y - start_y) * tile_width;
     MPI_Irecv(p_real[1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 1, cartcomm, req);
     MPI_Irecv(p_imag[1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 2, cartcomm, req + 1);
@@ -306,9 +327,17 @@ void HybridKernel::start_halo_exchange() {
     offset = (inner_start_y - start_y) * tile_width + halo_x;
     MPI_Isend(p_real[1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 3, cartcomm, req + 6);
     MPI_Isend(p_imag[1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 4, cartcomm, req + 7);
+#else
+    int offset = (inner_start_y - start_y) * tile_width;
+    memcpy2D(&(p_real[1 - sense][offset]), tile_width * sizeof(double), &(p_real[1 - sense][offset + tile_width - 2 * halo_x]), tile_width * sizeof(double), halo_x, tile_height);
+    memcpy2D(&(p_imag[1 - sense][offset]), tile_width * sizeof(double), &(p_imag[1 - sense][offset + tile_width - 2 * halo_x]), tile_width * sizeof(double), halo_x, tile_height);
+    memcpy2D(&(p_real[1 - sense][offset + tile_width - halo_x]), tile_width * sizeof(double), &(p_real[1 - sense][offset + halo_x]), tile_width * sizeof(double), halo_x, tile_height);
+    memcpy2D(&(p_imag[1 - sense][offset + tile_width - halo_x]), tile_width * sizeof(double), &(p_imag[1 - sense][offset + halo_x]), tile_width * sizeof(double), halo_x, tile_height);
+#endif
 }
 
 void HybridKernel::finish_halo_exchange() {
+#ifndef HAVE_MPI
     MPI_Waitall(8, req, statuses);
 
     // Halo exchange: UP/DOWN
@@ -325,7 +354,13 @@ void HybridKernel::finish_halo_exchange() {
     offset = halo_y * tile_width;
     MPI_Isend(p_real[sense] + offset, 1, horizontalBorder, neighbors[UP], 3, cartcomm, req + 6);
     MPI_Isend(p_imag[sense] + offset, 1, horizontalBorder, neighbors[UP], 4, cartcomm, req + 7);
-
+#else
+    int offset = (inner_end_y - start_y) * tile_width;
+    memcpy2D(p_real[sense], tile_width * sizeof(double), &(p_real[sense][offset - halo_y * tile_width]), tile_width * sizeof(double), tile_width, halo_y);
+    memcpy2D(p_imag[sense], tile_width * sizeof(double), &(p_imag[sense][offset - halo_y * tile_width]), tile_width * sizeof(double), tile_width, halo_y);
+    memcpy2D(&(p_real[sense][offset]), tile_width * sizeof(double), &(p_real[sense][halo_y * tile_width]), tile_width * sizeof(double), tile_width, halo_y);
+    memcpy2D(&(p_imag[sense][offset]), tile_width * sizeof(double), &(p_imag[sense][halo_y * tile_width]), tile_width * sizeof(double), tile_width, halo_y);
+#endif
     // Exhange internal halos
 
     // Copy the internal halos to the GPU memory
@@ -398,5 +433,7 @@ void HybridKernel::finish_halo_exchange() {
     CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_real[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), &(pdev_real[sense][(gpu_tile_height - 2 * halo_y)*gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream));
     CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(p_imag[sense][offset_y * tile_width + offset_x]), tile_width * sizeof(double), &(pdev_imag[sense][(gpu_tile_height - 2 * halo_y)*gpu_tile_width + halo_x]), gpu_tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream));
 
+#ifndef HAVE_MPI
     MPI_Waitall(8, req, statuses);
+#endif
 }

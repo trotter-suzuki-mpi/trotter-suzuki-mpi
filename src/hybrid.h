@@ -74,13 +74,15 @@ private:
     static const size_t block_height = BLOCK_HEIGHT;
     size_t gpu_tile_width, gpu_tile_height, gpu_start_x, gpu_start_y;
     size_t n_bands_on_cpu;
-
-    MPI_Comm cartcomm;
+    
     int neighbors[4];
     int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
+#ifdef HAVE_MPI
+    MPI_Comm cartcomm;    
     MPI_Request req[8];
     MPI_Status statuses[8];
     MPI_Datatype horizontalBorder, verticalBorder;
+#endif    
 };
 
 #endif

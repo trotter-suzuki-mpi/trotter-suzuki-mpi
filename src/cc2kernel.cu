@@ -31,10 +31,15 @@
  *  This snippet is from GPMR:
  *  http://code.google.com/p/gpmr/
  */
-void setDevice(int commRank, MPI_Comm cartcomm) {
-    int commSize;
+void setDevice(int commRank
+#ifdef HAVE_MPI
+               ,MPI_Comm cartcomm
+#endif
+               ) {
+    int commSize = 1;
+#ifdef HAVE_MPI
     MPI_Comm_size(cartcomm, &commSize);
-
+#endif
     FILE * fp = popen("/bin/hostname", "r");
     char buf[1024];
     if (fgets(buf, 1023, fp) == NULL) strcpy(buf, "localhost");
@@ -50,15 +55,17 @@ void setDevice(int commRank, MPI_Comm cartcomm) {
     if (commRank == 0) {
         std::map<std::string, std::vector<int> > hosts;
         std::map<std::string, int> devCounts;
+#ifdef HAVE_MPI
         MPI_Status stat;
         MPI_Request req;
-
+#endif
         hosts[buf].push_back(0);
         devCounts[buf] = devCount;
         for (int i = 1; i < commSize; ++i) {
+#ifdef HAVE_MPI
             MPI_Recv(buf, 1024, MPI_CHAR, i, 0, cartcomm, &stat);
             MPI_Recv(&devCount, 1, MPI_INT, i, 0, cartcomm, &stat);
-
+#endif
             // check to make sure each process on each node reports the same number of devices.
             hosts[buf].push_back(i);
             if (devCounts.find(buf) != devCounts.end()) {
@@ -75,11 +82,16 @@ void setDevice(int commRank, MPI_Comm cartcomm) {
                 printf("Error, more jobs running on '%s' than devices - %d jobs > %d devices.\n",
                        it->first.c_str(), static_cast<int>(it->second.size()), devCounts[it->first]);
                 fflush(stdout);
+#ifdef HAVE_MPI
                 MPI_Abort(cartcomm, 1);
+#else
+                abort();
+#endif
             }
         }
 
         // send out the device number for each process to use.
+#ifdef HAVE_MPI
         MPI_Irecv(&deviceNum, 1, MPI_INT, 0, 0, cartcomm, &req);
         for (std::map<std::string, std::vector<int> >::iterator it = hosts.begin(); it != hosts.end(); ++it) {
             for (unsigned int i = 0; i < it->second.size(); ++i) {
@@ -88,16 +100,21 @@ void setDevice(int commRank, MPI_Comm cartcomm) {
             }
         }
         MPI_Wait(&req, &stat);
+#endif        
     }
     else {
+#ifdef HAVE_MPI
         // send out the hostname and device count for your local node, then get back the device number you should use.
         MPI_Status stat;
         MPI_Send(buf, strlen(buf) + 1, MPI_CHAR, 0, 0, cartcomm);
         MPI_Send(&devCount, 1, MPI_INT, 0, 0, cartcomm);
         MPI_Recv(&deviceNum, 1, MPI_INT, 0, 0, cartcomm, &stat);
+#endif
     }
     CUDA_SAFE_CALL(cudaSetDevice(deviceNum));
+#ifdef HAVE_MPI
     MPI_Barrier(cartcomm);
+#endif
 }
 
 //REAL TIME functions
@@ -542,7 +559,11 @@ void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, s
     CUT_CHECK_ERROR("Kernel error in cc2kernel_wrapper");
 }
 
-CC2Kernel::CC2Kernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *periods, MPI_Comm _cartcomm, bool _imag_time):
+CC2Kernel::CC2Kernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *periods,
+#ifdef HAVE_MPI
+                     MPI_Comm _cartcomm,
+#endif
+                     bool _imag_time):
     p_real(_p_real),
     p_imag(_p_imag),
     external_pot_real(_external_pot_real),
@@ -555,19 +576,30 @@ CC2Kernel::CC2Kernel(double *_p_real, double *_p_imag, double *_external_pot_rea
     halo_y(_halo_y),
     imag_time(_imag_time) {
 
+    int rank, coords[2], dims[2] = {0, 0};
+#ifdef HAVE_MPI
     cartcomm = _cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
-    int rank, coords[2], dims[2] = {0, 0};
     MPI_Comm_rank(cartcomm, &rank);
     MPI_Cart_get(cartcomm, 2, dims, periods, coords);
+#else
+    neighbors[UP] = neighbors[DOWN] = neighbors[LEFT] = neighbors[RIGHT] = 0;
+    dims[0] = dims[1] = 1;
+    rank = 0;
+    coords[0] = coords[1] = 0;    
+#endif
     int inner_start_x = 0, end_x = 0, end_y = 0;
     calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     tile_width = end_x - start_x;
     tile_height = end_y - start_y;
 
-    setDevice(rank, cartcomm);
+    setDevice(rank
+#ifdef HAVE_MPI
+    , cartcomm
+#endif
+    );
 
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_real), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_imag), tile_width * tile_height * sizeof(double)));
@@ -684,8 +716,10 @@ void CC2Kernel::wait_for_completion(int iteration, int snapshots) {
         CUDA_SAFE_CALL(cudaMemcpy(p_real, pdev_real[sense], tile_width * tile_height * sizeof(double), cudaMemcpyDeviceToHost));
         CUDA_SAFE_CALL(cudaMemcpy(p_imag, pdev_imag[sense], tile_width * tile_height * sizeof(double), cudaMemcpyDeviceToHost));
 
-        int nProcs;
+        int nProcs = 1;
+#ifdef HAVE_MPI
         MPI_Comm_size(cartcomm, &nProcs);
+#endif
         int height = tile_height - halo_y;
         int width = tile_width - halo_x;
         double sum = 0., sums[nProcs];
@@ -694,8 +728,11 @@ void CC2Kernel::wait_for_completion(int iteration, int snapshots) {
                 sum += p_real[j + i * tile_width] * p_real[j + i * tile_width] + p_imag[j + i * tile_width] * p_imag[j + i * tile_width];
             }
         }
-
+#ifdef HAVE_MPI
         MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
+#else
+        sums[0] = sum
+#endif
         double tot_sum = 0.;
         for(int i = 0; i < nProcs; i++)
             tot_sum += sums[i];
@@ -731,8 +768,10 @@ void CC2Kernel::start_halo_exchange() {
 }
 
 void CC2Kernel::finish_halo_exchange() {
+#ifdef HAVE_MPI
     MPI_Request req[8];
     MPI_Status statuses[8];
+#endif    
     int offset = 0;
 
     // Halo copy: LEFT/RIGHT
@@ -765,7 +804,8 @@ void CC2Kernel::finish_halo_exchange() {
     height = inner_end_y - inner_start_y;	// The vertical halo in rows
     width = halo_x;	// The number of columns of the matrix
     stride = tile_width;	// The combined width of the matrix with the halo
-
+    
+#ifdef HAVE_MPI
     MPI_Irecv(left_real_receive, height * width, MPI_DOUBLE, neighbors[LEFT], 1, cartcomm, req);
     MPI_Irecv(left_imag_receive, height * width, MPI_DOUBLE, neighbors[LEFT], 2, cartcomm, req + 1);
     MPI_Irecv(right_real_receive, height * width, MPI_DOUBLE, neighbors[RIGHT], 3, cartcomm, req + 2);
@@ -780,12 +820,14 @@ void CC2Kernel::finish_halo_exchange() {
     MPI_Isend(left_imag_send, height * width, MPI_DOUBLE, neighbors[LEFT], 4, cartcomm, req + 7);
 
     MPI_Waitall(8, req, statuses);
+#endif
 
     // Halo exchange: UP/DOWN
     height = halo_y;	// The vertical halo in rows
     width = tile_width;	// The number of columns of the matrix
     stride = tile_width;	// The combined width of the matrix with the halo
 
+#ifdef HAVE_MPI
     MPI_Irecv(top_real_receive, height * width, MPI_DOUBLE, neighbors[UP], 1, cartcomm, req);
     MPI_Irecv(top_imag_receive, height * width, MPI_DOUBLE, neighbors[UP], 2, cartcomm, req + 1);
     MPI_Irecv(bottom_real_receive, height * width, MPI_DOUBLE, neighbors[DOWN], 3, cartcomm, req + 2);
@@ -800,7 +842,7 @@ void CC2Kernel::finish_halo_exchange() {
     MPI_Isend(top_imag_send, height * width, MPI_DOUBLE, neighbors[UP], 4, cartcomm, req + 7);
 
     MPI_Waitall(8, req, statuses);
-
+#endif
     // Copy back the halos to the GPU memory
 
     height = inner_end_y - inner_start_y;	// The vertical halo in rows
@@ -809,13 +851,23 @@ void CC2Kernel::finish_halo_exchange() {
 
     offset = (inner_start_y - start_y) * tile_width;
     if (neighbors[LEFT] >= 0) {
+#ifdef HAVE_MPI
         CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), left_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
         CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), left_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+#else
+        CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), right_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+        CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), right_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+#endif
     }
     offset = (inner_start_y - start_y) * tile_width + inner_end_x - start_x;
     if (neighbors[RIGHT] >= 0) {
+#ifdef HAVE_MPI
         CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), right_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
         CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), right_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+#else
+        CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), left_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+        CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), left_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+#endif
     }
 
     height = halo_y;	// The vertical halo in rows
@@ -824,14 +876,24 @@ void CC2Kernel::finish_halo_exchange() {
 
     offset = 0;
     if (neighbors[UP] >= 0) {
+#ifdef HAVE_MPI
         CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), top_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
         CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), top_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+#else
+        CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), bottom_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+        CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), bottom_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+#endif
     }
 
     offset = (inner_end_y - start_y) * tile_width;
     if (neighbors[DOWN] >= 0) {
+#ifdef HAVE_MPI
         CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), bottom_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
         CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), bottom_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+#else
+        CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), top_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+        CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), top_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+#endif        
     }
 }
 
