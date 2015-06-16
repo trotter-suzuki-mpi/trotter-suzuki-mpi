@@ -44,7 +44,7 @@ void process_band(size_t tile_width, size_t block_width, size_t block_height, si
 
 class CPUBlock: public ITrotterKernel {
 public:
-    CPUBlock(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods,
+    CPUBlock(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *_periods,
 #ifdef HAVE_MPI
              MPI_Comm cartcomm, 
 #endif
@@ -88,6 +88,8 @@ private:
     MPI_Request req[8];
     MPI_Status statuses[8];
     MPI_Datatype horizontalBorder, verticalBorder;
+#else
+    int *periods;
 #endif
 };
 
