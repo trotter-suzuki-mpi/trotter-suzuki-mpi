@@ -70,7 +70,7 @@ void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, s
 class CC2Kernel: public ITrotterKernel {
 public:
     CC2Kernel(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b,
-              int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods,
+              int matrix_width, int matrix_height, int halo_x, int halo_y, int *_periods,
 #ifdef HAVE_MPI
               MPI_Comm cartcomm,
 #endif
@@ -113,6 +113,8 @@ private:
 
 #ifdef HAVE_MPI
     MPI_Comm cartcomm;
+#else
+    int *periods;
 #endif
     int neighbors[4];
     int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
