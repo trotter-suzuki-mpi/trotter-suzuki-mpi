@@ -34,7 +34,7 @@
 class HybridKernel: public ITrotterKernel {
 public:
     HybridKernel(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b,
-                 int matrix_width, int matrix_height, int halo_x, int halo_y, int * periods, 
+                 int matrix_width, int matrix_height, int halo_x, int halo_y, int * _periods, 
 #ifdef HAVE_MPI
                  MPI_Comm cartcomm,
 #endif
@@ -89,6 +89,8 @@ private:
     MPI_Request req[8];
     MPI_Status statuses[8];
     MPI_Datatype horizontalBorder, verticalBorder;
+#else
+    int *periods;
 #endif    
 };
 
