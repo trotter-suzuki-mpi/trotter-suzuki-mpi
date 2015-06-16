@@ -22,6 +22,9 @@
 #include <string>
 #include <sstream>
 #include <sys/time.h>
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -150,7 +153,7 @@ void trotter(double h_a, double h_b,
 #ifdef HAVE_MPI
         MPI_Abort(MPI_COMM_WORLD, 2);
 #else
-        abort();
+        abort ();
 #endif
 #endif
         break;

@@ -18,6 +18,7 @@
  *
  */
 
+#include <string.h>
 #include <fstream>
 #include <unistd.h>
 #include <stdlib.h>

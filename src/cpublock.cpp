@@ -355,7 +355,7 @@ void CPUBlock::kernel8(const double *p_real, const double *p_imag, double * next
 
 void CPUBlock::start_halo_exchange() {
     // Halo exchange: LEFT/RIGHT
-#ifndef HAVE_MPI    
+#ifdef HAVE_MPI    
     int offset = (inner_start_y - start_y) * tile_width;
     MPI_Irecv(p_real[1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 1, cartcomm, req);
     MPI_Irecv(p_imag[1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 2, cartcomm, req + 1);
@@ -379,7 +379,7 @@ void CPUBlock::start_halo_exchange() {
 }
 
 void CPUBlock::finish_halo_exchange() {
-#ifndef HAVE_MPI
+#ifdef HAVE_MPI
     MPI_Waitall(8, req, statuses);
 
     // Halo exchange: UP/DOWN
