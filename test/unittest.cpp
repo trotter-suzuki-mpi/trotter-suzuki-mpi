@@ -27,13 +27,13 @@
 #include <iostream>
 #include <complex>
 #include <sys/stat.h>
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
 
 #include "trotter.h"
 #include "kernel.h"
 #include "common.h"
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 
 #define DIM 640
 #define ITERATIONS 1000

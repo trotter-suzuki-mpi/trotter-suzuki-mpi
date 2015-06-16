@@ -30,11 +30,12 @@
 #include <iostream>
 #include <complex>
 #include <sys/stat.h>
+
+#include "common.h"
+#include "trotter.h"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
-#include "trotter.h"
-#include "common.h"
 
 #define DIM 640
 #define ITERATIONS 1000
@@ -42,6 +43,7 @@
 #define SNAPSHOTS 100
 
 int main(int argc, char** argv) {
+
     int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, kernel_type = KERNEL_TYPE;
     int periods[2] = {1, 1};
     bool verbose = true;
@@ -52,14 +54,13 @@ int main(int argc, char** argv) {
     int matrix_width = dim + periods[1] * 2 * halo_x;
     int matrix_height = dim + periods[0] * 2 * halo_y;
     
-#ifdef HAVE_MPI
-    MPI_Init(&argc, &argv);
-#endif
+
     //define the topology
     int coords[2], dims[2] = {0, 0};
     int rank;
     int nProcs;
 #ifdef HAVE_MPI
+    MPI_Init(&argc, &argv);
     MPI_Comm cartcomm;
     MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
     MPI_Dims_create(nProcs, 2, dims);  //partition all the processes (the size of MPI_COMM_WORLD's group) into an 2-dimensional topology

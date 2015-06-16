@@ -20,6 +20,9 @@
 #ifndef __HYBRID_H
 #define __HYBRID_H
 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
 #ifdef _OPENMP
 #include <omp.h>
 #endif

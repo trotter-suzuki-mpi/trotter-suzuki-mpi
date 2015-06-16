@@ -24,10 +24,14 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include "kernel.h"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
-#include "kernel.h"
+
 
 #define DISABLE_FMA
 

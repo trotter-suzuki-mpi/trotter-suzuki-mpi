@@ -24,8 +24,12 @@
 #include <stdlib.h>
 #include <iostream>
 #include <complex>
-#include "trotter.h"
+
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "common.h"
+#include "trotter.h"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif

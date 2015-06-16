@@ -26,14 +26,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef HAVE_MPI
-#include <mpi.h>
+#if HAVE_CONFIG_H
+#include <config.h>
 #endif
-
 #include "common.h"
 #include "trotter.h"
 #include "cpublock.h"
 #include "cpublocksse.h"
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 #ifdef CUDA
 #include "cc2kernel.h"
 #include "hybrid.h"
@@ -196,7 +198,7 @@ void trotter(double h_a, double h_b,
             _p_real = new double[(inner_end_x - inner_start_x) * (inner_end_y - inner_start_y)];
             _p_imag = new double[(inner_end_x - inner_start_x) * (inner_end_y - inner_start_y)];
             kernel->get_sample(inner_end_x - inner_start_x, inner_start_x - start_x, inner_start_y - start_y,
-                               inner_end_x - inner_start_x, inner_end_y - inner_start_y, _p_real, _p_imag);
+                               inner_end_x - inner_start_x, inner_end_y - inner_start_y, _p_real, _p_imag);                               
 #ifdef HAVE_MPI
             // output complex matrix
 			// conversion
@@ -275,15 +277,11 @@ void trotter(double h_a, double h_b,
         }
         kernel->run_kernel_on_halo();
         if (i != iterations - 1) {
-#ifdef HAVE_MPI
             kernel->start_halo_exchange();
-#endif
         }
         kernel->run_kernel();
         if (i != iterations - 1) {
-#ifdef HAVE_MPI
             kernel->finish_halo_exchange();
-#endif
         }
         kernel->wait_for_completion(i, snapshots);
     }

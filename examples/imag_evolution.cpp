@@ -30,11 +30,12 @@
 #include <iostream>
 #include <complex>
 #include <sys/stat.h>
+
+#include "common.h"
+#include "trotter.h"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
-#include "trotter.h"
-#include "common.h"
 
 #define DIM 640
 #define ITERATIONS 1000

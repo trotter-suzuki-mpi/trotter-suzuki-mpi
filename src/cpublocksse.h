@@ -21,10 +21,13 @@
 #ifndef __CPUBLOCKSSE_H
 #define __CPUBLOCKSSE_H
 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include "kernel.h"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
-#include "kernel.h"
 
 #define BLOCK_WIDTH 128u
 #define BLOCK_HEIGHT 128u
