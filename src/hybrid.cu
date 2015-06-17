@@ -29,11 +29,11 @@
 #endif
 
 // Class methods
-HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int * _periods,
+HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int * _periods, bool _imag_time
 #ifdef HAVE_MPI
-                           MPI_Comm _cartcomm,
+                           , MPI_Comm _cartcomm
 #endif
-                           bool _imag_time):
+                           ):
     threadsPerBlock(BLOCK_X, STRIDE_Y),
     a(_a),
     b(_b),
@@ -72,11 +72,13 @@ HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_p
 
     gpu_tile_width = tile_width - block_width - last_block_width + 4 * halo_x;
     gpu_start_x = block_width - 2 * halo_x;
-
+    
+    setDevice(rank
 #ifdef HAVE_MPI
-    setDevice(rank, cartcomm);
+             , cartcomm
 #endif
-
+             );
+             
     int dev;
     CUDA_SAFE_CALL(cudaGetDevice(&dev));
     cudaDeviceProp deviceProp;

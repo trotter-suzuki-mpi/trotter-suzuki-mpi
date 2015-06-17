@@ -43,6 +43,13 @@
 #define SNAPSHOTS 100
 #define PARTICLES_NUMBER 2
 
+std::complex<double> exp_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
+    double L_x = matrix_width - periods[1] * 2 * halo_x;
+    double L_y = matrix_height - periods[0] * 2 * halo_y;
+
+    return exp(std::complex<double>(0. , 2 * 3.14159 / L_x * (x - periods[1] * halo_x) + 2 * 3.14159 / L_y * (y - periods[0] * halo_y) ));
+}
+
 int main(int argc, char** argv) {
     int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, kernel_type = KERNEL_TYPE, Particles_number = PARTICLES_NUMBER;
     int periods[2] = {1, 1};

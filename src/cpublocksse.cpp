@@ -678,11 +678,11 @@ void process_band_sse(size_t tile_width, size_t block_width, size_t block_height
 }
 
 CPUBlockSSEKernel::CPUBlockSSEKernel(double *_p_real, double *_p_imag, double *external_potential_real, double *external_potential_imag,
-                                     double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *_periods,
+                                     double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *_periods, bool _imag_time
 #ifdef HAVE_MPI
-                                     MPI_Comm _cartcomm,
+                                     , MPI_Comm _cartcomm
 #endif
-                                     bool _imag_time):
+                                     ):
     p_real(_p_real),
     p_imag(_p_imag),
     a(_a),

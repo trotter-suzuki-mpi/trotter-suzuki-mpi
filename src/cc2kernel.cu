@@ -45,10 +45,17 @@ void setDevice(int commRank
 #endif
               ) {
     int commSize = 1;
+    int devCount;
+    int deviceNum = 0; //-1;
+    CUDA_SAFE_CALL(cudaGetDeviceCount(&devCount));
+    
 #ifdef HAVE_MPI
     MPI_Comm_size(cartcomm, &commSize);
+#ifdef _WIN32
+	FILE * fp = popen("hostname.exe", "r");
+#else
+	FILE * fp = popen("/bin/hostname", "r");
 #endif
-    FILE * fp = popen("/bin/hostname", "r");
     char buf[1024];
     if (fgets(buf, 1023, fp) == NULL) strcpy(buf, "localhost");
     pclose(fp);
@@ -56,24 +63,18 @@ void setDevice(int commRank
     host = host.substr(0, host.size() - 1);
     strcpy(buf, host.c_str());
 
-    int devCount;
-    int deviceNum = -1;
-    CUDA_SAFE_CALL(cudaGetDeviceCount(&devCount));
-
     if (commRank == 0) {
         std::map<std::string, std::vector<int> > hosts;
         std::map<std::string, int> devCounts;
-#ifdef HAVE_MPI
         MPI_Status stat;
         MPI_Request req;
-#endif
+
         hosts[buf].push_back(0);
         devCounts[buf] = devCount;
         for (int i = 1; i < commSize; ++i) {
-#ifdef HAVE_MPI
             MPI_Recv(buf, 1024, MPI_CHAR, i, 0, cartcomm, &stat);
             MPI_Recv(&devCount, 1, MPI_INT, i, 0, cartcomm, &stat);
-#endif
+
             // check to make sure each process on each node reports the same number of devices.
             hosts[buf].push_back(i);
             if (devCounts.find(buf) != devCounts.end()) {
@@ -90,16 +91,11 @@ void setDevice(int commRank
                 printf("Error, more jobs running on '%s' than devices - %d jobs > %d devices.\n",
                        it->first.c_str(), static_cast<int>(it->second.size()), devCounts[it->first]);
                 fflush(stdout);
-#ifdef HAVE_MPI
                 MPI_Abort(cartcomm, 1);
-#else
-                abort();
-#endif
             }
         }
 
         // send out the device number for each process to use.
-#ifdef HAVE_MPI
         MPI_Irecv(&deviceNum, 1, MPI_INT, 0, 0, cartcomm, &req);
         for (std::map<std::string, std::vector<int> >::iterator it = hosts.begin(); it != hosts.end(); ++it) {
             for (unsigned int i = 0; i < it->second.size(); ++i) {
@@ -108,21 +104,17 @@ void setDevice(int commRank
             }
         }
         MPI_Wait(&req, &stat);
-#endif
     }
     else {
-#ifdef HAVE_MPI
         // send out the hostname and device count for your local node, then get back the device number you should use.
         MPI_Status stat;
         MPI_Send(buf, strlen(buf) + 1, MPI_CHAR, 0, 0, cartcomm);
         MPI_Send(&devCount, 1, MPI_INT, 0, 0, cartcomm);
         MPI_Recv(&deviceNum, 1, MPI_INT, 0, 0, cartcomm, &stat);
-#endif
     }
-    CUDA_SAFE_CALL(cudaSetDevice(deviceNum));
-#ifdef HAVE_MPI
     MPI_Barrier(cartcomm);
 #endif
+    CUDA_SAFE_CALL(cudaSetDevice(deviceNum));
 }
 
 //REAL TIME functions
@@ -567,11 +559,11 @@ void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, s
     CUT_CHECK_ERROR("Kernel error in cc2kernel_wrapper");
 }
 
-CC2Kernel::CC2Kernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *_periods,
+CC2Kernel::CC2Kernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *_periods, bool _imag_time
 #ifdef HAVE_MPI
-                     MPI_Comm _cartcomm,
+                     , MPI_Comm _cartcomm
 #endif
-                     bool _imag_time):
+                     ):
     p_real(_p_real),
     p_imag(_p_imag),
     external_pot_real(_external_pot_real),
@@ -603,11 +595,13 @@ CC2Kernel::CC2Kernel(double *_p_real, double *_p_imag, double *_external_pot_rea
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     tile_width = end_x - start_x;
     tile_height = end_y - start_y;
-
+    
+    setDevice(rank
 #ifdef HAVE_MPI
-    setDevice(rank, cartcomm);
+              , cartcomm
 #endif
-
+              );
+              
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_real), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_imag), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_real, external_pot_real, tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));

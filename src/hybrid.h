@@ -34,11 +34,11 @@
 class HybridKernel: public ITrotterKernel {
 public:
     HybridKernel(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b,
-                 int matrix_width, int matrix_height, int halo_x, int halo_y, int * _periods,
+                 int matrix_width, int matrix_height, int halo_x, int halo_y, int * _periods, bool _imag_time
 #ifdef HAVE_MPI
-                 MPI_Comm cartcomm,
+                 , MPI_Comm cartcomm
 #endif
-                 bool _imag_time);
+                 );
     ~HybridKernel();
     void run_kernel();
     void run_kernel_on_halo();

@@ -37,7 +37,7 @@
 
 #define DIM 640
 #define ITERATIONS 1000
-#define KERNEL_TYPE 1
+#define KERNEL_TYPE 0
 #define SNAPSHOTS 100
 
 struct MAGIC_NUMBER {
@@ -50,6 +50,13 @@ struct MAGIC_NUMBER {
 
 MAGIC_NUMBER::MAGIC_NUMBER() : threshold_E(3), threshold_P(3),
     expected_E((2. * M_PI / DIM) * (2. * M_PI / DIM)), expected_Px(0), expected_Py(0) {}
+
+std::complex<double> sinus_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
+    double L_x = matrix_width - periods[1] * 2 * halo_x;
+    double L_y = matrix_height - periods[0] * 2 * halo_y;
+
+    return std::complex<double> (sin(2 * 3.14159 / L_x * (x - periods[1] * halo_x)) * sin(2 * 3.14159 / L_y * (y - periods[0] * halo_y)), 0.0);
+}
 
 int main(int argc, char** argv) {
     int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, kernel_type = KERNEL_TYPE;
