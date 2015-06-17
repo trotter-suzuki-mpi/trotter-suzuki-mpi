@@ -1,3 +1,7 @@
+Since version 1.2:
+ - Changed: Code compiles without MPI.
+ - Fixed: No single process has to hold the entire state or potential in memory.
+
 Version 1.2: 2015-06-08
 
  - New: Imaginary time evolution to find ground state.
