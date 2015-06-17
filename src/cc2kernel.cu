@@ -1,6 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
  * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
@@ -41,9 +41,9 @@
  */
 void setDevice(int commRank
 #ifdef HAVE_MPI
-               ,MPI_Comm cartcomm
+               , MPI_Comm cartcomm
 #endif
-               ) {
+              ) {
     int commSize = 1;
 #ifdef HAVE_MPI
     MPI_Comm_size(cartcomm, &commSize);
@@ -108,7 +108,7 @@ void setDevice(int commRank
             }
         }
         MPI_Wait(&req, &stat);
-#endif        
+#endif
     }
     else {
 #ifdef HAVE_MPI
@@ -584,6 +584,7 @@ CC2Kernel::CC2Kernel(double *_p_real, double *_p_imag, double *_external_pot_rea
     halo_y(_halo_y),
     imag_time(_imag_time) {
 
+    periods = _periods;
     int rank, coords[2], dims[2] = {0, 0};
 #ifdef HAVE_MPI
     cartcomm = _cartcomm;
@@ -592,11 +593,10 @@ CC2Kernel::CC2Kernel(double *_p_real, double *_p_imag, double *_external_pot_rea
     MPI_Comm_rank(cartcomm, &rank);
     MPI_Cart_get(cartcomm, 2, dims, periods, coords);
 #else
-    periods = _periods;
     neighbors[UP] = neighbors[DOWN] = neighbors[LEFT] = neighbors[RIGHT] = 0;
     dims[0] = dims[1] = 1;
     rank = 0;
-    coords[0] = coords[1] = 0;    
+    coords[0] = coords[1] = 0;
 #endif
     int inner_start_x = 0, end_x = 0, end_y = 0;
     calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
@@ -778,7 +778,7 @@ void CC2Kernel::finish_halo_exchange() {
 #ifdef HAVE_MPI
     MPI_Request req[8];
     MPI_Status statuses[8];
-#endif    
+#endif
     int offset = 0;
 
     // Halo copy: LEFT/RIGHT
@@ -811,7 +811,7 @@ void CC2Kernel::finish_halo_exchange() {
     height = inner_end_y - inner_start_y;	// The vertical halo in rows
     width = halo_x;	// The number of columns of the matrix
     stride = tile_width;	// The combined width of the matrix with the halo
-    
+
 #ifdef HAVE_MPI
     MPI_Irecv(left_real_receive, height * width, MPI_DOUBLE, neighbors[LEFT], 1, cartcomm, req);
     MPI_Irecv(left_imag_receive, height * width, MPI_DOUBLE, neighbors[LEFT], 2, cartcomm, req + 1);
@@ -829,10 +829,10 @@ void CC2Kernel::finish_halo_exchange() {
     MPI_Waitall(8, req, statuses);
 #else
     if(periods[1] != 0) {
-      memcpy2D(left_real_receive, height * width * sizeof(double), right_real_send, height * width * sizeof(double), height * width * sizeof(double), 1);
-      memcpy2D(left_imag_receive, height * width * sizeof(double), right_imag_send, height * width * sizeof(double), height * width * sizeof(double), 1);
-      memcpy2D(right_real_receive, height * width * sizeof(double) , left_real_send, height * width * sizeof(double), height * width * sizeof(double), 1);
-      memcpy2D(right_imag_receive, height * width * sizeof(double) , left_imag_send, height * width * sizeof(double), height * width * sizeof(double), 1);
+        memcpy2D(left_real_receive, height * width * sizeof(double), right_real_send, height * width * sizeof(double), height * width * sizeof(double), 1);
+        memcpy2D(left_imag_receive, height * width * sizeof(double), right_imag_send, height * width * sizeof(double), height * width * sizeof(double), 1);
+        memcpy2D(right_real_receive, height * width * sizeof(double) , left_real_send, height * width * sizeof(double), height * width * sizeof(double), 1);
+        memcpy2D(right_imag_receive, height * width * sizeof(double) , left_imag_send, height * width * sizeof(double), height * width * sizeof(double), 1);
     }
 #endif
 
@@ -858,10 +858,10 @@ void CC2Kernel::finish_halo_exchange() {
     MPI_Waitall(8, req, statuses);
 #else
     if(periods[0] != 0) {
-      memcpy2D(top_real_receive, height * width * sizeof(double), bottom_real_send, height * width  * sizeof(double), height * width * sizeof(double), 1);
-      memcpy2D(top_imag_receive, height * width * sizeof(double), bottom_imag_send, height * width * sizeof(double), height * width * sizeof(double), 1);
-      memcpy2D(bottom_real_receive, height * width * sizeof(double) , top_real_send, height * width * sizeof(double) , height * width * sizeof(double), 1);
-      memcpy2D(bottom_imag_receive, height * width  * sizeof(double), top_imag_send, height * width * sizeof(double) , height * width * sizeof(double), 1);
+        memcpy2D(top_real_receive, height * width * sizeof(double), bottom_real_send, height * width  * sizeof(double), height * width * sizeof(double), 1);
+        memcpy2D(top_imag_receive, height * width * sizeof(double), bottom_imag_send, height * width * sizeof(double), height * width * sizeof(double), 1);
+        memcpy2D(bottom_real_receive, height * width * sizeof(double) , top_real_send, height * width * sizeof(double) , height * width * sizeof(double), 1);
+        memcpy2D(bottom_imag_receive, height * width  * sizeof(double), top_imag_send, height * width * sizeof(double) , height * width * sizeof(double), 1);
     }
 #endif
     // Copy back the halos to the GPU memory

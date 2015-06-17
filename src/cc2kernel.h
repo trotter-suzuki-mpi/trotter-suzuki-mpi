@@ -1,6 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
  * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
@@ -63,8 +63,8 @@ void setDevice(int commRank
 #ifdef HAVE_MPI
                , MPI_Comm cartcomm
 #endif
-               );
-               
+              );
+
 void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, double a, double b, const double * __restrict__ dev_external_pot_real, const double * __restrict__ dev_external_pot_imag, const double * __restrict__ pdev_real, const double * __restrict__ pdev_imag, double * __restrict__ pdev2_real, double * __restrict__ pdev2_imag, int inner, int horizontal, int vertical, bool imag_time);
 
 class CC2Kernel: public ITrotterKernel {
@@ -111,10 +111,9 @@ private:
     int sense;
     size_t halo_x, halo_y, tile_width, tile_height;
 
+    int *periods;
 #ifdef HAVE_MPI
     MPI_Comm cartcomm;
-#else
-    int *periods;
 #endif
     int neighbors[4];
     int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;

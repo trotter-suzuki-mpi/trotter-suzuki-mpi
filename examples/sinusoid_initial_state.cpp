@@ -1,6 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
  * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
     dims[0] = dims[1] = 1;
     coords[0] = coords[1] = 0;
 #endif
-    
+
     //set dimension of tiles and offsets
     int start_x, end_x, inner_start_x, inner_end_x,
         start_y, end_y, inner_start_y, inner_end_y;
@@ -81,23 +81,23 @@ int main(int argc, char** argv) {
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     int tile_width = end_x - start_x;
     int tile_height = end_y - start_y;
-    
+
     //set and calculate evolution operator variables from hamiltonian
     const double particle_mass = 1.;
-    double *external_pot_real = new double[tile_width*tile_height];
-    double *external_pot_imag = new double[tile_width*tile_height];
+    double *external_pot_real = new double[tile_width * tile_height];
+    double *external_pot_imag = new double[tile_width * tile_height];
     double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
     hamiltonian_pot = const_potential;
     double time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
     double h_a = cos(time_single_it / (2. * particle_mass));
     double h_b = sin(time_single_it / (2. * particle_mass));
-    
+
     initialize_exp_potential(external_pot_real, external_pot_imag, pot_name, hamiltonian_pot, tile_width, tile_height, matrix_width, matrix_height,
-                         start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, false);
+                             start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, false);
 
     //set initial state
-    double *p_real = new double[tile_width*tile_height];
-    double *p_imag = new double[tile_width*tile_height];
+    double *p_real = new double[tile_width * tile_height];
+    double *p_imag = new double[tile_width * tile_height];
     std::complex<double> (*ini_state)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
     ini_state = sinus_state;
     initialize_state(p_real, p_imag, filename, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,

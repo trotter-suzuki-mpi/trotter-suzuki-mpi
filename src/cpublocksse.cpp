@@ -1,6 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
  * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
@@ -204,23 +204,23 @@ inline void update_shiftx_sse_imaginary(size_t stride, size_t width, size_t heig
 
 void update_ext_pot_sse(size_t stride, size_t width, size_t height, double * __restrict__ pot_r, double * __restrict__ pot_i, double * __restrict__ real,
                         double * __restrict__ imag) {
-    
+
     for (size_t i = 0; i < height; i++) {
-		size_t j = 0;
+        size_t j = 0;
         for (; j < width - width % 2; j += 2) {
             size_t idx = i * stride + j;
             __m128d rq = _mm_load_pd(&real[idx]);
             __m128d iq = _mm_load_pd(&imag[idx]);
             __m128d potrq = _mm_load_pd(&pot_r[idx]);
             __m128d potiq = _mm_load_pd(&pot_i[idx]);
-            
+
             __m128d next_rq = _mm_sub_pd(_mm_mul_pd(rq, potrq), _mm_mul_pd(iq, potiq));
             __m128d next_iq = _mm_add_pd(_mm_mul_pd(iq, potrq), _mm_mul_pd(rq, potiq));
-            
+
             _mm_store_pd(&real[idx], next_rq);
             _mm_store_pd(&imag[idx], next_iq);
-		}
-	
+        }
+
         for (; j < width; j++) {
             size_t idx = i * stride + j;
             double tmp = real[idx];
@@ -233,19 +233,19 @@ void update_ext_pot_sse(size_t stride, size_t width, size_t height, double * __r
 void update_ext_pot_sse_imaginary(size_t stride, size_t width, size_t height, double * __restrict__ pot_r, double * __restrict__ pot_i, double * __restrict__ real,
                                   double * __restrict__ imag) {
     for (size_t i = 0; i < height; i++) {
-		size_t j = 0;
+        size_t j = 0;
         for (; j < width - width % 2; j += 2) {
             size_t idx = i * stride + j;
             __m128d rq = _mm_load_pd(&real[idx]);
             __m128d iq = _mm_load_pd(&imag[idx]);
             __m128d potrq = _mm_load_pd(&pot_r[idx]);
-            
+
             __m128d next_rq = _mm_mul_pd(rq, potrq);
             __m128d next_iq = _mm_mul_pd(iq, potrq);
-            
+
             _mm_store_pd(&real[idx], next_rq);
             _mm_store_pd(&imag[idx], next_iq);
-		}
+        }
         for (; j < width; j++) {
             size_t idx = i * stride + j;
             real[idx] = pot_r[idx] * real[idx];
@@ -691,20 +691,20 @@ CPUBlockSSEKernel::CPUBlockSSEKernel(double *_p_real, double *_p_imag, double *e
     halo_x(_halo_x),
     halo_y(_halo_y),
     imag_time(_imag_time) {
-    
+
+    periods = _periods;
     int rank, coords[2], dims[2] = {0, 0};
-#ifdef HAVE_MPI        
+#ifdef HAVE_MPI
     cartcomm = _cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
     MPI_Comm_rank(cartcomm, &rank);
     MPI_Cart_get(cartcomm, 2, dims, periods, coords);
 #else
-    periods = _periods;
     dims[0] = dims[1] = 1;
     rank = 0;
-    coords[0] = coords[1] = 0;     
-#endif    
+    coords[0] = coords[1] = 0;
+#endif
     int inner_start_x = 0, end_x = 0, end_y = 0;
     calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
@@ -860,13 +860,13 @@ void CPUBlockSSEKernel::run_kernel_on_halo() {
 
 void CPUBlockSSEKernel::run_kernel() {
     int inner = 1, sides = 0;
-    #ifndef HAVE_MPI
+#ifndef HAVE_MPI
     #pragma omp parallel default(shared)
 #endif
     {
 #ifndef HAVE_MPI
         #pragma omp for
-#endif 
+#endif
         for (size_t block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
             process_band_sse(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b,
                              ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11,
@@ -885,9 +885,9 @@ void CPUBlockSSEKernel::wait_for_completion(int iteration, int snapshots) {
     if(imag_time && ((iteration % 20) == 0 || ((snapshots > 0) && (iteration + 1) % snapshots == 0))) {
         //normalization
         int nProcs = 1;
-#ifdef HAVE_MPI        
+#ifdef HAVE_MPI
         MPI_Comm_size(cartcomm, &nProcs);
-#endif        
+#endif
         int height = (tile_height - halo_y) / 2;
         int width = (tile_width - halo_x) / 2;
         double sum = 0., sums[nProcs];
@@ -900,11 +900,11 @@ void CPUBlockSSEKernel::wait_for_completion(int iteration, int snapshots) {
                        r11[sense][idx] * r11[sense][idx] + i11[sense][idx] * i11[sense][idx];
             }
         }
-#ifdef HAVE_MPI        
+#ifdef HAVE_MPI
         MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
 #else
         sums[0] = sum;
-#endif        
+#endif
         double tot_sum = 0.;
         for(int i = 0; i < nProcs; i++)
             tot_sum += sums[i];
@@ -932,7 +932,7 @@ void CPUBlockSSEKernel::get_sample(size_t dest_stride, size_t x, size_t y, size_
 }
 
 void CPUBlockSSEKernel::start_halo_exchange() {
-#ifdef HAVE_MPI        
+#ifdef HAVE_MPI
     // Halo exchange: LEFT/RIGHT
     int offset = (inner_start_y - start_y) * tile_width / 4;
     MPI_Irecv(r00[1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 0, cartcomm, req + 0);
@@ -973,30 +973,30 @@ void CPUBlockSSEKernel::start_halo_exchange() {
     MPI_Isend(i11[1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 15, cartcomm, req + 31);
 #else
     if(periods[1] != 0) {
-	    int offset = (inner_start_y - start_y) * tile_width / 4;
-	    memcpy2D(&(r00[1 - sense][offset]), tile_width * sizeof(double) / 2, &(r00[1 - sense][offset + tile_width / 2 - halo_x]), tile_width * sizeof(double) / 2, halo_x * sizeof(double)  / 2, tile_height / 2);
-	    memcpy2D(&(i00[1 - sense][offset]), tile_width * sizeof(double) / 2, &(i00[1 - sense][offset + tile_width / 2 - halo_x]), tile_width * sizeof(double) / 2, halo_x * sizeof(double)  / 2, tile_height / 2);
-	    memcpy2D(&(r01[1 - sense][offset]), tile_width * sizeof(double) / 2, &(r01[1 - sense][offset + tile_width / 2 - halo_x]), tile_width * sizeof(double) / 2, halo_x * sizeof(double)  / 2, tile_height / 2);
-	    memcpy2D(&(i01[1 - sense][offset]), tile_width * sizeof(double) / 2, &(i01[1 - sense][offset + tile_width / 2 - halo_x]), tile_width * sizeof(double) / 2, halo_x * sizeof(double)  / 2, tile_height / 2);
-	    memcpy2D(&(r10[1 - sense][offset]), tile_width * sizeof(double) / 2, &(r10[1 - sense][offset + tile_width / 2 - halo_x]), tile_width * sizeof(double) / 2, halo_x * sizeof(double)  / 2, tile_height / 2);
-	    memcpy2D(&(i10[1 - sense][offset]), tile_width * sizeof(double) / 2, &(i10[1 - sense][offset + tile_width / 2 - halo_x]), tile_width * sizeof(double) / 2, halo_x * sizeof(double)  / 2, tile_height / 2);
-	    memcpy2D(&(r11[1 - sense][offset]), tile_width * sizeof(double) / 2, &(r11[1 - sense][offset + tile_width / 2 - halo_x]), tile_width * sizeof(double) / 2, halo_x * sizeof(double)  / 2, tile_height / 2);
-	    memcpy2D(&(i11[1 - sense][offset]), tile_width * sizeof(double) / 2, &(i11[1 - sense][offset + tile_width / 2 - halo_x]), tile_width * sizeof(double) / 2, halo_x * sizeof(double)  / 2, tile_height / 2);
-	
-	    memcpy2D(&(r00[1 - sense][offset + (tile_width - halo_x) / 2]), tile_width * sizeof(double) / 2, &(r00[1 - sense][offset + halo_x / 2]), tile_width * sizeof(double) / 2, halo_x * sizeof(double) / 2, tile_height / 2);
-	    memcpy2D(&(i00[1 - sense][offset + (tile_width - halo_x) / 2]), tile_width * sizeof(double) / 2, &(i00[1 - sense][offset + halo_x / 2]), tile_width * sizeof(double) / 2, halo_x * sizeof(double) / 2, tile_height / 2);
-	    memcpy2D(&(r01[1 - sense][offset + (tile_width - halo_x) / 2]), tile_width * sizeof(double) / 2, &(r01[1 - sense][offset + halo_x / 2]), tile_width * sizeof(double) / 2, halo_x * sizeof(double) / 2, tile_height / 2);
-	    memcpy2D(&(i01[1 - sense][offset + (tile_width - halo_x) / 2]), tile_width * sizeof(double) / 2, &(i01[1 - sense][offset + halo_x / 2]), tile_width * sizeof(double) / 2, halo_x * sizeof(double) / 2, tile_height / 2);
-	    memcpy2D(&(r10[1 - sense][offset + (tile_width - halo_x) / 2]), tile_width * sizeof(double) / 2, &(r10[1 - sense][offset + halo_x / 2]), tile_width * sizeof(double) / 2, halo_x * sizeof(double) / 2, tile_height / 2);
-	    memcpy2D(&(i10[1 - sense][offset + (tile_width - halo_x) / 2]), tile_width * sizeof(double) / 2, &(i10[1 - sense][offset + halo_x / 2]), tile_width * sizeof(double) / 2, halo_x * sizeof(double) / 2, tile_height / 2);
-	    memcpy2D(&(r11[1 - sense][offset + (tile_width - halo_x) / 2]), tile_width * sizeof(double) / 2, &(r11[1 - sense][offset + halo_x / 2]), tile_width * sizeof(double) / 2, halo_x * sizeof(double) / 2, tile_height / 2);
-	    memcpy2D(&(i11[1 - sense][offset + (tile_width - halo_x) / 2]), tile_width * sizeof(double) / 2, &(i11[1 - sense][offset + halo_x / 2]), tile_width * sizeof(double) / 2, halo_x * sizeof(double) / 2, tile_height / 2);
+        int offset = (inner_start_y - start_y) * tile_width / 4;
+        memcpy2D(&(r00[1 - sense][offset]), tile_width * sizeof(double) / 2, &(r00[1 - sense][offset + tile_width / 2 - halo_x]), tile_width * sizeof(double) / 2, halo_x * sizeof(double)  / 2, tile_height / 2);
+        memcpy2D(&(i00[1 - sense][offset]), tile_width * sizeof(double) / 2, &(i00[1 - sense][offset + tile_width / 2 - halo_x]), tile_width * sizeof(double) / 2, halo_x * sizeof(double)  / 2, tile_height / 2);
+        memcpy2D(&(r01[1 - sense][offset]), tile_width * sizeof(double) / 2, &(r01[1 - sense][offset + tile_width / 2 - halo_x]), tile_width * sizeof(double) / 2, halo_x * sizeof(double)  / 2, tile_height / 2);
+        memcpy2D(&(i01[1 - sense][offset]), tile_width * sizeof(double) / 2, &(i01[1 - sense][offset + tile_width / 2 - halo_x]), tile_width * sizeof(double) / 2, halo_x * sizeof(double)  / 2, tile_height / 2);
+        memcpy2D(&(r10[1 - sense][offset]), tile_width * sizeof(double) / 2, &(r10[1 - sense][offset + tile_width / 2 - halo_x]), tile_width * sizeof(double) / 2, halo_x * sizeof(double)  / 2, tile_height / 2);
+        memcpy2D(&(i10[1 - sense][offset]), tile_width * sizeof(double) / 2, &(i10[1 - sense][offset + tile_width / 2 - halo_x]), tile_width * sizeof(double) / 2, halo_x * sizeof(double)  / 2, tile_height / 2);
+        memcpy2D(&(r11[1 - sense][offset]), tile_width * sizeof(double) / 2, &(r11[1 - sense][offset + tile_width / 2 - halo_x]), tile_width * sizeof(double) / 2, halo_x * sizeof(double)  / 2, tile_height / 2);
+        memcpy2D(&(i11[1 - sense][offset]), tile_width * sizeof(double) / 2, &(i11[1 - sense][offset + tile_width / 2 - halo_x]), tile_width * sizeof(double) / 2, halo_x * sizeof(double)  / 2, tile_height / 2);
+
+        memcpy2D(&(r00[1 - sense][offset + (tile_width - halo_x) / 2]), tile_width * sizeof(double) / 2, &(r00[1 - sense][offset + halo_x / 2]), tile_width * sizeof(double) / 2, halo_x * sizeof(double) / 2, tile_height / 2);
+        memcpy2D(&(i00[1 - sense][offset + (tile_width - halo_x) / 2]), tile_width * sizeof(double) / 2, &(i00[1 - sense][offset + halo_x / 2]), tile_width * sizeof(double) / 2, halo_x * sizeof(double) / 2, tile_height / 2);
+        memcpy2D(&(r01[1 - sense][offset + (tile_width - halo_x) / 2]), tile_width * sizeof(double) / 2, &(r01[1 - sense][offset + halo_x / 2]), tile_width * sizeof(double) / 2, halo_x * sizeof(double) / 2, tile_height / 2);
+        memcpy2D(&(i01[1 - sense][offset + (tile_width - halo_x) / 2]), tile_width * sizeof(double) / 2, &(i01[1 - sense][offset + halo_x / 2]), tile_width * sizeof(double) / 2, halo_x * sizeof(double) / 2, tile_height / 2);
+        memcpy2D(&(r10[1 - sense][offset + (tile_width - halo_x) / 2]), tile_width * sizeof(double) / 2, &(r10[1 - sense][offset + halo_x / 2]), tile_width * sizeof(double) / 2, halo_x * sizeof(double) / 2, tile_height / 2);
+        memcpy2D(&(i10[1 - sense][offset + (tile_width - halo_x) / 2]), tile_width * sizeof(double) / 2, &(i10[1 - sense][offset + halo_x / 2]), tile_width * sizeof(double) / 2, halo_x * sizeof(double) / 2, tile_height / 2);
+        memcpy2D(&(r11[1 - sense][offset + (tile_width - halo_x) / 2]), tile_width * sizeof(double) / 2, &(r11[1 - sense][offset + halo_x / 2]), tile_width * sizeof(double) / 2, halo_x * sizeof(double) / 2, tile_height / 2);
+        memcpy2D(&(i11[1 - sense][offset + (tile_width - halo_x) / 2]), tile_width * sizeof(double) / 2, &(i11[1 - sense][offset + halo_x / 2]), tile_width * sizeof(double) / 2, halo_x * sizeof(double) / 2, tile_height / 2);
     }
 #endif
 }
 
 void CPUBlockSSEKernel::finish_halo_exchange() {
-#ifdef HAVE_MPI        
+#ifdef HAVE_MPI
     MPI_Waitall(32, req, statuses);
 
     // Halo exchange: UP/DOWN
@@ -1041,24 +1041,24 @@ void CPUBlockSSEKernel::finish_halo_exchange() {
     MPI_Waitall(32, req, statuses);
 #else
     if(periods[0] != 0) {
-	    int offset = (inner_end_y - start_y) * tile_width / 4;
-	    memcpy2D(r00[sense], tile_width * sizeof(double) / 2, &(r00[sense][offset - halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
-	    memcpy2D(i00[sense], tile_width * sizeof(double) / 2, &(i00[sense][offset - halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
-	    memcpy2D(r01[sense], tile_width * sizeof(double) / 2, &(r01[sense][offset - halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
-	    memcpy2D(i01[sense], tile_width * sizeof(double) / 2, &(i01[sense][offset - halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
-	    memcpy2D(r10[sense], tile_width * sizeof(double) / 2, &(r10[sense][offset - halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
-	    memcpy2D(i10[sense], tile_width * sizeof(double) / 2, &(i10[sense][offset - halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
-	    memcpy2D(r11[sense], tile_width * sizeof(double) / 2, &(r11[sense][offset - halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
-	    memcpy2D(i11[sense], tile_width * sizeof(double) / 2, &(i11[sense][offset - halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
-	    
-	    memcpy2D(&(r00[sense][offset]), tile_width * sizeof(double) / 2, &(r00[sense][halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
-	    memcpy2D(&(i00[sense][offset]), tile_width * sizeof(double) / 2, &(i00[sense][halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
-	    memcpy2D(&(r01[sense][offset]), tile_width * sizeof(double) / 2, &(r01[sense][halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
-	    memcpy2D(&(i01[sense][offset]), tile_width * sizeof(double) / 2, &(i01[sense][halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
-	    memcpy2D(&(r10[sense][offset]), tile_width * sizeof(double) / 2, &(r10[sense][halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
-	    memcpy2D(&(i10[sense][offset]), tile_width * sizeof(double) / 2, &(i10[sense][halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
-	    memcpy2D(&(r11[sense][offset]), tile_width * sizeof(double) / 2, &(r11[sense][halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
-	    memcpy2D(&(i11[sense][offset]), tile_width * sizeof(double) / 2, &(i11[sense][halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
+        int offset = (inner_end_y - start_y) * tile_width / 4;
+        memcpy2D(r00[sense], tile_width * sizeof(double) / 2, &(r00[sense][offset - halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
+        memcpy2D(i00[sense], tile_width * sizeof(double) / 2, &(i00[sense][offset - halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
+        memcpy2D(r01[sense], tile_width * sizeof(double) / 2, &(r01[sense][offset - halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
+        memcpy2D(i01[sense], tile_width * sizeof(double) / 2, &(i01[sense][offset - halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
+        memcpy2D(r10[sense], tile_width * sizeof(double) / 2, &(r10[sense][offset - halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
+        memcpy2D(i10[sense], tile_width * sizeof(double) / 2, &(i10[sense][offset - halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
+        memcpy2D(r11[sense], tile_width * sizeof(double) / 2, &(r11[sense][offset - halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
+        memcpy2D(i11[sense], tile_width * sizeof(double) / 2, &(i11[sense][offset - halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
+
+        memcpy2D(&(r00[sense][offset]), tile_width * sizeof(double) / 2, &(r00[sense][halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
+        memcpy2D(&(i00[sense][offset]), tile_width * sizeof(double) / 2, &(i00[sense][halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
+        memcpy2D(&(r01[sense][offset]), tile_width * sizeof(double) / 2, &(r01[sense][halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
+        memcpy2D(&(i01[sense][offset]), tile_width * sizeof(double) / 2, &(i01[sense][halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
+        memcpy2D(&(r10[sense][offset]), tile_width * sizeof(double) / 2, &(r10[sense][halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
+        memcpy2D(&(i10[sense][offset]), tile_width * sizeof(double) / 2, &(i10[sense][halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
+        memcpy2D(&(r11[sense][offset]), tile_width * sizeof(double) / 2, &(r11[sense][halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
+        memcpy2D(&(i11[sense][offset]), tile_width * sizeof(double) / 2, &(i11[sense][halo_y * tile_width / 4]), tile_width * sizeof(double) / 2, tile_width * sizeof(double) / 2, halo_y / 2);
     }
 #endif
 }

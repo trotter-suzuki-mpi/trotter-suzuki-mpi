@@ -1,6 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek 
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@
 class HybridKernel: public ITrotterKernel {
 public:
     HybridKernel(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b,
-                 int matrix_width, int matrix_height, int halo_x, int halo_y, int * _periods, 
+                 int matrix_width, int matrix_height, int halo_x, int halo_y, int * _periods,
 #ifdef HAVE_MPI
                  MPI_Comm cartcomm,
 #endif
@@ -81,17 +81,16 @@ private:
     static const size_t block_height = BLOCK_HEIGHT;
     size_t gpu_tile_width, gpu_tile_height, gpu_start_x, gpu_start_y;
     size_t n_bands_on_cpu;
-    
+
     int neighbors[4];
     int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
+    int *periods;
 #ifdef HAVE_MPI
-    MPI_Comm cartcomm;    
+    MPI_Comm cartcomm;
     MPI_Request req[8];
     MPI_Status statuses[8];
     MPI_Datatype horizontalBorder, verticalBorder;
-#else
-    int *periods;
-#endif    
+#endif
 };
 
 #endif

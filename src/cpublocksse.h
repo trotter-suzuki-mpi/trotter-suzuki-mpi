@@ -1,6 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
  * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
@@ -100,14 +100,13 @@ private:
     static const size_t block_height = BLOCK_HEIGHT;
 
     int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
+    int *periods;
 #ifdef HAVE_MPI
     MPI_Comm cartcomm;
     int neighbors[4];
     MPI_Request req[32];
     MPI_Status statuses[32];
     MPI_Datatype horizontalBorder, verticalBorder;
-#else
-    int *periods;
 #endif
 };
 

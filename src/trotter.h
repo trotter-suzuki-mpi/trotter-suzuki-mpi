@@ -1,6 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
  * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
@@ -33,7 +33,7 @@
     @param matrix_width      The width of the initial state
     @param matrix_height     The height of the initial state
     @param iterations        Number of iterations to be calculated
-    @param snapshots         Number of iterations between taking snapshots 
+    @param snapshots         Number of iterations between taking snapshots
                              (0 means no snapshots)
     @param kernel_type       The kernel type:
                               0: CPU block kernel
@@ -45,14 +45,14 @@
     @param verbose            Optional verbosity parameter
     @param imag_time          Optional parameter to calculate imaginary time evolution
     @param particle_tag       Optional parameter to tag a particle in the snapshots
-  
+
 */
-void trotter(double h_a, double h_b, 
-             double * external_pot_real, double * external_pot_imag, 
-             double * p_real, double * p_imag, 
-             const int matrix_width, const int matrix_height, 
-             const int iterations, const int snapshots, const int kernel_type, 
-             int *periods, const char *output_folder, 
+void trotter(double h_a, double h_b,
+             double * external_pot_real, double * external_pot_imag,
+             double * p_real, double * p_imag,
+             const int matrix_width, const int matrix_height,
+             const int iterations, const int snapshots, const int kernel_type,
+             int *periods, const char *output_folder,
              bool verbose = false, bool imag_time = false, int particle_tag = 1);
 
 #endif
