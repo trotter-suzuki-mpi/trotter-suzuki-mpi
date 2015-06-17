@@ -21,6 +21,9 @@
 #ifndef __KERNEL_H
 #define __KERNEL_H
 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <string>
 
 //These are for the MPI NEIGHBOURS

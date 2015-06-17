@@ -1,6 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
  * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,15 +18,21 @@
  *
  */
 
+#include <string.h>
 #include <fstream>
 #include <unistd.h>
 #include <stdlib.h>
 #include <iostream>
 #include <complex>
-#include <mpi.h>
-#include "trotter.h"
-#include "common.h"
 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include "common.h"
+#include "trotter.h"
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 #define DIM 640
 #define ITERATIONS 1000
 #define KERNEL_TYPE 0
@@ -167,25 +173,35 @@ int main(int argc, char** argv) {
     bool verbose = true, imag_time = false;
     double h_a = .0, h_b = .0;
 
+#ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
+#endif
     process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, filename, &h_a, &h_b, pot_name, &imag_time, &n_particles);
 
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
     int matrix_width = dim + periods[1] * 2 * halo_x;
     int matrix_height = dim + periods[0] * 2 * halo_y;
-    
+
     //define the topology
     int coords[2], dims[2] = {0, 0};
     int rank;
     int nProcs;
+
+#ifdef HAVE_MPI
     MPI_Comm cartcomm;
     MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
     MPI_Dims_create(nProcs, 2, dims);  //partition all the processes (the size of MPI_COMM_WORLD's group) into an 2-dimensional topology
     MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, 0, &cartcomm);
     MPI_Comm_rank(cartcomm, &rank);
     MPI_Cart_coords(cartcomm, rank, 2, coords);
-    
+#else
+    nProcs = 1;
+    rank = 0;
+    dims[0] = dims[1] = 1;
+    coords[0] = coords[1] = 0;
+#endif
+
     //set dimension of tiles and offsets
     int start_x, end_x, inner_start_x, inner_end_x,
         start_y, end_y, inner_start_y, inner_end_y;
@@ -193,17 +209,17 @@ int main(int argc, char** argv) {
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     int tile_width = end_x - start_x;
     int tile_height = end_y - start_y;
-    
+
     for(int i = 0; i < n_particles; i++) {
         int read_offset = i * dim * dim;
-        
+
         //set and calculate evolution operator variables from hamiltonian
         double time_single_it;
-        double *external_pot_real = new double[tile_width*tile_height];
-        double *external_pot_imag = new double[tile_width*tile_height];
+        double *external_pot_real = new double[tile_width * tile_height];
+        double *external_pot_imag = new double[tile_width * tile_height];
         double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
         hamiltonian_pot = const_potential;
-        
+
         if(imag_time) {
             double constant = 6.;
             time_single_it = 8 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
@@ -220,11 +236,11 @@ int main(int argc, char** argv) {
             }
         }
         initialize_exp_potential(external_pot_real, external_pot_imag, pot_name, hamiltonian_pot, tile_width, tile_height, matrix_width, matrix_height,
-                             start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, imag_time);
+                                 start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, imag_time);
 
         //set initial state
-        double *p_real = new double[tile_width*tile_height];
-        double *p_imag = new double[tile_width*tile_height];
+        double *p_real = new double[tile_width * tile_height];
+        double *p_imag = new double[tile_width * tile_height];
         std::complex<double> (*ini_state)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
         ini_state = NULL;
         initialize_state(p_real, p_imag, filename, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,
@@ -232,7 +248,8 @@ int main(int argc, char** argv) {
 
         trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, ".", verbose, imag_time, i + 1);
     }
-    
+#ifdef HAVE_MPI
     MPI_Finalize();
+#endif
     return 0;
 }

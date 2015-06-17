@@ -1,6 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
  * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,9 +21,13 @@
 #ifndef __CPUBLOCKSSE_H
 #define __CPUBLOCKSSE_H
 
-#include <mpi.h>
-
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "kernel.h"
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 
 #define BLOCK_WIDTH 128u
 #define BLOCK_HEIGHT 128u
@@ -56,7 +60,11 @@ void process_band_sse(double *var,   size_t tile_width, size_t block_width, size
 
 class CPUBlockSSEKernel: public ITrotterKernel {
 public:
-    CPUBlockSSEKernel(double *p_real, double *p_imag, double *external_potential_real, double *external_potential_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods, MPI_Comm cartcomm, bool _imag_time);
+    CPUBlockSSEKernel(double *p_real, double *p_imag, double *external_potential_real, double *external_potential_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *_periods,
+#ifdef HAVE_MPI
+                      MPI_Comm cartcomm,
+#endif
+                      bool _imag_time);
     ~CPUBlockSSEKernel();
     void run_kernel();
     void run_kernel_on_halo();
@@ -91,13 +99,15 @@ private:
     static const size_t block_width = BLOCK_WIDTH;
     static const size_t block_height = BLOCK_HEIGHT;
 
+    int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
+    int *periods;
+#ifdef HAVE_MPI
     MPI_Comm cartcomm;
     int neighbors[4];
-    int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
     MPI_Request req[32];
     MPI_Status statuses[32];
     MPI_Datatype horizontalBorder, verticalBorder;
-
+#endif
 };
 
 

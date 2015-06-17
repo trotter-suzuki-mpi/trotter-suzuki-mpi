@@ -1,6 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
  * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
@@ -57,14 +57,14 @@ void initialize_state(double * p_real, double * p_imag, char * filename, std::co
                       int tile_width, int tile_height, int matrix_width, int matrix_height, int start_x, int start_y,
                       int * periods, int * coords, int * dims, int halo_x, int halo_y, int read_offset = 0);
 void initialize_exp_potential(double * external_pot_real, double * external_pot_imag, char * pot_name, double (*hamilt_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
-                          int tile_width, int tile_height, int matrix_width, int matrix_height, int start_x, int start_y,
-                          int * periods, int * coords, int * dims, int halo_x, int halo_y, double time_single_it, double particle_mass, bool imag_time);
-void initialize_potential(double * hamilt_pot, double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y), 
+                              int tile_width, int tile_height, int matrix_width, int matrix_height, int start_x, int start_y,
+                              int * periods, int * coords, int * dims, int halo_x, int halo_y, double time_single_it, double particle_mass, bool imag_time);
+void initialize_potential(double * hamilt_pot, double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
                           int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
 std::complex<double> gauss_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
 std::complex<double> sinus_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
 std::complex<double> exp_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
 std::complex<double> super_position_two_exp_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
 double const_potential(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-                       
+
 #endif

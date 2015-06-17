@@ -1,6 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
  * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,9 +23,15 @@
 
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <mpi.h>
 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "kernel.h"
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
+
 
 #define DISABLE_FMA
 
@@ -53,13 +59,22 @@
     exit(-1);                                    \
   }
 
-void setDevice(int commRank, MPI_Comm cartcomm);
+void setDevice(int commRank
+#ifdef HAVE_MPI
+               , MPI_Comm cartcomm
+#endif
+              );
+
 void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, double a, double b, const double * __restrict__ dev_external_pot_real, const double * __restrict__ dev_external_pot_imag, const double * __restrict__ pdev_real, const double * __restrict__ pdev_imag, double * __restrict__ pdev2_real, double * __restrict__ pdev2_imag, int inner, int horizontal, int vertical, bool imag_time);
 
 class CC2Kernel: public ITrotterKernel {
 public:
     CC2Kernel(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b,
-              int matrix_width, int matrix_height, int halo_x, int halo_y, int *periods, MPI_Comm cartcomm, bool _imag_time);
+              int matrix_width, int matrix_height, int halo_x, int halo_y, int *_periods,
+#ifdef HAVE_MPI
+              MPI_Comm cartcomm,
+#endif
+              bool _imag_time);
     ~CC2Kernel();
     void run_kernel();
     void run_kernel_on_halo();
@@ -96,7 +111,10 @@ private:
     int sense;
     size_t halo_x, halo_y, tile_width, tile_height;
 
+    int *periods;
+#ifdef HAVE_MPI
     MPI_Comm cartcomm;
+#endif
     int neighbors[4];
     int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
     double *left_real_receive;

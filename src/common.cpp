@@ -1,6 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
  * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
@@ -49,8 +49,8 @@ void calculate_borders(int coord, int dim, int * start, int *end, int *inner_sta
 }
 
 void read_initial_state(double * p_real, double * p_imag, int tile_width, int tile_height,
-                      char * file_name, int matrix_width, int matrix_height, int start_x, int start_y,
-                      int * periods, int * coords, int * dims, int halo_x, int halo_y, int read_offset) {
+                        char * file_name, int matrix_width, int matrix_height, int start_x, int start_y,
+                        int * periods, int * coords, int * dims, int halo_x, int halo_y, int read_offset) {
     std::ifstream input(file_name);
 
     int in_width = matrix_width - 2 * periods[1] * halo_x;
@@ -101,7 +101,7 @@ void read_initial_state(double * p_real, double * p_imag, int tile_width, int ti
                     p_imag[(i - (in_height - halo_y)) * tile_width + j - (in_width - halo_x)] = imag(tmp);
                 }
             }
-            
+
             //Right band
             if(j < halo_x && periods[1] != 0 && coords[1] == dims[1] - 1) {
                 if((i - start_y) >= 0 && (i - start_y) < tile_height) {
@@ -109,7 +109,7 @@ void read_initial_state(double * p_real, double * p_imag, int tile_width, int ti
                     p_imag[(i - start_y) * tile_width + j + tile_width - halo_x] = imag(tmp);
                 }
             }
-            
+
             //Left band
             if(j >= in_width - halo_x && periods[1] != 0 && coords[1] == 0) {
                 if((i - start_y) >= 0 && (i - start_y) < tile_height) {
@@ -123,8 +123,8 @@ void read_initial_state(double * p_real, double * p_imag, int tile_width, int ti
 }
 
 void read_potential(double * external_pot_real, double * external_pot_imag, int tile_width, int tile_height,
-                      char * pot_name, int matrix_width, int matrix_height, int start_x, int start_y,
-                      int * periods, int * coords, int * dims, int halo_x, int halo_y, double time_single_it, double particle_mass, bool imag_time) {
+                    char * pot_name, int matrix_width, int matrix_height, int start_x, int start_y,
+                    int * periods, int * coords, int * dims, int halo_x, int halo_y, double time_single_it, double particle_mass, bool imag_time) {
     std::ifstream input(pot_name);
 
     int in_width = matrix_width - 2 * periods[1] * halo_x;
@@ -142,7 +142,7 @@ void read_potential(double * external_pot_real, double * external_pot_imag, int 
                 tmp = exp(std::complex<double> (CONST_1 * read , CONST_2));
             else
                 tmp = exp(std::complex<double> (0., CONST_1 * read + CONST_2));
-                    
+
             if((i - start_y) >= 0 && (i - start_y) < tile_height && (j - start_x) >= 0 && (j - start_x) < tile_width) {
                 external_pot_real[(i - start_y) * tile_width + j - start_x] = real(tmp);
                 external_pot_imag[(i - start_y) * tile_width + j - start_x] = imag(tmp);
@@ -183,7 +183,7 @@ void read_potential(double * external_pot_real, double * external_pot_imag, int 
                     external_pot_imag[(i - (in_height - halo_y)) * tile_width + j - (in_width - halo_x)] = imag(tmp);
                 }
             }
-            
+
             //Right band
             if(j < halo_x && periods[1] != 0 && coords[1] == dims[1] - 1) {
                 if((i - start_y) >= 0 && (i - start_y) < tile_height) {
@@ -191,7 +191,7 @@ void read_potential(double * external_pot_real, double * external_pot_imag, int 
                     external_pot_imag[(i - start_y) * tile_width + j + tile_width - halo_x] = imag(tmp);
                 }
             }
-            
+
             //Left band
             if(j >= in_width - halo_x && periods[1] != 0 && coords[1] == 0) {
                 if((i - start_y) >= 0 && (i - start_y) < tile_height) {
@@ -211,35 +211,35 @@ void read_potential(double * external_pot_real, double * external_pot_imag, int 
 std::complex<double> gauss_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
     double s = 64.0; // FIXME: y esto?
     return std::complex<double>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
-                          * exp(std::complex<double>(0.0, 0.4 * (x + y - 480.0)));
+           * exp(std::complex<double>(0.0, 0.4 * (x + y - 480.0)));
 }
 
 std::complex<double> sinus_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
     double L_x = matrix_width - periods[1] * 2 * halo_x;
     double L_y = matrix_height - periods[0] * 2 * halo_y;
-        
+
     return std::complex<double> (sin(2 * 3.14159 / L_x * (x - periods[1] * halo_x)) * sin(2 * 3.14159 / L_y * (y - periods[0] * halo_y)), 0.0);
 }
 
 std::complex<double> exp_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
     double L_x = matrix_width - periods[1] * 2 * halo_x;
     double L_y = matrix_height - periods[0] * 2 * halo_y;
-    
+
     return exp(std::complex<double>(0. , 2 * 3.14159 / L_x * (x - periods[1] * halo_x) + 2 * 3.14159 / L_y * (y - periods[0] * halo_y) ));
 }
 
 std::complex<double> super_position_two_exp_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
     double L_x = matrix_width - periods[1] * 2 * halo_x;
     double L_y = matrix_height - periods[0] * 2 * halo_y;
-    
+
     return exp(std::complex<double>(0. , 2. * 3.14159 / L_x * (x - periods[1] * halo_x))) +
-                          exp(std::complex<double>(0. , 10. * 2. * 3.14159 / L_x * (x - periods[1] * halo_x)));
+           exp(std::complex<double>(0. , 10. * 2. * 3.14159 / L_x * (x - periods[1] * halo_x)));
 }
 
 void initialize_state(double * p_real, double * p_imag, char * filename, std::complex<double> (*ini_state)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
                       int tile_width, int tile_height, int matrix_width, int matrix_height, int start_x, int start_y,
                       int * periods, int * coords, int * dims, int halo_x, int halo_y, int read_offset) {
-    if(filename[0] != '\0') 
+    if(filename[0] != '\0')
         read_initial_state(p_real, p_imag, tile_width, tile_height, filename, matrix_width, matrix_height, start_x, start_y, periods, coords, dims, halo_x, halo_y, read_offset);
     else if(ini_state != NULL) {
         std::complex<double> tmp;
@@ -258,9 +258,9 @@ double const_potential(int x, int y, int matrix_width, int matrix_height, int * 
 }
 
 void initialize_exp_potential(double * external_pot_real, double * external_pot_imag, char * pot_name, double (*hamilt_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
-                          int tile_width, int tile_height, int matrix_width, int matrix_height, int start_x, int start_y,
-                          int * periods, int * coords, int * dims, int halo_x, int halo_y, double time_single_it, double particle_mass, bool imag_time) {
-    if(pot_name[0] != '\0') 
+                              int tile_width, int tile_height, int matrix_width, int matrix_height, int start_x, int start_y,
+                              int * periods, int * coords, int * dims, int halo_x, int halo_y, double time_single_it, double particle_mass, bool imag_time) {
+    if(pot_name[0] != '\0')
         read_potential(external_pot_real, external_pot_imag, tile_width, tile_height, pot_name, matrix_width, matrix_height, start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, imag_time);
     else if(hamilt_pot != NULL) {
         double order_approx = 2.;
@@ -281,7 +281,7 @@ void initialize_exp_potential(double * external_pot_real, double * external_pot_
     }
 }
 
-void initialize_potential(double * hamilt_pot, double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y), 
+void initialize_potential(double * hamilt_pot, double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
                           int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
     for(int y = 0; y < matrix_height; y++) {
         for(int x = 0; x < matrix_width; x++) {
@@ -461,10 +461,10 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
         filenames = filename.str();
         std::ifstream up(filenames.c_str()), center(filenames.c_str()), down(filenames.c_str());
         std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
-        
+
         for (int j = 0; j < dim; j++)
             center >> psi_center;
-        for (int j = 0; j < 2*dim; j++)
+        for (int j = 0; j < 2 * dim; j++)
             down >> psi_center;
         up >> psi_up;
         down >> psi_down;
@@ -479,28 +479,28 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
                 up >> psi_up;
                 center >> psi_right;
                 down >> psi_down;
-                
+
                 sum_E += conj(psi_center) * (cost_E * (psi_right + psi_left + psi_down + psi_up - psi_center * std::complex<double> (4., 0.)) + psi_center * std::complex<double> (hamilt_pot[j * dim + k], 0.)) ;
                 sum_Px += conj(psi_center) * (psi_right - psi_left);
                 sum_Py += conj(psi_center) * (psi_down - psi_up);
                 sum_pdi += conj(psi_center) * psi_center;
-                
+
                 psi_left = psi_center;
                 psi_center = psi_right;
             }
-            
+
         }
         up.close();
         center.close();
         down.close();
-        
+
         out << N_name[i] << "\t" << real(sum_E / sum_pdi) << "\t" << real(cost_P * sum_Px / sum_pdi) << "\t" << real(cost_P * sum_Py / sum_pdi) << "\t"
             << real(cost_P * sum_Px / sum_pdi)*real(cost_P * sum_Px / sum_pdi) + real(cost_P * sum_Py / sum_pdi)*real(cost_P * sum_Py / sum_pdi) << "\t" << real(sum_pdi) << std::endl;
 
         energy[i] = real(sum_E / sum_pdi);
         momentum_x[i] = real(cost_P * sum_Px / sum_pdi);
         momentum_y[i] = real(cost_P * sum_Py / sum_pdi);
-        
+
         sum_E = 0;
         sum_Px = 0;
         sum_Py = 0;

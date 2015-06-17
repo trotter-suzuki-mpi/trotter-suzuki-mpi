@@ -1,6 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek 
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,9 @@
 #ifndef __HYBRID_H
 #define __HYBRID_H
 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -31,7 +34,11 @@
 class HybridKernel: public ITrotterKernel {
 public:
     HybridKernel(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b,
-                 int matrix_width, int matrix_height, int halo_x, int halo_y, int * periods, MPI_Comm cartcomm, bool _imag_time);
+                 int matrix_width, int matrix_height, int halo_x, int halo_y, int * _periods,
+#ifdef HAVE_MPI
+                 MPI_Comm cartcomm,
+#endif
+                 bool _imag_time);
     ~HybridKernel();
     void run_kernel();
     void run_kernel_on_halo();
@@ -75,12 +82,15 @@ private:
     size_t gpu_tile_width, gpu_tile_height, gpu_start_x, gpu_start_y;
     size_t n_bands_on_cpu;
 
-    MPI_Comm cartcomm;
     int neighbors[4];
     int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
+    int *periods;
+#ifdef HAVE_MPI
+    MPI_Comm cartcomm;
     MPI_Request req[8];
     MPI_Status statuses[8];
     MPI_Datatype horizontalBorder, verticalBorder;
+#endif
 };
 
 #endif
