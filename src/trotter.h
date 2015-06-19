@@ -55,4 +55,13 @@ void trotter(double h_a, double h_b,
              int *periods, const char *output_folder,
              bool verbose = false, bool imag_time = false, int particle_tag = 1);
 
+struct energy_momentum_statistics {
+    double mean_E, mean_Px, mean_Py;
+    double var_E, var_Px, var_Py;
+    energy_momentum_statistics() : mean_E(0.), mean_Px(0.), mean_Py(0.),
+        var_E(0.), var_Px(0.), var_Py(0.) {}
+};
+
+void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, double particle_mass,
+                   const char *dirname, int *periods, int halo_x, int halo_y, energy_momentum_statistics *sample);
 #endif

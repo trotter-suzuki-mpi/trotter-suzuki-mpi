@@ -60,11 +60,11 @@ void process_band_sse(double *var,   size_t tile_width, size_t block_width, size
 
 class CPUBlockSSEKernel: public ITrotterKernel {
 public:
-    CPUBlockSSEKernel(double *p_real, double *p_imag, double *external_potential_real, double *external_potential_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *_periods,
+    CPUBlockSSEKernel(double *p_real, double *p_imag, double *external_potential_real, double *external_potential_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *_periods, bool _imag_time
 #ifdef HAVE_MPI
-                      MPI_Comm cartcomm,
+                      , MPI_Comm cartcomm
 #endif
-                      bool _imag_time);
+                      );
     ~CPUBlockSSEKernel();
     void run_kernel();
     void run_kernel_on_halo();

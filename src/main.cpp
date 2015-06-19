@@ -40,6 +40,7 @@
 #define N_PARTICLES 1
 #define FILENAME_LENGTH 255
 
+
 void print_usage() {
     std::cout << "Usage:\n" \
               "     trotter [OPTION] -n filename\n" \

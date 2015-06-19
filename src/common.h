@@ -28,12 +28,7 @@
 #include <config.h>
 #endif
 
-struct energy_momentum_statistics {
-    double mean_E, mean_Px, mean_Py;
-    double var_E, var_Px, var_Py;
-    energy_momentum_statistics() : mean_E(0.), mean_Px(0.), mean_Py(0.),
-        var_E(0.), var_Px(0.), var_Py(0.) {}
-};
+#include "trotter.h"
 
 void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound);
 void print_complex_matrix(char * filename, double * matrix_real, double * matrix_imag, size_t stride, size_t width, size_t height);

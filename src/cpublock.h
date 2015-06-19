@@ -44,11 +44,11 @@ void process_band(size_t tile_width, size_t block_width, size_t block_height, si
 
 class CPUBlock: public ITrotterKernel {
 public:
-    CPUBlock(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *_periods,
+    CPUBlock(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *_periods, bool imag_time
 #ifdef HAVE_MPI
-             MPI_Comm cartcomm,
+             , MPI_Comm cartcomm
 #endif
-             bool imag_time);
+             );
     ~CPUBlock();
     void run_kernel();
     void run_kernel_on_halo();

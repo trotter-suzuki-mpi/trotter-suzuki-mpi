@@ -42,6 +42,12 @@
 #define KERNEL_TYPE 0
 #define SNAPSHOTS 100
 
+std::complex<double> gauss_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
+    double s = 64.0; // FIXME: y esto?
+    return std::complex<double>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
+           * exp(std::complex<double>(0.0, 0.4 * (x + y - 480.0)));
+}
+
 int main(int argc, char** argv) {
     int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, kernel_type = KERNEL_TYPE;
     int periods[2] = {0, 0};

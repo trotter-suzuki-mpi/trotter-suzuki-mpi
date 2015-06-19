@@ -200,11 +200,11 @@ void process_band(size_t tile_width, size_t block_width, size_t block_height, si
 }
 
 // Class methods
-CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *_periods,
+CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *_periods, bool _imag_time
 #ifdef HAVE_MPI
-                   MPI_Comm _cartcomm,
+                   , MPI_Comm _cartcomm
 #endif
-                   bool _imag_time):
+                   ):
     a(_a),
     b(_b),
     sense(0),

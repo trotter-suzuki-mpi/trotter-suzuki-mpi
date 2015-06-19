@@ -207,7 +207,7 @@ void read_potential(double * external_pot_real, double * external_pot_imag, int 
 /*
  * Initial state functions
  */
-
+/*
 std::complex<double> gauss_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
     double s = 64.0; // FIXME: y esto?
     return std::complex<double>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
@@ -235,7 +235,7 @@ std::complex<double> super_position_two_exp_state(int x, int y, int matrix_width
     return exp(std::complex<double>(0. , 2. * 3.14159 / L_x * (x - periods[1] * halo_x))) +
            exp(std::complex<double>(0. , 10. * 2. * 3.14159 / L_x * (x - periods[1] * halo_x)));
 }
-
+*/
 void initialize_state(double * p_real, double * p_imag, char * filename, std::complex<double> (*ini_state)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
                       int tile_width, int tile_height, int matrix_width, int matrix_height, int start_x, int start_y,
                       int * periods, int * coords, int * dims, int halo_x, int halo_y, int read_offset) {

@@ -126,28 +126,28 @@ void trotter(double h_a, double h_b,
     ITrotterKernel * kernel;
     switch (kernel_type) {
     case 0:
-        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods,
+        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, imag_time
 #ifdef HAVE_MPI
-                              cartcomm,
+                              , cartcomm
 #endif
-                              imag_time);
+                              );
         break;
 
     case 1:
-        kernel = new CPUBlockSSEKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods,
+        kernel = new CPUBlockSSEKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, imag_time
 #ifdef HAVE_MPI
-                              cartcomm,
+                              , cartcomm
 #endif
-                              imag_time);
+                              );
         break;
 
     case 2:
 #ifdef CUDA
-        kernel = new CC2Kernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods,
+        kernel = new CC2Kernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, imag_time
 #ifdef HAVE_MPI
-                              cartcomm,
+                              , cartcomm
 #endif
-                              imag_time);
+                              );
 #else
         if (coords[0] == 0 && coords[1] == 0) {
             std::cerr << "Compiled without CUDA\n";
@@ -162,11 +162,11 @@ void trotter(double h_a, double h_b,
 
     case 3:
 #ifdef CUDA
-        kernel = new HybridKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods,
+        kernel = new HybridKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, imag_time
 #ifdef HAVE_MPI
-                              cartcomm,
+                              , cartcomm
 #endif
-                              imag_time);
+                              );
 #else
         if (coords[0] == 0 && coords[1] == 0) {
             std::cerr << "Compiled without CUDA\n";
@@ -180,11 +180,11 @@ void trotter(double h_a, double h_b,
         break;
 
     default:
-        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods,
+        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, imag_time
 #ifdef HAVE_MPI
-                              cartcomm,
+                              , cartcomm
 #endif
-                              imag_time);
+                              );
         break;
     }
 
