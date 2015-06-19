@@ -1,4 +1,4 @@
-%module trotter
+%module trottersuzuki
 %{
 #include "trotter.h"
 %}
