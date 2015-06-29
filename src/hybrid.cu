@@ -255,10 +255,10 @@ void HybridKernel::run_kernel_on_halo() {
     }
 }
 
-void HybridKernel::wait_for_completion(int iteration, int snapshots) {
+void HybridKernel::wait_for_completion(int iteration) {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
     //normalization for imaginary time evolution
-    if(imag_time && ((iteration % 20) == 0 || ((snapshots > 0) && (iteration + 1) % snapshots == 0))) {
+    if(imag_time && ((iteration % 20) == 0 )) {
         CUDA_SAFE_CALL(cudaMemcpy2D(&(p_real[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), pdev_real[sense], gpu_tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyDeviceToHost));
         CUDA_SAFE_CALL(cudaMemcpy2D(&(p_imag[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), pdev_imag[sense], gpu_tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyDeviceToHost));
 

@@ -298,8 +298,8 @@ void CPUBlock::run_kernel_on_halo() {
     }
 }
 
-void CPUBlock::wait_for_completion(int iteration, int snapshots) {
-    if(imag_time && ((iteration % 20) == 0 || ((snapshots > 0) && (iteration + 1) % snapshots == 0))) {
+void CPUBlock::wait_for_completion(int iteration) {
+    if(imag_time && ((iteration % 20) == 0)) {
         //normalization
         int nProcs = 1;
 #ifdef HAVE_MPI

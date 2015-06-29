@@ -27,6 +27,9 @@
 #if HAVE_CONFIG_H
 #include <config.h>
 #endif
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 
 #include "trotter.h"
 
@@ -56,10 +59,16 @@ void initialize_exp_potential(double * external_pot_real, double * external_pot_
                               int * periods, int * coords, int * dims, int halo_x, int halo_y, double time_single_it, double particle_mass, bool imag_time);
 void initialize_potential(double * hamilt_pot, double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
                           int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-std::complex<double> gauss_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
+/*std::complex<double> gauss_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
 std::complex<double> sinus_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
 std::complex<double> exp_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-std::complex<double> super_position_two_exp_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
+std::complex<double> super_position_two_exp_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);*/
 double const_potential(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-
+void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x,
+           int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords, int * periods, 
+           int tag_particle, int iterations, int count_snap, const char * output_folder
+#ifdef HAVE_MPI
+           , MPI_Comm cartcomm
+#endif
+           );
 #endif

@@ -47,14 +47,14 @@
     @param particle_tag       Optional parameter to tag a particle in the snapshots
 
 */
+
 void trotter(double h_a, double h_b,
              double * external_pot_real, double * external_pot_imag,
-             double * p_real, double * p_imag,
-             const int matrix_width, const int matrix_height,
-             const int iterations, const int snapshots, const int kernel_type,
-             int *periods, const char *output_folder,
-             bool verbose = false, bool imag_time = false, int particle_tag = 1);
-
+             double * p_real, double * p_imag, 
+             const int matrix_width, const int matrix_height, 
+             const int iterations, const int kernel_type,
+             int *periods, bool imag_time, long * time);
+             
 struct energy_momentum_statistics {
     double mean_E, mean_Px, mean_Py;
     double var_E, var_Px, var_Py;
@@ -64,4 +64,11 @@ struct energy_momentum_statistics {
 
 void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, double particle_mass,
                    const char *dirname, int *periods, int halo_x, int halo_y, energy_momentum_statistics *sample);
+void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x,
+           int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords, int * periods, 
+           int tag_particle, int iterations, int count_snap, const char * output_folder
+#ifdef HAVE_MPI
+           , MPI_Comm cartcomm
+#endif
+           );
 #endif

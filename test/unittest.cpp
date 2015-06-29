@@ -36,9 +36,9 @@
 #endif
 
 #define DIM 640
-#define ITERATIONS 1000
+#define ITERATIONS 100
 #define KERNEL_TYPE 0
-#define SNAPSHOTS 100
+#define SNAPSHOTS 10
 
 struct MAGIC_NUMBER {
     double threshold_E, threshold_P;
@@ -68,7 +68,8 @@ int main(int argc, char** argv) {
     bool imag_time = false;
     double h_a = 0.;
     double h_b = 0.;
-
+    long time, tot_time = 0;
+    
     // Get the top level suite from the registry
     CppUnit::Test *suite = CppUnit::TestFactoryRegistry::getRegistry().makeTest();
     // Adds the test to the list of test to run
@@ -162,13 +163,26 @@ int main(int argc, char** argv) {
         status = mkdir(filenames.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
         if(status != 0 && status != -1)
-            filenames = "./";
+            filenames = ".";
     }
     else
-        filenames = "./";
+        filenames = ".";
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, filenames.c_str(), show_time_sim, imag_time);
-
+    for(int count_snap = 0; count_snap <= snapshots; count_snap++) {
+        stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
+              start_y, inner_start_y, inner_end_y, dims, coords, periods, 
+              0, iterations, count_snap, filenames.c_str()
+#ifdef HAVE_MPI
+              , cartcomm
+#endif
+              );                  
+              
+        if(count_snap != snapshots) {
+            trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time, &time);
+            tot_time += time;
+        }
+    }
+        
     if(rank == 0) {
         MAGIC_NUMBER th_values;
         energy_momentum_statistics sample;
@@ -189,7 +203,6 @@ int main(int argc, char** argv) {
             std::cout << "Momentum Py -> OK\tsigma: " << std::abs(sample.mean_Py - th_values.expected_Py) / sample.var_Py << std::endl;
         else
             std::cout << "Momentum Py value is not the one theoretically expected: sigma " << std::abs(sample.mean_Py - th_values.expected_Py) / sample.var_Py << std::endl;
-
     }
 
 #ifdef HAVE_MPI

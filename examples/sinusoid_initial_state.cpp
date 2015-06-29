@@ -38,9 +38,9 @@
 #endif
 
 #define DIM 640
-#define ITERATIONS 1000
+#define ITERATIONS 100
 #define KERNEL_TYPE 0
-#define SNAPSHOTS 100
+#define SNAPSHOTS 10
 
 std::complex<double> sinus_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
     double L_x = matrix_width - periods[1] * 2 * halo_x;
@@ -59,7 +59,9 @@ int main(int argc, char** argv) {
     int halo_y = 4;
     int matrix_width = dim + periods[1] * 2 * halo_x;
     int matrix_height = dim + periods[0] * 2 * halo_y;
-
+    long time, tot_time = 0;
+    bool imag_time = false;
+    
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
@@ -136,7 +138,28 @@ int main(int argc, char** argv) {
     else
         dirnames = ".";
 
-    trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, dirnames.c_str(), verbose);
+    stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
+          start_y, inner_start_y, inner_end_y, dims, coords, periods, 
+          0, iterations, 0, dirnames.c_str()
+#ifdef HAVE_MPI
+          , cartcomm
+#endif
+          );  
+    for(int count_snap = 0; count_snap < snapshots; count_snap++) {
+        trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time, &time);
+        tot_time += time;
+            
+        stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
+              start_y, inner_start_y, inner_end_y, dims, coords, periods, 
+              0, iterations, count_snap, dirnames.c_str()
+#ifdef HAVE_MPI
+              , cartcomm
+#endif
+              );                  
+    }
+    if (coords[0] == 0 && coords[1] == 0 && verbose == true) {
+        std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " kernel:" << kernel_type << " np:" << nProcs << " " << tot_time << std::endl;
+    }
 
 #ifdef HAVE_MPI
     MPI_Finalize();
