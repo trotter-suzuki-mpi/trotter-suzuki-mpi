@@ -53,7 +53,7 @@ void trotter(double h_a, double h_b,
              double * p_real, double * p_imag, 
              const int matrix_width, const int matrix_height, 
              const int iterations, const int kernel_type,
-             int *periods, bool imag_time, long * time);
+             int *periods, bool imag_time, int * time);
              
 struct energy_momentum_statistics {
     double mean_E, mean_Px, mean_Py;

@@ -46,7 +46,7 @@ void trotter(double h_a, double h_b,
              double * p_real, double * p_imag, 
              const int matrix_width, const int matrix_height, 
              const int iterations, const int kernel_type,
-             int *periods, bool imag_time, long * time) {
+             int *periods, bool imag_time, int * time) {
     
     int start_x, end_x, inner_start_x, inner_end_x,
         start_y, end_y, inner_start_y, inner_end_y;
@@ -162,17 +162,6 @@ void trotter(double h_a, double h_b,
     
     gettimeofday(&end, NULL);
     *time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
-    /*if (coords[0] == 0 && coords[1] == 0 && verbose == true) {
-        long time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
-        std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " " << kernel->get_name() << " " << nProcs << " " << time << std::endl;
-    }*/
-/*
-#ifdef HAVE_MPI    
-    MPI_Type_free(&localarray);
-    MPI_Type_free(&num_as_string);
-    MPI_Type_free(&complex_localarray);
-    MPI_Type_free(&complex_num_as_string);
-#endif
-*/ 
+
     //delete kernel;
 }

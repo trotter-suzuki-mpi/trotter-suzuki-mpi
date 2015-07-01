@@ -173,7 +173,7 @@ int main(int argc, char** argv) {
     char pot_name[FILENAME_LENGTH] = "";
     bool verbose = true, imag_time = false;
     double h_a = .0, h_b = .0;
-    long time, tot_time = 0;
+    int time, tot_time = 0;
     char output_folder[2] = {'.','\0'};
     
 #ifdef HAVE_MPI

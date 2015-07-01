@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
     bool imag_time = false;
     double h_a = 0.;
     double h_b = 0.;
-    long time, tot_time = 0;
+    int time, tot_time = 0;
     
     // Get the top level suite from the registry
     CppUnit::Test *suite = CppUnit::TestFactoryRegistry::getRegistry().makeTest();

@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
     int halo_y = 4;
     int matrix_width = dim + periods[1] * 2 * halo_x;
     int matrix_height = dim + periods[0] * 2 * halo_y;
-    long time, tot_time = 0;
+    int time, tot_time = 0;
     bool imag_time = false;
 
     //define the topology
