@@ -420,7 +420,7 @@ void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height
     MPI_Status status;
     
     // each number is represented by charspernum chars 
-    const int chars_per_complex_num = 30;
+    const int chars_per_complex_num = 28;
     MPI_Datatype complex_num_as_string;
     MPI_Type_contiguous(chars_per_complex_num, MPI_CHAR, &complex_num_as_string); 
     MPI_Type_commit(&complex_num_as_string);
@@ -450,15 +450,15 @@ void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height
     count = 0;
     for (int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
         for (int k = inner_start_x - start_x; k < inner_end_x - start_x - 1; k++) {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.6e,%+.6e) ", p_real[j * matrix_width + k], p_imag[j * matrix_width + k]);
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e) ", p_real[j * matrix_width + k], p_imag[j * matrix_width + k]);
             count++;
         }
         if(coords[1] == dims[1] - 1) {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.6e,%+.6e)\n", p_real[j * matrix_width + (inner_end_x - inner_start_x) - 1], p_imag[j * matrix_width + (inner_end_x - inner_start_x) - 1]);
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)\n", p_real[j * matrix_width + (inner_end_x - start_x) - 1], p_imag[j * matrix_width + (inner_end_x - start_x) - 1]);
             count++;
         }
         else {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.6e,%+.6e) ", p_real[j * matrix_width + (inner_end_x - inner_start_x) - 1], p_imag[j * matrix_width + (inner_end_x - inner_start_x) - 1]);
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e) ", p_real[j * matrix_width + (inner_end_x - start_x) - 1], p_imag[j * matrix_width + (inner_end_x - start_x) - 1]);
             count++;
         }
     }
@@ -485,11 +485,11 @@ void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height
             count++;
         }
         if(coords[1] == dims[1]-1) {
-            sprintf(&data_as_txt[count*charspernum], "%+.6e\n", p_real[j * matrix_width + (inner_end_x - inner_start_x)-1]);
+            sprintf(&data_as_txt[count*charspernum], "%+.6e\n", p_real[j * matrix_width + (inner_end_x - start_x)-1]);
             count++;
         }
         else {
-            sprintf(&data_as_txt[count*charspernum], "%+.6e ", p_real[j * matrix_width + (inner_end_x - inner_start_x)-1]);
+            sprintf(&data_as_txt[count*charspernum], "%+.6e ", p_real[j * matrix_width + (inner_end_x - start_x)-1]);
             count++;
         }
     }
