@@ -32,11 +32,17 @@
 #define BLOCK_WIDTH 128u
 #define BLOCK_HEIGHT 128u
 
+#ifdef WIN32
+template <int offset_y>
+inline void update_shifty_sse(size_t stride, size_t width, size_t height, double a, double b, double * __restrict r1, double * __restrict i1, double * __restrict r2, double * __restrict i2);
+template <int offset_x>
+inline void update_shiftx_sse(size_t stride, size_t width, size_t height, double a, double b, double * __restrict r1, double * __restrict i1, double * __restrict r2, double * __restrict i2);
+#else
 template <int offset_y>
 inline void update_shifty_sse(size_t stride, size_t width, size_t height, double a, double b, double * __restrict__ r1, double * __restrict__ i1, double * __restrict__ r2, double * __restrict__ i2);
 template <int offset_x>
 inline void update_shiftx_sse(size_t stride, size_t width, size_t height, double a, double b, double * __restrict__ r1, double * __restrict__ i1, double * __restrict__ r2, double * __restrict__ i2);
-
+#endif
 void process_sides_sse( double *var, size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b,
                         const double *ext_pot_r00, const double *ext_pot_r01, const double *ext_pot_r10, const double *ext_pot_r11,
                         const double *ext_pot_i00, const double *ext_pot_i01, const double *ext_pot_i10, const double *ext_pot_i11,
