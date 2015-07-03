@@ -20,10 +20,15 @@
 
 #include <string.h>
 #include <fstream>
-#include <unistd.h>
 #include <stdlib.h>
 #include <iostream>
 #include <complex>
+
+#ifdef WIN32
+#include "unistd.h"
+#else
+#include <unistd.h>
+#endif
 
 #if HAVE_CONFIG_H
 #include <config.h>
