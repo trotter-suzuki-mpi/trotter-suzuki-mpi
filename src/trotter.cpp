@@ -21,10 +21,15 @@
 #include <cstring>
 #include <string>
 #include <sstream>
-#include <sys/time.h>
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifdef WIN32
+#include <windows.h>
+#else
+#include <sys/time.h>
+#endif
 
 #if HAVE_CONFIG_H
 #include <config.h>
@@ -142,8 +147,13 @@ void trotter(double h_a, double h_b,
         break;
     }
 
+#ifdef WIN32
+	SYSTEMTIME start;
+	GetSystemTime(&start);
+#else
     struct timeval start, end;
-    gettimeofday(&start, NULL);
+    gettimeofday(&start, NULL)
+#endif
 
     // Main loop
     for (int i = 0; i < iterations; i++) {
@@ -159,9 +169,15 @@ void trotter(double h_a, double h_b,
     }
     
     kernel->get_sample(width, 0, 0, width, height, p_real, p_imag);
-    
+
+#ifdef WIN32
+	SYSTEMTIME end;
+	GetSystemTime(&end);
+	*time = (end.wMinute - start.wMinute) * 60000 + (end.wSecond - start.wSecond) * 1000 + (end.wMilliseconds - start.wMilliseconds);
+#else
     gettimeofday(&end, NULL);
     *time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
+#endif
 
     //delete kernel;
 }
