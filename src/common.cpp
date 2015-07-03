@@ -24,7 +24,6 @@
 #include <string>
 #include <sstream>
 #include <cmath>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -524,7 +523,7 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
         return;
 
     int N_files = snapshots + 1;
-    int N_name[N_files];
+	int *N_name = new int[N_files];
 
     N_name[0] = 0;
     for(int i = 1; i < N_files; i++) {
@@ -534,7 +533,9 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
     std::complex<double> sum_E = 0;
     std::complex<double> sum_Px = 0, sum_Py = 0;
     std::complex<double> sum_pdi = 0;
-    double energy[N_files], momentum_x[N_files], momentum_y[N_files];
+	double *energy = new double[N_files];
+	double *momentum_x = new double[N_files];
+	double *momentum_y = new double[N_files];
 
     std::complex<double> cost_E = -1. / (2.*particle_mass), cost_P;
     cost_P = std::complex<double>(0., -0.5);
