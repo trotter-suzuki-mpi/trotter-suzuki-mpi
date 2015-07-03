@@ -21,7 +21,7 @@
 #define __HYBRID_H
 
 #if HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 #ifdef _OPENMP
 #include <omp.h>

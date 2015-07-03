@@ -32,7 +32,7 @@
 #endif
 
 #if HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 #include "common.h"
 #include "trotter.h"
@@ -152,7 +152,7 @@ void trotter(double h_a, double h_b,
 	GetSystemTime(&start);
 #else
     struct timeval start, end;
-    gettimeofday(&start, NULL)
+    gettimeofday(&start, NULL);
 #endif
 
     // Main loop

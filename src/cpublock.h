@@ -22,7 +22,7 @@
 #define __CPUBLOCK_H
 
 #if HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 #include "kernel.h"
 #ifdef HAVE_MPI

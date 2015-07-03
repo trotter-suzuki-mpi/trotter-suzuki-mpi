@@ -51,7 +51,7 @@ trotter: $(OBJS)
 	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o $@ $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
 
 %.o: %.cpp
-	$(CXX) $(DEFS) $(CXXFLAGS) ${MPI_INC} -I$(srcdir) -I.. -o $@ -c $(srcdir)/$<
+	$(CXX) $(DEFS) $(CXXFLAGS) ${MPI_INC} -iquote$(srcdir) -iquote.. -o $@ -c $(srcdir)/$<
 
 %.cu.co: %.cu
 	$(NVCC) $(DEFS) $(CUDA_CFLAGS) ${MPI_INC} -I$(srcdir) -I.. -o $@ -c $(srcdir)/$<
