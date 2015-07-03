@@ -307,7 +307,8 @@ void CPUBlock::wait_for_completion(int iteration) {
 #endif
         int height = tile_height - halo_y;
         int width = tile_width - halo_x;
-        double sum = 0., sums[nProcs];
+		double sum = 0., *sums;
+		sums = new double[nProcs];
         for(int i = halo_y; i < height; i++) {
             for(int j = halo_x; j < width; j++) {
                 sum += p_real[sense][j + i * tile_width] * p_real[sense][j + i * tile_width] + p_imag[sense][j + i * tile_width] * p_imag[sense][j + i * tile_width];
@@ -329,6 +330,7 @@ void CPUBlock::wait_for_completion(int iteration) {
                 p_imag[sense][j + i * tile_width] /= norm;
             }
         }
+		delete[] sums;
     }
 }
 
@@ -347,7 +349,7 @@ void CPUBlock::kernel8(const double *p_real, const double *p_imag, double * next
 #ifndef HAVE_MPI
         #pragma omp for
 #endif
-        for (size_t block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
+        for (int block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
             process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, external_pot_real, external_pot_imag, p_real, p_imag, next_real, next_imag, inner, sides, imag_time);
         }
     }
