@@ -20,6 +20,7 @@
 
 #include <cassert>
 #include <emmintrin.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "cpublocksse.h"
@@ -30,9 +31,14 @@
 /***************
 * SSE variants *
 ***************/
+#ifdef WIN32
+template <int offset_y>
+inline void update_shifty_sse(size_t stride, size_t width, size_t height, double a, double b, double * __restrict r1, double * __restrict i1, double * __restrict r2, double * __restrict i2) {
+#else
 template <int offset_y>
 inline void update_shifty_sse(size_t stride, size_t width, size_t height, double a, double b, double * __restrict__ r1, double * __restrict__ i1, double * __restrict__ r2, double * __restrict__ i2) {
-    __m128d aq, bq;
+#endif
+	__m128d aq, bq;
     aq = _mm_load1_pd(&a);
     bq = _mm_load1_pd(&b);
     for (size_t i = 0; i < height - offset_y; i++) {
@@ -66,9 +72,14 @@ inline void update_shifty_sse(size_t stride, size_t width, size_t height, double
     }
 }
 
+#ifdef WIN32
+template <int offset_y>
+inline void update_shifty_sse_imaginary(size_t stride, size_t width, size_t height, double a, double b, double * __restrict r1, double * __restrict i1, double * __restrict r2, double * __restrict i2) {
+#else
 template <int offset_y>
 inline void update_shifty_sse_imaginary(size_t stride, size_t width, size_t height, double a, double b, double * __restrict__ r1, double * __restrict__ i1, double * __restrict__ r2, double * __restrict__ i2) {
-    __m128d aq, bq;
+#endif
+	__m128d aq, bq;
     aq = _mm_load1_pd(&a);
     bq = _mm_load1_pd(&b);
     for (size_t i = 0; i < height - offset_y; i++) {
@@ -102,9 +113,14 @@ inline void update_shifty_sse_imaginary(size_t stride, size_t width, size_t heig
     }
 }
 
+#ifdef WIN32
+template <int offset_x>
+inline void update_shiftx_sse(size_t stride, size_t width, size_t height, double a, double b, double * __restrict r1, double * __restrict i1, double * __restrict r2, double * __restrict i2) {
+#else
 template <int offset_x>
 inline void update_shiftx_sse(size_t stride, size_t width, size_t height, double a, double b, double * __restrict__ r1, double * __restrict__ i1, double * __restrict__ r2, double * __restrict__ i2) {
-    __m128d aq, bq;
+#endif	
+	__m128d aq, bq;
     aq = _mm_load1_pd(&a);
     bq = _mm_load1_pd(&b);
     for (size_t i = 0; i < height; i++) {
@@ -152,9 +168,14 @@ inline void update_shiftx_sse(size_t stride, size_t width, size_t height, double
     }
 }
 
+#ifdef WIN32
+template <int offset_x>
+inline void update_shiftx_sse_imaginary(size_t stride, size_t width, size_t height, double a, double b, double * __restrict r1, double * __restrict i1, double * __restrict r2, double * __restrict i2) {
+#else
 template <int offset_x>
 inline void update_shiftx_sse_imaginary(size_t stride, size_t width, size_t height, double a, double b, double * __restrict__ r1, double * __restrict__ i1, double * __restrict__ r2, double * __restrict__ i2) {
-    __m128d aq, bq;
+#endif
+	__m128d aq, bq;
     aq = _mm_load1_pd(&a);
     bq = _mm_load1_pd(&b);
     for (size_t i = 0; i < height; i++) {
@@ -202,9 +223,13 @@ inline void update_shiftx_sse_imaginary(size_t stride, size_t width, size_t heig
     }
 }
 
+#ifdef WIN32
+void update_ext_pot_sse(size_t stride, size_t width, size_t height, double * __restrict pot_r, double * __restrict pot_i, double * __restrict real,
+                        double * __restrict imag) {
+#else
 void update_ext_pot_sse(size_t stride, size_t width, size_t height, double * __restrict__ pot_r, double * __restrict__ pot_i, double * __restrict__ real,
-                        double * __restrict__ imag) {
-
+	double * __restrict__ imag) {
+#endif
     for (size_t i = 0; i < height; i++) {
         size_t j = 0;
         for (; j < width - width % 2; j += 2) {
@@ -230,8 +255,13 @@ void update_ext_pot_sse(size_t stride, size_t width, size_t height, double * __r
     }
 }
 
+#ifdef WIN32
+void update_ext_pot_sse_imaginary(size_t stride, size_t width, size_t height, double * __restrict pot_r, double * __restrict pot_i, double * __restrict real,
+                                  double * __restrict imag) {
+#else
 void update_ext_pot_sse_imaginary(size_t stride, size_t width, size_t height, double * __restrict__ pot_r, double * __restrict__ pot_i, double * __restrict__ real,
-                                  double * __restrict__ imag) {
+	double * __restrict__ imag) {
+#endif
     for (size_t i = 0; i < height; i++) {
         size_t j = 0;
         for (; j < width - width % 2; j += 2) {
@@ -515,23 +545,23 @@ void process_band_sse(size_t tile_width, size_t block_width, size_t block_height
                       const double * i00, const double * i01, const double * i10, const double * i11,
                       double * next_r00, double * next_r01, double * next_r10, double * next_r11,
                       double * next_i00, double * next_i01, double * next_i10, double * next_i11, int inner, int sides, bool imag_time) {
-    double block_r00[(block_height / 2) * (block_width / 2)];
-    double block_r01[(block_height / 2) * (block_width / 2)];
-    double block_r10[(block_height / 2) * (block_width / 2)];
-    double block_r11[(block_height / 2) * (block_width / 2)];
-    double block_i00[(block_height / 2) * (block_width / 2)];
-    double block_i01[(block_height / 2) * (block_width / 2)];
-    double block_i10[(block_height / 2) * (block_width / 2)];
-    double block_i11[(block_height / 2) * (block_width / 2)];
+    double *block_r00 = new double[(block_height / 2) * (block_width / 2)];
+	double *block_r01 = new double[(block_height / 2) * (block_width / 2)];
+	double *block_r10 = new double[(block_height / 2) * (block_width / 2)];
+	double *block_r11 = new double[(block_height / 2) * (block_width / 2)];
+	double *block_i00 = new double[(block_height / 2) * (block_width / 2)];
+	double *block_i01 = new double[(block_height / 2) * (block_width / 2)];
+	double *block_i10 = new double[(block_height / 2) * (block_width / 2)];
+	double *block_i11 = new double[(block_height / 2) * (block_width / 2)];
 
-    double block_ext_pot_r00[(block_height / 2) * (block_width / 2)];
-    double block_ext_pot_r01[(block_height / 2) * (block_width / 2)];
-    double block_ext_pot_r10[(block_height / 2) * (block_width / 2)];
-    double block_ext_pot_r11[(block_height / 2) * (block_width / 2)];
-    double block_ext_pot_i00[(block_height / 2) * (block_width / 2)];
-    double block_ext_pot_i01[(block_height / 2) * (block_width / 2)];
-    double block_ext_pot_i10[(block_height / 2) * (block_width / 2)];
-    double block_ext_pot_i11[(block_height / 2) * (block_width / 2)];
+	double *block_ext_pot_r00 = new double[(block_height / 2) * (block_width / 2)];
+	double *block_ext_pot_r01 = new double[(block_height / 2) * (block_width / 2)];
+	double *block_ext_pot_r10 = new double[(block_height / 2) * (block_width / 2)];
+	double *block_ext_pot_r11 = new double[(block_height / 2) * (block_width / 2)];
+	double *block_ext_pot_i00 = new double[(block_height / 2) * (block_width / 2)];
+	double *block_ext_pot_i01 = new double[(block_height / 2) * (block_width / 2)];
+	double *block_ext_pot_i10 = new double[(block_height / 2) * (block_width / 2)];
+	double *block_ext_pot_i11 = new double[(block_height / 2) * (block_width / 2)];
 
     size_t read_idx;
     size_t read_width;
@@ -675,6 +705,23 @@ void process_band_sse(size_t tile_width, size_t block_width, size_t block_height
             }
         }
     }
+	delete[] block_r00;
+	delete[] block_r01;
+	delete[] block_r10;
+	delete[] block_r11;
+	delete[] block_i00;
+	delete[] block_i01;
+	delete[] block_i10;
+	delete[] block_i11;
+
+	delete[] block_ext_pot_r00;
+	delete[] block_ext_pot_r01;
+	delete[] block_ext_pot_r10;
+	delete[] block_ext_pot_r11;
+	delete[] block_ext_pot_i00;
+	delete[] block_ext_pot_i01;
+	delete[] block_ext_pot_i10;
+	delete[] block_ext_pot_i11;
 }
 
 CPUBlockSSEKernel::CPUBlockSSEKernel(double *_p_real, double *_p_imag, double *external_potential_real, double *external_potential_imag,
@@ -713,7 +760,7 @@ CPUBlockSSEKernel::CPUBlockSSEKernel(double *_p_real, double *_p_imag, double *e
 
     assert (tile_width % 2 == 0);
     assert (tile_height % 2 == 0);
-
+	/*
     posix_memalign(reinterpret_cast<void**>(&r00[0]), 64, ((tile_width * tile_height) / 4) * sizeof(double));
     posix_memalign(reinterpret_cast<void**>(&r00[1]), 64, ((tile_width * tile_height) / 4) * sizeof(double));
     posix_memalign(reinterpret_cast<void**>(&r01[0]), 64, ((tile_width * tile_height) / 4) * sizeof(double));
@@ -739,6 +786,59 @@ CPUBlockSSEKernel::CPUBlockSSEKernel(double *_p_real, double *_p_imag, double *e
     posix_memalign(reinterpret_cast<void**>(&ext_pot_i01), 64, ((tile_width * tile_height) / 4) * sizeof(double));
     posix_memalign(reinterpret_cast<void**>(&ext_pot_i10), 64, ((tile_width * tile_height) / 4) * sizeof(double));
     posix_memalign(reinterpret_cast<void**>(&ext_pot_i11), 64, ((tile_width * tile_height) / 4) * sizeof(double));
+	*/
+	
+#ifdef WIN32
+	r00[0] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	r00[1] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	r01[0] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	r01[1] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	r10[0] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	r10[1] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	r11[0] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	r11[1] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	i00[0] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	i00[1] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	i01[0] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	i01[1] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	i10[0] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	i10[1] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	i11[0] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	i11[1] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	ext_pot_r00 = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	ext_pot_r01 = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	ext_pot_r10 = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	ext_pot_r11 = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	ext_pot_i00 = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	ext_pot_i01 = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	ext_pot_i10 = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	ext_pot_i11 = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+#else
+	r00[0] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	r00[1] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	r01[0] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	r01[1] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	r10[0] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	r10[1] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	r11[0] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	r11[1] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	i00[0] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	i00[1] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	i01[0] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	i01[1] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	i10[0] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	i10[1] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	i11[0] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	i11[1] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	ext_pot_r00 = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	ext_pot_r01 = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	ext_pot_r10 = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	ext_pot_r11 = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	ext_pot_i00 = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	ext_pot_i01 = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	ext_pot_i10 = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	ext_pot_i11 = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+#endif
 
     for (size_t i = 0; i < tile_height / 2; i++) {
         for (size_t j = 0; j < tile_width / 2; j++) {
@@ -867,7 +967,7 @@ void CPUBlockSSEKernel::run_kernel() {
 #ifndef HAVE_MPI
         #pragma omp for
 #endif
-        for (size_t block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
+        for (int block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
             process_band_sse(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b,
                              ext_pot_r00, ext_pot_r10, ext_pot_r01, ext_pot_r11,
                              ext_pot_i00, ext_pot_i10, ext_pot_i01, ext_pot_i11,
@@ -890,7 +990,8 @@ void CPUBlockSSEKernel::wait_for_completion(int iteration) {
 #endif
         int height = (tile_height - halo_y) / 2;
         int width = (tile_width - halo_x) / 2;
-        double sum = 0., sums[nProcs];
+        double sum = 0., *sums;
+		sums = new double[nProcs];
         for(int i = halo_y / 2; i < height; i++) {
             for(int j = halo_x / 2; j < width; j++) {
                 int idx = j + i * tile_width / 2;
@@ -923,7 +1024,8 @@ void CPUBlockSSEKernel::wait_for_completion(int iteration) {
                 i11[sense][idx] /= norm;
             }
         }
-    }
+		delete[] sums;
+	}
 }
 
 
