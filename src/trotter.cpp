@@ -31,7 +31,9 @@
 #include "common.h"
 #include "trotter.h"
 #include "cpublock.h"
+#ifndef WIN32
 #include "cpublocksse.h"
+#endif
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
@@ -87,12 +89,19 @@ void trotter(double h_a, double h_b,
         break;
 
     case 1:
-        kernel = new CPUBlockSSEKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, imag_time
+#ifndef WIN32
+		kernel = new CPUBlockSSEKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, imag_time
 #ifdef HAVE_MPI
                               , cartcomm
 #endif
                               );
-        break;
+#else
+		if (coords[0] == 0 && coords[1] == 0) {
+			std::cerr << "SSE kernel not supported on Windows\n";
+		}
+		abort();
+#endif
+		break;
 
     case 2:
 #ifdef CUDA
