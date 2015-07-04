@@ -789,30 +789,30 @@ CPUBlockSSEKernel::CPUBlockSSEKernel(double *_p_real, double *_p_imag, double *e
 	*/
 	
 #ifdef WIN32
-	r00[0] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	r00[1] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	r01[0] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	r01[1] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	r10[0] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	r10[1] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	r11[0] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	r11[1] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	i00[0] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	i00[1] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	i01[0] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	i01[1] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	i10[0] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	i10[1] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	i11[0] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	i11[1] = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	ext_pot_r00 = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	ext_pot_r01 = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	ext_pot_r10 = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	ext_pot_r11 = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	ext_pot_i00 = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	ext_pot_i01 = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	ext_pot_i10 = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
-	ext_pot_i11 = reinterpret_cast<double*>(_aligned_malloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
+	r00[0] = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	r00[1] = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	r01[0] = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	r01[1] = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	r10[0] = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	r10[1] = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	r11[0] = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	r11[1] = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	i00[0] = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	i00[1] = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	i01[0] = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	i01[1] = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	i10[0] = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	i10[1] = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	i11[0] = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	i11[1] = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	ext_pot_r00 = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	ext_pot_r01 = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	ext_pot_r10 = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	ext_pot_r11 = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	ext_pot_i00 = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	ext_pot_i01 = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	ext_pot_i10 = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
+	ext_pot_i11 = reinterpret_cast<double*>(_aligned_malloc(((tile_width * tile_height) / 4) * sizeof(double), 64));
 #else
 	r00[0] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
 	r00[1] = reinterpret_cast<double*>(aligned_alloc(64, ((tile_width * tile_height) / 4) * sizeof(double)));
