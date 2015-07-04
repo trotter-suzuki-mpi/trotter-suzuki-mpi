@@ -65,7 +65,7 @@ If you want the latest git version, follow the standard procedure for installing
     $ sudo python setup.py install
 
 Build on Mac OS X
---------------------
+-----------------
 Before installing using pip, gcc should be installed first. As of OS X 10.9, gcc is just symlink to clang. To build trottersuzuki and this extension correctly, it is recommended to install gcc using something like:
 ::
    
@@ -88,4 +88,8 @@ and set environment using:
 Then you can issue
 ::
    
-    $ sudo pip install somoclu
+    $ sudo pip install trottersuzuki
+
+Build on Windows
+----------------
+The pip install command might fail on Windows. If this happens, compile the source with Visual Studio and run the setupWin.py script.
