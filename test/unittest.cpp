@@ -68,7 +68,6 @@ int main(int argc, char** argv) {
     bool imag_time = false;
     double h_a = 0.;
     double h_b = 0.;
-    int time, tot_time = 0;
     
     // Get the top level suite from the registry
     CppUnit::Test *suite = CppUnit::TestFactoryRegistry::getRegistry().makeTest();
@@ -178,8 +177,7 @@ int main(int argc, char** argv) {
               );                  
               
         if(count_snap != snapshots) {
-            trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time, &time);
-            tot_time += time;
+            trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time);
         }
     }
         

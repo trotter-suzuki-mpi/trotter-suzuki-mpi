@@ -917,7 +917,7 @@ CPUBlockSSEKernel::~CPUBlockSSEKernel() {
     free(i10[1]);
     free(i11[0]);
     free(i11[1]);
-#endif;
+#endif
 }
 
 

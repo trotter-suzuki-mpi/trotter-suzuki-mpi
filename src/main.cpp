@@ -26,7 +26,9 @@
 
 #ifdef WIN32
 #include "unistd.h"
+#include <windows.h>
 #else
+#include <sys/time.h>
 #include <unistd.h>
 #endif
 
@@ -264,7 +266,22 @@ int main(int argc, char** argv) {
                   );                  
                   
             if(count_snap != snapshots) {
-                trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time, &time);
+#ifdef WIN32
+                SYSTEMTIME start;
+                GetSystemTime(&start);
+#else
+                struct timeval start, end;
+                gettimeofday(&start, NULL);
+#endif
+                trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time);
+#ifdef WIN32
+                SYSTEMTIME end;
+                GetSystemTime(&end);
+                time = (end.wMinute - start.wMinute) * 60000 + (end.wSecond - start.wSecond) * 1000 + (end.wMilliseconds - start.wMilliseconds);
+#else
+                gettimeofday(&end, NULL);
+                time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
+#endif
                 tot_time += time;
             }
         }

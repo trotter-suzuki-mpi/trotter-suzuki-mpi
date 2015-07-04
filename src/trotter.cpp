@@ -25,12 +25,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef WIN32
-#include <windows.h>
-#else
-#include <sys/time.h>
-#endif
-
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -51,7 +45,7 @@ void trotter(double h_a, double h_b,
              double * p_real, double * p_imag, 
              const int matrix_width, const int matrix_height, 
              const int iterations, const int kernel_type,
-             int *periods, bool imag_time, int * time) {
+             int *periods, bool imag_time) {
     
     int start_x, end_x, inner_start_x, inner_end_x,
         start_y, end_y, inner_start_y, inner_end_y;
@@ -147,14 +141,6 @@ void trotter(double h_a, double h_b,
         break;
     }
 
-#ifdef WIN32
-	SYSTEMTIME start;
-	GetSystemTime(&start);
-#else
-    struct timeval start, end;
-    gettimeofday(&start, NULL);
-#endif
-
     // Main loop
     for (int i = 0; i < iterations; i++) {
         kernel->run_kernel_on_halo();
@@ -169,15 +155,6 @@ void trotter(double h_a, double h_b,
     }
     
     kernel->get_sample(width, 0, 0, width, height, p_real, p_imag);
-
-#ifdef WIN32
-	SYSTEMTIME end;
-	GetSystemTime(&end);
-	*time = (end.wMinute - start.wMinute) * 60000 + (end.wSecond - start.wSecond) * 1000 + (end.wMilliseconds - start.wMilliseconds);
-#else
-    gettimeofday(&end, NULL);
-    *time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
-#endif
 
     //delete kernel;
 }

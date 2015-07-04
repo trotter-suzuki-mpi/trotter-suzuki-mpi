@@ -60,7 +60,6 @@ int main(int argc, char** argv) {
     int halo_y = 4;
     int matrix_width = dim + periods[1] * 2 * halo_x;
     int matrix_height = dim + periods[0] * 2 * halo_y;
-    int time, tot_time = 0;
     bool imag_time = true;
     
 #ifdef HAVE_MPI
@@ -151,8 +150,7 @@ int main(int argc, char** argv) {
 #endif
           );  
     for(int count_snap = 0; count_snap < snapshots; count_snap++) {
-        trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time, &time);
-        tot_time += time;
+        trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time);
             
         stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
               start_y, inner_start_y, inner_end_y, dims, coords, periods, 
@@ -163,7 +161,7 @@ int main(int argc, char** argv) {
               );                  
     }
     if (coords[0] == 0 && coords[1] == 0 && verbose == true) {
-        std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " kernel:" << kernel_type << " np:" << nProcs << " " << tot_time << std::endl;
+        std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " kernel:" << kernel_type << " np:" << nProcs << std::endl;
     }
 
 #ifdef HAVE_MPI
