@@ -20,13 +20,18 @@
 
 #include <string.h>
 #include <fstream>
-#include <unistd.h>
 #include <stdlib.h>
 #include <iostream>
 #include <complex>
 
+#ifdef WIN32
+#include "unistd.h"
+#else
+#include <unistd.h>
+#endif
+
 #if HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 #include "common.h"
 #include "trotter.h"
@@ -36,7 +41,7 @@
 #define DIM 640
 #define ITERATIONS 1000
 #define KERNEL_TYPE 0
-#define SNAPSHOTS 0
+#define SNAPSHOTS 1
 #define N_PARTICLES 1
 #define FILENAME_LENGTH 255
 
@@ -173,7 +178,9 @@ int main(int argc, char** argv) {
     char pot_name[FILENAME_LENGTH] = "";
     bool verbose = true, imag_time = false;
     double h_a = .0, h_b = .0;
-
+    int time, tot_time = 0;
+    char output_folder[2] = {'.','\0'};
+    
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
@@ -246,8 +253,24 @@ int main(int argc, char** argv) {
         ini_state = NULL;
         initialize_state(p_real, p_imag, filename, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,
                          periods, coords, dims, halo_x, halo_y, read_offset);
-
-        trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, snapshots, kernel_type, periods, ".", verbose, imag_time, i + 1);
+                         
+        for(int count_snap = 0; count_snap <= snapshots; count_snap++) {
+            stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
+                  start_y, inner_start_y, inner_end_y, dims, coords, periods, 
+                  i, iterations, count_snap, output_folder
+#ifdef HAVE_MPI
+                  , cartcomm
+#endif
+                  );                  
+                  
+            if(count_snap != snapshots) {
+                trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time, &time);
+                tot_time += time;
+            }
+        }
+    }
+    if (coords[0] == 0 && coords[1] == 0 && verbose == true) {
+        std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " kernel:" << kernel_type << " np:" << nProcs << " " << tot_time << std::endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize();

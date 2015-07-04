@@ -22,7 +22,7 @@
 #define __CPUBLOCK_H
 
 #if HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 #include "kernel.h"
 #ifdef HAVE_MPI
@@ -52,7 +52,7 @@ public:
     ~CPUBlock();
     void run_kernel();
     void run_kernel_on_halo();
-    void wait_for_completion(int iteration, int snapshosts);
+    void wait_for_completion(int iteration);
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const;
 
     bool runs_in_place() const {
