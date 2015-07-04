@@ -883,7 +883,24 @@ CPUBlockSSEKernel::CPUBlockSSEKernel(double *_p_real, double *_p_imag, double *e
 }
 
 CPUBlockSSEKernel::~CPUBlockSSEKernel() {
-
+#ifdef WIN32
+	_aligned_free(r00[0]);
+	_aligned_free(r00[1]);
+	_aligned_free(r01[0]);
+	_aligned_free(r01[1]);
+	_aligned_free(r10[0]);
+	_aligned_free(r10[1]);
+	_aligned_free(r11[0]);
+	_aligned_free(r11[1]);
+	_aligned_free(i00[0]);
+	_aligned_free(i00[1]);
+	_aligned_free(i01[0]);
+	_aligned_free(i01[1]);
+	_aligned_free(i10[0]);
+	_aligned_free(i10[1]);
+	_aligned_free(i11[0]);
+	_aligned_free(i11[1]);
+#else
     free(r00[0]);
     free(r00[1]);
     free(r01[0]);
@@ -900,6 +917,7 @@ CPUBlockSSEKernel::~CPUBlockSSEKernel() {
     free(i10[1]);
     free(i11[0]);
     free(i11[1]);
+#endif;
 }
 
 
