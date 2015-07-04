@@ -13,7 +13,7 @@ Key features:
   - Cache optimized multi-core, SSE, GPU, and hybrid kernels.
   - Near-linear scaling across multiple nodes with computations overlapping communication.
 
-The current stable version is 1.2. Download it [here](https://github.com/peterwittek/trotter-suzuki-mpi/releases/download/1.2/trotter-suzuki-1.2.tar.gz). The development version is [available on GitHub](https://github.com/peterwittek/trotter-suzuki-mpi).
+The current stable version is 1.3. Download it [here](https://github.com/peterwittek/trotter-suzuki-mpi/releases/download/1.3/trotter-suzuki-1.3.tar.gz). The development version is [available on GitHub](https://github.com/peterwittek/trotter-suzuki-mpi).
 
 Usage
 -----
@@ -106,9 +106,15 @@ MPI must be initialized before the function is called. Examples of using the API
   - `two_particles_exponential_initial_state.cpp`: Time evolution of two free particles in a box with periodic boundary conditions.
 
 
+**Python and MATLAB Interfaces**
+
+The CPU and SSE kernels are accessible from Python and MATLAB. The Python version is available on the [Python Package Index](https://pypi.python.org/pypi/trottersuzuki).
+
 Compilation & Installation
 --------------------------
-The code was tested with the GNU Compiler Chain (GCC) and with Intel compilers. An MPI implementation is required for compiling. The unit testing framework is separate and it requires [CppUnit](http://sourceforge.net/projects/cppunit/) to compile. To use the GPU-accelerated version, CUDA and a GPU with at least Compute Cabapility 2.0 are necessary.
+The code was tested with the GNU Compiler Chain (GCC), with Intel compilers, and with Visual Studio. The unit testing framework is separate and it requires [CppUnit](http://sourceforge.net/projects/cppunit/) to compile. To use the GPU-accelerated version, CUDA and a GPU with at least Compute Cabapility 2.0 are necessary.
+
+**Building on Linux**
 
 If you clone the git repository, first run
 
