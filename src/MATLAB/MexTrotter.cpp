@@ -60,7 +60,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	}
 
 	//Call trotter routine
-	trotter(h_a, h_b, ext_real, ext_imag, p_real, p_imag, nCol, nRow, iterations, KernelType, periods, imag_time, time);
+	trotter(h_a, h_b, ext_real, ext_imag, p_real, p_imag, nCol, nRow, iterations, KernelType, periods, imag_time);
 
 	//Set output
 	plhs[0] = mxCreateDoubleMatrix(nRow, nCol, mxREAL);
