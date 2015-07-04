@@ -1,4 +1,6 @@
 Since version 1.2:
+ - New: Wrappers for Python and MATLAB.
+ - New: Compiles on Windows with Visual Studio.
  - Changed: Code compiles without MPI.
  - Fixed: No single process has to hold the entire state or potential in memory.
 
