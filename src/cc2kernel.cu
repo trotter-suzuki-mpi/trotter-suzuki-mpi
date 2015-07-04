@@ -48,13 +48,13 @@ void setDevice(int commRank
     int devCount;
     int deviceNum = 0; //-1;
     CUDA_SAFE_CALL(cudaGetDeviceCount(&devCount));
-    
+
 #ifdef HAVE_MPI
     MPI_Comm_size(cartcomm, &commSize);
 #ifdef _WIN32
-	FILE * fp = popen("hostname.exe", "r");
+    FILE * fp = popen("hostname.exe", "r");
 #else
-	FILE * fp = popen("/bin/hostname", "r");
+    FILE * fp = popen("/bin/hostname", "r");
 #endif
     char buf[1024];
     if (fgets(buf, 1023, fp) == NULL) strcpy(buf, "localhost");
@@ -563,7 +563,7 @@ CC2Kernel::CC2Kernel(double *_p_real, double *_p_imag, double *_external_pot_rea
 #ifdef HAVE_MPI
                      , MPI_Comm _cartcomm
 #endif
-                     ):
+                    ):
     p_real(_p_real),
     p_imag(_p_imag),
     external_pot_real(_external_pot_real),
@@ -595,13 +595,13 @@ CC2Kernel::CC2Kernel(double *_p_real, double *_p_imag, double *_external_pot_rea
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     tile_width = end_x - start_x;
     tile_height = end_y - start_y;
-    
+
     setDevice(rank
 #ifdef HAVE_MPI
               , cartcomm
 #endif
-              );
-              
+             );
+
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_real), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_imag), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_real, external_pot_real, tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));

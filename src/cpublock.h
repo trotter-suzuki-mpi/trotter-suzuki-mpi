@@ -48,7 +48,7 @@ public:
 #ifdef HAVE_MPI
              , MPI_Comm cartcomm
 #endif
-             );
+            );
     ~CPUBlock();
     void run_kernel();
     void run_kernel_on_halo();

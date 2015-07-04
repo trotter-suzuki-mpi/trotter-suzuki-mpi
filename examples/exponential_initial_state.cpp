@@ -137,22 +137,22 @@ int main(int argc, char** argv) {
         dirnames = ".";
 
     stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
-          start_y, inner_start_y, inner_end_y, dims, coords, periods, 
+          start_y, inner_start_y, inner_end_y, dims, coords, periods,
           0, iterations, 0, dirnames.c_str()
 #ifdef HAVE_MPI
           , cartcomm
 #endif
-          );  
+         );
     for(int count_snap = 1; count_snap <= snapshots; count_snap++) {
         trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time);
-            
+
         stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
-              start_y, inner_start_y, inner_end_y, dims, coords, periods, 
+              start_y, inner_start_y, inner_end_y, dims, coords, periods,
               0, iterations, count_snap, dirnames.c_str()
 #ifdef HAVE_MPI
               , cartcomm
 #endif
-              );                  
+             );
     }
     if (coords[0] == 0 && coords[1] == 0 && verbose == true) {
         std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " kernel:" << kernel_type << " np:" << nProcs << std::endl;

@@ -1,6 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
  * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
@@ -44,11 +44,11 @@
 
 void trotter(double h_a, double h_b,
              double * external_pot_real, double * external_pot_imag,
-             double * p_real, double * p_imag, 
-             const int matrix_width, const int matrix_height, 
+             double * p_real, double * p_imag,
+             const int matrix_width, const int matrix_height,
              const int iterations, const int kernel_type,
              int *periods, bool imag_time) {
-    
+
     int start_x, end_x, inner_start_x, inner_end_x,
         start_y, end_y, inner_start_y, inner_end_y;
 
@@ -76,7 +76,7 @@ void trotter(double h_a, double h_b,
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     int width = end_x - start_x;
     int height = end_y - start_y;
-    
+
     // Initialize kernel
     ITrotterKernel * kernel;
     switch (kernel_type) {
@@ -85,29 +85,29 @@ void trotter(double h_a, double h_b,
 #ifdef HAVE_MPI
                               , cartcomm
 #endif
-                              );
+                             );
         break;
 
     case 1:
 #ifndef WIN32
-		kernel = new CPUBlockSSEKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, imag_time
+        kernel = new CPUBlockSSEKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, imag_time
 #ifdef HAVE_MPI
-                              , cartcomm
+                                       , cartcomm
 #endif
-                              );
+                                      );
 #else
-		if (coords[0] == 0 && coords[1] == 0) {
-			std::cerr << "SSE kernel not supported on Windows\n";
-		}
-		abort();
+        if (coords[0] == 0 && coords[1] == 0) {
+            std::cerr << "SSE kernel not supported on Windows\n";
+        }
+        abort();
 #endif
-		break;
+        break;
 
     case 2:
 #ifdef CUDA
         kernel = new CC2Kernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, imag_time
 #ifdef HAVE_MPI
-                              , cartcomm
+                               , cartcomm
 #endif
                               );
 #else
@@ -126,9 +126,9 @@ void trotter(double h_a, double h_b,
 #ifdef CUDA
         kernel = new HybridKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, imag_time
 #ifdef HAVE_MPI
-                              , cartcomm
+                                  , cartcomm
 #endif
-                              );
+                                 );
 #else
         if (coords[0] == 0 && coords[1] == 0) {
             std::cerr << "Compiled without CUDA\n";
@@ -146,7 +146,7 @@ void trotter(double h_a, double h_b,
 #ifdef HAVE_MPI
                               , cartcomm
 #endif
-                              );
+                             );
         break;
     }
 
@@ -162,7 +162,7 @@ void trotter(double h_a, double h_b,
         }
         kernel->wait_for_completion(i);
     }
-    
+
     kernel->get_sample(width, 0, 0, width, height, p_real, p_imag);
 
     //delete kernel;

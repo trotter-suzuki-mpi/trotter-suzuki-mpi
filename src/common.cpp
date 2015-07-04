@@ -401,44 +401,44 @@ void get_quadrant_sample_to_buffer(const double * r00, const double * r01, const
 }
 
 void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x,
-           int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords, int * periods, 
+           int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords, int * periods,
            int tag_particle, int iterations, int count_snap, const char * output_folder
 #ifdef HAVE_MPI
            , MPI_Comm cartcomm
 #endif
-           ){
-               
+          ) {
+
     char * output_filename;
     output_filename = new char[51];
 #ifdef HAVE_MPI
     // Set variables for mpi output
     char *data_as_txt;
     int count;
-    
+
     MPI_File   file;
     MPI_Status status;
-    
-    // each number is represented by charspernum chars 
+
+    // each number is represented by charspernum chars
     const int chars_per_complex_num = 28;
     MPI_Datatype complex_num_as_string;
-    MPI_Type_contiguous(chars_per_complex_num, MPI_CHAR, &complex_num_as_string); 
+    MPI_Type_contiguous(chars_per_complex_num, MPI_CHAR, &complex_num_as_string);
     MPI_Type_commit(&complex_num_as_string);
-    
+
     const int charspernum = 14;
     MPI_Datatype num_as_string;
-    MPI_Type_contiguous(charspernum, MPI_CHAR, &num_as_string); 
+    MPI_Type_contiguous(charspernum, MPI_CHAR, &num_as_string);
     MPI_Type_commit(&num_as_string);
-    
-    // create a type describing our piece of the array 
+
+    // create a type describing our piece of the array
     int globalsizes[2] = {matrix_height - 2 * periods[0] * halo_y, matrix_width - 2 * periods[1] * halo_x};
     int localsizes [2] = {inner_end_y - inner_start_y, inner_end_x - inner_start_x};
     int starts[2]      = {inner_start_y, inner_start_x};
     int order          = MPI_ORDER_C;
-	
-	MPI_Datatype complex_localarray;
+
+    MPI_Datatype complex_localarray;
     MPI_Type_create_subarray(2, globalsizes, localsizes, starts, order, complex_num_as_string, &complex_localarray);
     MPI_Type_commit(&complex_localarray);
-    
+
     MPI_Datatype localarray;
     MPI_Type_create_subarray(2, globalsizes, localsizes, starts, order, num_as_string, &localarray);
     MPI_Type_commit(&localarray);
@@ -462,10 +462,10 @@ void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height
         }
     }
 
-    // open the file, and set the view 
+    // open the file, and set the view
     sprintf(output_filename, "%s/%i-%i-iter-comp.dat", output_folder, tag_particle + 1, iterations * count_snap);
-    MPI_File_open(cartcomm, output_filename, 
-                  MPI_MODE_CREATE|MPI_MODE_WRONLY,
+    MPI_File_open(cartcomm, output_filename,
+                  MPI_MODE_CREATE | MPI_MODE_WRONLY,
                   MPI_INFO_NULL, &file);
 
     MPI_File_set_view(file, 0,  MPI_CHAR, complex_localarray, "native", MPI_INFO_NULL);
@@ -473,35 +473,35 @@ void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height
     MPI_File_write_all(file, data_as_txt, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), complex_num_as_string, &status);
     MPI_File_close(&file);
     delete [] data_as_txt;
-    
+
     // output real matrix
     //conversion
     data_as_txt = new char[(inner_end_x - inner_start_x) * (inner_end_y - inner_start_y) * charspernum];
     count = 0;
     for (int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
         for (int k = inner_start_x - start_x; k < inner_end_x - start_x - 1; k++) {
-            sprintf(&data_as_txt[count*charspernum], "%+.6e ", p_real[j * matrix_width + k]);
+            sprintf(&data_as_txt[count * charspernum], "%+.6e ", p_real[j * matrix_width + k]);
             count++;
         }
-        if(coords[1] == dims[1]-1) {
-            sprintf(&data_as_txt[count*charspernum], "%+.6e\n", p_real[j * matrix_width + (inner_end_x - start_x)-1]);
+        if(coords[1] == dims[1] - 1) {
+            sprintf(&data_as_txt[count * charspernum], "%+.6e\n", p_real[j * matrix_width + (inner_end_x - start_x) - 1]);
             count++;
         }
         else {
-            sprintf(&data_as_txt[count*charspernum], "%+.6e ", p_real[j * matrix_width + (inner_end_x - start_x)-1]);
+            sprintf(&data_as_txt[count * charspernum], "%+.6e ", p_real[j * matrix_width + (inner_end_x - start_x) - 1]);
             count++;
         }
     }
-    
-    // open the file, and set the view 
+
+    // open the file, and set the view
     sprintf(output_filename, "%s/%i-%i-iter-real.dat", output_folder, tag_particle + 1, iterations * count_snap);
-    MPI_File_open(cartcomm, output_filename, 
-                  MPI_MODE_CREATE|MPI_MODE_WRONLY,
+    MPI_File_open(cartcomm, output_filename,
+                  MPI_MODE_CREATE | MPI_MODE_WRONLY,
                   MPI_INFO_NULL, &file);
 
     MPI_File_set_view(file, 0,  MPI_CHAR, localarray, "native", MPI_INFO_NULL);
 
-    MPI_File_write_all(file, data_as_txt, (inner_end_x - inner_start_x)*( inner_end_y - inner_start_y), num_as_string, &status);
+    MPI_File_write_all(file, data_as_txt, (inner_end_x - inner_start_x) * ( inner_end_y - inner_start_y), num_as_string, &status);
     MPI_File_close(&file);
     delete [] data_as_txt;
 #else
@@ -523,7 +523,7 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
         return;
 
     int N_files = snapshots + 1;
-	int *N_name = new int[N_files];
+    int *N_name = new int[N_files];
 
     N_name[0] = 0;
     for(int i = 1; i < N_files; i++) {
@@ -533,9 +533,9 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
     std::complex<double> sum_E = 0;
     std::complex<double> sum_Px = 0, sum_Py = 0;
     std::complex<double> sum_pdi = 0;
-	double *energy = new double[N_files];
-	double *momentum_x = new double[N_files];
-	double *momentum_y = new double[N_files];
+    double *energy = new double[N_files];
+    double *momentum_x = new double[N_files];
+    double *momentum_y = new double[N_files];
 
     std::complex<double> cost_E = -1. / (2.*particle_mass), cost_P;
     cost_P = std::complex<double>(0., -0.5);

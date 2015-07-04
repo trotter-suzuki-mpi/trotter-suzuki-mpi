@@ -74,7 +74,7 @@ public:
 #ifdef HAVE_MPI
               , MPI_Comm cartcomm
 #endif
-              );
+             );
     ~CC2Kernel();
     void run_kernel();
     void run_kernel_on_halo();

@@ -204,7 +204,7 @@ CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real,
 #ifdef HAVE_MPI
                    , MPI_Comm _cartcomm
 #endif
-                   ):
+                  ):
     a(_a),
     b(_b),
     sense(0),
@@ -307,8 +307,8 @@ void CPUBlock::wait_for_completion(int iteration) {
 #endif
         int height = tile_height - halo_y;
         int width = tile_width - halo_x;
-		double sum = 0., *sums;
-		sums = new double[nProcs];
+        double sum = 0., *sums;
+        sums = new double[nProcs];
         for(int i = halo_y; i < height; i++) {
             for(int j = halo_x; j < width; j++) {
                 sum += p_real[sense][j + i * tile_width] * p_real[sense][j + i * tile_width] + p_imag[sense][j + i * tile_width] * p_imag[sense][j + i * tile_width];
@@ -330,7 +330,7 @@ void CPUBlock::wait_for_completion(int iteration) {
                 p_imag[sense][j + i * tile_width] /= norm;
             }
         }
-		delete[] sums;
+        delete[] sums;
     }
 }
 

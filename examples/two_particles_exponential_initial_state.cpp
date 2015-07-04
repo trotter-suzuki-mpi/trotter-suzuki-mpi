@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
     int halo_y = 4;
     int matrix_width = dim + periods[1] * 2 * halo_x;
     int matrix_height = dim + periods[0] * 2 * halo_y;
-    
+
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
@@ -139,24 +139,24 @@ int main(int argc, char** argv) {
         initialize_state(p_real, p_imag, filename, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,
                          periods, coords, dims, halo_x, halo_y);
 
-        
+
         stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
-              start_y, inner_start_y, inner_end_y, dims, coords, periods, 
+              start_y, inner_start_y, inner_end_y, dims, coords, periods,
               i, iterations, 0, dirnames.c_str()
 #ifdef HAVE_MPI
               , cartcomm
 #endif
-              );  
+             );
         for(int count_snap = 0; count_snap < snapshots; count_snap++) {
             trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time);
-                
+
             stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
-                  start_y, inner_start_y, inner_end_y, dims, coords, periods, 
+                  start_y, inner_start_y, inner_end_y, dims, coords, periods,
                   i, iterations, count_snap, dirnames.c_str()
 #ifdef HAVE_MPI
                   , cartcomm
 #endif
-                  );                  
+                 );
         }
     }
     if (coords[0] == 0 && coords[1] == 0 && verbose == true) {

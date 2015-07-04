@@ -38,7 +38,7 @@ public:
 #ifdef HAVE_MPI
                  , MPI_Comm cartcomm
 #endif
-                 );
+                );
     ~HybridKernel();
     void run_kernel();
     void run_kernel_on_halo();
