@@ -14,7 +14,7 @@ The following code block gives a simple example of initializing a state and plot
 
 .. code-block:: python
 		
-	imag_time = 0;
+  imag_time = 0;
   order_approx = 2;
   dim = 640;
   iterations = 600;
@@ -54,7 +54,7 @@ Trotter-Suzuki-MPI MATLAB Extension Build Guide (Linux/Mac):
 
     $ ./autogen.sh
 
-Then run ``configure`` disabling MPI and CUDA:
+   Then run ``configure`` disabling MPI and CUDA:
 
     $ ./configure --without-mpi --without-cuda
  
@@ -62,7 +62,7 @@ Then run ``configure`` disabling MPI and CUDA:
    ::
       MEX_BIN="/usr/local/MATLAB/R2015a/bin/mex" ./makeMex.sh
     
-where ``MEX_BIN`` is the path to the MATLAB installation mex binary.
+   where ``MEX_BIN`` is the path to the MATLAB installation mex binary.
 
 3. Then ``MexTrotter.mexa64`` or ``MexTrotter.mexa32`` is generated for use, you can test by running the ``mex_trotter_interface_test.m``.
 
