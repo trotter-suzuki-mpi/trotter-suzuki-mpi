@@ -262,7 +262,7 @@ void initialize_potential(double * hamilt_pot, double (*hamiltonian_pot)(int x, 
                           int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
     for(int y = 0; y < matrix_height; y++) {
         for(int x = 0; x < matrix_width; x++) {
-            hamilt_pot[y * matrix_width + x] = 0.;//hamiltonian_pot(x, y, matrix_width, matrix_height, periods, halo_x, halo_y);
+            hamilt_pot[y * matrix_width + x] = hamiltonian_pot(x, y, matrix_width, matrix_height, periods, halo_x, halo_y);
         }
     }
 }
