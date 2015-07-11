@@ -1,3 +1,8 @@
+#!/usr/bin/env python2
+
+"""
+setup.py file for SWIG example
+"""
 
 from setuptools import setup, Extension
 from setuptools.command.install import install

@@ -65,10 +65,10 @@ std::complex<double> exp_state(int x, int y, int matrix_width, int matrix_height
 std::complex<double> super_position_two_exp_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);*/
 double const_potential(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
 void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x,
-           int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords, int * periods, 
+           int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords, int * periods,
            int tag_particle, int iterations, int count_snap, const char * output_folder
 #ifdef HAVE_MPI
            , MPI_Comm cartcomm
 #endif
-           );
+          );
 #endif

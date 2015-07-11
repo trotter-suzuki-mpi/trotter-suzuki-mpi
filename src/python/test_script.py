@@ -2,13 +2,12 @@ import numpy as np
 import trottersuzuki as ts
 from matplotlib import pyplot as plt
 
-imag_time = 0
+imag_time = False
 order_approx = 2
 dim = 640
 iterations = 200
 kernel_type = 0
-periods = np.zeros(2, dtype=np.int32)
-time = np.zeros(1, dtype=np.int32)
+periods = [0, 0]
 
 particle_mass = 1
 time_single_it = 0.08 * particle_mass / 2
@@ -28,7 +27,7 @@ for y in range(0, dim):
         pot_r[y, x] = np.cos(CONST * pot_r[y, x])
 	pot_i[y, x] = np.sin(CONST * pot_i[y, x])
 
-ts.trotter_func(h_a, h_b, pot_r, pot_i, p_real, p_imag, iterations, kernel_type, periods, imag_time, time)
+ts.trotter(h_a, h_b, pot_r, pot_i, p_real, p_imag, iterations, kernel_type, periods, imag_time)
 
 heatmap = plt.pcolor(p_real)
 plt.show()

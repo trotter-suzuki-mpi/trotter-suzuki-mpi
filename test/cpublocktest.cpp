@@ -1,6 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek, 
+ * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
  * 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify

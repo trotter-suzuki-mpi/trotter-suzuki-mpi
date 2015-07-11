@@ -26,7 +26,9 @@
 
 #ifdef WIN32
 #include "unistd.h"
+#include <windows.h>
 #else
+#include <sys/time.h>
 #include <unistd.h>
 #endif
 
@@ -179,8 +181,8 @@ int main(int argc, char** argv) {
     bool verbose = true, imag_time = false;
     double h_a = .0, h_b = .0;
     int time, tot_time = 0;
-    char output_folder[2] = {'.','\0'};
-    
+    char output_folder[2] = {'.', '\0'};
+
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
@@ -253,18 +255,33 @@ int main(int argc, char** argv) {
         ini_state = NULL;
         initialize_state(p_real, p_imag, filename, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,
                          periods, coords, dims, halo_x, halo_y, read_offset);
-                         
+
         for(int count_snap = 0; count_snap <= snapshots; count_snap++) {
             stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
-                  start_y, inner_start_y, inner_end_y, dims, coords, periods, 
+                  start_y, inner_start_y, inner_end_y, dims, coords, periods,
                   i, iterations, count_snap, output_folder
 #ifdef HAVE_MPI
                   , cartcomm
 #endif
-                  );                  
-                  
+                 );
+
             if(count_snap != snapshots) {
-                trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time, &time);
+#ifdef WIN32
+                SYSTEMTIME start;
+                GetSystemTime(&start);
+#else
+                struct timeval start, end;
+                gettimeofday(&start, NULL);
+#endif
+                trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time);
+#ifdef WIN32
+                SYSTEMTIME end;
+                GetSystemTime(&end);
+                time = (end.wMinute - start.wMinute) * 60000 + (end.wSecond - start.wSecond) * 1000 + (end.wMilliseconds - start.wMilliseconds);
+#else
+                gettimeofday(&end, NULL);
+                time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
+#endif
                 tot_time += time;
             }
         }

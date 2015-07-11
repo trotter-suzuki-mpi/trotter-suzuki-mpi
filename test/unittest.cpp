@@ -68,8 +68,7 @@ int main(int argc, char** argv) {
     bool imag_time = false;
     double h_a = 0.;
     double h_b = 0.;
-    int time, tot_time = 0;
-    
+
     // Get the top level suite from the registry
     CppUnit::Test *suite = CppUnit::TestFactoryRegistry::getRegistry().makeTest();
     // Adds the test to the list of test to run
@@ -170,19 +169,18 @@ int main(int argc, char** argv) {
 
     for(int count_snap = 0; count_snap <= snapshots; count_snap++) {
         stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
-              start_y, inner_start_y, inner_end_y, dims, coords, periods, 
+              start_y, inner_start_y, inner_end_y, dims, coords, periods,
               0, iterations, count_snap, filenames.c_str()
 #ifdef HAVE_MPI
               , cartcomm
 #endif
-              );                  
-              
+             );
+
         if(count_snap != snapshots) {
-            trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time, &time);
-            tot_time += time;
+            trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time);
         }
     }
-        
+
     if(rank == 0) {
         MAGIC_NUMBER th_values;
         energy_momentum_statistics sample;
