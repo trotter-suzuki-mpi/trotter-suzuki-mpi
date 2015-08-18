@@ -1,7 +1,7 @@
 Massively Parallel Trotter-Suzuki Solver
 ========================================
 
-The Trotter-Suzuki approximation leads to an efficient algorithm for solving the time-dependent Schödinger equation. This library provides a scalable, high-precision implementation that uses parallel and distributed computational resources. The implementation built on [single-node parallel kernels](https://bitbucket.org/zzzoom/trottersuzuki) [1], extending them to use distributed resources [2], and generalizing the kernels to be able to tackle a wider range of problems in quantum physics. 
+The Trotter-Suzuki approximation leads to an efficient algorithm for solving the time-dependent Schödinger equation. This library provides a scalable, high-precision implementation that uses parallel and distributed computational resources. The implementation built on [single-node parallel kernels](https://bitbucket.org/zzzoom/trottersuzuki) [1], extending them to use distributed resources [2], and generalizing the kernels to be able to tackle a wider range of problems in quantum physics [3]. 
 
 Key features:
 
@@ -168,6 +168,8 @@ The [original high-performance kernels](https://bitbucket.org/zzzoom/trottersuzu
 References
 ----------
   
-  1. Bederián, C. & Dente, A. [Boosting quantum evolutions using Trotter-Suzuki algorithms on GPUs](http://www.famaf.unc.edu.ar/grupos/GPGPU/boosting_trotter-suzuki.pdf). Proceedings of HPCLatAm-11, 4th High-Performance Computing Symposium, 2011.
+  1. Bederián, C. & Dente, A. Boosting quantum evolutions using Trotter-Suzuki algorithms on GPUs. *Proceedings of HPCLatAm-11, 4th High-Performance Computing Symposium*, 2011. [PDF](http://www.famaf.unc.edu.ar/grupos/GPGPU/boosting_trotter-suzuki.pdf)
   
-  2. Wittek, P. and Cucchietti, F.M. (2013). [A Second-Order Distributed Trotter-Suzuki Solver with a Hybrid CPU-GPU Kernel](http://dx.doi.org/10.1016/j.cpc.2012.12.008). Computer Physics Communications, 184, pp. 1165-1171. [PDF](http://arxiv.org/pdf/1208.2407)
+  2. Wittek, P. and Cucchietti, F.M. (2013). [A Second-Order Distributed Trotter-Suzuki Solver with a Hybrid CPU-GPU Kernel](http://dx.doi.org/10.1016/j.cpc.2012.12.008). *Computer Physics Communications*, 184, pp. 1165-1171. [PDF](http://arxiv.org/pdf/1208.2407)
+
+  3. Wittek, P. and Calderaro, L. (2015). [Extended computational kernels in a massively parallel implementation of the Trotter-Suzuki approximation](http://dx.doi.org/10.1016/j.cpc.2015.07.017). *To Appear in Computer Physics Communications*. [PDF](https://www.researchgate.net/profile/Peter_Wittek/publication/280962265_Extended_Computational_Kernels_in_a_Massively_Parallel_Implementation_of_the_TrotterSuzuki_Approximation/links/55cebd1f08aee19936fc5dcf.pdf)
