@@ -109,7 +109,7 @@ MPI must be initialized before the function is called. Examples of using the API
 
 **Python and MATLAB Interfaces**
 
-The CPU and SSE kernels are accessible from Python and MATLAB. The Python version is available on the [Python Package Index](https://pypi.python.org/pypi/trottersuzuki). Please refer to the documentation of these packages for further information.
+The CPU and SSE kernels are accessible from Python and MATLAB. The Python version is available on the [Python Package Index](https://pypi.python.org/pypi/trottersuzuki), whereas the MATLAB version is available on the [MATLAB File Exchange](http://www.mathworks.com/matlabcentral/fileexchange/51975-mextrotter). Please refer to the documentation of these packages for further information.
 
 Compilation & Installation
 --------------------------
