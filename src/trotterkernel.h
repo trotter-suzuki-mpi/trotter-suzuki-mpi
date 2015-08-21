@@ -1,7 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
- * 2010-2012 Carlos Bederián
+ * Copyright (C) 2012 Peter Wittek, 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,14 +16,13 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+ 
+#ifndef __TROTTERKERNEL_H
+#define __TROTTERKERNEL_H
 
-#ifndef __KERNEL_H
-#define __KERNEL_H
-
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include <string>
+
+#include <mpi.h>
 
 //These are for the MPI NEIGHBOURS
 #define UP    0
@@ -34,15 +32,15 @@
 
 class ITrotterKernel {
 public:
-    virtual ~ITrotterKernel() {};
     virtual void run_kernel() = 0;
     virtual void run_kernel_on_halo() = 0;
-    virtual void wait_for_completion(int iteration) = 0;
-    virtual void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const = 0;
+    virtual void wait_for_completion() = 0;
+    virtual void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const = 0;
 
     virtual bool runs_in_place() const = 0;
     virtual std::string get_name() const = 0;
-
+    
+    virtual void initialize_MPI(MPI_Comm cartcomm, int _start_x, int _inner_end_x, int _start_y, int _inner_start_y, int _inner_end_y) = 0;
     virtual void start_halo_exchange() = 0;
     virtual void finish_halo_exchange() = 0;
 

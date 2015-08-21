@@ -1,6 +1,0 @@
-include README.rst
-include *.h
-include *.i
-include *.cpp
-include *.cxx
-include *.py

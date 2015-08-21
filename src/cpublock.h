@@ -1,7 +1,6 @@
 /**
  * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
- * 2010-2012 Carlos Bederián
+ * Copyright (C) 2012 Peter Wittek, 2010-2012 Carlos Bederián
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,79 +16,70 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
+ 
 #ifndef __CPUBLOCK_H
 #define __CPUBLOCK_H
 
-#if HAVE_CONFIG_H
-#include "config.h"
+#ifdef _OPENMP
+#include <omp.h>
 #endif
-#include "kernel.h"
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
+
+#include "trotterkernel.h"
 
 #define BLOCK_WIDTH 128u
 #define BLOCK_HEIGHT 128u
 
-//Helpers
-void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
-void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
-
-void block_kernel_vertical_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
-void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
-
-void process_sides(size_t tile_width, size_t block_width, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b, const double *external_pot_real, const double *external_pot_imag, const double * p_real, const double * p_imag, double * next_real, double * next_imag, double * block_real, double * block_imag, bool imag_time);
-void process_band(size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b, const double *external_pot_real, const double *external_pot_imag, const double * p_real, const double * p_imag, double * next_real, double * next_imag, int inner, int sides, bool imag_time);
-
 class CPUBlock: public ITrotterKernel {
 public:
-    CPUBlock(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *_periods, bool imag_time
-#ifdef HAVE_MPI
-             , MPI_Comm cartcomm
-#endif
-            );
+    CPUBlock(float *p_real, float *p_imag, float a, float b, size_t tile_width, size_t tile_height, int halo_x, int halo_y);
     ~CPUBlock();
     void run_kernel();
     void run_kernel_on_halo();
-    void wait_for_completion(int iteration);
-    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const;
+    void wait_for_completion();
+    void copy_results();
+    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, float * dest_real, float * dest_imag) const;
 
     bool runs_in_place() const {
         return false;
     }
     std::string get_name() const {
-        return "CPU";
+#ifdef _OPENMP
+        std::stringstream name;
+        name << "OpenMP block kernel (" << omp_get_max_threads() << " threads)";
+        return name.str();
+#else
+        return "CPU block kernel";
+#endif
     };
 
+    void initialize_MPI(MPI_Comm cartcomm, int _start_x, int _inner_end_x, int _start_y, int _inner_start_y, int _inner_end_y);
     void start_halo_exchange();
     void finish_halo_exchange();
 
 
 
 private:
-    void kernel8(const double *p_real, const double *p_imag, double * next_real, double * next_imag);
-    double *p_real[2];
-    double *p_imag[2];
-    double *external_pot_real;
-    double *external_pot_imag;
-    double a;
-    double b;
-    int sense;
-    size_t halo_x, halo_y, tile_width, tile_height;
-    bool imag_time;
-    static const size_t block_width = BLOCK_WIDTH;
-    static const size_t block_height = BLOCK_HEIGHT;
+    void kernel8(const float *p_real, const float *p_imag, float * next_real, float * next_imag);
+    void process_band(size_t, size_t, size_t, size_t, float, float, const float *, const float *, float *, float *, int, int);
+    void process_sides(size_t read_y, size_t read_height, size_t write_offset, size_t write_height, float a, float b, const float * p_real, const float * p_imag, float * next_real, float * next_imag, float * block_real, float * block_imag);
 
-    int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
-    int *periods;
-#ifdef HAVE_MPI
+    float *orig_real;
+    float *orig_imag;
+    float *p_real[2];
+    float *p_imag[2];
+    float a;
+    float b;
+    int sense;
+    int halo_x, halo_y, tile_width, tile_height;
+    static const size_t block_width=BLOCK_WIDTH;
+    static const size_t block_height=BLOCK_HEIGHT;
+
     MPI_Comm cartcomm;
     int neighbors[4];
+    int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
     MPI_Request req[8];
-    MPI_Status statuses[8];
+    MPI_Status statuses[8];    
     MPI_Datatype horizontalBorder, verticalBorder;
-#endif
 };
 
 #endif
