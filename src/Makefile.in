@@ -34,7 +34,7 @@ MPI_LIBS       = @MPI_LIBS@
 srcdir	 = @srcdir@
 VPATH	  = @srcdir@
 
-LIBOBJS=common.o cpublock.o trotter.o
+LIBOBJS=common.o cpublock.o cpublocksse.o trotter.o
 
 ifdef CUDA_LIBS
 	LIBOBJS+=cc2kernel.cu.co hybrid.cu.co
