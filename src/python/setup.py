@@ -23,7 +23,15 @@ if sys.platform.startswith('win'):
                     'cpublock.cpp',
                     'trotter.cpp',
                     'trotter_wrap.cxx']
-
+elif sys.platform.startswith('darwin'):
+    extra_compile_args = ['-fopenmp']
+    extra_link_args = [
+        '-lgomp'
+    ]        
+    sources_files=[	'common.cpp',
+                    'cpublock.cpp',
+                    'trotter.cpp',
+                    'trotter_wrap.cxx']
 else:
     extra_compile_args = ['-fopenmp']
     extra_link_args = [
