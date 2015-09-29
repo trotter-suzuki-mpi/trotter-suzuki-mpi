@@ -1,5 +1,0 @@
-  - Add GPU kernel to the Python and MATLAB wrappers.
-  - Windows support for SSE and CUDA kernels.
-  - Add padding to support matrices of arbitrary size.
-  - Upgrade SSE kernel to AVX.
-  - Update CUDA kernel from Compute Capability 2.0 to 5.0.

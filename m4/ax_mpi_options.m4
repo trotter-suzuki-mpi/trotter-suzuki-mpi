@@ -81,6 +81,7 @@ if test -z "${MPI_DIR}";	then
 	pathlibs="$(echo $LD_LIBRARY_PATH|sed -e 's/:/ /g')"
 	counter=1
 	end=no
+  CANDIDATES="/usr"
 	until [test x"$end" = x"yes"]
 	do
 		pathlib="$(echo $pathlibs | awk -v awk_var=$counter '{print $awk_var}' )" 
@@ -123,8 +124,7 @@ if test -z "${MPI_DIR}";	then
 	done
 	
 	if test -z "${MPI_DIR}";	then	
-		AC_MSG_RESULT([${MPI_DIR}])
-		AC_MSG_ERROR([cannot find MPI directory])
+			AC_MSG_RESULT([${MPI_DIR}])
 	fi
 fi
 
