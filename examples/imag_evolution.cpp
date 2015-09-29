@@ -42,6 +42,9 @@
 #define KERNEL_TYPE 0
 #define SNAPSHOTS 10
 
+double coupling_const = 0;
+double delta_x = 1, delta_y = 1;
+
 std::complex<double> super_position_two_exp_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
     double L_x = matrix_width - periods[1] * 2 * halo_x;
 
@@ -57,6 +60,7 @@ int main(int argc, char** argv) {
     char pot_name[1] = "";
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
+    double norm = 1;
     int matrix_width = dim + periods[1] * 2 * halo_x;
     int matrix_height = dim + periods[0] * 2 * halo_y;
     bool imag_time = true;
@@ -149,7 +153,7 @@ int main(int argc, char** argv) {
 #endif
          );
     for(int count_snap = 0; count_snap < snapshots; count_snap++) {
-        trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time);
+        trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, iterations, kernel_type, periods, norm, imag_time);
 
         stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
               start_y, inner_start_y, inner_end_y, dims, coords, periods,
