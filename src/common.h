@@ -48,8 +48,8 @@ void get_quadrant_sample_to_buffer(const double * r00, const double * r01, const
                                    size_t x, size_t y, size_t width, size_t height,
                                    double * dest_real, double * dest_imag);
 
-void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, double particle_mass, const char *dirname,
-                   int *periods, int halo_x, int halo_y, energy_momentum_statistics *sample);
+void expect_values(int dimx, int dimy, double delta_x, double delta_y, double delta_t, double coupling_const, int iterations, int snapshots, double * hamilt_pot, double particle_mass,
+                   const char *dirname, int *periods, int halo_x, int halo_y, energy_momentum_statistics *sample);
 
 void initialize_state(double * p_real, double * p_imag, char * filename, std::complex<double> (*ini_state)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
                       int tile_width, int tile_height, int matrix_width, int matrix_height, int start_x, int start_y,
@@ -59,10 +59,7 @@ void initialize_exp_potential(double * external_pot_real, double * external_pot_
                               int * periods, int * coords, int * dims, int halo_x, int halo_y, double time_single_it, double particle_mass, bool imag_time);
 void initialize_potential(double * hamilt_pot, double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
                           int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-/*std::complex<double> gauss_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-std::complex<double> sinus_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-std::complex<double> exp_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-std::complex<double> super_position_two_exp_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);*/
+
 double const_potential(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
 void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x,
            int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords, int * periods,
