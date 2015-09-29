@@ -46,7 +46,7 @@ ifdef CUDA_LIBS
 	LIBOBJS+=cc2kernel.cu.co hybrid.cu.co
 endif
 
-OBJS=$(LIBOBJS) main.o
+OBJS=$(LIBOBJS) main.o solver.o
 
 all: trotter lib
 
