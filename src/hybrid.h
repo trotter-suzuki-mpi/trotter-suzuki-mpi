@@ -33,8 +33,8 @@
 
 class HybridKernel: public ITrotterKernel {
 public:
-    HybridKernel(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b,
-                 int matrix_width, int matrix_height, int halo_x, int halo_y, int * _periods, bool _imag_time
+    HybridKernel(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b, double _delta_x, double _delta_y,
+                 int matrix_width, int matrix_height, int halo_x, int halo_y, int * _periods, double _norm, bool _imag_time
 #ifdef HAVE_MPI
                  , MPI_Comm cartcomm
 #endif
@@ -75,6 +75,8 @@ private:
     double *dev_external_pot_imag;
     double a;
     double b;
+    double delta_x, delta_y;
+    double norm;
     int sense;
     size_t halo_x, halo_y, tile_width, tile_height;
     static const size_t block_width = BLOCK_WIDTH;
@@ -84,6 +86,7 @@ private:
 
     int neighbors[4];
     int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
+    int inner_start_x, end_x, end_y;
     int *periods;
 #ifdef HAVE_MPI
     MPI_Comm cartcomm;
