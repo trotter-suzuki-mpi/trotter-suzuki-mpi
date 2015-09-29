@@ -47,6 +47,11 @@
 #define N_PARTICLES 1
 #define FILENAME_LENGTH 255
 
+double delta_t = 4e-4;
+double g = 4. * M_PI * 5.662739242e-5;
+double coupling_const = delta_t * g;
+
+double delta_x = 1, delta_y = 1;
 
 void print_usage() {
     std::cout << "Usage:\n" \
@@ -180,6 +185,7 @@ int main(int argc, char** argv) {
     char pot_name[FILENAME_LENGTH] = "";
     bool verbose = true, imag_time = false;
     double h_a = .0, h_b = .0;
+    double norm = 1;
     int time, tot_time = 0;
     char output_folder[2] = {'.', '\0'};
 
@@ -232,14 +238,14 @@ int main(int argc, char** argv) {
 
         if(imag_time) {
             double constant = 6.;
-            time_single_it = 8 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
+            time_single_it = delta_t * particle_mass / 2.;	//second approx trotter-suzuki: time/2
             if(h_a == 0. && h_b == 0.) {
                 h_a = cosh(time_single_it / (2. * particle_mass)) / constant;
                 h_b = sinh(time_single_it / (2. * particle_mass)) / constant;
             }
         }
         else {
-            time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
+            time_single_it = delta_t * particle_mass / 2.;	//second approx trotter-suzuki: time/2
             if(h_a == 0. && h_b == 0.) {
                 h_a = cos(time_single_it / (2. * particle_mass));
                 h_b = sin(time_single_it / (2. * particle_mass));
@@ -273,7 +279,7 @@ int main(int argc, char** argv) {
                 struct timeval start, end;
                 gettimeofday(&start, NULL);
 #endif
-                trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time);
+                trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, iterations, kernel_type, periods, norm, imag_time);
 #ifdef WIN32
                 SYSTEMTIME end;
                 GetSystemTime(&end);
