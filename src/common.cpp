@@ -21,6 +21,7 @@
 #include <cassert>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <sstream>
 #include <cmath>
@@ -419,7 +420,7 @@ void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height
     MPI_Status status;
 
     // each number is represented by charspernum chars
-    const int chars_per_complex_num = 28;
+    const int chars_per_complex_num = 30;
     MPI_Datatype complex_num_as_string;
     MPI_Type_contiguous(chars_per_complex_num, MPI_CHAR, &complex_num_as_string);
     MPI_Type_commit(&complex_num_as_string);
@@ -449,15 +450,15 @@ void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height
     count = 0;
     for (int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
         for (int k = inner_start_x - start_x; k < inner_end_x - start_x - 1; k++) {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e) ", p_real[j * matrix_width + k], p_imag[j * matrix_width + k]);
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)   ", p_real[j * matrix_width + k], p_imag[j * matrix_width + k]);
             count++;
         }
         if(coords[1] == dims[1] - 1) {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)\n", p_real[j * matrix_width + (inner_end_x - start_x) - 1], p_imag[j * matrix_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)\n  ", p_real[j * matrix_width + (inner_end_x - start_x) - 1], p_imag[j * matrix_width + (inner_end_x - start_x) - 1]);
             count++;
         }
         else {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e) ", p_real[j * matrix_width + (inner_end_x - start_x) - 1], p_imag[j * matrix_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)   ", p_real[j * matrix_width + (inner_end_x - start_x) - 1], p_imag[j * matrix_width + (inner_end_x - start_x) - 1]);
             count++;
         }
     }
@@ -480,15 +481,15 @@ void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height
     count = 0;
     for (int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
         for (int k = inner_start_x - start_x; k < inner_end_x - start_x - 1; k++) {
-            sprintf(&data_as_txt[count * charspernum], "%+.6e ", p_real[j * matrix_width + k]);
+            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", p_real[j * matrix_width + k]);
             count++;
         }
         if(coords[1] == dims[1] - 1) {
-            sprintf(&data_as_txt[count * charspernum], "%+.6e\n", p_real[j * matrix_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * charspernum], "%+.5e\n ", p_real[j * matrix_width + (inner_end_x - start_x) - 1]);
             count++;
         }
         else {
-            sprintf(&data_as_txt[count * charspernum], "%+.6e ", p_real[j * matrix_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", p_real[j * matrix_width + (inner_end_x - start_x) - 1]);
             count++;
         }
     }
@@ -516,9 +517,10 @@ void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height
     return;
 }
 
-void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, double particle_mass,
+void expect_values(int dimx, int dimy, double delta_x, double delta_y, double delta_t, double coupling_const, int iterations, int snapshots, double * hamilt_pot, double particle_mass,
                    const char *dirname, int *periods, int halo_x, int halo_y, energy_momentum_statistics *sample) {
 
+	int dim = dimx; //provvisional
     if(snapshots == 0)
         return;
 
@@ -533,12 +535,14 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
     std::complex<double> sum_E = 0;
     std::complex<double> sum_Px = 0, sum_Py = 0;
     std::complex<double> sum_pdi = 0;
+    std::complex<double> sum_x2 = 0, sum_x = 0, sum_y2 = 0, sum_y = 0;
     double *energy = new double[N_files];
     double *momentum_x = new double[N_files];
     double *momentum_y = new double[N_files];
 
-    std::complex<double> cost_E = -1. / (2.*particle_mass), cost_P;
-    cost_P = std::complex<double>(0., -0.5);
+    std::complex<double> cost_E = -1. / (2. * particle_mass * delta_x * delta_y), cost_P_x, cost_P_y;
+    cost_P_x = std::complex<double>(0., -0.5 / delta_x);
+    cost_P_y = std::complex<double>(0., -0.5 / delta_y);
 
     std::stringstream filename;
     std::string filenames;
@@ -547,8 +551,10 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
     filename << dirname << "/exp_val_D" << dim << "_I" << iterations << "_S" << snapshots << ".dat";
     filenames = filename.str();
     std::ofstream out(filenames.c_str());
+    
+    double E_before = 0, E_now = 0;
 
-    out << "#time\tEnergy\t\tPx\tPy\tP**2\tnorm(psi(t))" << std::endl;
+    out << "#iter\t time\tEnergy\t\tdelta_E\t\tPx\tPy\tP**2\tnorm2(psi(t))\tsigma_x\tsigma_y\t<X>\t<Y>" << std::endl;
     for(int i = 0; i < N_files; i++) {
 
         filename.str("");
@@ -575,9 +581,13 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
                 center >> psi_right;
                 down >> psi_down;
 
-                sum_E += conj(psi_center) * (cost_E * (psi_right + psi_left + psi_down + psi_up - psi_center * std::complex<double> (4., 0.)) + psi_center * std::complex<double> (hamilt_pot[j * dim + k], 0.)) ;
+                sum_E += conj(psi_center) * (cost_E * (psi_right + psi_left + psi_down + psi_up - psi_center * std::complex<double> (4., 0.)) + psi_center * std::complex<double> (hamilt_pot[j * dim + k], 0.)  + psi_center * psi_center * conj(psi_center) * std::complex<double> (0.5 * coupling_const, 0.)) ;
                 sum_Px += conj(psi_center) * (psi_right - psi_left);
                 sum_Py += conj(psi_center) * (psi_down - psi_up);
+                sum_x2 += conj(psi_center) * std::complex<double> (k * k, 0.) * psi_center;  
+                sum_x += conj(psi_center) * std::complex<double> (k, 0.) * psi_center;
+                sum_y2 += conj(psi_center) * std::complex<double> (j * j, 0.) * psi_center;
+                sum_y += conj(psi_center) * std::complex<double> (j, 0.) * psi_center;
                 sum_pdi += conj(psi_center) * psi_center;
 
                 psi_left = psi_center;
@@ -589,17 +599,28 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
         center.close();
         down.close();
 
-        out << N_name[i] << "\t" << real(sum_E / sum_pdi) << "\t" << real(cost_P * sum_Px / sum_pdi) << "\t" << real(cost_P * sum_Py / sum_pdi) << "\t"
-            << real(cost_P * sum_Px / sum_pdi)*real(cost_P * sum_Px / sum_pdi) + real(cost_P * sum_Py / sum_pdi)*real(cost_P * sum_Py / sum_pdi) << "\t" << real(sum_pdi) << std::endl;
-
+        //out << N_name[i] << "\t" << real(sum_E / sum_pdi) << "\t" << real(cost_P_x * sum_Px / sum_pdi) << "\t" << real(cost_P_y * sum_Py / sum_pdi) << "\t"
+          //  << real(cost_P * sum_Px / sum_pdi)*real(cost_P * sum_Px / sum_pdi) + real(cost_P * sum_Py / sum_pdi)*real(cost_P * sum_Py / sum_pdi) << "\t" << real(sum_pdi) << std::endl;
+		E_now = real(sum_E / sum_pdi);
+        out << N_name[i] << "\t" << N_name[i] * delta_t << "\t" << std::setw(10) << real(sum_E / sum_pdi);
+        out << "\t" << std::setw(10) << E_before - E_now;
+        out << "\t" << std::setw(10) << real(cost_P_x * sum_Px / sum_pdi) << "\t" << std::setw(10) << real(cost_P_y * sum_Py / sum_pdi) << "\t" << std::setw(10)
+            << real(cost_P_x * sum_Px / sum_pdi)*real(cost_P_x * sum_Px / sum_pdi) + real(cost_P_y * sum_Py / sum_pdi)*real(cost_P_y * sum_Py / sum_pdi) << "\t" 
+            << real(sum_pdi) * delta_x * delta_y << "\t" << delta_x * sqrt(real(sum_x2 / sum_pdi - sum_x * sum_x / (sum_pdi * sum_pdi))) << "\t" << delta_y * sqrt(real(sum_y2 / sum_pdi - sum_y * sum_y / (sum_pdi * sum_pdi)))
+            << std::setw(10) << delta_x * real(sum_x / sum_pdi) << "\t" << delta_y * real(sum_y / sum_pdi);
+        out << std::endl;
+        E_before = E_now;
+        
         energy[i] = real(sum_E / sum_pdi);
-        momentum_x[i] = real(cost_P * sum_Px / sum_pdi);
-        momentum_y[i] = real(cost_P * sum_Py / sum_pdi);
+        momentum_x[i] = real(cost_P_x * sum_Px / sum_pdi);
+        momentum_y[i] = real(cost_P_y * sum_Py / sum_pdi);
 
         sum_E = 0;
         sum_Px = 0;
         sum_Py = 0;
         sum_pdi = 0;
+        sum_x2 = 0; sum_x = 0;
+        sum_y2 = 0; sum_y = 0;
     }
 
     //calculate sample mean and sample variance
@@ -623,4 +644,63 @@ void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, 
     sample->var_Px = sqrt(sample->var_Px);
     sample->var_Py /= N_files - 1;
     sample->var_Py = sqrt(sample->var_Py);
+}
+
+double Energy_tot(double * p_real, double * p_imag,
+				  double particle_mass, double coupling_const, double * external_pot,
+				  const int matrix_width, const int matrix_height, double delta_x, double delta_y) {
+	
+	std::complex<double> sum = 0, norm2 = 0;
+	std::complex<double> cost_E = -1. / (2. * particle_mass);
+	std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
+	for(int i = 1; i < matrix_height - 1; i++) {
+		for(int j = 1; j < matrix_width - 1; j++) {
+			psi_center = std::complex<double> (p_real[i * matrix_width + j], p_imag[i * matrix_width + j]);
+			psi_up = std::complex<double> (p_real[(i - 1) * matrix_width + j], p_imag[(i - 1) * matrix_width + j]);
+			psi_down = std::complex<double> (p_real[(i + 1) * matrix_width + j], p_imag[(i + 1) * matrix_width + j]);
+			psi_right = std::complex<double> (p_real[i * matrix_width + j + 1], p_imag[i * matrix_width + j + 1]);
+			psi_left = std::complex<double> (p_real[i * matrix_width + j - 1], p_imag[i * matrix_width + j - 1]);
+			
+			norm2 += conj(psi_center) * psi_center;
+			sum += conj(psi_center) * (cost_E * (std::complex<double> (1. / delta_x * delta_x, 0.) * (psi_right + psi_left - psi_center * std::complex<double> (2., 0.)) + std::complex<double> (1. / delta_y * delta_y, 0.) * (psi_down + psi_up - psi_center * std::complex<double> (2., 0.))) + psi_center * std::complex<double> (external_pot[i * matrix_width + j], 0.)  + psi_center * psi_center * conj(psi_center) * std::complex<double> (0.5 * coupling_const, 0.)) ;
+		}
+	}
+	
+	return real(sum / norm2);
+}
+
+double Energy_kin(double * p_real, double * p_imag, double particle_mass,
+				  const int matrix_width, const int matrix_height, double delta_x, double delta_y) {
+	
+	std::complex<double> sum = 0, norm2 = 0;
+	std::complex<double> cost_E = -1. / (2. * particle_mass);
+	std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
+	for(int i = 1; i < matrix_height - 1; i++) {
+		for(int j = 1; j < matrix_width - 1; j++) {
+			psi_center = std::complex<double> (p_real[i * matrix_width + j], p_imag[i * matrix_width + j]);
+			psi_up = std::complex<double> (p_real[(i - 1) * matrix_width + j], p_imag[(i - 1) * matrix_width + j]);
+			psi_down = std::complex<double> (p_real[(i + 1) * matrix_width + j], p_imag[(i + 1) * matrix_width + j]);
+			psi_right = std::complex<double> (p_real[i * matrix_width + j + 1], p_imag[i * matrix_width + j + 1]);
+			psi_left = std::complex<double> (p_real[i * matrix_width + j - 1], p_imag[i * matrix_width + j - 1]);
+			
+			norm2 += conj(psi_center) * psi_center;
+			sum += conj(psi_center) * (cost_E * (std::complex<double> (1. / delta_x * delta_x, 0.) * (psi_right + psi_left - psi_center * std::complex<double> (2., 0.)) + std::complex<double> (1. / delta_y * delta_y, 0.) * (psi_down + psi_up - psi_center * std::complex<double> (2., 0.))) );
+		}
+	}
+	
+	return real(sum / norm2);
+}
+
+double Norm2(double * p_real, double * p_imag, const int matrix_width, const int matrix_height, double delta_x, double delta_y) {
+	
+	std::complex<double> norm2 = 0;
+	std::complex<double> psi_center;
+	for(int i = 0; i < matrix_height; i++) {
+		for(int j = 0; j < matrix_width; j++) {
+			psi_center = std::complex<double> (p_real[i * matrix_width + j], p_imag[i * matrix_width + j]);
+			norm2 += conj(psi_center) * psi_center;
+		}
+	}
+	
+	return real(norm2) * delta_x * delta_y;
 }
