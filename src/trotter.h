@@ -48,12 +48,16 @@
 
 */
 
-void trotter(double h_a, double h_b,
+void trotter(double h_a, double h_b, double coupling_const,
              double * external_pot_real, double * external_pot_imag,
-             double * p_real, double * p_imag,
+             double * p_real, double * p_imag, double delta_x, double delta_y,
              const int matrix_width, const int matrix_height,
              const int iterations, const int kernel_type,
-             int *periods, bool imag_time);
+             int *periods, double norm, bool imag_time);
+             
+void solver(double * p_real, double * p_imag,
+			double particle_mass, double coupling_const, double * external_pot,
+            const int matrix_width, const int matrix_height, double delta_x, double delta_y, double delta_t, const int iterations, const int kernel_type, int *periods, bool imag_time);
 
 struct energy_momentum_statistics {
     double mean_E, mean_Px, mean_Py;
@@ -61,6 +65,15 @@ struct energy_momentum_statistics {
     energy_momentum_statistics() : mean_E(0.), mean_Px(0.), mean_Py(0.),
         var_E(0.), var_Px(0.), var_Py(0.) {}
 };
+
+double Energy_tot(double * p_real, double * p_imag,
+				  double particle_mass, double coupling_const, double * external_pot,
+				  const int matrix_width, const int matrix_height, double delta_x, double delta_y);
+
+double Energy_kin(double * p_real, double * p_imag, double particle_mass,
+				  const int matrix_width, const int matrix_height, double delta_x, double delta_y);
+				  
+double Norm2(double * p_real, double * p_imag, const int matrix_width, const int matrix_height, double delta_x, double delta_y);
 
 void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, double particle_mass,
                    const char *dirname, int *periods, int halo_x, int halo_y, energy_momentum_statistics *sample);

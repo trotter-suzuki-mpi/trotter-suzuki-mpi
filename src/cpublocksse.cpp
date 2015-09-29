@@ -20,6 +20,7 @@
 
 #include <cassert>
 #include <emmintrin.h>
+//#include <immintrin.h>
 #include <stdlib.h>
 
 #include "common.h"
@@ -31,6 +32,8 @@
 /***************
 * SSE variants *
 ***************/
+
+
 #ifdef WIN32
 template <int offset_y>
 inline void update_shifty_sse(size_t stride, size_t width, size_t height, double a, double b, double * __restrict r1, double * __restrict i1, double * __restrict r2, double * __restrict i2) {
@@ -224,12 +227,15 @@ inline void update_shiftx_sse_imaginary(size_t stride, size_t width, size_t heig
 }
 
 #ifdef WIN32
-void update_ext_pot_sse(size_t stride, size_t width, size_t height, double * __restrict pot_r, double * __restrict pot_i, double * __restrict real,
+void update_ext_pot_sse(size_t stride, size_t width, size_t height, double coupling_const, double coupling_const, double * __restrict pot_r, double * __restrict pot_i, double * __restrict real,
                         double * __restrict imag) {
 #else
 void update_ext_pot_sse(size_t stride, size_t width, size_t height, double * __restrict__ pot_r, double * __restrict__ pot_i, double * __restrict__ real,
                         double * __restrict__ imag) {
 #endif
+	//double coupling_const;
+	//__m128d couplq = _mm_load1_pd(&coupling_const);
+	
     for (size_t i = 0; i < height; i++) {
         size_t j = 0;
         for (; j < width - width % 2; j += 2) {
@@ -238,19 +244,35 @@ void update_ext_pot_sse(size_t stride, size_t width, size_t height, double * __r
             __m128d iq = _mm_load_pd(&imag[idx]);
             __m128d potrq = _mm_load_pd(&pot_r[idx]);
             __m128d potiq = _mm_load_pd(&pot_i[idx]);
+            
+            //__m128d norm_2 = _mm_add_pd( _mm_mul_pd(rq, rq), _mm_mul_pd(iq, iq));
 
             __m128d next_rq = _mm_sub_pd(_mm_mul_pd(rq, potrq), _mm_mul_pd(iq, potiq));
             __m128d next_iq = _mm_add_pd(_mm_mul_pd(iq, potrq), _mm_mul_pd(rq, potiq));
+            
+            //__m128d cine = _mm_cos_pd(_mm_mul_pd(couplq, norm_2));
+            //__m128d sine = _mm_sin_pd(_mm_mul_pd(couplq, norm_2));
+            
+            //__m128d next2_rq = _mm_add_pd( _mm_mul_pd( cine, next_rq), _mm_mul_pd( sine, next_iq));
+            //__m128d next2_iq = _mm_sub_pd( _mm_mul_pd( cine, next_iq), _mm_mul_pd( sine, next_rq));
 
+            //_mm_store_pd(&real[idx], next2_rq);
+            //_mm_store_pd(&imag[idx], next2_iq);
+            
             _mm_store_pd(&real[idx], next_rq);
             _mm_store_pd(&imag[idx], next_iq);
         }
 
         for (; j < width; j++) {
             size_t idx = i * stride + j;
+            double norm_2 = real[idx] * real[idx] + imag[idx] * imag[idx];
             double tmp = real[idx];
             real[idx] = pot_r[idx] * tmp - pot_i[idx] * imag[idx];
             imag[idx] = pot_r[idx] * imag[idx] + pot_i[idx] * tmp;
+            
+            //tmp = real[idx];
+            //real[idx] = cos(coupling_const * norm_2) * tmp + sin(coupling_const * norm_2) * imag[idx];
+            //imag[idx] = cos(coupling_const * norm_2) * imag[idx] - sin(coupling_const * norm_2) * tmp;
         }
     }
 }
@@ -725,7 +747,7 @@ void process_band_sse(size_t tile_width, size_t block_width, size_t block_height
 }
 
 CPUBlockSSEKernel::CPUBlockSSEKernel(double *_p_real, double *_p_imag, double *external_potential_real, double *external_potential_imag,
-                                     double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *_periods, bool _imag_time
+                                     double _a, double _b, double _delta_x, double _delta_y, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *_periods, double _norm, bool _imag_time
 #ifdef HAVE_MPI
                                      , MPI_Comm _cartcomm
 #endif
@@ -734,9 +756,12 @@ CPUBlockSSEKernel::CPUBlockSSEKernel(double *_p_real, double *_p_imag, double *e
     p_imag(_p_imag),
     a(_a),
     b(_b),
+    delta_x(_delta_x),
+    delta_y(_delta_y),
     sense(0),
     halo_x(_halo_x),
     halo_y(_halo_y),
+    norm(_norm),
     imag_time(_imag_time) {
 
     periods = _periods;
@@ -752,7 +777,7 @@ CPUBlockSSEKernel::CPUBlockSSEKernel(double *_p_real, double *_p_imag, double *e
     rank = 0;
     coords[0] = coords[1] = 0;
 #endif
-    int inner_start_x = 0, end_x = 0, end_y = 0;
+    
     calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     tile_width = end_x - start_x;
@@ -1000,18 +1025,17 @@ void CPUBlockSSEKernel::run_kernel() {
 
 
 void CPUBlockSSEKernel::wait_for_completion(int iteration) {
-    if(imag_time && ((iteration % 20) == 0 )) {
+    if(imag_time) {
         //normalization
         int nProcs = 1;
 #ifdef HAVE_MPI
         MPI_Comm_size(cartcomm, &nProcs);
 #endif
-        int height = (tile_height - halo_y) / 2;
-        int width = (tile_width - halo_x) / 2;
         double sum = 0., *sums;
         sums = new double[nProcs];
-        for(int i = halo_y / 2; i < height; i++) {
-            for(int j = halo_x / 2; j < width; j++) {
+        
+        for(int i = (inner_start_y - start_y) / 2; i < (inner_end_y - inner_start_y) / 2; i++) {
+            for(int j = (inner_start_x - start_x) / 2; j < (inner_end_y - inner_start_y) / 2; j++) {
                 int idx = j + i * tile_width / 2;
                 sum += r00[sense][idx] * r00[sense][idx] + i00[sense][idx] * i00[sense][idx] +
                        r10[sense][idx] * r10[sense][idx] + i10[sense][idx] * i10[sense][idx] +
@@ -1027,19 +1051,19 @@ void CPUBlockSSEKernel::wait_for_completion(int iteration) {
         double tot_sum = 0.;
         for(int i = 0; i < nProcs; i++)
             tot_sum += sums[i];
-        double norm = sqrt(tot_sum);
+        double _norm = sqrt(tot_sum * delta_x * delta_y / norm);
 
         for(size_t i = 0; i < tile_height / 2; i++) {
             for(size_t j = 0; j < tile_width / 2; j++) {
                 int idx = j + i * tile_width / 2;
-                r00[sense][idx] /= norm;
-                i00[sense][idx] /= norm;
-                r10[sense][idx] /= norm;
-                i10[sense][idx] /= norm;
-                r01[sense][idx] /= norm;
-                i01[sense][idx] /= norm;
-                r11[sense][idx] /= norm;
-                i11[sense][idx] /= norm;
+                r00[sense][idx] /= _norm;
+                i00[sense][idx] /= _norm;
+                r10[sense][idx] /= _norm;
+                i10[sense][idx] /= _norm;
+                r01[sense][idx] /= _norm;
+                i01[sense][idx] /= _norm;
+                r11[sense][idx] /= _norm;
+                i11[sense][idx] /= _norm;
             }
         }
         delete[] sums;

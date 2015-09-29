@@ -37,42 +37,51 @@
 #include <mpi.h>
 #endif
 
+#define LENGHT 50
 #define DIM 640
-#define ITERATIONS 100
+#define ITERATIONS 2000
+#define PARTICLES_NUM 1700000
 #define KERNEL_TYPE 0
 #define SNAPSHOTS 10
+#define SCATTER_LENGHT_2D 5.662739242e-5
 
-double coupling_const = 0;
-double delta_x = 1, delta_y = 1;
 
-std::complex<double> super_position_two_exp_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
-    double L_x = matrix_width - periods[1] * 2 * halo_x;
+std::complex<double> gauss_ini_state(int m, int n, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
+	double delta_x = double(LENGHT)/double(DIM);
+    double x = (m - matrix_width / 2.) * delta_x, y = (n - matrix_height / 2.) * delta_x;
+    double w = 0.01;
+    return std::complex<double>(sqrt(w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w), 0.0);
+}
 
-    return exp(std::complex<double>(0. , 2. * 3.14159 / L_x * (x - periods[1] * halo_x))) +
-           exp(std::complex<double>(0. , 10. * 2. * 3.14159 / L_x * (x - periods[1] * halo_x)));
+double parabolic_potential(int m, int n, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
+    double delta_x = double(LENGHT)/double(DIM);
+    double x = (m - matrix_width / 2.) * delta_x, y = (n - matrix_width / 2.) * delta_x;
+    double w_x = 1, w_y = 1. / sqrt(2); 
+    return 0.5 * (w_x * w_x * x * x + w_y * w_y * y * y);
 }
 
 int main(int argc, char** argv) {
+
     int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, kernel_type = KERNEL_TYPE;
-    int periods[2] = {1, 1};
+    int periods[2] = {0, 0};
     bool verbose = true;
     char filename[1] = "";
     char pot_name[1] = "";
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
-    double norm = 1;
     int matrix_width = dim + periods[1] * 2 * halo_x;
     int matrix_height = dim + periods[0] * 2 * halo_y;
+    double norm = 1;
     bool imag_time = true;
-
-#ifdef HAVE_MPI
-    MPI_Init(&argc, &argv);
-#endif
+    double delta_t = 1.e-4;
+	const double particle_mass = 1.;
+	
     //define the topology
     int coords[2], dims[2] = {0, 0};
     int rank;
     int nProcs;
 #ifdef HAVE_MPI
+    MPI_Init(&argc, &argv);
     MPI_Comm cartcomm;
     MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
     MPI_Dims_create(nProcs, 2, dims);  //partition all the processes (the size of MPI_COMM_WORLD's group) into an 2-dimensional topology
@@ -95,35 +104,33 @@ int main(int argc, char** argv) {
     int tile_height = end_y - start_y;
 
     //set and calculate evolution operator variables from hamiltonian
-    const double particle_mass = 1.;
+    double coupling_const = delta_t * 4. * M_PI * double(SCATTER_LENGHT_2D) * double(PARTICLES_NUM);
+    double delta_x = double(LENGHT)/double(DIM), delta_y = double(LENGHT)/double(DIM);
     double *external_pot_real = new double[tile_width * tile_height];
     double *external_pot_imag = new double[tile_width * tile_height];
     double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-    hamiltonian_pot = const_potential;
-    double constant = 6.;
-    double time_single_it = 0.8 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
-    double h_a = cos(time_single_it / (2. * particle_mass)) / constant;
-    double h_b = sin(time_single_it / (2. * particle_mass)) / constant;
+    hamiltonian_pot = parabolic_potential;
+    double time_single_it = delta_t / 2.;	//second approx trotter-suzuki: time/2
+    double h_a = cosh(time_single_it / (2. * particle_mass * delta_x * delta_y));
+    double h_b = sinh(time_single_it / (2. * particle_mass * delta_x * delta_y));
 
     initialize_exp_potential(external_pot_real, external_pot_imag, pot_name, hamiltonian_pot, tile_width, tile_height, matrix_width, matrix_height,
-                             start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, true);
+                             start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, imag_time);
 
     //set initial state
     double *p_real = new double[tile_width * tile_height];
     double *p_imag = new double[tile_width * tile_height];
     std::complex<double> (*ini_state)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-    ini_state = super_position_two_exp_state;
+    ini_state = gauss_ini_state;
     initialize_state(p_real, p_imag, filename, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,
                      periods, coords, dims, halo_x, halo_y);
 
     if(rank == 0) {
         std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
-        std::cout << "* It calculates the imaginary time-evolution of a free particle in a box\n";
+        std::cout << "* It calculates the time-evolution of a particle in a box\n";
         std::cout << "* with periodic boundary conditions, where the initial\n";
         std::cout << "* state is the following:\n";
-        std::cout << "* \texp(i2M_PI / L * x) + exp(i20M_PI / L * x)\n\n";
-        std::cout << "* The state will reach the eigenfunction of the Hamiltonian with the lowest\n";
-        std::cout << "* eigenvalue:   exp(i2M_PI / L * x)\n\n";
+        std::cout << "* \texp(i2M_PI / L (x + y))\n\n";
     }
 
     //set file output directory
@@ -133,7 +140,7 @@ int main(int argc, char** argv) {
         int status;
 
         dirname.str("");
-        dirname << "IMAG_EVO_D" << dim << "_I" << iterations << "_S" << snapshots << "";
+        dirname << "D" << dim << "_I" << iterations << "_S" << snapshots << "";
         dirnames = dirname.str();
 
         status = mkdir(dirnames.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -144,7 +151,6 @@ int main(int argc, char** argv) {
     else
         dirnames = ".";
 
-
     stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
           start_y, inner_start_y, inner_end_y, dims, coords, periods,
           0, iterations, 0, dirnames.c_str()
@@ -152,7 +158,7 @@ int main(int argc, char** argv) {
           , cartcomm
 #endif
          );
-    for(int count_snap = 0; count_snap < snapshots; count_snap++) {
+    for(int count_snap = 1; count_snap <= snapshots; count_snap++) {
         trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, iterations, kernel_type, periods, norm, imag_time);
 
         stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
@@ -166,7 +172,6 @@ int main(int argc, char** argv) {
     if (coords[0] == 0 && coords[1] == 0 && verbose == true) {
         std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " kernel:" << kernel_type << " np:" << nProcs << std::endl;
     }
-
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif

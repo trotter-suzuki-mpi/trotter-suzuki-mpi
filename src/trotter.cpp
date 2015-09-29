@@ -42,12 +42,12 @@
 #include "hybrid.h"
 #endif
 
-void trotter(double h_a, double h_b,
+void trotter(double h_a, double h_b, double coupling_const,
              double * external_pot_real, double * external_pot_imag,
-             double * p_real, double * p_imag,
+             double * p_real, double * p_imag, double delta_x, double delta_y,
              const int matrix_width, const int matrix_height,
              const int iterations, const int kernel_type,
-             int *periods, bool imag_time) {
+             int *periods, double norm, bool imag_time) {
 
     int start_x, end_x, inner_start_x, inner_end_x,
         start_y, end_y, inner_start_y, inner_end_y;
@@ -81,7 +81,7 @@ void trotter(double h_a, double h_b,
     ITrotterKernel * kernel;
     switch (kernel_type) {
     case 0:
-        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, imag_time
+        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, coupling_const, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
 #ifdef HAVE_MPI
                               , cartcomm
 #endif
@@ -90,7 +90,7 @@ void trotter(double h_a, double h_b,
 
     case 1:
 #ifndef WIN32
-        kernel = new CPUBlockSSEKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, imag_time
+        kernel = new CPUBlockSSEKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
 #ifdef HAVE_MPI
                                        , cartcomm
 #endif
@@ -105,7 +105,7 @@ void trotter(double h_a, double h_b,
 
     case 2:
 #ifdef CUDA
-        kernel = new CC2Kernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, imag_time
+        kernel = new CC2Kernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
 #ifdef HAVE_MPI
                                , cartcomm
 #endif
@@ -124,7 +124,7 @@ void trotter(double h_a, double h_b,
 
     case 3:
 #ifdef CUDA
-        kernel = new HybridKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, imag_time
+        kernel = new HybridKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
 #ifdef HAVE_MPI
                                   , cartcomm
 #endif
@@ -142,7 +142,7 @@ void trotter(double h_a, double h_b,
         break;
 
     default:
-        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, matrix_width, matrix_height, halo_x, halo_y, periods, imag_time
+        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, coupling_const, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
 #ifdef HAVE_MPI
                               , cartcomm
 #endif

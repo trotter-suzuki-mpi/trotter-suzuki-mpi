@@ -29,7 +29,7 @@
 #endif
 
 // Class methods
-HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int * _periods, bool _imag_time
+HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, double _delta_x, double _delta_y, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int * _periods, double _norm, bool _imag_time
 #ifdef HAVE_MPI
                            , MPI_Comm _cartcomm
 #endif
@@ -37,11 +37,14 @@ HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_p
     threadsPerBlock(BLOCK_X, STRIDE_Y),
     a(_a),
     b(_b),
+    delta_x(_delta_x),
+    delta_y(_delta_y),
     external_pot_real(_external_pot_real),
     external_pot_imag(_external_pot_imag),
     sense(0),
     halo_x(_halo_x),
     halo_y(_halo_y),
+    norm(_norm),
     imag_time(_imag_time) {
 
     periods = _periods;
@@ -57,7 +60,6 @@ HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_p
     rank = 0;
     coords[0] = coords[1] = 0;
 #endif
-    int inner_start_x = 0, end_x = 0, end_y = 0;
     calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     tile_width = end_x - start_x;
@@ -258,7 +260,7 @@ void HybridKernel::run_kernel_on_halo() {
 void HybridKernel::wait_for_completion(int iteration) {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
     //normalization for imaginary time evolution
-    if(imag_time && ((iteration % 20) == 0 )) {
+    if(imag_time) {
         CUDA_SAFE_CALL(cudaMemcpy2D(&(p_real[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), pdev_real[sense], gpu_tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyDeviceToHost));
         CUDA_SAFE_CALL(cudaMemcpy2D(&(p_imag[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), pdev_imag[sense], gpu_tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyDeviceToHost));
 
@@ -266,11 +268,9 @@ void HybridKernel::wait_for_completion(int iteration) {
 #ifdef HAVE_MPI
         MPI_Comm_size(cartcomm, &nProcs);
 #endif
-        int height = tile_height - halo_y;
-        int width = tile_width - halo_x;
         double sum = 0., sums[nProcs];
-        for(int i = halo_y; i < height; i++) {
-            for(int j = halo_x; j < width; j++) {
+        for(int i = inner_start_y - start_y; i < inner_end_y - inner_start_y; i++) {
+            for(int j = inner_start_x - start_x; j < inner_end_x - inner_start_x; j++) {
                 sum += p_real[sense][j + i * tile_width] * p_real[sense][j + i * tile_width] + p_imag[sense][j + i * tile_width] * p_imag[sense][j + i * tile_width];
             }
         }
@@ -282,12 +282,12 @@ void HybridKernel::wait_for_completion(int iteration) {
         double tot_sum = 0.;
         for(int i = 0; i < nProcs; i++)
             tot_sum += sums[i];
-        double norm = sqrt(tot_sum);
+        double _norm = sqrt(tot_sum * delta_x * delta_y / norm);
 
         for(int i = 0; i < tile_height; i++) {
             for(int j = 0; j < tile_width; j++) {
-                p_real[sense][j + i * tile_width] /= norm;
-                p_imag[sense][j + i * tile_width] /= norm;
+                p_real[sense][j + i * tile_width] /= _norm;
+                p_imag[sense][j + i * tile_width] /= _norm;
             }
         }
         CUDA_SAFE_CALL(cudaMemcpy2D(pdev_real[sense], gpu_tile_width * sizeof(double), &(p_real[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyHostToDevice));

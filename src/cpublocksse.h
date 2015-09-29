@@ -66,7 +66,7 @@ void process_band_sse(double *var,   size_t tile_width, size_t block_width, size
 
 class CPUBlockSSEKernel: public ITrotterKernel {
 public:
-    CPUBlockSSEKernel(double *p_real, double *p_imag, double *external_potential_real, double *external_potential_imag, double a, double b, int matrix_width, int matrix_height, int halo_x, int halo_y, int *_periods, bool _imag_time
+    CPUBlockSSEKernel(double *p_real, double *p_imag, double *external_potential_real, double *external_potential_imag, double a, double b, double _delta_x, double _delta_y, int matrix_width, int matrix_height, int halo_x, int halo_y, int *_periods, double _norm, bool _imag_time
 #ifdef HAVE_MPI
                       , MPI_Comm cartcomm
 #endif
@@ -97,6 +97,8 @@ private:
     double *ext_pot_i00, *ext_pot_i01, *ext_pot_i10, *ext_pot_i11;
     double a;
     double b;
+    double delta_x, delta_y;
+    double norm;
     int sense;
     size_t halo_x, halo_y, tile_width, tile_height;
     bool imag_time;
@@ -106,6 +108,7 @@ private:
     static const size_t block_height = BLOCK_HEIGHT;
 
     int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
+    int inner_start_x, end_x, end_y;
     int *periods;
 #ifdef HAVE_MPI
     MPI_Comm cartcomm;
