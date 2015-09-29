@@ -22,6 +22,7 @@ if sys.platform.startswith('win'):
     sources_files=[	'common.cpp',
                     'cpublock.cpp',
                     'trotter.cpp',
+                    'solver.cpp',
                     'trotter_wrap.cxx']
 elif sys.platform.startswith('darwin'):
     extra_compile_args = ['-fopenmp']
@@ -31,6 +32,7 @@ elif sys.platform.startswith('darwin'):
     sources_files=[	'common.cpp',
                     'cpublock.cpp',
                     'trotter.cpp',
+                    'solver.cpp',
                     'trotter_wrap.cxx']
 else:
     extra_compile_args = ['-fopenmp']
@@ -41,6 +43,7 @@ else:
                     'cpublock.cpp',
                     'cpublocksse.cpp',
                     'trotter.cpp',
+                    'solver.cpp',
                     'trotter_wrap.cxx']
 
 trottersuzuki_module = Extension('_trottersuzuki',
