@@ -35,10 +35,15 @@
 #include <mpi.h>
 #endif
 
+#define LENGHT 50
 #define DIM 640
-#define ITERATIONS 100
-#define KERNEL_TYPE 0
-#define SNAPSHOTS 10
+#define ITERATIONS 200
+#define PARTICLES_NUM 1700000
+#define KERNEL_TYPE 1
+#define SNAPSHOTS 5
+#define SCATTER_LENGHT_2D 5.662739242e-5
+
+
 
 struct MAGIC_NUMBER {
     double threshold_E, threshold_P;
@@ -51,24 +56,41 @@ struct MAGIC_NUMBER {
 MAGIC_NUMBER::MAGIC_NUMBER() : threshold_E(3), threshold_P(3),
     expected_E((2. * M_PI / DIM) * (2. * M_PI / DIM)), expected_Px(0), expected_Py(0) {}
 
-std::complex<double> sinus_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
-    double L_x = matrix_width - periods[1] * 2 * halo_x;
-    double L_y = matrix_height - periods[0] * 2 * halo_y;
+std::complex<double> gauss_ini_state(int m, int n, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
+	double delta_x = double(LENGHT)/double(DIM);
+    double x = (m - matrix_width / 2.) * delta_x, y = (n - matrix_height / 2.) * delta_x;
+    double w = 0.01;
+    return std::complex<double>(sqrt(w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w), 0.0);
+}
 
-    return std::complex<double> (sin(2 * 3.14159 / L_x * (x - periods[1] * halo_x)) * sin(2 * 3.14159 / L_y * (y - periods[0] * halo_y)), 0.0);
+std::complex<double> sinus_state(int m, int n, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
+	double delta_x = double(LENGHT)/double(DIM);
+	double x = m * delta_x, y = n * delta_x;
+	return std::complex<double>(sin(2 * M_PI * x / double(LENGHT)) * sin(2 * M_PI * y / double(LENGHT)), 0.0);
+}
+
+double parabolic_potential(int m, int n, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
+    double delta_x = double(LENGHT)/double(DIM);
+    double x = (m - matrix_width / 2.) * delta_x, y = (n - matrix_width / 2.) * delta_x;
+    double w_x = 1, w_y = 1. / sqrt(2); 
+    return 0.5 * (w_x * w_x * x * x + w_y * w_y * y * y);
 }
 
 int main(int argc, char** argv) {
     int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, kernel_type = KERNEL_TYPE;
-    int periods[2] = {1, 1};
-    char file_name[1] = "";
+    int periods[2] = {0, 0};
+    char file_name[] = "";//"GSD640_N1700000_L50_A5.66_NIST_phase.dat";
     char pot_name[1] = "";
     const double particle_mass = 1.;
     bool show_time_sim = false;
-    bool imag_time = false;
+    bool imag_time = true;
+    double norm = 1.5;
     double h_a = 0.;
     double h_b = 0.;
-
+	
+	double delta_t = 5.e-5;
+	double delta_x = double(LENGHT)/double(DIM), delta_y = double(LENGHT)/double(DIM);
+	
     // Get the top level suite from the registry
     CppUnit::Test *suite = CppUnit::TestFactoryRegistry::getRegistry().makeTest();
     // Adds the test to the list of test to run
@@ -115,27 +137,50 @@ int main(int argc, char** argv) {
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     int tile_width = end_x - start_x;
     int tile_height = end_y - start_y;
+    
+  /*  //***************************************
+    double *p_real = new double[tile_width * tile_height];
+    double *p_imag = new double[tile_width * tile_height];
+    for(int i = 0; i < tile_width * tile_height; i++) {
+		p_real[i] = rank;
+		p_imag[i] = rank;
+	}
+	
+	std::string filenames1 = ".";
+    stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
+              start_y, inner_start_y, inner_end_y, dims, coords, periods,
+              0, iterations, 0, filenames1.c_str()
+#ifdef HAVE_MPI
+              , cartcomm
+#endif
+             );
+             
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return 0;
+  */  //***************************************
 
     //set and calculate evolution operator variables from hamiltonian
     double time_single_it;
+    double coupling_const = delta_t * 4. * M_PI * double(SCATTER_LENGHT_2D);
     double *external_pot_real = new double[tile_width * tile_height];
     double *external_pot_imag = new double[tile_width * tile_height];
     double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-    hamiltonian_pot = const_potential;
+    hamiltonian_pot = parabolic_potential;
 
     if(imag_time) {
-        double constant = 6.;
-        time_single_it = 8 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
+        time_single_it = delta_t / 2.;	//second approx trotter-suzuki: time/2
         if(h_a == 0. && h_b == 0.) {
-            h_a = cosh(time_single_it / (2. * particle_mass)) / constant;
-            h_b = sinh(time_single_it / (2. * particle_mass)) / constant;
+            h_a = cosh(time_single_it / (2. * particle_mass * delta_x * delta_y));
+            h_b = sinh(time_single_it / (2. * particle_mass * delta_x * delta_y));
         }
     }
     else {
-        time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
+        time_single_it = delta_t / 2.;	//second approx trotter-suzuki: time/2
         if(h_a == 0. && h_b == 0.) {
-            h_a = cos(time_single_it / (2. * particle_mass));
-            h_b = sin(time_single_it / (2. * particle_mass));
+            h_a = cos(time_single_it / (2. * particle_mass * delta_x * delta_y));
+            h_b = sin(time_single_it / (2. * particle_mass * delta_x * delta_y));
         }
     }
     initialize_exp_potential(external_pot_real, external_pot_imag, pot_name, hamiltonian_pot, tile_width, tile_height, matrix_width, matrix_height,
@@ -175,9 +220,14 @@ int main(int argc, char** argv) {
               , cartcomm
 #endif
              );
-
+      /*       
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return 0;
+    */
         if(count_snap != snapshots) {
-            trotter(h_a, h_b, external_pot_real, external_pot_imag, p_real, p_imag, matrix_width, matrix_height, iterations, kernel_type, periods, imag_time);
+            trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, iterations, kernel_type, periods, norm, imag_time);
         }
     }
 
@@ -187,7 +237,7 @@ int main(int argc, char** argv) {
         double hamilt_pot[dim * dim];
 
         initialize_potential(hamilt_pot, hamiltonian_pot, dim, dim, periods, halo_x, halo_y);
-        expect_values(dim, iterations, snapshots, hamilt_pot, particle_mass, filenames.c_str(), periods, halo_x, halo_y, &sample);
+        expect_values(dim, dim, delta_x, delta_y, delta_t, 4. * M_PI * double(SCATTER_LENGHT_2D), iterations, snapshots, hamilt_pot, particle_mass, filenames.c_str(), periods, halo_x, halo_y, &sample);
 
         if(std::abs(sample.mean_E - th_values.expected_E) / sample.var_E < th_values.threshold_E)
             std::cout << "Energy -> OK\tsigma: " << std::abs(sample.mean_E - th_values.expected_E) / sample.var_E << std::endl;
