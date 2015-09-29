@@ -21,6 +21,7 @@ sources_files=['trotter.i']
 extra_objects=['../windows/trotter/Debug/common.obj'
                '../windows/trotter/Debug/cpublock.obj'
                '../windows/trotter/Debug/cpublocksse.obj'
+               '../windows/trotter/Debug/solver.obj'
                '../windows/trotter/Debug/trotter.obj']
 
 if sys.platform.startswith('win'):
