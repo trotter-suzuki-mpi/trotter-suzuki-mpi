@@ -11,7 +11,7 @@ Key features of the Python interface:
 
 Usage
 ------
-The following code block gives a simple example of initializing a state and plotting the result of the evolution.
+The following code block gives a simple example of initializing a state and calculating the expectation values of the Hamiltonian and kinetic operators and the norm of the state after the evolution.
 
 .. code-block:: python
 		
@@ -19,32 +19,78 @@ The following code block gives a simple example of initializing a state and plot
     import trottersuzuki as ts
     from matplotlib import pyplot as plt
 
-    imag_time = False
-    order_approx = 2
-    dim = 640
-    iterations = 200
-    kernel_type = 0
-    periods = [0, 0]
+    # lattice parameters
+    dim = 200
+    delta_x = 1.
+    delta_y = 1.
+    periods = [1, 1]
 
+    # Hamiltonian parameter
     particle_mass = 1
-    time_single_it = 0.08 * particle_mass / 2
+    coupling_const = 0.
+    external_potential = np.zeros((dim, dim))
 
-    h_a = np.cos(time_single_it / (2. * particle_mass))
-    h_b = np.sin(time_single_it / (2. * particle_mass))
-
+    # initial state
     p_real = np.ones((dim,dim))
     p_imag = np.zeros((dim,dim))
-    pot_r = np.zeros((dim, dim))
-    pot_i = np.zeros((dim, dim))
-
-    CONST = -1. * time_single_it * order_approx
     for y in range(0, dim):
         for x in range(0, dim):
             p_real[y, x] = np.sin(2 * np.pi * x / dim) * np.sin(2 * np.pi * y / dim)
-            pot_r[y, x] = np.cos(CONST * pot_r[y, x])
-      pot_i[y, x] = np.sin(CONST * pot_i[y, x])
 
-    ts.trotter(h_a, h_b, pot_r, pot_i, p_real, p_imag, iterations, kernel_type, periods, imag_time)
+    # evolution parameters
+    imag_time = False
+    delta_t = 0.001
+    iterations = 200
+    kernel_type = 0
+
+    # launch evolution
+    ts.solver(p_real, p_imag, particle_mass, coupling_const, external_potential, delta_x, delta_y, delta_t, iterations, kernel_type, periods, imag_time)
+
+    # expectation values
+    Energy = ts.H(p_real, p_imag, particle_mass, coupling_const, external_potential, delta_x, delta_y)
+    print Energy
+
+    Kinetic_Energy = ts.K(p_real, p_imag, particle_mass, delta_x, delta_y)
+    print Kinetic_Energy
+
+    Norm2 = ts.Norm2(p_real, p_imag, delta_x, delta_y)
+    print Norm2
+
+
+Another code block that finds the ground state of a single particle in a well potential.
+
+.. code-block:: python
+
+    import numpy as np
+    import trottersuzuki as ts
+    from matplotlib import pyplot as plt
+
+    # lattice parameters
+    dim = 200
+    delta_x = 1.
+    delta_y = 1.
+    periods = [0, 0]
+
+    # Hamiltonian parameter
+    particle_mass = 1
+    coupling_const = 0.
+    external_potential = np.zeros((dim, dim))
+
+    # initial state
+    p_real = np.ones((dim,dim))
+    p_imag = np.zeros((dim,dim))	
+
+    # evolution parameters
+    imag_time = True
+    delta_t = 0.1
+    iterations = 2000
+    kernel_type = 1
+
+    for i in range(0, 15):
+        # launch evolution
+        ts.solver(p_real, p_imag, particle_mass, coupling_const, external_potential, delta_x, delta_y, delta_t, iterations, kernel_type, periods, imag_time)
+        print ts.H(p_real, p_imag, particle_mass, coupling_const, external_potential, delta_x, delta_y)
+        print ts.Norm2(p_real, p_imag, delta_x, delta_y)
 
     heatmap = plt.pcolor(p_real)
     plt.show()
