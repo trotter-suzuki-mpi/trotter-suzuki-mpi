@@ -9,26 +9,26 @@ void mexFunction(int nlhs, mxArray *plhs[],
     
     //check inputs           
     if(nrhs != 5) {
-		mexErrMsgIdAndTxt("MexTrotter: five inputs required.");
+		mexErrMsgIdAndTxt("MexTrotter:"," five inputs required.");
 	}
 	
 	if( !mxIsDouble(prhs[0]) || mxIsComplex(prhs[0])) {
-		mexErrMsgIdAndTxt("MexTrotter: input 1: notDouble Input, matrix must be type double.");
+		mexErrMsgIdAndTxt("MexTrotter:"," input 1: notDouble Input, matrix must be type double.");
 	}
 	
 	if( !mxIsDouble(prhs[1]) || mxIsComplex(prhs[1])) {
-		mexErrMsgIdAndTxt("MexTrotter: input 2: notDouble Input, matrix must be type double.");
+		mexErrMsgIdAndTxt("MexTrotter:"," input 2: notDouble Input, matrix must be type double.");
 	}
 	
 	if( !mxIsDouble(prhs[2]) || mxIsComplex(prhs[2]) || mxGetNumberOfElements(prhs[2]) != 1 ) {
-		mexErrMsgIdAndTxt("MexTrotter: input 3: notScalar Input, particle mass must be a scalar.");
+		mexErrMsgIdAndTxt("MexTrotter:"," input 3: notScalar Input, particle mass must be a scalar.");
 	}
 	
 	if( !mxIsDouble(prhs[3]) || mxIsComplex(prhs[3]) || mxGetNumberOfElements(prhs[3]) != 1 ) {
-		mexErrMsgIdAndTxt("MexTrotter: input 4: notScalar Input, delta_x must be a scalar.");
+		mexErrMsgIdAndTxt("MexTrotter:"," input 4: notScalar Input, delta_x must be a scalar.");
 	}
 	if( !mxIsDouble(prhs[4]) || mxIsComplex(prhs[4]) || mxGetNumberOfElements(prhs[4]) != 1 ) {
-		mexErrMsgIdAndTxt("MexTrotter: input 5: notScalar Input, delta_y must be a scalar.");
+		mexErrMsgIdAndTxt("MexTrotter:"," input 5: notScalar Input, delta_y must be a scalar.");
 	}
 	
 	//check matrices dimensions    
@@ -41,7 +41,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
     
 	//check outputs
 	if(nlhs != 1) {
-		mexErrMsgIdAndTxt("MexTrotter: one output required.");
+		mexErrMsgIdAndTxt("MexTrotter:"," one output required.");
 	}
 	
     // initialize matrices
