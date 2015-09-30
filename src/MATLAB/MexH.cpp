@@ -8,8 +8,8 @@ void mexFunction(int nlhs, mxArray *plhs[],
     int nRow = mxGetM(prhs[0]);
     
     //check inputs           
-    if(nrhs != 12) {
-		mexErrMsgIdAndTxt("MexTrotter: twelve inputs required.");
+    if(nrhs != 7) {
+		mexErrMsgIdAndTxt("MexTrotter: seven inputs required.");
 	}
 	
 	if( !mxIsDouble(prhs[0]) || mxIsComplex(prhs[0])) {
@@ -38,19 +38,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
 	if( !mxIsDouble(prhs[6]) || mxIsComplex(prhs[6]) || mxGetNumberOfElements(prhs[6]) != 1 ) {
 		mexErrMsgIdAndTxt("MexTrotter: input 7: notScalar Input, delta_y must be a scalar.");
 	}
-	if( !mxIsDouble(prhs[7]) || mxIsComplex(prhs[7]) || mxGetNumberOfElements(prhs[7]) != 1 ) {
-		mexErrMsgIdAndTxt("MexTrotter: input 8: notScalar Input, delta_t must be a scalar.");
-	}
-	if( mxIsComplex(prhs[8]) || mxGetNumberOfElements(prhs[8]) != 1 ) {
-		mexErrMsgIdAndTxt("MexTrotter: input 9: notScalar Input, number of iterations must be a scalar.");
-	}
-	if( mxIsComplex(prhs[9]) || mxGetNumberOfElements(prhs[9]) != 1 ) {
-		mexErrMsgIdAndTxt("MexTrotter: input 10: notScalar Input, kernel type must be a scalar.");
-	}
 	
-	if( mxIsComplex(prhs[11]) || mxGetNumberOfElements(prhs[11]) != 1 ) {
-		mexErrMsgIdAndTxt("MexTrotter: input 12: notScalar Input, imag time must be a scalar.");
-	}
 	
 	//check matrices dimensions    
     if (nCol != mxGetN(prhs[1])) {
@@ -68,24 +56,10 @@ void mexFunction(int nlhs, mxArray *plhs[],
     }
     
 	//check outputs
-	if(nlhs != 2) {
-		mexErrMsgIdAndTxt("MexTrotter: two outputs required.");
+	if(nlhs != 1) {
+		mexErrMsgIdAndTxt("MexTrotter: one output required.");
 	}
-	/*
-	if (nCol != mxGetN(plhs[0])) {
-        mexErrMsgIdAndTxt("MexTrotter:", "Output 1 must have the same number of columns as input 1");
-    }
-    if (nRow != mxGetM(plhs[0])) {
-        mexErrMsgIdAndTxt("MexTrotter:", "Output 1 must have the same number of rows as input 1");
-    }
-    
-    if (nCol != mxGetN(plhs[1])) {
-        mexErrMsgIdAndTxt("MexTrotter:", "Output 2 must have the same number of columns as input 1");
-    }
-    if (nRow != mxGetM(plhs[1])) {
-        mexErrMsgIdAndTxt("MexTrotter:", "Output 2 must have the same number of rows as input 1");
-    }
-    */
+	
     // initialize matrices
     double *Mp_real = mxGetPr(prhs[0]);
     double *p_real = new double[nCol * nRow];
@@ -93,9 +67,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
     double *p_imag = new double[nCol * nRow];
     double *Mext_pot = mxGetPr(prhs[4]);
     double *ext_pot = new double[nCol * nRow];
-    int *Mperiods = (int*)mxGetPr(prhs[10]);
-    int *periods = new int[2];
-    
+        
     for (int i = 0; i < nRow; i++) {
         for (int j = 0; j < nCol; j++) {
             p_real[i * nCol + j] = (double)Mp_real[j * nRow + i];
@@ -103,32 +75,18 @@ void mexFunction(int nlhs, mxArray *plhs[],
             ext_pot[i * nCol + j] = (double)Mext_real[j * nRow + i];
         }
     }
-    for (int i = 0; i < 2; i++) {
-        periods[i] = (int)Mperiods[i];
-    }
     
     //initialize scalars
     double particle_mass = (double)mxGetPr(prhs[2])[0];
     double coupling_const = (double)mxGetPr(prhs[3])[0];
     double delta_x = (double)mxGetPr(prhs[5])[0];
     double delta_y = (double)mxGetPr(prhs[6])[0];
-    double delta_t = (double)mxGetPr(prhs[7])[0];
-    int iterations = (int)mxGetPr(prhs[8])[0];
-    int kernel_type = (int)mxGetPr(prhs[9])[0];
-    bool imag_time = (bool)mxGetPr(prhs[11])[0];
     
-    //launch the solver
-    solver(p_real, p_imag, particle_mass, coupling_const, ext_pot, nCol, nRow, delta_x, delta_y, delta_t, iterations, kernel_type, periods, imag_time);
+    //launch the function
+    double EnergyTot = Energy_tot(p_real, p_imag, particle_mass, coupling_const, ext_pot, nCol, nRow, delta_x, delta_y);
     
     //Set output
-    plhs[0] = mxCreateDoubleMatrix(nRow, nCol, mxREAL);
-    double* Op_real = mxGetPr(plhs[0]);
-    plhs[1] = mxCreateDoubleMatrix(nRow, nCol, mxREAL);
-    double* Op_imag = mxGetPr(plhs[1]);
-    for (int i = 0; i < nRow; i++) {
-        for (int j = 0; j < nCol; j++) {
-            Op_real[j * nRow + i] = (double)p_real[i * nCol + j];
-            Op_imag[j * nRow + i] = (double)p_imag[i * nCol + j];
-        }
-    }
+    plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
+    double* OutEnergyTot = mxGetPr(plhs[0]);
+    OutEnergyTot[0] = EnergyTot;
 }
