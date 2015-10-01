@@ -29,12 +29,17 @@ NVCC       	   = @NVCC@
 MPI_INC        = @MPI_INC@
 MPI_LIBDIR     = @MPI_LIBDIR@
 MPI_LIBS       = @MPI_LIBS@
+MATLAB_ROOT    = @MATLAB_ROOT@
+MEX_BIN        = @MEX_BIN@
 
 # VPATH-related substitution variables
 srcdir	 = @srcdir@
 VPATH	  = @srcdir@
 
-LIBOBJS=common.o cpublock.o trotter.o
+LIBOBJS=common.o cpublock.o trotter.o solver.o
+
+MEX_FLAGS=-I./
+MEX_LIBS=-lgomp
 
 platform=$(shell uname -s)
 
@@ -61,6 +66,28 @@ trotter: $(OBJS)
 
 %.cu.co: %.cu
 	$(NVCC) $(DEFS) $(CUDA_CFLAGS) ${MPI_INC} -I$(srcdir) -I.. -o $@ -c $(srcdir)/$<
+
+matlab: lib
+	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexTrotter.cpp $(LIBOBJS) $(MEX_LIBS)
+	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexH.cpp ./common.o $(MEX_LIBS)
+	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexK.cpp ./common.o $(MEX_LIBS)
+	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexNorm.cpp ./common.o $(MEX_LIBS)
+
+matlab_clean: clean
+	-rm -f Mex*
+	
+python:
+	cp ../COPYING ./Python
+	cp ./*.h ./Python/
+	cp ./*.cpp ./Python/
+	swig -c++ -python ./Python/trotter.i
+	cd Python; python2 setup.py build
+
+python_install: python python_doc
+	cd Python; python2 setup.py install
+
+python_clean:
+	-rm -rf Python/*.pyc Python/*.h Python/*.cpp  Python/*.cxx Python/dist Python/trottersuzuki.egg* Python/build Python/trottersuzuki.py Python/*.so
 
 clean:
 	-rm -f trotter $(OBJS) 1>/dev/null
