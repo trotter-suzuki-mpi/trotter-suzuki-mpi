@@ -57,15 +57,13 @@ Trotter-Suzuki-MPI MATLAB Extension Build Guide (Linux/Mac):
 
     $ ./autogen.sh
 
-   Then run ``configure`` disabling MPI and CUDA:
+   Then run ``configure`` disabling MPI and CUDA. You can also supply the root directory of your MATLAB installation:
 
-    $ ./configure --without-mpi --without-cuda
+    $ ./configure --without-mpi --without-cuda --with-matlab=/usr/local/MATLAB/R2015a/bin/mex
  
-2. Build MATLAB Extension by running:
+2. Build the MATLAB Extension
    ::
-      MEX_BIN="/usr/local/MATLAB/R2015a/bin/mex" ./makeMex.sh
-    
-   where ``MEX_BIN`` is the path to the MATLAB installation mex binary.
+      make matlab
 
 3. Then ``MexTrotter.mexa64`` or ``MexTrotter.mexa32`` is generated for use, you can test by running the ``mex_trotter_interface_test.m``.
 

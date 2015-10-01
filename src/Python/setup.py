@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 """
 setup.py file for SWIG example
 """
