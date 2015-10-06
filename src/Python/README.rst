@@ -135,7 +135,3 @@ Then you can issue
 ::
    
     $ sudo pip install trottersuzuki
-
-Build on Windows
-----------------
-The pip install command might fail on Windows. If this happens, compile the source with Visual Studio and run the setupWin.py script.

@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 """
 setup.py file for SWIG example
 """
@@ -16,29 +14,41 @@ try:
 except AttributeError:
     numpy_include = numpy.get_numpy_include()
 
-sources_files=['trotter.i']
-
-extra_objects=['../windows/trotter/Debug/common.obj'
-               '../windows/trotter/Debug/cpublock.obj'
-               '../windows/trotter/Debug/cpublocksse.obj'
-               '../windows/trotter/Debug/solver.obj'
-               '../windows/trotter/Debug/trotter.obj']
-
 if sys.platform.startswith('win'):
-    extra_compile_args = ['-openmp']
+    extra_compile_args = ['-openmp', '-DWIN32']
     extra_link_args = []
+    sources_files=[	'common.cpp',
+                    'cpublock.cpp',
+                    'trotter.cpp',
+                    'solver.cpp',
+                    'trotter_wrap.cxx']
+elif sys.platform.startswith('darwin'):
+    extra_compile_args = ['-fopenmp']
+    extra_link_args = [
+        '-lgomp'
+    ]        
+    sources_files=[	'common.cpp',
+                    'cpublock.cpp',
+                    'trotter.cpp',
+                    'solver.cpp',
+                    'trotter_wrap.cxx']
 else:
     extra_compile_args = ['-fopenmp']
     extra_link_args = [
         '-lgomp'
     ]        
+    sources_files=[	'common.cpp',
+                    'cpublock.cpp',
+                    'cpublocksse.cpp',
+                    'trotter.cpp',
+                    'solver.cpp',
+                    'trotter_wrap.cxx']
 
 trottersuzuki_module = Extension('_trottersuzuki',
                                  sources=sources_files,						   
                                  include_dirs=[numpy_include],
                                  extra_compile_args=extra_compile_args,
-                                 extra_link_args=extra_link_args,
-                                 swig_opts=['-c++'])
+                                 extra_link_args=extra_link_args)
 
 
 setup(name='trottersuzuki',
