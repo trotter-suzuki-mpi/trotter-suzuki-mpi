@@ -279,7 +279,7 @@ void print_complex_matrix(char * filename, double * matrix_real, double * matrix
     out.close();
 }
 
-void print_matrix(char * filename, double * matrix, size_t stride, size_t width, size_t height) {
+void print_matrix(const char * filename, double * matrix, size_t stride, size_t width, size_t height) {
     std::ofstream out(filename, std::ios::out | std::ios::trunc);
     for (size_t i = 0; i < height; ++i) {
         for (size_t j = 0; j < width; ++j) {
@@ -401,7 +401,7 @@ void get_quadrant_sample_to_buffer(const double * r00, const double * r01, const
     assert (dest_y == y + height);
 }
 
-void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x,
+void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x, int end_x,
            int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords, int * periods,
            int tag_particle, int iterations, int count_snap, const char * output_folder
 #ifdef HAVE_MPI
@@ -446,19 +446,20 @@ void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height
 
     // output complex matrix
     // conversion
+    int tile_width = end_x - start_x;
     data_as_txt = new char[(inner_end_x - inner_start_x) * (inner_end_y - inner_start_y) * chars_per_complex_num];
     count = 0;
     for (int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
         for (int k = inner_start_x - start_x; k < inner_end_x - start_x - 1; k++) {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)   ", p_real[j * matrix_width + k], p_imag[j * matrix_width + k]);
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)   ", p_real[j * tile_width + k], p_imag[j * tile_width + k]);
             count++;
         }
         if(coords[1] == dims[1] - 1) {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)\n  ", p_real[j * matrix_width + (inner_end_x - start_x) - 1], p_imag[j * matrix_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)\n  ", p_real[j * tile_width + (inner_end_x - start_x) - 1], p_imag[j * tile_width + (inner_end_x - start_x) - 1]);
             count++;
         }
         else {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)   ", p_real[j * matrix_width + (inner_end_x - start_x) - 1], p_imag[j * matrix_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)   ", p_real[j * tile_width + (inner_end_x - start_x) - 1], p_imag[j * tile_width + (inner_end_x - start_x) - 1]);
             count++;
         }
     }
@@ -481,15 +482,15 @@ void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height
     count = 0;
     for (int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
         for (int k = inner_start_x - start_x; k < inner_end_x - start_x - 1; k++) {
-            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", p_real[j * matrix_width + k]);
+            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", p_real[j * tile_width + k]);
             count++;
         }
         if(coords[1] == dims[1] - 1) {
-            sprintf(&data_as_txt[count * charspernum], "%+.5e\n ", p_real[j * matrix_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * charspernum], "%+.5e\n ", p_real[j * tile_width + (inner_end_x - start_x) - 1]);
             count++;
         }
         else {
-            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", p_real[j * matrix_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", p_real[j * tile_width + (inner_end_x - start_x) - 1]);
             count++;
         }
     }

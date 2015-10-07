@@ -35,7 +35,7 @@
 
 void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound);
 void print_complex_matrix(char * filename, double * matrix_real, double * matrix_imag, size_t stride, size_t width, size_t height);
-void print_matrix(char * filename, double * matrix, size_t stride, size_t width, size_t height);
+void print_matrix(const char * filename, double * matrix, size_t stride, size_t width, size_t height);
 void memcpy2D(void * dst, size_t dstride, const void * src, size_t sstride, size_t width, size_t height);
 void get_quadrant_sample(const double * r00, const double * r01, const double * r10, const double * r11,
                          const double * i00, const double * i01, const double * i10, const double * i11,
@@ -61,7 +61,7 @@ void initialize_potential(double * hamilt_pot, double (*hamiltonian_pot)(int x, 
                           int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
 
 double const_potential(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x,
+void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x, int end_x,
            int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords, int * periods,
            int tag_particle, int iterations, int count_snap, const char * output_folder
 #ifdef HAVE_MPI
