@@ -37,10 +37,10 @@
 
 #define LENGHT 50
 #define DIM 640
-#define ITERATIONS 200
+#define ITERATIONS 1000
 #define PARTICLES_NUM 1700000
-#define KERNEL_TYPE 1
-#define SNAPSHOTS 5
+#define KERNEL_TYPE 0
+#define SNAPSHOTS 10
 #define SCATTER_LENGHT_2D 5.662739242e-5
 
 
@@ -79,11 +79,11 @@ double parabolic_potential(int m, int n, int matrix_width, int matrix_height, in
 int main(int argc, char** argv) {
     int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, kernel_type = KERNEL_TYPE;
     int periods[2] = {0, 0};
-    char file_name[] = "";//"GSD640_N1700000_L50_A5.66_NIST_phase.dat";
+    char file_name[] = "";
     char pot_name[1] = "";
     const double particle_mass = 1.;
     bool show_time_sim = false;
-    bool imag_time = true;
+    bool imag_time = false;
     double norm = 1.5;
     double h_a = 0.;
     double h_b = 0.;
@@ -138,36 +138,13 @@ int main(int argc, char** argv) {
     int tile_width = end_x - start_x;
     int tile_height = end_y - start_y;
     
-  /*  //***************************************
-    double *p_real = new double[tile_width * tile_height];
-    double *p_imag = new double[tile_width * tile_height];
-    for(int i = 0; i < tile_width * tile_height; i++) {
-		p_real[i] = rank;
-		p_imag[i] = rank;
-	}
-	
-	std::string filenames1 = ".";
-    stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
-              start_y, inner_start_y, inner_end_y, dims, coords, periods,
-              0, iterations, 0, filenames1.c_str()
-#ifdef HAVE_MPI
-              , cartcomm
-#endif
-             );
-             
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-    return 0;
-  */  //***************************************
-
     //set and calculate evolution operator variables from hamiltonian
     double time_single_it;
     double coupling_const = delta_t * 4. * M_PI * double(SCATTER_LENGHT_2D);
     double *external_pot_real = new double[tile_width * tile_height];
     double *external_pot_imag = new double[tile_width * tile_height];
     double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-    hamiltonian_pot = parabolic_potential;
+    hamiltonian_pot = const_potential;
 
     if(imag_time) {
         time_single_it = delta_t / 2.;	//second approx trotter-suzuki: time/2
@@ -213,19 +190,21 @@ int main(int argc, char** argv) {
         filenames = ".";
 
     for(int count_snap = 0; count_snap <= snapshots; count_snap++) {
-        stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
+        stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
               start_y, inner_start_y, inner_end_y, dims, coords, periods,
               0, iterations, count_snap, filenames.c_str()
 #ifdef HAVE_MPI
               , cartcomm
 #endif
              );
-      /*       
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-    return 0;
-    */
+
+		std::stringstream filename1;
+		std::string filenames1;
+		filename1.str("");
+        filename1 << "new/D" << dim << "_I" << iterations << "_" << count_snap << "_" << rank << "";
+        filenames1 = filename1.str();
+        
+		print_matrix(filenames1.c_str(), p_real, tile_width, tile_width, tile_height);
         if(count_snap != snapshots) {
             trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, iterations, kernel_type, periods, norm, imag_time);
         }

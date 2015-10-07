@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
     else
         dirnames = ".";
 
-    stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
+    stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
           start_y, inner_start_y, inner_end_y, dims, coords, periods,
           0, iterations, 0, dirnames.c_str()
 #ifdef HAVE_MPI
@@ -151,7 +151,7 @@ int main(int argc, char** argv) {
     for(int count_snap = 0; count_snap < snapshots; count_snap++) {
         trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, iterations, kernel_type, periods, norm, imag_time);
 
-        stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
+        stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
               start_y, inner_start_y, inner_end_y, dims, coords, periods,
               0, iterations, count_snap, dirnames.c_str()
 #ifdef HAVE_MPI

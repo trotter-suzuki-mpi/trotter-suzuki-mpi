@@ -263,7 +263,7 @@ int main(int argc, char** argv) {
                          periods, coords, dims, halo_x, halo_y, read_offset);
 
         for(int count_snap = 0; count_snap <= snapshots; count_snap++) {
-            stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x,
+            stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
                   start_y, inner_start_y, inner_end_y, dims, coords, periods,
                   i, iterations, count_snap, output_folder
 #ifdef HAVE_MPI
