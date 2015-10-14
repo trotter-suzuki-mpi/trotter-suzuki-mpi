@@ -90,14 +90,21 @@ void trotter(double h_a, double h_b, double coupling_const,
 
     case 1:
 #ifndef WIN32
+#ifndef __APPLE__
         kernel = new CPUBlockSSEKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
 #ifdef HAVE_MPI
                                        , cartcomm
 #endif
                                       );
 #else
+		if (coords[0] == 0 && coords[1] == 0) {
+            std::cerr << "SSE kernel not supported on Windows and MAC\n";
+        }
+        abort();
+#endif
+#else
         if (coords[0] == 0 && coords[1] == 0) {
-            std::cerr << "SSE kernel not supported on Windows\n";
+            std::cerr << "SSE kernel not supported on Windows and MAC\n";
         }
         abort();
 #endif
