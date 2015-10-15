@@ -14,32 +14,32 @@ except AttributeError:
 if sys.platform.startswith('win'):
     extra_compile_args = ['-openmp', '-DWIN32']
     extra_link_args = []
-    sources_files = ['common.cpp',
-                     'cpublock.cpp',
-                     'trotter.cpp',
-                     'solver.cpp',
-                     'trotter_wrap.cxx']
+    sources_files = ['trottersuzuki/common.cpp',
+                     'trottersuzuki/cpublock.cpp',
+                     'trottersuzuki/trotter.cpp',
+                     'trottersuzuki/solver.cpp',
+                     'trottersuzuki/trotter_wrap.cxx']
 elif sys.platform.startswith('darwin'):
     extra_compile_args = ['-fopenmp']
     extra_link_args = [
         '-lgomp'
     ]
-    sources_files = ['common.cpp',
-                     'cpublock.cpp',
-                     'trotter.cpp',
-                     'solver.cpp',
-                     'trotter_wrap.cxx']
+    sources_files = ['trottersuzuki/common.cpp',
+                     'trottersuzuki/cpublock.cpp',
+                     'trottersuzuki/trotter.cpp',
+                     'trottersuzuki/solver.cpp',
+                     'trottersuzuki/trotter_wrap.cxx']
 else:
     extra_compile_args = ['-fopenmp']
     extra_link_args = [
         '-lgomp'
     ]
-    sources_files = ['common.cpp',
-                     'cpublock.cpp',
-                     'cpublocksse.cpp',
-                     'trotter.cpp',
-                     'solver.cpp',
-                     'trotter_wrap.cxx']
+    sources_files = ['trottersuzuki/common.cpp',
+                     'trottersuzuki/cpublock.cpp',
+                     'trottersuzuki/cpublocksse.cpp',
+                     'trottersuzuki/trotter.cpp',
+                     'trottersuzuki/solver.cpp',
+                     'trottersuzuki/trotter_wrap.cxx']
 
 trottersuzuki_module = Extension('_trottersuzuki',
                                  sources=sources_files,
@@ -58,5 +58,6 @@ setup(name='trottersuzuki',
       description="A massively parallel implementation of the Trotter-Suzuki decomposition",
       ext_modules=[trottersuzuki_module],
       py_modules=["trottersuzuki"],
+      packages=["trottersuzuki"],
       install_requires=['numpy']
       )
