@@ -78,16 +78,16 @@ matlab_clean: clean
 	
 python:
 	cp ../COPYING ./Python
-	cp ./*.h ./Python/
-	cp ./*.cpp ./Python/
-	swig -c++ -python ./Python/trotter.i
+	cp ./*.h ./Python/trottersuzuki/
+	cp ./*.cpp ./Python/trottersuzuki/
+	swig -c++ -python ./Python/trottersuzuki/trotter.i
 	cd Python; python setup.py build
 
 python_install: python python_doc
 	cd Python; python setup.py install
 
 python_clean:
-	-rm -rf Python/*.pyc Python/*.h Python/*.cpp  Python/*.cxx Python/dist Python/trottersuzuki.egg* Python/build Python/trottersuzuki.py Python/*.so
+	-rm -rf Python/*.pyc Python/trottersuzuki/*.pyc Python/trottersuzuki/*.h Python/trottersuzuki/*.cpp  Python/trottersuzuki/*.cxx Python/dist Python/trottersuzuki.egg* Python/build Python/trottersuzuki/trottersuzuki.py Python/trottersuzuki/*.so
 
 clean:
 	-rm -f trotter $(OBJS) 1>/dev/null
