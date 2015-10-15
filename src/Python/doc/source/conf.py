@@ -56,7 +56,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'TrotterSuzuki'
-copyright = u'2015, Peter Wittek, Shi Chao Gao'
+copyright = u'2015, Peter Wittek, Luca Calderaro'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -212,7 +212,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('indexlatex', 'manual.tex', u'Trotter-Suzuki-MPI Python Documentation',
-   u'Peter Wittek, Shi Chao Gao', 'manual'),
+   u'Peter Wittek, Luca Calderaro', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -242,7 +242,7 @@ latex_appendices = []
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'trottersuzuki', u'Trotter-Suzuki-MPI Python Documentation',
-     [u'Peter Wittek, Shi Chao Gao'], 1)
+     [u'Peter Wittek, Luca Calderaro'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -256,7 +256,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'trottersuzuki', u'Trotter-Suzuki-MPI Python Documentation',
-   u'Peter Wittek, Shi Chao Gao', 'trottersuzuki', 'One line description of project.',
+   u'Peter Wittek, Luca Calderaro', 'trottersuzuki', 'One line description of project.',
    'Miscellaneous'),
 ]
 
