@@ -1,6 +1,6 @@
 Since 1.3:
  - New: CPU kernel implements the Gross-Pitaevskii equation.
- - New: All kernels output a wave function normalized with a set value.
+ - New: performing imaginary time evolution, all kernels output a wave function normalized with a set value provided as input.
  - New: Python and MATLAB wrappers only need Hamiltonian parameters, lattice parameters and evolution parameters as input.
  - New: Sphinx documentation for the Python wrapper, including examples.
  - Changed: Example of MATLAB wrapper.
