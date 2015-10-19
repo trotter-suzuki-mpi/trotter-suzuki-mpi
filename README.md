@@ -7,6 +7,7 @@ Key features:
 
   - Arbitrary single-body initial state with closed and periodic boundary conditions.
   - Many-body simulations with non-interacting particles.
+  - Gross-Pitaevskii equation.
   - Imaginary time evolution to calculate the ground state.
   - Stationary external potential.
   - Command-line interface (CLI) and application programming interface (API) for flexible use.
