@@ -68,14 +68,6 @@ The hybrid kernel is experimental. It splits the work between the GPU and the CP
 
 If the command-line interface is not flexible enough, the function that performs the evolution is exposed as an API:
 
-    void trotter(double h_a, double h_b, 
-                 double * external_pot_real, double * external_pot_imag, 
-                 double * p_real, double * p_imag, 
-                 const int matrix_width, const int matrix_height, 
-                 const int iterations, const int snapshots, const int kernel_type, 
-                 int *periods, const char *output_folder, 
-                 bool verbose = false, bool imag_time = false, int particle_tag = 1);
-                 
     void trotter(double h_a, double h_b, double coupling_const,
                  double * external_pot_real, double * external_pot_imag,
                  double * p_real, double * p_imag, double delta_x, double delta_y,
