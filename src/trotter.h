@@ -26,25 +26,24 @@
 
     @param h_a               Kinetic term of the Hamiltonian (cosine part)
     @param h_b               Kinetic term of the Hamiltonian (sine part)
+    @param coupling_const    Coupling constant of the self-interacting term
     @param external_pot_real External potential, real part
     @param external_pot_imag External potential, imaginary part
     @param p_real            Initial state, real part
     @param p_imag            Initial state, imaginary part
+    @param delta_x           Physical distance between two neighbour points of the lattice along the x axis
+    @param delta_y           Physical distance between two neighbour points of the lattice along the y axis
     @param matrix_width      The width of the initial state
     @param matrix_height     The height of the initial state
     @param iterations        Number of iterations to be calculated
-    @param snapshots         Number of iterations between taking snapshots
-                             (0 means no snapshots)
     @param kernel_type       The kernel type:
-                              0: CPU block kernel
-                              1: CPU SSE block kernel
-                              2: GPU kernel
-                              3: Hybrid kernel
-    @param periods            Whether the grid is periodic in any of the directions
-    @param output_folder      The folder to write the snapshots in
-    @param verbose            Optional verbosity parameter
-    @param imag_time          Optional parameter to calculate imaginary time evolution
-    @param particle_tag       Optional parameter to tag a particle in the snapshots
+                             0: CPU block kernel
+                             1: CPU SSE block kernel
+                             2: GPU kernel
+                             3: Hybrid kernel
+    @param periods           Whether the grid is periodic in any of the directions
+    @param norm              Norm of the final state (only for imaginary time evolution)
+    @param imag_time         Optional parameter to calculate imaginary time evolution
 
 */
 
