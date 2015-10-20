@@ -28,11 +28,13 @@ The file specified contains the complex matrix describing the initial state in t
 
 Arguments:
 
-    -a NUMBER     Parameter h_a of kinetic evolution operator (cosine part)
-    -b NUMBER     Parameter h_b of kinetic evolution operator (sine part)
+    -m NUMBER     Particle mass
+    -c NUMBER     Coupling constant of the self-interacting term (default: 0)
     -d NUMBER     Matrix dimension (default: 640)
-    -g            Imaginary time evolution to evolve towards the ground state
+    -l NUMBER     Physical dimension of the square lattice's edge (default: 640)
+    -t NUMBER     Single time step (default: 0.01)
     -i NUMBER     Number of iterations (default: 1000)
+    -g            Imaginary time evolution to evolve towards the ground state
     -k NUMBER     Kernel type (default: 0): 
                     0: CPU, cache-optimized
                     1: CPU, SSE and cache-optimized
@@ -41,7 +43,6 @@ Arguments:
     -s NUMBER     Snapshots are taken at every NUMBER of iterations.
                     Zero means no snapshots. Default: 0.
     -n FILENAME   The initial state.
-    -N NUMBER     Number of particles of the system.
     -p FILENAME   Name of file that stores the potential operator 
                   (in coordinate representation)
 
@@ -74,30 +75,36 @@ If the command-line interface is not flexible enough, the function that performs
                  const int iterations, const int snapshots, const int kernel_type, 
                  int *periods, const char *output_folder, 
                  bool verbose = false, bool imag_time = false, int particle_tag = 1);
+                 
+    void trotter(double h_a, double h_b, double coupling_const,
+                 double * external_pot_real, double * external_pot_imag,
+                 double * p_real, double * p_imag, double delta_x, double delta_y,
+                 const int matrix_width, const int matrix_height,
+                 const int iterations, const int kernel_type,
+                 int *periods, double norm, bool imag_time);
 
 where the parameters are as follows:
 
     h_a               Kinetic term of the Hamiltonian (cosine part)
     h_b               Kinetic term of the Hamiltonian (sine part)
+    coupling_const    Coupling constant of the self-interacting term
     external_pot_real External potential, real part
     external_pot_imag External potential, imaginary part
     p_real            Initial state, real part
     p_imag            Initial state, imaginary part
+    delta_x           Physical distance between two neighbour points of the lattice along the x axis
+    delta_y           Physical distance between two neighbour points of the lattice along the y axis
     matrix_width      The width of the initial state
     matrix_height     The height of the initial state
     iterations        Number of iterations to be calculated
-    snapshots         Number of iterations between taking snapshots 
-                             (0 means no snapshots)
     kernel_type       The kernel type:
                               0: CPU block kernel
                               1: CPU SSE block kernel
                               2: GPU kernel
                               3: Hybrid kernel
-    periods            Whether the grid is periodic in any of the directions
-    output_folder      The folder to write the snapshots in
-    verbose            Optional verbosity parameter
-    imag_time          Optional parameter to calculate imaginary time evolution
-    particle_tag       Optional parameter to tag a particle in the snapshots
+    periods           Whether the grid is periodic in any of the directions
+    norm              Norm of the final state (only for imaginary time evolution)
+    imag_time         Optional parameter to calculate imaginary time evolution
   
 MPI must be initialized before the function is called. Examples of using the API are included in the source tree. The respective files are in the examples folder:
 
@@ -105,7 +112,7 @@ MPI must be initialized before the function is called. Examples of using the API
   - `gaussian-like_initial_state.cpp`: Time evolution of a particle in a box with a Gaussian-like initial state with closed boundary conditions.
   - `imag_evolution.cpp`: Imaginary time evolution of an exponential initial state with periodic boundary conditions.
   - `sinusoid_initial_state.cpp`: Time evolution of a particle in a box with a sinusoid initial state with periodic boundary conditions.
-  - `two_particles_exponential_initial_state.cpp`: Time evolution of two free particles in a box with periodic boundary conditions.
+  - `groundstate_of_BEC_in_harmonic_pot.cpp`: Imaginary time evolution of a Bose-Einstein Condensate trapped in a harmonic potential.
 
 
 **Python and MATLAB Interfaces**
