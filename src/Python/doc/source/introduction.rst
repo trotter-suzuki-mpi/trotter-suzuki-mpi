@@ -8,6 +8,10 @@ Key features of the Python interface:
 * Fast execution by parallelization: OpenMP.
 * NumPy arrays are supported for efficient data exchange.
 * Multi-platform: Linux, OS X, and Windows are supported.
+* Arbitrary single-body initial state with closed and periodic boundary conditions.
+* Many-body simulations with non-interacting particles.
+* `Gross-Pitaevskii equation <https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb>`_.
+* Imaginary time evolution to calculate the ground state.
 
 
 Copyright and License
