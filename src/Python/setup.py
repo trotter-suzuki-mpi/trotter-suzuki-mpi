@@ -49,7 +49,7 @@ trottersuzuki_module = Extension('_trottersuzuki',
 
 
 setup(name='trottersuzuki',
-      version='1.3',
+      version='1.4',
       license='GPL3',
       author="Peter Wittek, Luca Calderaro",
       author_email='peterwittek@users.noreply.github.com',

@@ -7,15 +7,15 @@ Key features:
 
   - Arbitrary single-body initial state with closed and periodic boundary conditions.
   - Many-body simulations with non-interacting particles.
-  - Gross-Pitaevskii equation.
+  - [Gross-Pitaevskii equation](https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb).
   - Imaginary time evolution to calculate the ground state.
   - Stationary external potential.
   - Command-line interface (CLI) and application programming interface (API) for flexible use.
-  - [Python](https://pypi.python.org/pypi/trottersuzuki) and MATLAB wrappers are provided.
+  - [Python](https://pypi.python.org/pypi/trottersuzuki) and [MATLAB](https://www.mathworks.com/matlabcentral/fileexchange/51975-mextrotter) wrappers are provided.
   - Cache optimized multi-core, SSE, GPU, and hybrid kernels.
   - Near-linear scaling across multiple nodes with computations overlapping communication.
 
-The current stable version is 1.3. Download it [here](https://github.com/peterwittek/trotter-suzuki-mpi/releases/download/1.3/trotter-suzuki-1.3.tar.gz). The development version is [available on GitHub](https://github.com/peterwittek/trotter-suzuki-mpi).
+Download the latest stable release [here](https://github.com/peterwittek/trotter-suzuki-mpi/releases/latest). The development version is [available on GitHub](https://github.com/peterwittek/trotter-suzuki-mpi).
 
 Usage
 -----
@@ -172,4 +172,4 @@ References
   
   2. Wittek, P. and Cucchietti, F.M. (2013). [A Second-Order Distributed Trotter-Suzuki Solver with a Hybrid CPU-GPU Kernel](http://dx.doi.org/10.1016/j.cpc.2012.12.008). *Computer Physics Communications*, 184, pp. 1165-1171. [PDF](http://arxiv.org/pdf/1208.2407)
 
-  3. Wittek, P. and Calderaro, L. (2015). [Extended computational kernels in a massively parallel implementation of the Trotter-Suzuki approximation](http://dx.doi.org/10.1016/j.cpc.2015.07.017). *To Appear in Computer Physics Communications*. [PDF](https://www.researchgate.net/profile/Peter_Wittek/publication/280962265_Extended_Computational_Kernels_in_a_Massively_Parallel_Implementation_of_the_TrotterSuzuki_Approximation/links/55cebd1f08aee19936fc5dcf.pdf)
+  3. Wittek, P. and Calderaro, L. (2015). [Extended computational kernels in a massively parallel implementation of the Trotter-Suzuki approximation](http://dx.doi.org/10.1016/j.cpc.2015.07.017). *Computer Physics Communications*. [PDF](https://www.researchgate.net/profile/Peter_Wittek/publication/280962265_Extended_Computational_Kernels_in_a_Massively_Parallel_Implementation_of_the_TrotterSuzuki_Approximation/links/55cebd1f08aee19936fc5dcf.pdf)
