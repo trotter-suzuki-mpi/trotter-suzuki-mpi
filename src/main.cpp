@@ -41,27 +41,28 @@
 #include <mpi.h>
 #endif
 #define DIM 640
+#define EDGE_LENGHT 640
+#define SINGLE_TIME_STEP 0.01
 #define ITERATIONS 1000
 #define KERNEL_TYPE 0
 #define SNAPSHOTS 1
-#define N_PARTICLES 1
+#define PARTICLE_MASS 1
+#define COUPLING_CONST 0
 #define FILENAME_LENGTH 255
 
-double delta_t = 4e-4;
-double g = 4. * M_PI * 5.662739242e-5;
-double coupling_const = delta_t * g;
 
-double delta_x = 1, delta_y = 1;
 
 void print_usage() {
     std::cout << "Usage:\n" \
               "     trotter [OPTION] -n filename\n" \
               "Arguments:\n" \
-              "     -a NUMBER     Parameter h_a of kinetic evolution operator (cosine part)\n"\
-              "     -b NUMBER     Parameter h_b of kinetic evolution operator (sine part)\n"\
+              "     -m NUMBER     Particle mass (default: " << PARTICLE_MASS << ")\n"\
+              "     -c NUMBER     Coupling constant of the self-interacting term (default: " << COUPLING_CONST << ")\n"\
               "     -d NUMBER     Matrix dimension (default: " << DIM << ")\n" \
+              "     -l NUMBER     Physical dimension of the square lattice's edge (default: " << EDGE_LENGHT << ")\n" \
+              "     -t NUMBER     Single time step (default: " << SINGLE_TIME_STEP << ")\n" \
+              "     -i NUMBER     Number of iterations before a snapshot (default: " << ITERATIONS << ")\n" \
               "     -g            Imaginary time evolution to evolve towards the ground state\n" \
-              "     -i NUMBER     Number of iterations (default: " << ITERATIONS << ")\n" \
               "     -k NUMBER     Kernel type (default: " << KERNEL_TYPE << "): \n" \
               "                      0: CPU, cache-optimized\n" \
               "                      1: CPU, SSE and cache-optimized\n" \
@@ -70,22 +71,23 @@ void print_usage() {
               "     -s NUMBER     Snapshots are taken at every NUMBER of iterations.\n" \
               "                   Zero means no snapshots. Default: " << SNAPSHOTS << ".\n"\
               "     -n STRING     Name of file that defines the initial state.\n"\
-              "     -N NUMBER     Number of particles of the system.\n"\
               "     -p STRING     Name of file that stores the potential operator (in coordinate representation)\n";
 }
 
-void process_command_line(int argc, char** argv, int *dim, int *iterations, int *snapshots, int *kernel_type, char *filename, double *h_a, double *h_b, char * pot_name, bool *imag_time, int *n_particles) {
+void process_command_line(int argc, char** argv, int *dim, double *delta_x, double *delta_y, int *iterations, int *snapshots, int *kernel_type, char *filename, double *delta_t, double *coupling_const, double *particle_mass, char * pot_name, bool *imag_time) {
     // Setting default values
     *dim = DIM;
     *iterations = ITERATIONS;
     *snapshots = SNAPSHOTS;
     *kernel_type = KERNEL_TYPE;
-    *n_particles = N_PARTICLES;
+    *delta_t = double(SINGLE_TIME_STEP);
+    *coupling_const = double(COUPLING_CONST);
+    *particle_mass = double(PARTICLE_MASS);
 
+	double lenght = double(EDGE_LENGHT);
     int c;
     bool file_supplied = false;
-    int kinetic_par = 0;
-    while ((c = getopt (argc, argv, "gd:hi:k:s:n:a:b:p:N:")) != -1) {
+    while ((c = getopt (argc, argv, "gd:hi:k:s:n:t:l:p:c:m:")) != -1) {
         switch (c) {
         case 'g':
             *imag_time = true;
@@ -127,22 +129,31 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
                 filename[i] = optarg[i];
             file_supplied = true;
             break;
-        case 'a':
-            *h_a = atoi(optarg);
-            kinetic_par++;
+        case 'c':
+            *coupling_const = atoi(optarg);
             break;
-        case 'b':
-            *h_b = atoi(optarg);
-            kinetic_par++;
+        case 'm':
+            *particle_mass = atoi(optarg);
+            if (delta_t <= 0) {
+                fprintf (stderr, "The argument of option -m should be a positive real number.\n");
+                abort ();
+            }
+            break;
+        case 't':
+            *delta_t = atoi(optarg);
+            if (delta_t <= 0) {
+                fprintf (stderr, "The argument of option -t should be a positive real number.\n");
+                abort ();
+            }
             break;
         case 'p':
             for(size_t i = 0; i < strlen(optarg); i++)
                 pot_name[i] = optarg[i];
             break;
-        case 'N':
-            *n_particles = atoi(optarg);
-            if (*n_particles <= 0) {
-                fprintf (stderr, "The argument of option -N should be a positive integer.\n");
+        case 'l':
+            lenght = atoi(optarg);
+            if (lenght <= 0) {
+                fprintf (stderr, "The argument of option -l should be a positive real number.\n");
                 abort ();
             }
             break;
@@ -171,16 +182,15 @@ void process_command_line(int argc, char** argv, int *dim, int *iterations, int 
         print_usage();
         abort();
     }
-    if(kinetic_par == 1) {
-        std::cout << "Both the kinetic parameters should be provided.\n";
-        abort ();
-    }
+    
+    *delta_x = lenght / double(*dim);
+    *delta_y = lenght / double(*dim);
 }
 
 int main(int argc, char** argv) {
-    int dim = 0, iterations = 0, snapshots = 0, kernel_type = 0, n_particles = 0;
+    int dim = 0, iterations = 0, snapshots = 0, kernel_type = 0;
     int periods[2] = {1, 1};
-    const double particle_mass = 1.;
+    double particle_mass = 1.;
     char filename[FILENAME_LENGTH] = "";
     char pot_name[FILENAME_LENGTH] = "";
     bool verbose = true, imag_time = false;
@@ -188,12 +198,16 @@ int main(int argc, char** argv) {
     double norm = 1;
     int time, tot_time = 0;
     char output_folder[2] = {'.', '\0'};
+	double delta_t = 0;
+	double coupling_const = 0;
+	double delta_x = 1, delta_y = 1;
 
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    process_command_line(argc, argv, &dim, &iterations, &snapshots, &kernel_type, filename, &h_a, &h_b, pot_name, &imag_time, &n_particles);
-
+    process_command_line(argc, argv, &dim, &delta_x, &delta_y, &iterations, &snapshots, &kernel_type, filename, &delta_t, &coupling_const, &particle_mass, pot_name, &imag_time);
+	coupling_const *= delta_t;
+	
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
     int matrix_width = dim + periods[1] * 2 * halo_x;
@@ -226,72 +240,72 @@ int main(int argc, char** argv) {
     int tile_width = end_x - start_x;
     int tile_height = end_y - start_y;
 
-    for(int i = 0; i < n_particles; i++) {
-        int read_offset = i * dim * dim;
+    
+	int read_offset = 0;
 
-        //set and calculate evolution operator variables from hamiltonian
-        double time_single_it;
-        double *external_pot_real = new double[tile_width * tile_height];
-        double *external_pot_imag = new double[tile_width * tile_height];
-        double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-        hamiltonian_pot = const_potential;
+	//set and calculate evolution operator variables from hamiltonian
+	double time_single_it;
+	double *external_pot_real = new double[tile_width * tile_height];
+	double *external_pot_imag = new double[tile_width * tile_height];
+	double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
+	hamiltonian_pot = const_potential;
 
-        if(imag_time) {
-            double constant = 6.;
-            time_single_it = delta_t * particle_mass / 2.;	//second approx trotter-suzuki: time/2
-            if(h_a == 0. && h_b == 0.) {
-                h_a = cosh(time_single_it / (2. * particle_mass)) / constant;
-                h_b = sinh(time_single_it / (2. * particle_mass)) / constant;
-            }
-        }
-        else {
-            time_single_it = delta_t * particle_mass / 2.;	//second approx trotter-suzuki: time/2
-            if(h_a == 0. && h_b == 0.) {
-                h_a = cos(time_single_it / (2. * particle_mass));
-                h_b = sin(time_single_it / (2. * particle_mass));
-            }
-        }
-        initialize_exp_potential(external_pot_real, external_pot_imag, pot_name, hamiltonian_pot, tile_width, tile_height, matrix_width, matrix_height,
-                                 start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, imag_time);
+	if(imag_time) {
+		double constant = 6.;
+		time_single_it = delta_t / 2.;	//second approx trotter-suzuki: time/2
+		if(h_a == 0. && h_b == 0.) {
+			h_a = cosh(time_single_it / (2. * particle_mass)) / constant;
+			h_b = sinh(time_single_it / (2. * particle_mass)) / constant;
+		}
+	}
+	else {
+		time_single_it = delta_t / 2.;	//second approx trotter-suzuki: time/2
+		if(h_a == 0. && h_b == 0.) {
+			h_a = cos(time_single_it / (2. * particle_mass));
+			h_b = sin(time_single_it / (2. * particle_mass));
+		}
+	}
+	initialize_exp_potential(external_pot_real, external_pot_imag, pot_name, hamiltonian_pot, tile_width, tile_height, matrix_width, matrix_height,
+							 start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, imag_time);
 
-        //set initial state
-        double *p_real = new double[tile_width * tile_height];
-        double *p_imag = new double[tile_width * tile_height];
-        std::complex<double> (*ini_state)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-        ini_state = NULL;
-        initialize_state(p_real, p_imag, filename, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,
-                         periods, coords, dims, halo_x, halo_y, read_offset);
+	//set initial state
+	double *p_real = new double[tile_width * tile_height];
+	double *p_imag = new double[tile_width * tile_height];
+	std::complex<double> (*ini_state)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
+	ini_state = NULL;
+	initialize_state(p_real, p_imag, filename, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,
+					 periods, coords, dims, halo_x, halo_y, read_offset);
 
-        for(int count_snap = 0; count_snap <= snapshots; count_snap++) {
-            stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
-                  start_y, inner_start_y, inner_end_y, dims, coords, periods,
-                  i, iterations, count_snap, output_folder
+	for(int count_snap = 0; count_snap <= snapshots; count_snap++) {
+		stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
+			  start_y, inner_start_y, inner_end_y, dims, coords, periods,
+			  0, iterations, count_snap, output_folder
 #ifdef HAVE_MPI
-                  , cartcomm
+			  , cartcomm
 #endif
-                 );
+			 );
 
-            if(count_snap != snapshots) {
+		if(count_snap != snapshots) {
 #ifdef WIN32
-                SYSTEMTIME start;
-                GetSystemTime(&start);
+			SYSTEMTIME start;
+			GetSystemTime(&start);
 #else
-                struct timeval start, end;
-                gettimeofday(&start, NULL);
+			struct timeval start, end;
+			gettimeofday(&start, NULL);
 #endif
-                trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, iterations, kernel_type, periods, norm, imag_time);
+			trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, iterations, kernel_type, periods, norm, imag_time);
 #ifdef WIN32
-                SYSTEMTIME end;
-                GetSystemTime(&end);
-                time = (end.wMinute - start.wMinute) * 60000 + (end.wSecond - start.wSecond) * 1000 + (end.wMilliseconds - start.wMilliseconds);
+			SYSTEMTIME end;
+			GetSystemTime(&end);
+			time = (end.wMinute - start.wMinute) * 60000 + (end.wSecond - start.wSecond) * 1000 + (end.wMilliseconds - start.wMilliseconds);
 #else
-                gettimeofday(&end, NULL);
-                time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
+			gettimeofday(&end, NULL);
+			time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
 #endif
-                tot_time += time;
-            }
-        }
-    }
+			tot_time += time;
+		}
+	}
+
     if (coords[0] == 0 && coords[1] == 0 && verbose == true) {
         std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " kernel:" << kernel_type << " np:" << nProcs << " " << tot_time << std::endl;
     }

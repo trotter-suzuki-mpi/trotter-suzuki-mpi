@@ -1,6 +1,12 @@
+include COPYING
 include README.rst
-include *.h
-include *.i
-include *.cpp
-include *.cxx
+include doc/Makefile
+include doc/manual.pdf
+recursive-include doc/html *
+recursive-include doc/source *
+include trottersuzuki/*.h
+include trottersuzuki/*.i
+include trottersuzuki/*.cpp
+include trottersuzuki/*.cxx
+include trottersuzuki/*.py
 include *.py
