@@ -7,14 +7,15 @@ Key features:
 
   - Arbitrary single-body initial state with closed and periodic boundary conditions.
   - Many-body simulations with non-interacting particles.
+  - [Gross-Pitaevskii equation](https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb).
   - Imaginary time evolution to calculate the ground state.
   - Stationary external potential.
   - Command-line interface (CLI) and application programming interface (API) for flexible use.
-  - [Python](https://pypi.python.org/pypi/trottersuzuki) and MATLAB wrappers are provided.
+  - [Python](https://pypi.python.org/pypi/trottersuzuki) and [MATLAB](https://www.mathworks.com/matlabcentral/fileexchange/51975-mextrotter) wrappers are provided.
   - Cache optimized multi-core, SSE, GPU, and hybrid kernels.
   - Near-linear scaling across multiple nodes with computations overlapping communication.
 
-The current stable version is 1.3. Download it [here](https://github.com/peterwittek/trotter-suzuki-mpi/releases/download/1.3/trotter-suzuki-1.3.tar.gz). The development version is [available on GitHub](https://github.com/peterwittek/trotter-suzuki-mpi).
+Download the latest stable release [here](https://github.com/peterwittek/trotter-suzuki-mpi/releases/latest). The development version is [available on GitHub](https://github.com/peterwittek/trotter-suzuki-mpi).
 
 Usage
 -----
@@ -27,11 +28,13 @@ The file specified contains the complex matrix describing the initial state in t
 
 Arguments:
 
-    -a NUMBER     Parameter h_a of kinetic evolution operator (cosine part)
-    -b NUMBER     Parameter h_b of kinetic evolution operator (sine part)
+    -m NUMBER     Particle mass
+    -c NUMBER     Coupling constant of the self-interacting term (default: 0)
     -d NUMBER     Matrix dimension (default: 640)
-    -g            Imaginary time evolution to evolve towards the ground state
+    -l NUMBER     Physical dimension of the square lattice's edge (default: 640)
+    -t NUMBER     Single time step (default: 0.01)
     -i NUMBER     Number of iterations (default: 1000)
+    -g            Imaginary time evolution to evolve towards the ground state
     -k NUMBER     Kernel type (default: 0): 
                     0: CPU, cache-optimized
                     1: CPU, SSE and cache-optimized
@@ -40,7 +43,6 @@ Arguments:
     -s NUMBER     Snapshots are taken at every NUMBER of iterations.
                     Zero means no snapshots. Default: 0.
     -n FILENAME   The initial state.
-    -N NUMBER     Number of particles of the system.
     -p FILENAME   Name of file that stores the potential operator 
                   (in coordinate representation)
 
@@ -66,37 +68,35 @@ The hybrid kernel is experimental. It splits the work between the GPU and the CP
 
 If the command-line interface is not flexible enough, the function that performs the evolution is exposed as an API:
 
-    void trotter(double h_a, double h_b, 
-                 double * external_pot_real, double * external_pot_imag, 
-                 double * p_real, double * p_imag, 
-                 const int matrix_width, const int matrix_height, 
-                 const int iterations, const int snapshots, const int kernel_type, 
-                 int *periods, const char *output_folder, 
-                 bool verbose = false, bool imag_time = false, int particle_tag = 1);
+    void trotter(double h_a, double h_b, double coupling_const,
+                 double * external_pot_real, double * external_pot_imag,
+                 double * p_real, double * p_imag, double delta_x, double delta_y,
+                 const int matrix_width, const int matrix_height,
+                 const int iterations, const int kernel_type,
+                 int *periods, double norm, bool imag_time);
 
 where the parameters are as follows:
 
     h_a               Kinetic term of the Hamiltonian (cosine part)
     h_b               Kinetic term of the Hamiltonian (sine part)
+    coupling_const    Coupling constant of the self-interacting term
     external_pot_real External potential, real part
     external_pot_imag External potential, imaginary part
     p_real            Initial state, real part
     p_imag            Initial state, imaginary part
+    delta_x           Physical distance between two neighbour points of the lattice along the x axis
+    delta_y           Physical distance between two neighbour points of the lattice along the y axis
     matrix_width      The width of the initial state
     matrix_height     The height of the initial state
     iterations        Number of iterations to be calculated
-    snapshots         Number of iterations between taking snapshots 
-                             (0 means no snapshots)
     kernel_type       The kernel type:
                               0: CPU block kernel
                               1: CPU SSE block kernel
                               2: GPU kernel
                               3: Hybrid kernel
-    periods            Whether the grid is periodic in any of the directions
-    output_folder      The folder to write the snapshots in
-    verbose            Optional verbosity parameter
-    imag_time          Optional parameter to calculate imaginary time evolution
-    particle_tag       Optional parameter to tag a particle in the snapshots
+    periods           Whether the grid is periodic in any of the directions
+    norm              Norm of the final state (only for imaginary time evolution)
+    imag_time         Optional parameter to calculate imaginary time evolution
   
 MPI must be initialized before the function is called. Examples of using the API are included in the source tree. The respective files are in the examples folder:
 
@@ -104,7 +104,7 @@ MPI must be initialized before the function is called. Examples of using the API
   - `gaussian-like_initial_state.cpp`: Time evolution of a particle in a box with a Gaussian-like initial state with closed boundary conditions.
   - `imag_evolution.cpp`: Imaginary time evolution of an exponential initial state with periodic boundary conditions.
   - `sinusoid_initial_state.cpp`: Time evolution of a particle in a box with a sinusoid initial state with periodic boundary conditions.
-  - `two_particles_exponential_initial_state.cpp`: Time evolution of two free particles in a box with periodic boundary conditions.
+  - `groundstate_of_BEC_in_harmonic_pot.cpp`: Imaginary time evolution of a Bose-Einstein Condensate trapped in a harmonic potential.
 
 
 **Python and MATLAB Interfaces**
@@ -172,4 +172,4 @@ References
   
   2. Wittek, P. and Cucchietti, F.M. (2013). [A Second-Order Distributed Trotter-Suzuki Solver with a Hybrid CPU-GPU Kernel](http://dx.doi.org/10.1016/j.cpc.2012.12.008). *Computer Physics Communications*, 184, pp. 1165-1171. [PDF](http://arxiv.org/pdf/1208.2407)
 
-  3. Wittek, P. and Calderaro, L. (2015). [Extended computational kernels in a massively parallel implementation of the Trotter-Suzuki approximation](http://dx.doi.org/10.1016/j.cpc.2015.07.017). *To Appear in Computer Physics Communications*. [PDF](https://www.researchgate.net/profile/Peter_Wittek/publication/280962265_Extended_Computational_Kernels_in_a_Massively_Parallel_Implementation_of_the_TrotterSuzuki_Approximation/links/55cebd1f08aee19936fc5dcf.pdf)
+  3. Wittek, P. and Calderaro, L. (2015). [Extended computational kernels in a massively parallel implementation of the Trotter-Suzuki approximation](http://dx.doi.org/10.1016/j.cpc.2015.07.017). *Computer Physics Communications*. [PDF](https://www.researchgate.net/profile/Peter_Wittek/publication/280962265_Extended_Computational_Kernels_in_a_Massively_Parallel_Implementation_of_the_TrotterSuzuki_Approximation/links/55cebd1f08aee19936fc5dcf.pdf)
