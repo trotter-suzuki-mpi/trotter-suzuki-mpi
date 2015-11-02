@@ -44,11 +44,12 @@
 
 void trotter(double h_a, double h_b, double coupling_const,
              double * external_pot_real, double * external_pot_imag,
+             double omega, int rot_coord_x, int rot_coord_y,
              double * p_real, double * p_imag, double delta_x, double delta_y,
-             const int matrix_width, const int matrix_height,
+             const int matrix_width, const int matrix_height, double delta_t,
              const int iterations, const int kernel_type,
              int *periods, double norm, bool imag_time) {
-
+    
     int start_x, end_x, inner_start_x, inner_end_x,
         start_y, end_y, inner_start_y, inner_end_y;
 
@@ -81,7 +82,7 @@ void trotter(double h_a, double h_b, double coupling_const,
     ITrotterKernel * kernel;
     switch (kernel_type) {
     case 0:
-        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, coupling_const, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
+        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, coupling_const * delta_t, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time, omega * delta_t * delta_x / (2 * delta_y), omega * delta_t * delta_y / (2 * delta_x), rot_coord_x, rot_coord_y
 #ifdef HAVE_MPI
                               , cartcomm
 #endif
@@ -149,7 +150,7 @@ void trotter(double h_a, double h_b, double coupling_const,
         break;
 
     default:
-        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, coupling_const, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
+        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, coupling_const * delta_t, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time, omega * delta_t * delta_x / ( 2 * delta_y), omega * delta_t * delta_y / ( 2 * delta_x), rot_coord_x, rot_coord_y
 #ifdef HAVE_MPI
                               , cartcomm
 #endif

@@ -648,12 +648,15 @@ void expect_values(int dimx, int dimy, double delta_x, double delta_y, double de
 }
 
 double Energy_tot(double * p_real, double * p_imag,
-				  double particle_mass, double coupling_const, double * external_pot,
+				  double particle_mass, double coupling_const, double * external_pot, double omega, double coord_rot_x, double coord_rot_y,
 				  const int matrix_width, const int matrix_height, double delta_x, double delta_y) {
 	
 	std::complex<double> sum = 0, norm2 = 0;
 	std::complex<double> cost_E = -1. / (2. * particle_mass);
 	std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
+	std::complex<double> rot_y, rot_x;
+	double cost_rot_x = 0.5 * omega * delta_y / delta_x;
+	double cost_rot_y = 0.5 * omega * delta_x / delta_y;
 	for(int i = 1; i < matrix_height - 1; i++) {
 		for(int j = 1; j < matrix_width - 1; j++) {
 			psi_center = std::complex<double> (p_real[i * matrix_width + j], p_imag[i * matrix_width + j]);
@@ -662,8 +665,10 @@ double Energy_tot(double * p_real, double * p_imag,
 			psi_right = std::complex<double> (p_real[i * matrix_width + j + 1], p_imag[i * matrix_width + j + 1]);
 			psi_left = std::complex<double> (p_real[i * matrix_width + j - 1], p_imag[i * matrix_width + j - 1]);
 			
+			rot_x = std::complex<double>(0. ,cost_rot_x * (i - coord_rot_y));
+			rot_y = std::complex<double>(0. ,cost_rot_y * (j - coord_rot_x));
 			norm2 += conj(psi_center) * psi_center;
-			sum += conj(psi_center) * (cost_E * (std::complex<double> (1. / delta_x * delta_x, 0.) * (psi_right + psi_left - psi_center * std::complex<double> (2., 0.)) + std::complex<double> (1. / delta_y * delta_y, 0.) * (psi_down + psi_up - psi_center * std::complex<double> (2., 0.))) + psi_center * std::complex<double> (external_pot[i * matrix_width + j], 0.)  + psi_center * psi_center * conj(psi_center) * std::complex<double> (0.5 * coupling_const, 0.)) ;
+			sum += conj(psi_center) * (cost_E * (std::complex<double> (1. / delta_x * delta_x, 0.) * (psi_right + psi_left - psi_center * std::complex<double> (2., 0.)) + std::complex<double> (1. / delta_y * delta_y, 0.) * (psi_down + psi_up - psi_center * std::complex<double> (2., 0.))) + psi_center * std::complex<double> (external_pot[i * matrix_width + j], 0.)  + psi_center * psi_center * conj(psi_center) * std::complex<double> (0.5 * coupling_const, 0.)  + rot_y * (psi_down - psi_up) - rot_x * (psi_right - psi_left)) ;
 		}
 	}
 	
@@ -692,6 +697,33 @@ double Energy_kin(double * p_real, double * p_imag, double particle_mass,
 	return real(sum / norm2);
 }
 
+double Energy_rot(double * p_real, double * p_imag,
+				  double omega, double coord_rot_x, double coord_rot_y,
+				  const int matrix_width, const int matrix_height, double delta_x, double delta_y) {
+					  
+	std::complex<double> sum = 0, norm2 = 0;
+	std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
+	std::complex<double> rot_y, rot_x;
+	double cost_rot_x = 0.5 * omega * delta_y / delta_x;
+	double cost_rot_y = 0.5 * omega * delta_x / delta_y;
+	for(int i = 1; i < matrix_height - 1; i++) {
+		for(int j = 1; j < matrix_width - 1; j++) {
+			psi_center = std::complex<double> (p_real[i * matrix_width + j], p_imag[i * matrix_width + j]);
+			psi_up = std::complex<double> (p_real[(i - 1) * matrix_width + j], p_imag[(i - 1) * matrix_width + j]);
+			psi_down = std::complex<double> (p_real[(i + 1) * matrix_width + j], p_imag[(i + 1) * matrix_width + j]);
+			psi_right = std::complex<double> (p_real[i * matrix_width + j + 1], p_imag[i * matrix_width + j + 1]);
+			psi_left = std::complex<double> (p_real[i * matrix_width + j - 1], p_imag[i * matrix_width + j - 1]);
+			
+			rot_x = std::complex<double>(0. ,cost_rot_x * (i - coord_rot_y));
+			rot_y = std::complex<double>(0. ,cost_rot_y * (j - coord_rot_x));
+			norm2 += conj(psi_center) * psi_center;
+			sum += conj(psi_center) * (rot_y * (psi_down - psi_up) - rot_x * (psi_right - psi_left)) ;
+		}
+	}
+	
+	return real(sum / norm2);
+}
+
 double Norm2(double * p_real, double * p_imag, const int matrix_width, const int matrix_height, double delta_x, double delta_y) {
 	
 	std::complex<double> norm2 = 0;
@@ -704,4 +736,25 @@ double Norm2(double * p_real, double * p_imag, const int matrix_width, const int
 	}
 	
 	return real(norm2) * delta_x * delta_y;
+}
+
+void get_wave_function_phase(double * phase, double * p_real, double * p_imag, int width, int height) {
+	double norm;
+	for(int i = 0; i < width; i++) {
+		for(int j = 0; j < height; j++) {
+			norm = sqrt(p_real[j * width + i] * p_real[j * width + i] + p_imag[j * width + i] * p_imag[j * width + i]);
+			if(norm == 0)
+				phase[j * width + i] = 0;
+			else
+				phase[j * width + i] = acos(p_real[j * width + i] / norm) * ((p_imag[j * width + i] > 0) - (p_imag[j * width + i] < 0));
+		}
+	}
+}
+
+void get_wave_function_density(double * density, double * p_real, double * p_imag, int width, int height) {
+	for(int i = 0; i < width; i++) {
+		for(int j = 0; j < height; j++) {
+			density[j * width + i] = p_real[j * width + i] * p_real[j * width + i] + p_imag[j * width + i] * p_imag[j * width + i];
+		}
+	}
 }

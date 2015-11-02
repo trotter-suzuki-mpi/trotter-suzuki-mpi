@@ -50,7 +50,8 @@
 #define COUPLING_CONST 0
 #define FILENAME_LENGTH 255
 
-
+int rot_coord_x = 320, rot_coord_y = 320;
+double omega = 0;
 
 void print_usage() {
     std::cout << "Usage:\n" \
@@ -206,7 +207,6 @@ int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
 #endif
     process_command_line(argc, argv, &dim, &delta_x, &delta_y, &iterations, &snapshots, &kernel_type, filename, &delta_t, &coupling_const, &particle_mass, pot_name, &imag_time);
-	coupling_const *= delta_t;
 	
     int halo_x = (kernel_type == 2 ? 3 : 4);
     int halo_y = 4;
@@ -293,7 +293,7 @@ int main(int argc, char** argv) {
 			struct timeval start, end;
 			gettimeofday(&start, NULL);
 #endif
-			trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, iterations, kernel_type, periods, norm, imag_time);
+			trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, omega, rot_coord_x, rot_coord_y, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, delta_t, iterations, kernel_type, periods, norm, imag_time);
 #ifdef WIN32
 			SYSTEMTIME end;
 			GetSystemTime(&end);

@@ -4,11 +4,11 @@
 #include "trotter.h"
 
 void solver(double * p_real, double * p_imag,
-			double particle_mass, double coupling_const, double * external_pot,
+			double particle_mass, double coupling_const, double * external_pot, double omega, int rot_coord_x, int rot_coord_y,
             const int matrix_width, const int matrix_height, double delta_x, double delta_y, double delta_t, const int iterations, const int kernel_type, int *periods, bool imag_time) {
 	
-	int halo_x = (kernel_type == 2 ? 3 : 4);
-    int halo_y = 4;
+	int halo_x = (kernel_type == 2 ? 3 : 10);
+    int halo_y = 10;
 	int dimx = matrix_width + 2 * halo_x * periods[1];
 	int dimy = matrix_height + 2 * halo_y * periods[0];
 	
@@ -160,7 +160,7 @@ void solver(double * p_real, double * p_imag,
     
 	
 	//launch kernel
-	trotter(h_a, h_b, delta_t * coupling_const, external_pot_real, external_pot_imag, _p_real, _p_imag, delta_x, delta_y, dimx, dimy, iterations, kernel_type, periods, norm, imag_time);
+	trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, omega, rot_coord_x, rot_coord_y, _p_real, _p_imag, delta_x, delta_y, dimx, dimy, delta_t, iterations, kernel_type, periods, norm, imag_time);
 	
 	//copy back the final state
 	for(int i = 0; i < matrix_height; i++) {
