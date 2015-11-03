@@ -460,8 +460,8 @@ void CPUBlock::wait_for_completion(int iteration) {
         
         double sum = 0., *sums;
         sums = new double[nProcs];
-        for(int i = inner_start_y - start_y; i < inner_end_y - inner_start_y; i++) {
-            for(int j = inner_start_x - start_x; j < inner_end_x - inner_start_x; j++) {
+        for(int i = inner_start_y - start_y; i < inner_end_y - start_y; i++) {
+            for(int j = inner_start_x - start_x; j < inner_end_x - start_x; j++) {
                 sum += p_real[sense][j + i * tile_width] * p_real[sense][j + i * tile_width] + p_imag[sense][j + i * tile_width] * p_imag[sense][j + i * tile_width];
             }
         }

@@ -518,6 +518,79 @@ void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height
     return;
 }
 
+void stamp_real(double * p_real, int matrix_width, int matrix_height, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x, int end_x,
+           int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords, int * periods,
+           int iterations, const char * output_folder, const char * file_tag
+#ifdef HAVE_MPI
+           , MPI_Comm cartcomm
+#endif
+          ) {
+
+    char * output_filename;
+    output_filename = new char[51];
+#ifdef HAVE_MPI
+    // Set variables for mpi output
+    char *data_as_txt;
+    int count;
+
+    MPI_File   file;
+    MPI_Status status;
+
+    // each number is represented by charspernum chars
+    const int charspernum = 14;
+    MPI_Datatype num_as_string;
+    MPI_Type_contiguous(charspernum, MPI_CHAR, &num_as_string);
+    MPI_Type_commit(&num_as_string);
+
+    // create a type describing our piece of the array
+    int globalsizes[2] = {matrix_height - 2 * periods[0] * halo_y, matrix_width - 2 * periods[1] * halo_x};
+    int localsizes [2] = {inner_end_y - inner_start_y, inner_end_x - inner_start_x};
+    int starts[2]      = {inner_start_y, inner_start_x};
+    int order          = MPI_ORDER_C;
+
+    MPI_Datatype localarray;
+    MPI_Type_create_subarray(2, globalsizes, localsizes, starts, order, num_as_string, &localarray);
+    MPI_Type_commit(&localarray);
+
+    // output real matrix
+    //conversion
+    data_as_txt = new char[(inner_end_x - inner_start_x) * (inner_end_y - inner_start_y) * charspernum];
+    int tile_width = end_x - start_x;
+    count = 0;
+    for (int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
+        for (int k = inner_start_x - start_x; k < inner_end_x - start_x - 1; k++) {
+            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", p_real[j * tile_width + k]);
+            count++;
+        }
+        if(coords[1] == dims[1] - 1) {
+            sprintf(&data_as_txt[count * charspernum], "%+.5e\n ", p_real[j * tile_width + (inner_end_x - start_x) - 1]);
+            count++;
+        }
+        else {
+            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", p_real[j * tile_width + (inner_end_x - start_x) - 1]);
+            count++;
+        }
+    }
+
+    // open the file, and set the view
+    sprintf(output_filename, "%s/%i-%s", output_folder, iterations, file_tag);
+    MPI_File_open(cartcomm, output_filename,
+                  MPI_MODE_CREATE | MPI_MODE_WRONLY,
+                  MPI_INFO_NULL, &file);
+
+    MPI_File_set_view(file, 0,  MPI_CHAR, localarray, "native", MPI_INFO_NULL);
+
+    MPI_File_write_all(file, data_as_txt, (inner_end_x - inner_start_x) * ( inner_end_y - inner_start_y), num_as_string, &status);
+    MPI_File_close(&file);
+    delete [] data_as_txt;
+#else
+    sprintf(output_filename, "%s/%i-%s", output_folder, iterations, file_tag);
+    print_matrix(output_filename, &(p_real[matrix_width * (inner_start_y - start_y) + inner_start_x - start_x]), matrix_width,
+                 matrix_width - 2 * periods[1]*halo_x, matrix_height - 2 * periods[0]*halo_y);
+#endif
+    return;
+}
+
 void expect_values(int dimx, int dimy, double delta_x, double delta_y, double delta_t, double coupling_const, int iterations, int snapshots, double * hamilt_pot, double particle_mass,
                    const char *dirname, int *periods, int halo_x, int halo_y, energy_momentum_statistics *sample) {
 
@@ -648,100 +721,147 @@ void expect_values(int dimx, int dimy, double delta_x, double delta_y, double de
 }
 
 double Energy_tot(double * p_real, double * p_imag,
-				  double particle_mass, double coupling_const, double * external_pot, double omega, double coord_rot_x, double coord_rot_y,
-				  const int matrix_width, const int matrix_height, double delta_x, double delta_y) {
+				  double particle_mass, double coupling_const, double (*hamilt_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y), double * external_pot, double omega, double coord_rot_x, double coord_rot_y,
+				  double delta_x, double delta_y, double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y,
+				  int matrix_width, int matrix_height, int halo_x, int halo_y, int * periods) {
 	
-	std::complex<double> sum = 0, norm2 = 0;
+	int ini_halo_x = inner_start_x - start_x;
+	int ini_halo_y = inner_start_y - start_y;
+	int end_halo_x = end_x - inner_end_x;
+	int end_halo_y = end_y - inner_end_y;
+	int tile_width = end_x - start_x;
+	
+	if(norm2 == 0)
+		norm2 = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+		
+	std::complex<double> sum = 0;
 	std::complex<double> cost_E = -1. / (2. * particle_mass);
 	std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
 	std::complex<double> rot_y, rot_x;
 	double cost_rot_x = 0.5 * omega * delta_y / delta_x;
 	double cost_rot_y = 0.5 * omega * delta_x / delta_y;
-	for(int i = 1; i < matrix_height - 1; i++) {
-		for(int j = 1; j < matrix_width - 1; j++) {
-			psi_center = std::complex<double> (p_real[i * matrix_width + j], p_imag[i * matrix_width + j]);
-			psi_up = std::complex<double> (p_real[(i - 1) * matrix_width + j], p_imag[(i - 1) * matrix_width + j]);
-			psi_down = std::complex<double> (p_real[(i + 1) * matrix_width + j], p_imag[(i + 1) * matrix_width + j]);
-			psi_right = std::complex<double> (p_real[i * matrix_width + j + 1], p_imag[i * matrix_width + j + 1]);
-			psi_left = std::complex<double> (p_real[i * matrix_width + j - 1], p_imag[i * matrix_width + j - 1]);
-			
-			rot_x = std::complex<double>(0. ,cost_rot_x * (i - coord_rot_y));
-			rot_y = std::complex<double>(0. ,cost_rot_y * (j - coord_rot_x));
-			norm2 += conj(psi_center) * psi_center;
-			sum += conj(psi_center) * (cost_E * (std::complex<double> (1. / delta_x * delta_x, 0.) * (psi_right + psi_left - psi_center * std::complex<double> (2., 0.)) + std::complex<double> (1. / delta_y * delta_y, 0.) * (psi_down + psi_up - psi_center * std::complex<double> (2., 0.))) + psi_center * std::complex<double> (external_pot[i * matrix_width + j], 0.)  + psi_center * psi_center * conj(psi_center) * std::complex<double> (0.5 * coupling_const, 0.)  + rot_y * (psi_down - psi_up) - rot_x * (psi_right - psi_left)) ;
+	if(external_pot == NULL) {
+		for(int i = inner_start_y - start_y + (ini_halo_y == 0), y = inner_start_y + (ini_halo_y == 0); i < inner_end_y - start_y - (end_halo_y == 0); i++, y++) {
+			for(int j = inner_start_x - start_x + (ini_halo_x == 0), x = inner_start_x + (ini_halo_x == 0); j < inner_end_x - start_x - (end_halo_x == 0); j++, x++) {
+				psi_center = std::complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
+				psi_up = std::complex<double> (p_real[(i - 1) * tile_width + j], p_imag[(i - 1) * tile_width + j]);
+				psi_down = std::complex<double> (p_real[(i + 1) * tile_width + j], p_imag[(i + 1) * tile_width + j]);
+				psi_right = std::complex<double> (p_real[i * tile_width + j + 1], p_imag[i * tile_width + j + 1]);
+				psi_left = std::complex<double> (p_real[i * tile_width + j - 1], p_imag[i * tile_width + j - 1]);
+				
+				rot_x = std::complex<double>(0., cost_rot_x * (y - coord_rot_y));
+				rot_y = std::complex<double>(0., cost_rot_y * (x - coord_rot_x));
+				sum += conj(psi_center) * (cost_E * (std::complex<double> (1. / (delta_x * delta_x), 0.) * (psi_right + psi_left - psi_center * std::complex<double> (2., 0.)) + std::complex<double> (1. / (delta_y * delta_y), 0.) * (psi_down + psi_up - psi_center * std::complex<double> (2., 0.))) + 
+				                           psi_center * std::complex<double> (hamilt_pot(x, y, matrix_width, matrix_height, periods, halo_x, halo_y), 0.) + 
+				                           psi_center * psi_center * conj(psi_center) * std::complex<double> (0.5 * coupling_const, 0.) + 
+				                           rot_y * (psi_down - psi_up) - rot_x * (psi_right - psi_left));
+			}
+		}
+	}
+	else {
+		for(int i = inner_start_y - start_y + (ini_halo_y == 0), y = inner_start_y + (ini_halo_y == 0); i < inner_end_y - start_y - (end_halo_y == 0); i++, y++) {
+			for(int j = inner_start_x - start_x + (ini_halo_x == 0), x = inner_start_x + (ini_halo_x == 0); j < inner_end_x - start_x - (end_halo_x == 0); j++, x++) {
+				psi_center = std::complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
+				psi_up = std::complex<double> (p_real[(i - 1) * tile_width + j], p_imag[(i - 1) * tile_width + j]);
+				psi_down = std::complex<double> (p_real[(i + 1) * tile_width + j], p_imag[(i + 1) * tile_width + j]);
+				psi_right = std::complex<double> (p_real[i * tile_width + j + 1], p_imag[i * tile_width + j + 1]);
+				psi_left = std::complex<double> (p_real[i * tile_width + j - 1], p_imag[i * tile_width + j - 1]);
+				
+				rot_x = std::complex<double>(0., cost_rot_x * (y - coord_rot_y));
+				rot_y = std::complex<double>(0., cost_rot_y * (x - coord_rot_x));
+				sum += conj(psi_center) * (cost_E * (std::complex<double> (1. / delta_x * delta_x, 0.) * (psi_right + psi_left - psi_center * std::complex<double> (2., 0.)) + std::complex<double> (1. / delta_y * delta_y, 0.) * (psi_down + psi_up - psi_center * std::complex<double> (2., 0.))) + 
+				                           psi_center * std::complex<double> (external_pot[y * matrix_width + x], 0.) + 
+				                           psi_center * psi_center * conj(psi_center) * std::complex<double> (0.5 * coupling_const, 0.) + 
+				                           rot_y * (psi_down - psi_up) - rot_x * (psi_right - psi_left));
+			}
 		}
 	}
 	
-	return real(sum / norm2);
+	return real(sum / norm2) * delta_x * delta_y;
 }
 
-double Energy_kin(double * p_real, double * p_imag, double particle_mass,
-				  const int matrix_width, const int matrix_height, double delta_x, double delta_y) {
+double Energy_kin(double * p_real, double * p_imag, double particle_mass, double delta_x, double delta_y,
+                  double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
 	
-	std::complex<double> sum = 0, norm2 = 0;
+	int ini_halo_x = inner_start_x - start_x;
+	int ini_halo_y = inner_start_y - start_y;
+	int end_halo_x = end_x - inner_end_x;
+	int end_halo_y = end_y - inner_end_y;
+	int tile_width = end_x - start_x;
+	
+	if(norm2 == 0)
+		norm2 = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+		
+	std::complex<double> sum = 0;
 	std::complex<double> cost_E = -1. / (2. * particle_mass);
 	std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
-	for(int i = 1; i < matrix_height - 1; i++) {
-		for(int j = 1; j < matrix_width - 1; j++) {
-			psi_center = std::complex<double> (p_real[i * matrix_width + j], p_imag[i * matrix_width + j]);
-			psi_up = std::complex<double> (p_real[(i - 1) * matrix_width + j], p_imag[(i - 1) * matrix_width + j]);
-			psi_down = std::complex<double> (p_real[(i + 1) * matrix_width + j], p_imag[(i + 1) * matrix_width + j]);
-			psi_right = std::complex<double> (p_real[i * matrix_width + j + 1], p_imag[i * matrix_width + j + 1]);
-			psi_left = std::complex<double> (p_real[i * matrix_width + j - 1], p_imag[i * matrix_width + j - 1]);
+	for(int i = inner_start_y - start_y + (ini_halo_y == 0); i < inner_end_y - start_y - (end_halo_y == 0); i++) {
+		for(int j = inner_start_x - start_x + (ini_halo_x == 0); j < inner_end_x - start_x - (end_halo_x == 0); j++) {
+			psi_center = std::complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
+			psi_up = std::complex<double> (p_real[(i - 1) * tile_width + j], p_imag[(i - 1) * tile_width + j]);
+			psi_down = std::complex<double> (p_real[(i + 1) * tile_width + j], p_imag[(i + 1) * tile_width + j]);
+			psi_right = std::complex<double> (p_real[i * tile_width + j + 1], p_imag[i * tile_width + j + 1]);
+			psi_left = std::complex<double> (p_real[i * tile_width + j - 1], p_imag[i * tile_width + j - 1]);
 			
-			norm2 += conj(psi_center) * psi_center;
-			sum += conj(psi_center) * (cost_E * (std::complex<double> (1. / delta_x * delta_x, 0.) * (psi_right + psi_left - psi_center * std::complex<double> (2., 0.)) + std::complex<double> (1. / delta_y * delta_y, 0.) * (psi_down + psi_up - psi_center * std::complex<double> (2., 0.))) );
+			sum += conj(psi_center) * (cost_E * (std::complex<double> (1. / (delta_x * delta_x), 0.) * (psi_right + psi_left - psi_center * std::complex<double> (2., 0.)) + std::complex<double> (1. / (delta_y * delta_y), 0.) * (psi_down + psi_up - psi_center * std::complex<double> (2., 0.))) );
 		}
 	}
 	
-	return real(sum / norm2);
+	return real(sum / norm2) * delta_x * delta_y;
 }
 
 double Energy_rot(double * p_real, double * p_imag,
-				  double omega, double coord_rot_x, double coord_rot_y,
-				  const int matrix_width, const int matrix_height, double delta_x, double delta_y) {
+				  double omega, double coord_rot_x, double coord_rot_y, double delta_x, double delta_y,
+				  double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
 					  
-	std::complex<double> sum = 0, norm2 = 0;
+	int ini_halo_x = inner_start_x - start_x;
+	int ini_halo_y = inner_start_y - start_y;
+	int end_halo_x = end_x - inner_end_x;
+	int end_halo_y = end_y - inner_end_y;
+	int tile_width = end_x - start_x;
+	
+	if(norm2 == 0)
+		norm2 = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+		
+	std::complex<double> sum = 0;
 	std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
 	std::complex<double> rot_y, rot_x;
 	double cost_rot_x = 0.5 * omega * delta_y / delta_x;
 	double cost_rot_y = 0.5 * omega * delta_x / delta_y;
-	for(int i = 1; i < matrix_height - 1; i++) {
-		for(int j = 1; j < matrix_width - 1; j++) {
-			psi_center = std::complex<double> (p_real[i * matrix_width + j], p_imag[i * matrix_width + j]);
-			psi_up = std::complex<double> (p_real[(i - 1) * matrix_width + j], p_imag[(i - 1) * matrix_width + j]);
-			psi_down = std::complex<double> (p_real[(i + 1) * matrix_width + j], p_imag[(i + 1) * matrix_width + j]);
-			psi_right = std::complex<double> (p_real[i * matrix_width + j + 1], p_imag[i * matrix_width + j + 1]);
-			psi_left = std::complex<double> (p_real[i * matrix_width + j - 1], p_imag[i * matrix_width + j - 1]);
+	for(int i = inner_start_y - start_y + (ini_halo_y == 0), y = inner_start_y + (ini_halo_y == 0); i < inner_end_y - start_y - (end_halo_y == 0); i++, y++) {
+		for(int j = inner_start_x - start_x + (ini_halo_x == 0), x = inner_start_x + (ini_halo_x == 0); j < inner_end_x - start_x - (end_halo_x == 0); j++, x++) {
+			psi_center = std::complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
+			psi_up = std::complex<double> (p_real[(i - 1) * tile_width + j], p_imag[(i - 1) * tile_width + j]);
+			psi_down = std::complex<double> (p_real[(i + 1) * tile_width + j], p_imag[(i + 1) * tile_width + j]);
+			psi_right = std::complex<double> (p_real[i * tile_width + j + 1], p_imag[i * tile_width + j + 1]);
+			psi_left = std::complex<double> (p_real[i * tile_width + j - 1], p_imag[i * tile_width + j - 1]);
 			
-			rot_x = std::complex<double>(0. ,cost_rot_x * (i - coord_rot_y));
-			rot_y = std::complex<double>(0. ,cost_rot_y * (j - coord_rot_x));
-			norm2 += conj(psi_center) * psi_center;
+			rot_x = std::complex<double>(0. ,cost_rot_x * (y - coord_rot_y));
+			rot_y = std::complex<double>(0. ,cost_rot_y * (x - coord_rot_x));
 			sum += conj(psi_center) * (rot_y * (psi_down - psi_up) - rot_x * (psi_right - psi_left)) ;
 		}
 	}
 	
-	return real(sum / norm2);
+	return real(sum / norm2) * delta_x * delta_y;
 }
 
-double Norm2(double * p_real, double * p_imag, const int matrix_width, const int matrix_height, double delta_x, double delta_y) {
-	
-	std::complex<double> norm2 = 0;
-	std::complex<double> psi_center;
-	for(int i = 0; i < matrix_height; i++) {
-		for(int j = 0; j < matrix_width; j++) {
-			psi_center = std::complex<double> (p_real[i * matrix_width + j], p_imag[i * matrix_width + j]);
-			norm2 += conj(psi_center) * psi_center;
+double Norm2(double * p_real, double * p_imag, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
+	double norm2 = 0;
+	int tile_width = end_x - start_x;
+	for(int i = inner_start_y - start_y; i < inner_end_y - start_y; i++) {
+		for(int j = inner_start_x - start_x; j < inner_end_x - start_x; j++) {
+			norm2 += p_real[j + i * tile_width] * p_real[j + i * tile_width] + p_imag[j + i * tile_width] * p_imag[j + i * tile_width];
 		}
 	}
 	
-	return real(norm2) * delta_x * delta_y;
+	return norm2 * delta_x * delta_y;
 }
 
-void get_wave_function_phase(double * phase, double * p_real, double * p_imag, int width, int height) {
+void get_wave_function_phase(double * phase, double * p_real, double * p_imag, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
+	int width = end_x - start_x;
 	double norm;
-	for(int i = 0; i < width; i++) {
-		for(int j = 0; j < height; j++) {
+	for(int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
+		for(int i = inner_start_x - start_x; i < inner_end_x - start_x; i++) {
 			norm = sqrt(p_real[j * width + i] * p_real[j * width + i] + p_imag[j * width + i] * p_imag[j * width + i]);
 			if(norm == 0)
 				phase[j * width + i] = 0;
@@ -751,9 +871,10 @@ void get_wave_function_phase(double * phase, double * p_real, double * p_imag, i
 	}
 }
 
-void get_wave_function_density(double * density, double * p_real, double * p_imag, int width, int height) {
-	for(int i = 0; i < width; i++) {
-		for(int j = 0; j < height; j++) {
+void get_wave_function_density(double * density, double * p_real, double * p_imag, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
+	int width = end_x - start_x;
+	for(int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
+		for(int i = inner_start_x - start_x; i < inner_end_x - start_x; i++) {
 			density[j * width + i] = p_real[j * width + i] * p_real[j * width + i] + p_imag[j * width + i] * p_imag[j * width + i];
 		}
 	}
