@@ -43,8 +43,9 @@ BOX_OBJS_2 = $(LIBOBJS) sinusoid_initial_state.o
 BOX_OBJS_3 = $(LIBOBJS) exponential_initial_state.o
 IMAG_EVO = $(LIBOBJS) imag_evolution.o
 BEC = $(LIBOBJS) groundstate_of_BEC_in_harmonic_pot.o
+VORTEXES = $(LIBOBJS) vortexes.o
 
-all example: box1 box2 box3 ievo bec_trap
+all example: box1 box2 box3 ievo bec_trap vortexes
 
 box1: $(BOX_OBJS_1)
 	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -I.. -o gaussian-like_initial_state $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} 
@@ -59,7 +60,10 @@ ievo: $(IMAG_EVO)
 	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -I.. -o imag_evolution $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} 
 
 bec_trap: $(BEC)
-	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -I.. -o groundstate_of_BEC_in_harmonic_pot $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} 
+	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -I.. -o groundstate_of_BEC_in_harmonic_pot $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
+
+vortexes: $(VORTEXES)$
+	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -I.. -o vortexes $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
 
 %.o: %.cpp
 	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -I.. -I$(srcdir) -o $@ -c $^ 
