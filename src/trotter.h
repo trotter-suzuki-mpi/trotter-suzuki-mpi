@@ -67,18 +67,18 @@ struct energy_momentum_statistics {
         var_E(0.), var_Px(0.), var_Py(0.) {}
 };
 
-double Energy_tot(double * p_real, double * p_imag,
-				  double particle_mass, double coupling_const, double * external_pot, double omega, double coord_rot_x, double coord_rot_y,
-				  const int matrix_width, const int matrix_height, double delta_x, double delta_y);
-
-double Energy_kin(double * p_real, double * p_imag, double particle_mass,
-				  const int matrix_width, const int matrix_height, double delta_x, double delta_y);
-				  
 double Energy_rot(double * p_real, double * p_imag,
-				  double omega, double coord_rot_x, double coord_rot_y,
-				  const int matrix_width, const int matrix_height, double delta_x, double delta_y);
-
-double Norm2(double * p_real, double * p_imag, const int matrix_width, const int matrix_height, double delta_x, double delta_y);
+				  double omega, double coord_rot_x, double coord_rot_y, double delta_x, double delta_y,
+				  double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
+double Energy_kin(double * p_real, double * p_imag, double particle_mass, double delta_x, double delta_y,
+                  double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
+double Energy_tot(double * p_real, double * p_imag,
+				  double particle_mass, double coupling_const, double (*hamilt_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y), double * external_pot, double omega, double coord_rot_x, double coord_rot_y,
+				  double delta_x, double delta_y, double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y,
+				  int matrix_width, int matrix_height, int halo_x, int halo_y, int * periods);
+double Norm2(double * p_real, double * p_imag, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
+void get_wave_function_phase(double * phase, double * p_real, double * p_imag, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
+void get_wave_function_density(double * density, double * p_real, double * p_imag, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
 
 void get_wave_function_phase(double * phase, double * p_real, double * p_imag, int width, int height);
 

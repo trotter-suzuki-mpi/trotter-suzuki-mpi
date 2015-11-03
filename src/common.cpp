@@ -769,7 +769,7 @@ double Energy_tot(double * p_real, double * p_imag,
 				
 				rot_x = std::complex<double>(0., cost_rot_x * (y - coord_rot_y));
 				rot_y = std::complex<double>(0., cost_rot_y * (x - coord_rot_x));
-				sum += conj(psi_center) * (cost_E * (std::complex<double> (1. / delta_x * delta_x, 0.) * (psi_right + psi_left - psi_center * std::complex<double> (2., 0.)) + std::complex<double> (1. / delta_y * delta_y, 0.) * (psi_down + psi_up - psi_center * std::complex<double> (2., 0.))) + 
+				sum += conj(psi_center) * (cost_E * (std::complex<double> (1. / (delta_x * delta_x), 0.) * (psi_right + psi_left - psi_center * std::complex<double> (2., 0.)) + std::complex<double> (1. / (delta_y * delta_y), 0.) * (psi_down + psi_up - psi_center * std::complex<double> (2., 0.))) + 
 				                           psi_center * std::complex<double> (external_pot[y * matrix_width + x], 0.) + 
 				                           psi_center * psi_center * conj(psi_center) * std::complex<double> (0.5 * coupling_const, 0.) + 
 				                           rot_y * (psi_down - psi_up) - rot_x * (psi_right - psi_left));
