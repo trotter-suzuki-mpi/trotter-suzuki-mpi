@@ -1034,8 +1034,8 @@ void CPUBlockSSEKernel::wait_for_completion(int iteration) {
         double sum = 0., *sums;
         sums = new double[nProcs];
         
-        for(int i = (inner_start_y - start_y) / 2; i < (inner_end_y - inner_start_y) / 2; i++) {
-            for(int j = (inner_start_x - start_x) / 2; j < (inner_end_y - inner_start_y) / 2; j++) {
+        for(int i = (inner_start_y - start_y) / 2; i < (inner_end_y - start_y) / 2; i++) {
+            for(int j = (inner_start_x - start_x) / 2; j < (inner_end_y - start_y) / 2; j++) {
                 int idx = j + i * tile_width / 2;
                 sum += r00[sense][idx] * r00[sense][idx] + i00[sense][idx] * i00[sense][idx] +
                        r10[sense][idx] * r10[sense][idx] + i10[sense][idx] * i10[sense][idx] +

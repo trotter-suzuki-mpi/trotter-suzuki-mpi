@@ -44,11 +44,12 @@
 
 void trotter(double h_a, double h_b, double coupling_const,
              double * external_pot_real, double * external_pot_imag,
+             double omega, int rot_coord_x, int rot_coord_y,
              double * p_real, double * p_imag, double delta_x, double delta_y,
-             const int matrix_width, const int matrix_height,
+             const int matrix_width, const int matrix_height, double delta_t,
              const int iterations, const int kernel_type,
              int *periods, double norm, bool imag_time) {
-
+    
     int start_x, end_x, inner_start_x, inner_end_x,
         start_y, end_y, inner_start_y, inner_end_y;
 
@@ -71,7 +72,8 @@ void trotter(double h_a, double h_b, double coupling_const,
 #endif
 
     int halo_x = (kernel_type == 2 ? 3 : 4);
-    int halo_y = 4;
+    halo_x = (omega == 0. ? halo_x : 8);
+    int halo_y = (omega == 0. ? 4 : 8);
     calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     int width = end_x - start_x;
@@ -81,7 +83,7 @@ void trotter(double h_a, double h_b, double coupling_const,
     ITrotterKernel * kernel;
     switch (kernel_type) {
     case 0:
-        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, coupling_const, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
+        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, coupling_const * delta_t, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time, omega * delta_t * delta_x / (2 * delta_y), omega * delta_t * delta_y / (2 * delta_x), rot_coord_x, rot_coord_y
 #ifdef HAVE_MPI
                               , cartcomm
 #endif
@@ -149,7 +151,7 @@ void trotter(double h_a, double h_b, double coupling_const,
         break;
 
     default:
-        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, coupling_const, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
+        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, coupling_const * delta_t, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time, omega * delta_t * delta_x / ( 2 * delta_y), omega * delta_t * delta_y / ( 2 * delta_x), rot_coord_x, rot_coord_y
 #ifdef HAVE_MPI
                               , cartcomm
 #endif

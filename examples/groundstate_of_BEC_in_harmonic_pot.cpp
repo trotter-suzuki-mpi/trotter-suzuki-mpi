@@ -45,6 +45,8 @@
 #define SNAPSHOTS 10
 #define SCATTER_LENGHT_2D 5.662739242e-5
 
+int rot_coord_x = 320, rot_coord_y = 320;
+double omega = 0;
 
 std::complex<double> gauss_ini_state(int m, int n, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
 	double delta_x = double(LENGHT)/double(DIM);
@@ -104,7 +106,7 @@ int main(int argc, char** argv) {
     int tile_height = end_y - start_y;
 
     //set and calculate evolution operator variables from hamiltonian
-    double coupling_const = delta_t * 4. * M_PI * double(SCATTER_LENGHT_2D) * double(PARTICLES_NUM);
+    double coupling_const = 4. * M_PI * double(SCATTER_LENGHT_2D) * double(PARTICLES_NUM);
     double delta_x = double(LENGHT)/double(DIM), delta_y = double(LENGHT)/double(DIM);
     double *external_pot_real = new double[tile_width * tile_height];
     double *external_pot_imag = new double[tile_width * tile_height];
@@ -159,7 +161,7 @@ int main(int argc, char** argv) {
 #endif
          );
     for(int count_snap = 1; count_snap <= snapshots; count_snap++) {
-        trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, iterations, kernel_type, periods, norm, imag_time);
+        trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, omega, rot_coord_x, rot_coord_y, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, delta_t, iterations, kernel_type, periods, norm, imag_time);
 
         stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
               start_y, inner_start_y, inner_end_y, dims, coords, periods,
