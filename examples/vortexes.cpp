@@ -34,21 +34,20 @@
 
 #define LENGHT 50
 #define DIM 640
-#define ITERATIONS 5000
-#define PARTICLES_NUM 1700000
+#define ITERATIONS 10000
+#define PARTICLES_NUM 8.e+6
 #define KERNEL_TYPE 0
-#define SNAPSHOTS 2
-#define SNAP_PER_STAMP 1
+#define SNAPSHOTS 400
+#define SNAP_PER_STAMP 20
 #define COUPLING_CONST_2D 7.116007999594e-4
 
 int rot_coord_x = 320, rot_coord_y = 320;
-double omega = 0.5;
+double omega = 0.9;
 
 std::complex<double> gauss_ini_state(int m, int n, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
 	double delta_x = double(LENGHT)/double(DIM);
     double x = (m - matrix_width / 2.) * delta_x, y = (n - matrix_height / 2.) * delta_x;
     double w = 0.002/(delta_x * delta_x);
-    //return std::complex<double>(sqrt(w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w), 0.0);
     return std::complex<double>(sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w), sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w));
 }
 
@@ -75,7 +74,7 @@ int main(int argc, char** argv) {
     double h_a = 0.;
     double h_b = 0.;
 	
-	double delta_t = 5.e-5;
+	double delta_t = 2.e-4;
 	double delta_x = double(LENGHT)/double(DIM), delta_y = double(LENGHT)/double(DIM);
 
     int halo_x = (kernel_type == 2 ? 3 : 4);
@@ -282,7 +281,7 @@ int main(int argc, char** argv) {
 			file_tags = "phase";
 			stamp_real(_matrix, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
 			   start_y, inner_start_y, inner_end_y, dims, coords, periods,
-			   iterations * count_snap, dirnames.c_str(), file_tags.c_str()
+			   iterations * (count_snap + 1), dirnames.c_str(), file_tags.c_str()
 #ifdef HAVE_MPI
 			   , cartcomm
 #endif
@@ -293,7 +292,7 @@ int main(int argc, char** argv) {
 			file_tags = "density";
 			stamp_real(_matrix, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
 			   start_y, inner_start_y, inner_end_y, dims, coords, periods,
-			   iterations * count_snap, dirnames.c_str(), file_tags.c_str()
+			   iterations * (count_snap + 1), dirnames.c_str(), file_tags.c_str()
 #ifdef HAVE_MPI
 				, cartcomm
 #endif
