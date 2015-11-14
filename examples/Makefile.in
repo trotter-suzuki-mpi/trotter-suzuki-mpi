@@ -37,7 +37,7 @@ LIBOBJS=$(srcdir)/common.o $(srcdir)/cpublock.o $(srcdir)/trotter.o
 platform=$(shell uname -s)
 
 ifneq ($(platform),Darwin)
-	LIBOBJS+=cpublocksse.o 
+	LIBOBJS+=$(srcdir)/cpublocksse.o 
 endif
 
 ifdef CUDA_LIBS
