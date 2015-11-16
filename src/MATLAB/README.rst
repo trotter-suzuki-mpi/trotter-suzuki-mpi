@@ -53,7 +53,7 @@ The following code block gives a simple example of initializing a state and plot
 Trotter-Suzuki-MPI MATLAB Extension Build Guide (Linux/Mac):
 ================================
 
-1. Referring to the installation instructions reported here https://github.com/peterwittek/trotter-suzuki-mpi, first run
+1. Referring to the installation instructions reported here https://github.com/trotter-suzuki-mpi/trotter-suzuki-mpi, first run
 
     $ ./autogen.sh
 
