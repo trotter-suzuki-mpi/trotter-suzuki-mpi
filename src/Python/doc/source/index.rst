@@ -6,3 +6,5 @@
    
    download.rst
    examples.rst
+   reference.rst
+   

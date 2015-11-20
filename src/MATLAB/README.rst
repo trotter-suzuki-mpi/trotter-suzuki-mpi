@@ -1,11 +1,11 @@
 Trotter-Suzuki-MPI - MATLAB Interface
 =====================================
 
-The module is a massively parallel implementation of the Trotter-Suzuki approximation to simulate the evolution of quantum systems classically. It relies on interfacing with C++ code with OpenMP for multicore execution.
+The module is a massively parallel implementation of the Trotter-Suzuki approximation to simulate the evolution of quantum systems classically. It relies on interfacing with C++ code with OpenMP for multicore execution, and it can be accelerated by CUDA..
 
 Key features of the MATLAB interface:
 
-* Fast execution by parallelization: OpenMP.
+* Fast execution by parallelization: OpenMP and CUDA.
 * Multi-platform: Linux, OS X, and Windows are supported.
 
 Usage
@@ -57,9 +57,11 @@ Trotter-Suzuki-MPI MATLAB Extension Build Guide (Linux/Mac):
 
     $ ./autogen.sh
 
-   Then run ``configure`` disabling MPI and CUDA. You can also supply the root directory of your MATLAB installation:
+Then run ``configure`` disabling MPI. You can also supply the root directory of your MATLAB installation:
 
     $ ./configure --without-mpi --without-cuda --with-matlab=/usr/local/MATLAB/R2015a/bin/mex
+
+If you want CUDA support, specify the CUDA directory as well.
  
 2. Build the MATLAB Extension
    ::
