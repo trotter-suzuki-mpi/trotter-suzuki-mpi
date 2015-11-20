@@ -1,3 +1,7 @@
+Since 1.4:
+ - New: CUDA support in Python and MATLAB interfaces.
+ - Fixed: Code compiles again with the hybrid kernel.
+
 Version 1.4: 2015-10-25
  - New: CPU kernel implements the Gross-Pitaevskii equation.
  - New: performing imaginary time evolution, all kernels output a wave function normalized with a set value provided as input.
