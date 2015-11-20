@@ -31,7 +31,7 @@
 #include "common.h"
 #include "trotter.h"
 #include "cpublock.h"
-#ifndef WIN32
+#ifdef SSE
 #include "cpublocksse.h"
 #endif
 #ifdef HAVE_MPI
@@ -89,8 +89,7 @@ void trotter(double h_a, double h_b, double coupling_const,
         break;
 
     case 1:
-#ifndef WIN32
-#ifndef __APPLE__
+#ifdef SSE
         kernel = new CPUBlockSSEKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
 #ifdef HAVE_MPI
                                        , cartcomm
@@ -98,13 +97,7 @@ void trotter(double h_a, double h_b, double coupling_const,
                                       );
 #else
 		if (coords[0] == 0 && coords[1] == 0) {
-            std::cerr << "SSE kernel not supported on Windows and MAC\n";
-        }
-        abort();
-#endif
-#else
-        if (coords[0] == 0 && coords[1] == 0) {
-            std::cerr << "SSE kernel not supported on Windows and MAC\n";
+            std::cerr << "SSE kernel not was not compiled.\n";
         }
         abort();
 #endif
