@@ -28,6 +28,7 @@ if sys.platform.startswith('win') and os.path.exists(win_cuda_dir):
     object_files = ['trottersuzuki/src/common.obj',
                     'trottersuzuki/src/cpublock.obj',
                     'trottersuzuki/src/cc2kernel.cu.obj',
+                    'trottersuzuki/src/hybrid.cu.obj',                    
                     'trottersuzuki/src/trotter.obj',
                     'trottersuzuki/src/solver.obj']
     trottersuzuki_module = Extension('_trottersuzuki',
@@ -39,8 +40,6 @@ if sys.platform.startswith('win') and os.path.exists(win_cuda_dir):
                                      libraries=['cudart', 'cublas'],
                                      include_dirs=[numpy_include])
 elif os.path.exists(cuda_dir):
-  
-    print("HSHDSHKDHSKHDSHDSHK")
   
     class MyInstall(install):
 
@@ -58,6 +57,7 @@ elif os.path.exists(cuda_dir):
     object_files = ['trottersuzuki/src/common.o',
                     'trottersuzuki/src/cpublock.o',
                     'trottersuzuki/src/cc2kernel.cu.co',
+                    'trottersuzuki/src/hybrid.cu.co',
                     'trottersuzuki/src/trotter.o',
                     'trottersuzuki/src/solver.o']
 
