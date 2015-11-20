@@ -15,7 +15,7 @@ Key features:
   - Cache optimized multi-core, SSE, GPU, and hybrid kernels.
   - Near-linear scaling across multiple nodes with computations overlapping communication.
 
-Download the latest stable release [here](https://github.com/trotter_suzuki-mpi/trotter-suzuki-mpi/releases/latest). The development version is [available on GitHub](https://github.com/trotter_suzuki-mpi/trotter-suzuki-mpi).
+Download the latest stable release [here](https://github.com/trotter_suzuki-mpi/trotter-suzuki-mpi/releases/latest). The development version is [available on GitHub](https://github.com/trotter-suzuki-mpi/trotter-suzuki-mpi).
 
 Usage
 -----

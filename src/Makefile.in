@@ -22,6 +22,7 @@ INSTALL	       = @INSTALL@
 INSTALL_DATA   = @INSTALL_DATA@
 INSTALL_PROGRAM= @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
+HAVE_SSE       = @HAVE_SSE@
 CUDA_CFLAGS    = @CUDA_CFLAGS@
 CUDA_LIBS      = @CUDA_LIBS@
 CUDA_LDFLAGS   = @CUDA_LDFLAGS@
@@ -43,7 +44,7 @@ MEX_LIBS=-lgomp
 
 platform=$(shell uname -s)
 
-ifneq ($(platform),Darwin)
+ifeq ($(HAVE_SSE),1)
 	LIBOBJS+=cpublocksse.o 
 endif
 
