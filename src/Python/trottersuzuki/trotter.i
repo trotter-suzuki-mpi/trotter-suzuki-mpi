@@ -3,7 +3,7 @@
 %module trottersuzuki
 %{
 #define SWIG_FILE_WITH_INIT
-#include "trotter.h"
+#include "src/trotter.h"
 %}
 
 %include "numpy.i"

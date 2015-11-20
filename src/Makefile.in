@@ -76,11 +76,23 @@ matlab: lib
 
 matlab_clean: clean
 	-rm -f Mex*
-	
+
 python:
+	mkdir -p ./Python/trottersuzuki/src
+	mkdir -p ./Python/trottersuzuki/src/Windows
+	mkdir -p ./Python/trottersuzuki/test
+	mkdir -p ./Python/trottersuzuki/examples
 	cp ../COPYING ./Python
-	cp ./*.h ./Python/trottersuzuki/
-	cp ./*.cpp ./Python/trottersuzuki/
+	cp ../Makefile.in ./Python/trottersuzuki/
+	cp ../configure ./Python/trottersuzuki/
+	cp ../config.h.in ./Python/trottersuzuki/
+	cp ../install-sh ./Python/trottersuzuki/
+	cp ./Makefile.in ./Python/trottersuzuki/src/
+	cp ../test/Makefile.in ./Python/trottersuzuki/test/
+	cp ../examples/Makefile.in ./Python/trottersuzuki/examples/
+	cp ./*.h ./Python/trottersuzuki/src/
+	cp ./*.cpp ./Python/trottersuzuki/src/
+	cp ./*.cu ./Python/trottersuzuki/src/
 	swig -c++ -python ./Python/trottersuzuki/trotter.i
 	cd Python; python setup.py build
 
@@ -88,7 +100,7 @@ python_install: python python_doc
 	cd Python; python setup.py install
 
 python_clean:
-	-rm -rf Python/*.pyc Python/trottersuzuki/*.pyc Python/trottersuzuki/*.h Python/trottersuzuki/*.cpp  Python/trottersuzuki/*.cxx Python/dist Python/trottersuzuki.egg* Python/build Python/trottersuzuki/trottersuzuki.py Python/trottersuzuki/*.so
+	-rm -rf Python/trottersuzuki/src Python/trottersuzuki/examples Python/trottersuzuki/test Python/*.pyc Python/trottersuzuki/*.pyc Python/trottersuzuki/*.h Python/trottersuzuki/*.cpp  Python/trottersuzuki/*.cxx Python/dist Python/trottersuzuki.egg* Python/build Python/trottersuzuki/trottersuzuki.py Python/trottersuzuki/*.so Python/trottersuzuki/Makefile* Python/trottersuzuki/config* Python/trottersuzuki/install*
 
 clean:
 	-rm -f trotter $(OBJS) 1>/dev/null
