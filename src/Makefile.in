@@ -41,6 +41,7 @@ LIBOBJS=common.o cpublock.o trotter.o solver.o
 
 MEX_FLAGS=-I./
 MEX_LIBS=-lgomp
+MEX_OBJS=common.o cpublock.o trotter.o solver.o
 
 platform=$(shell uname -s)
 
@@ -50,6 +51,9 @@ endif
 
 ifdef CUDA_LIBS
 	LIBOBJS+=cc2kernel.cu.co hybrid.cu.co
+	MEX_FLAGS+=-I"$(MATLAB_ROOT)/toolbox/distcomp/gpu/extern/include/" -DCUDA 
+	MEX_LIBS+=$(CUDA_LDFLAGS) $(CUDA_LIBS) -lnvblas -lmwgpu
+	MEX_OBJS+=cc2kernel.cu.o hybrid.cu.o
 endif
 
 OBJS=$(LIBOBJS) main.o solver.o
@@ -69,7 +73,8 @@ trotter: $(OBJS)
 	$(NVCC) $(DEFS) $(CUDA_CFLAGS) ${MPI_INC} -I$(srcdir) -I.. -o $@ -c $(srcdir)/$<
 
 matlab: lib
-	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexTrotter.cpp $(LIBOBJS) $(MEX_LIBS)
+	if [ -e cc2kernel.cu.co ]; then cp cc2kernel.cu.co cc2kernel.cu.o; cp hybrid.cu.co hybrid.cu.o; fi
+	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexTrotter.cpp $(MEX_OBJS) $(MEX_LIBS)
 	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexH.cpp ./common.o $(MEX_LIBS)
 	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexK.cpp ./common.o $(MEX_LIBS)
 	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexNorm.cpp ./common.o $(MEX_LIBS)
