@@ -724,8 +724,8 @@ void CC2Kernel::wait_for_completion(int iteration) {
         MPI_Comm_size(cartcomm, &nProcs);
 #endif
         double sum = 0., sums[nProcs];
-        for(int i = inner_start_y - start_y; i < inner_end_y - inner_start_y; i++) {
-            for(int j = inner_start_x - start_x; j < inner_end_x - inner_start_x; j++) {
+        for(int i = inner_start_y - start_y; i < inner_end_y - start_y; i++) {
+            for(int j = inner_start_x - start_x; j < inner_end_x - start_x; j++) {
                 sum += p_real[j + i * tile_width] * p_real[j + i * tile_width] + p_imag[j + i * tile_width] * p_imag[j + i * tile_width];
             }
         }

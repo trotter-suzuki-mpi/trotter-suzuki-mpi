@@ -45,6 +45,10 @@
 double coupling_const = 0;
 double delta_x = 1, delta_y = 1;
 
+double delta_t = 0.08;
+int rot_coord_x = 320, rot_coord_y = 320;
+double omega = 0;
+
 std::complex<double> gauss_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
     double s = 64.0; // FIXME: y esto?
     return std::complex<double>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
@@ -99,7 +103,7 @@ int main(int argc, char** argv) {
     double *external_pot_imag = new double[tile_width * tile_height];
     double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
     hamiltonian_pot = const_potential;
-    double time_single_it = 0.08 * particle_mass / 2.;	//second approx trotter-suzuki: time/2
+    double time_single_it = delta_t * particle_mass / 2.;	//second approx trotter-suzuki: time/2
     double h_a = cos(time_single_it / (2. * particle_mass));
     double h_b = sin(time_single_it / (2. * particle_mass));
 
@@ -148,7 +152,7 @@ int main(int argc, char** argv) {
 #endif
          );
     for(int count_snap = 0; count_snap < snapshots; count_snap++) {
-        trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, iterations, kernel_type, periods, norm, imag_time);
+        trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, omega, rot_coord_x, rot_coord_y, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, delta_t, iterations, kernel_type, periods, norm, imag_time);
 
         stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
               start_y, inner_start_y, inner_end_y, dims, coords, periods,

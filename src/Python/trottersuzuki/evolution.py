@@ -1,8 +1,8 @@
 import numpy as np
-from .trottersuzuki import solver, H, K, Norm2
+from .trottersuzuki import solver, H, K, Lz, Norm2, phase, density
 
 
-def evolve(p_real, p_imag, particle_mass, external_potential, delta_x, delta_y,
+def evolve(p_real, p_imag, particle_mass, external_potential, omega, rot_coord_x, rot_coord_y, delta_x, delta_y,
            delta_t, iterations, coupling_const=0.0, kernel_type=0,
            periods=None, imag_time=False):
     """Function for evolving a quantum state.
@@ -15,6 +15,12 @@ def evolve(p_real, p_imag, particle_mass, external_potential, delta_x, delta_y,
     :type particle_mass: float.
     :param external_potential: External potential.
     :type external_potential: 2D numpy.array of float64.
+    :param omega: angolar velocity of the frame system
+    :type omega: float.
+    :param rot_coord_x: x coordinate of the rotating axis
+    :type rot_coord_x: float.
+    :param rot_coord_y: y coordinate of the rotating axis
+    :type rot_coord_y: float.
     :param delta_x: Relative grid distance in the x direction.
     :type delta_x: float.
     :param delta_y: Relative grid distance in the y direction.
@@ -44,12 +50,12 @@ def evolve(p_real, p_imag, particle_mass, external_potential, delta_x, delta_y,
         external_potential = np.zeros(p_real.shape)
     if periods is None:
         periods = [0, 0]
-    solver(p_real, p_imag, particle_mass, coupling_const, external_potential,
+    solver(p_real, p_imag, particle_mass, coupling_const, external_potential, omega, rot_coord_x, rot_coord_y,
            delta_x, delta_y, delta_t, iterations, kernel_type, periods,
            imag_time)
 
 
-def calculate_total_energy(p_real, p_imag, particle_mass, external_potential,
+def calculate_total_energy(p_real, p_imag, particle_mass, external_potential, omega, coord_rot_x, coord_rot_y,
                            delta_x, delta_y, coupling_const=0.0):
     """Function for calculating the expectation value of the Hamiltonian.
 
@@ -70,7 +76,7 @@ def calculate_total_energy(p_real, p_imag, particle_mass, external_potential,
     """
     if external_potential is None:
         external_potential = np.zeros(p_real.shape)
-    return H(p_real, p_imag, particle_mass, coupling_const, external_potential,
+    return H(p_real, p_imag, particle_mass, coupling_const, external_potential, omega, coord_rot_x, coord_rot_y,
              delta_x, delta_y)
 
 
@@ -91,6 +97,27 @@ def calculate_kinetic_energy(p_real, p_imag, particle_mass, delta_x, delta_y):
     return K(p_real, p_imag, particle_mass, delta_x, delta_y)
 
 
+def calculate_rotational_energy(p_real, p_imag, omega, coord_rot_x, coord_rot_y, delta_x, delta_y):
+    """Function for calculating rotational energy of a system in a rotating frame of reference. The axis of rotation is parallel to z.
+    
+    :param p_real: The real part of the quantum state.
+    :type p_real: 2D numpy.array of float64.
+    :param p_imag: The imaginary part of the quantum state.
+    :type p_imag: 2D numpy.array of float64.
+    :param omega: Angular velocity of the frame system.
+    :type omega: float.
+    :param coord_rot_x: x-coordinate of the rotation axis.
+    :type coord_rot_x: int.
+    :param coord_rot_y: y-coordinate of the rotation axis.
+    :type coord_rot_x: int.
+    :param delta_x: Relative grid distance in the x direction.
+    :type delta_x: float.
+    :param delta_y: Relative grid distance in the y direction.
+    :type delta_y: float.
+    """
+    return Lz(p_real, p_imag, omega, coord_rot_x, coord_rot_y, delta_x, delta_y)
+
+
 def calculate_norm2(p_real, p_imag, delta_x, delta_y):
     """Function for calculating the expectation value of the kinetic energy.
 
@@ -104,3 +131,29 @@ def calculate_norm2(p_real, p_imag, delta_x, delta_y):
     :type delta_y: float.
     """
     return Norm2(p_real, p_imag, delta_x, delta_y)
+
+
+def get_wave_function_phase(p_real, p_imag):
+    """Function that return the phase of the wave function
+
+    :param p_real: The real part of the quantum state.
+    :type p_real: 2D numpy.array of float64.
+    :param p_imag: The imaginary part of the quantum state.
+    :type p_imag: 2D numpy.array of float64.
+    """
+    phase_matrix = np.zeros(p_real.shape)
+    phase(phase_matrix, p_real, p_imag)
+    return phase_matrix
+
+
+def get_wave_function_density(p_real, p_imag):
+    """Function that return the particle denity of the wave function
+
+    :param p_real: The real part of the quantum state.
+    :type p_real: 2D numpy.array of float64.
+    :param p_imag: The imaginary part of the quantum state.
+    :type p_imag: 2D numpy.array of float64.
+    """
+    density_matrix = np.zeros(p_real.shape)
+    density(density_matrix, p_real, p_imag)
+    return density_matrix

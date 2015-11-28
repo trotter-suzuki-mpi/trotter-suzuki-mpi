@@ -43,7 +43,8 @@
 #define SNAPSHOTS 10
 #define SCATTER_LENGHT_2D 5.662739242e-5
 
-
+int rot_coord_x = 320, rot_coord_y = 320;
+double omega = 0;
 
 struct MAGIC_NUMBER {
     double threshold_E, threshold_P;
@@ -140,7 +141,7 @@ int main(int argc, char** argv) {
     
     //set and calculate evolution operator variables from hamiltonian
     double time_single_it;
-    double coupling_const = delta_t * 4. * M_PI * double(SCATTER_LENGHT_2D);
+    double coupling_const = 4. * M_PI * double(SCATTER_LENGHT_2D);
     double *external_pot_real = new double[tile_width * tile_height];
     double *external_pot_imag = new double[tile_width * tile_height];
     double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
@@ -206,7 +207,7 @@ int main(int argc, char** argv) {
         
 		print_matrix(filenames1.c_str(), p_real, tile_width, tile_width, tile_height);
         if(count_snap != snapshots) {
-            trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, iterations, kernel_type, periods, norm, imag_time);
+            trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, omega, rot_coord_x, rot_coord_y, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, delta_t, iterations, kernel_type, periods, norm, imag_time);
         }
     }
 
