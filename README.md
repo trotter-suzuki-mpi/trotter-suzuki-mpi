@@ -11,11 +11,11 @@ Key features:
   - Imaginary time evolution to calculate the ground state.
   - Stationary external potential.
   - Command-line interface (CLI) and application programming interface (API) for flexible use.
-  - [Python](https://pypi.python.org/pypi/trottersuzuki) and [MATLAB](https://www.mathworks.com/matlabcentral/fileexchange/51975-mextrotter) wrappers are provided.
+  - [Python](http://trotter-suzuki-mpi.readthedocs.org) and [MATLAB](https://www.mathworks.com/matlabcentral/fileexchange/51975-mextrotter) wrappers are provided.
   - Cache optimized multi-core, SSE, GPU, and hybrid kernels.
   - Near-linear scaling across multiple nodes with computations overlapping communication.
 
-Download the latest stable release [here](https://github.com/peterwittek/trotter-suzuki-mpi/releases/latest). The development version is [available on GitHub](https://github.com/peterwittek/trotter-suzuki-mpi).
+Download the latest stable release [here](https://github.com/trotter_suzuki-mpi/trotter-suzuki-mpi/releases/latest). The development version is [available on GitHub](https://github.com/trotter-suzuki-mpi/trotter-suzuki-mpi).
 
 Usage
 -----
@@ -109,7 +109,7 @@ MPI must be initialized before the function is called. Examples of using the API
 
 **Python and MATLAB Interfaces**
 
-The CPU and SSE kernels are accessible from Python and MATLAB. The Python version is available on the [Python Package Index](https://pypi.python.org/pypi/trottersuzuki), whereas the MATLAB version is available on the [MATLAB File Exchange](http://www.mathworks.com/matlabcentral/fileexchange/51975-mextrotter). Please refer to the documentation of these packages for further information.
+The CPU and SSE kernels are accessible from Python and MATLAB. The Python version is available on the [Python Package Index](https://pypi.python.org/pypi/trottersuzuki) with documentation on [Read the Docs](http://trotter-suzuki-mpi.readthedocs.org), whereas the MATLAB version is available on the [MATLAB File Exchange](http://www.mathworks.com/matlabcentral/fileexchange/51975-mextrotter). Please refer to the documentation of these packages for further information.
 
 Compilation & Installation
 --------------------------

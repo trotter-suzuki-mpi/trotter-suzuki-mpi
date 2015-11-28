@@ -1,17 +1,17 @@
 Trotter-Suzuki-MPI - Python Interface
 =====================================
 
-The module is a massively parallel implementation of the Trotter-Suzuki approximation to simulate the evolution of quantum systems classically. It relies on interfacing with C++ code with OpenMP for multicore execution.
+The module is a massively parallel implementation of the Trotter-Suzuki approximation to simulate the evolution of quantum systems classically. It relies on interfacing with C++ code with OpenMP for multicore execution, and it can be accelerated by CUDA.
 
 Key features of the Python interface:
 
-* Fast execution by parallelization: OpenMP.
+* Fast execution by parallelization: OpenMP and CUDA are supported.
 * NumPy arrays are supported for efficient data exchange.
 * Multi-platform: Linux, OS X, and Windows are supported.
 
 Usage
 ------
-Documentation is available on Read the Docs. The following code block gives a simple example of initializing a state and calculating the expectation values of the Hamiltonian and kinetic operators and the norm of the state after the evolution.
+Documentation is available on [Read the Docs](http://trotter-suzuki-mpi.readthedocs.org). The following code block gives a simple example of initializing a state and calculating the expectation values of the Hamiltonian and kinetic operators and the norm of the state after the evolution.
 
 .. code-block:: python
 		
@@ -96,3 +96,29 @@ Then you can issue
 ::
    
     $ sudo pip install trottersuzuki
+
+Build with CUDA support on Linux and OS X:
+------------------------------------------
+If your CUDA is installed elsewhere than /usr/local/cuda, you cannot directly install the module from PyPI. Please download the `source distribution <https://pypi.python.org/pypi/trottersuzuki/>`_ from PyPI. Open the setup.py file in an editor and modify the path to your CUDA installation directory:
+
+::
+
+   cuda_dir = /path/to/cuda
+
+Then run the install command
+
+::
+
+    $ sudo python setup.py install
+
+Build with CUDA support on Windows:
+--------------------------------------
+You should first follow the instructions to `build the Windows binary <http://trotter-suzuki-mpi.github.io/>`_ with MPI disabled with the same version Visual Studio as your Python is built with.(Since currently Python is built by VS2008 by default and CUDA v6.5 removed VS2008 support, you may use CUDA 6.0 with VS2008 or find a Python prebuilt with VS2010. And remember to install VS2010 or Windows SDK7.1 to get the option in Platform Toolset if you use VS2013.) Then you should copy the .obj files generated in the release build path to the Python/src folder.
+
+Then modify the win_cuda_dir in setup.py to your CUDA path and run the install command
+
+::
+
+    $ sudo python setup.py install
+
+Then it should be able to build and install the module.

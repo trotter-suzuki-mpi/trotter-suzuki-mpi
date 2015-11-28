@@ -33,7 +33,7 @@
 
 class HybridKernel: public ITrotterKernel {
 public:
-    HybridKernel(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b, double _delta_x, double _delta_y,
+    HybridKernel(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b, double _coupling_const, double _delta_x, double _delta_y,
                  int matrix_width, int matrix_height, int halo_x, int halo_y, int * _periods, double _norm, bool _imag_time
 #ifdef HAVE_MPI
                  , MPI_Comm cartcomm
@@ -75,6 +75,7 @@ private:
     double *dev_external_pot_imag;
     double a;
     double b;
+    double coupling_const;    
     double delta_x, delta_y;
     double norm;
     int sense;

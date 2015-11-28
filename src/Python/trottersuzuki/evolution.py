@@ -35,6 +35,9 @@ def evolve(p_real, p_imag, particle_mass, external_potential, omega, rot_coord_x
 
                            * 0: CPU kernel (default)
                            * 1: CPU SSE kernel (if compiled with it)
+                           * 2: GPU kernel (if compiled with it)
+                           * 3: Hybrid kernel (if compiled with it)
+                           
     :type kernel_type: int.
     :param periods: Optional parameter to specify periodicity in x and y
                     directions.

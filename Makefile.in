@@ -36,14 +36,14 @@ check test: trotter
 dist: $(distdir).tar.gz
 
 $(distdir).tar.gz: FORCE $(distdir)
-	tar chof - $(distdir) | gzip -9 -c >$(distdir).tar.gz
+	tar chf - $(distdir) | gzip -9 -c >$(distdir).tar.gz
 	rm -rf $(distdir)
 
 $(distdir):
 	mkdir -p $(distdir)/examples
 	mkdir -p $(distdir)/src
 	mkdir -p $(distdir)/src/MATLAB
-	mkdir -p $(distdir)/src/python
+	mkdir -p $(distdir)/src/Python
 	mkdir -p $(distdir)/src/windows
 	mkdir -p $(distdir)/src/windows/trotter
 	mkdir -p $(distdir)/test
@@ -53,13 +53,12 @@ $(distdir):
 	cp $(srcdir)/Makefile.in $(distdir)
 	cp $(srcdir)/README.md $(distdir)
 	cp $(srcdir)/COPYING $(distdir)  
-	cp $(srcdir)/TODO $(distdir)
 	cp $(srcdir)/CHANGES $(distdir)
 	cp $(srcdir)/examples/Makefile.in $(srcdir)/examples/*cpp $(distdir)/examples
 	cp $(srcdir)/src/Makefile.in $(distdir)/src
 	cp $(srcdir)/src/*.c* $(srcdir)/src/*.h $(distdir)/src
 	cp $(srcdir)/src/MATLAB/* $(distdir)/src/MATLAB
-	cp $(srcdir)/src/python/* $(distdir)/src/python
+	cp -R $(srcdir)/src/Python/* $(distdir)/src/Python
 	cp $(srcdir)/src/windows/trotter/* $(distdir)/src/windows/trotter
 	cp $(srcdir)/test/*.c* $(srcdir)/test/*.h $(srcdir)/test/Makefile.in $(distdir)/test
 

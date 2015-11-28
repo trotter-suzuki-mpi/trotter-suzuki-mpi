@@ -29,7 +29,7 @@
 #endif
 
 // Class methods
-HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, double _delta_x, double _delta_y, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int * _periods, double _norm, bool _imag_time
+HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, double _coupling_const, double _delta_x, double _delta_y, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int * _periods, double _norm, bool _imag_time
 #ifdef HAVE_MPI
                            , MPI_Comm _cartcomm
 #endif
@@ -37,6 +37,7 @@ HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_p
     threadsPerBlock(BLOCK_X, STRIDE_Y),
     a(_a),
     b(_b),
+    coupling_const(_coupling_const),
     delta_x(_delta_x),
     delta_y(_delta_y),
     external_pot_real(_external_pot_real),
@@ -175,7 +176,7 @@ void HybridKernel::run_kernel() {
     {
         #pragma omp for schedule(runtime) nowait
         for (block_start = block_height - 2 * halo_y; block_start < (int)last_band; block_start += block_height - 2 * halo_y) {
-            process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
+            process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, coupling_const, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
         }
     }
     #pragma omp barrier
@@ -198,7 +199,7 @@ void HybridKernel::run_kernel_on_halo() {
         // One full band
         inner = 1;
         sides = 1;
-        process_band(tile_width, block_width, block_height, halo_x, 0, tile_height, 0, tile_height, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
+        process_band(tile_width, block_width, block_height, halo_x, 0, tile_height, 0, tile_height, a, b, coupling_const, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
     }
     else {
 #ifdef _OPENMP
@@ -212,7 +213,7 @@ void HybridKernel::run_kernel_on_halo() {
                     // First band
                     inner = 1;
                     sides = 1;
-                    process_band(tile_width, block_width, block_height, halo_x, 0, block_height, 0, block_height - halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
+                    process_band(tile_width, block_width, block_height, halo_x, 0, block_height, 0, block_height - halo_y, a, b, coupling_const, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
 
                 }
                 #pragma omp section
@@ -221,8 +222,7 @@ void HybridKernel::run_kernel_on_halo() {
                     block_start = ((tile_height - block_height) / (block_height - 2 * halo_y) + 1) * (block_height - 2 * halo_y);
                     inner = 1;
                     sides = 1;
-                    process_band(tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
-
+                    process_band(tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a, b, coupling_const, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
                 }
             }
 
@@ -230,7 +230,7 @@ void HybridKernel::run_kernel_on_halo() {
             for (block_start = block_height - 2 * halo_y; block_start < (int)(tile_height - block_height); block_start += block_height - 2 * halo_y) {
                 inner = 0;
                 sides = 1;
-                process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
+                process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, coupling_const, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
             }
 
             #pragma omp barrier
@@ -242,17 +242,17 @@ void HybridKernel::run_kernel_on_halo() {
         sides = 1;
         int block_start;
         for (block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
-            process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
+            process_band(tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, coupling_const, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
         }
         // First band
         inner = 1;
         sides = 1;
-        process_band(tile_width, block_width, block_height, halo_x, 0, block_height, 0, block_height - halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
+        process_band(tile_width, block_width, block_height, halo_x, 0, block_height, 0, block_height - halo_y, a, b, coupling_const, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
 
         // Last band
         inner = 1;
         sides = 1;
-        process_band(tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a, b, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
+        process_band(tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a, b, coupling_const, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
 #endif /* _OPENMP */
     }
 }
