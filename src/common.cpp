@@ -845,6 +845,76 @@ double Energy_rot(double * p_real, double * p_imag,
 	return real(sum / norm2) * delta_x * delta_y;
 }
 
+void mean_position(double * p_real, double * p_imag, double delta_x, double delta_y, int grid_origin_x, int grid_origin_y, double *results,
+                       double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
+	
+	int ini_halo_x = inner_start_x - start_x;
+	int ini_halo_y = inner_start_y - start_y;
+	int end_halo_x = end_x - inner_end_x;
+	int end_halo_y = end_y - inner_end_y;
+	int tile_width = end_x - start_x;
+	
+	if(norm2 == 0)
+		norm2 = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+		
+	std::complex<double> sum_x_mean = 0, sum_xx_mean = 0, sum_y_mean = 0, sum_yy_mean = 0;
+	std::complex<double> psi_center;
+	for(int i = inner_start_y - start_y + (ini_halo_y == 0); i < inner_end_y - start_y - (end_halo_y == 0); i++) {
+		for(int j = inner_start_x - start_x + (ini_halo_x == 0); j < inner_end_x - start_x - (end_halo_x == 0); j++) {
+			psi_center = std::complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
+			sum_x_mean += conj(psi_center) * psi_center * std::complex<double>(delta_x * (j - grid_origin_x), 0.);
+			sum_y_mean += conj(psi_center) * psi_center * std::complex<double>(delta_y * (i - grid_origin_y), 0.);
+			sum_xx_mean += conj(psi_center) * psi_center * std::complex<double>(delta_x * (j - grid_origin_x), 0.) * std::complex<double>(delta_x * (j - grid_origin_x), 0.);
+			sum_yy_mean += conj(psi_center) * psi_center * std::complex<double>(delta_y * (i - grid_origin_y), 0.) * std::complex<double>(delta_y * (i - grid_origin_y), 0.);
+		}
+	}
+	
+	results[0] = real(sum_x_mean / norm2) * delta_x * delta_y;
+	results[2] = real(sum_y_mean / norm2) * delta_x * delta_y;
+	results[1] = real(sum_xx_mean / norm2) * delta_x * delta_y - results[0] * results[0];
+	results[3] = real(sum_yy_mean / norm2) * delta_x * delta_y - results[2] * results[2];
+}
+
+void mean_momentum(double * p_real, double * p_imag, double delta_x, double delta_y, double *results,
+                   double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
+	
+	int ini_halo_x = inner_start_x - start_x;
+	int ini_halo_y = inner_start_y - start_y;
+	int end_halo_x = end_x - inner_end_x;
+	int end_halo_y = end_y - inner_end_y;
+	int tile_width = end_x - start_x;
+	
+	if(norm2 == 0)
+		norm2 = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+		
+	std::complex<double> sum_px_mean = 0, sum_pxpx_mean = 0, sum_py_mean = 0, sum_pypy_mean = 0, var_px = std::complex<double>(0., - 0.5 / delta_x), var_py = std::complex<double>(0., - 0.5 / delta_y);
+	std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
+	for(int i = inner_start_y - start_y + (ini_halo_y == 0); i < inner_end_y - start_y - (end_halo_y == 0); i++) {
+		for(int j = inner_start_x - start_x + (ini_halo_x == 0); j < inner_end_x - start_x - (end_halo_x == 0); j++) {
+			psi_center = std::complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
+			psi_up = std::complex<double> (p_real[(i - 1) * tile_width + j], p_imag[(i - 1) * tile_width + j]);
+			psi_down = std::complex<double> (p_real[(i + 1) * tile_width + j], p_imag[(i + 1) * tile_width + j]);
+			psi_right = std::complex<double> (p_real[i * tile_width + j + 1], p_imag[i * tile_width + j + 1]);
+			psi_left = std::complex<double> (p_real[i * tile_width + j - 1], p_imag[i * tile_width + j - 1]);
+			
+			sum_px_mean += conj(psi_center) * (psi_right - psi_left);
+			sum_py_mean += conj(psi_center) * (psi_up - psi_down);
+			sum_pxpx_mean += conj(psi_center) * (psi_right - 2. * psi_center + psi_left);
+			sum_pypy_mean += conj(psi_center) * (psi_up - 2. * psi_center + psi_down);
+		}
+	}
+
+	sum_px_mean = sum_px_mean * var_px;
+	sum_py_mean = sum_py_mean * var_py;
+	sum_pxpx_mean = sum_pxpx_mean * (-1.)/(delta_x * delta_x);
+	sum_pypy_mean = sum_pypy_mean * (-1.)/(delta_y * delta_y);
+	
+	results[0] = real(sum_px_mean / norm2) * delta_x * delta_y;
+	results[2] = real(sum_py_mean / norm2) * delta_x * delta_y;
+	results[1] = real(sum_pxpx_mean / norm2) * delta_x * delta_y - results[0] * results[0];
+	results[3] = real(sum_pypy_mean / norm2) * delta_x * delta_y - results[2] * results[2];
+}
+
 double Norm2(double * p_real, double * p_imag, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
 	double norm2 = 0;
 	int tile_width = end_x - start_x;
