@@ -26,36 +26,38 @@
 
     @param h_a               Kinetic term of the Hamiltonian (cosine part)
     @param h_b               Kinetic term of the Hamiltonian (sine part)
-    @param coupling_const    Coupling constant of the self-interacting term
     @param external_pot_real External potential, real part
     @param external_pot_imag External potential, imaginary part
     @param p_real            Initial state, real part
     @param p_imag            Initial state, imaginary part
-    @param delta_x           Physical distance between two neighbour points of the lattice along the x axis
-    @param delta_y           Physical distance between two neighbour points of the lattice along the y axis
     @param matrix_width      The width of the initial state
     @param matrix_height     The height of the initial state
     @param iterations        Number of iterations to be calculated
+    @param snapshots         Number of iterations between taking snapshots
+                             (0 means no snapshots)
     @param kernel_type       The kernel type:
-                             0: CPU block kernel
-                             1: CPU SSE block kernel
-                             2: GPU kernel
-                             3: Hybrid kernel
-    @param periods           Whether the grid is periodic in any of the directions
-    @param norm              Norm of the final state (only for imaginary time evolution)
-    @param imag_time         Optional parameter to calculate imaginary time evolution
+                              0: CPU block kernel
+                              1: CPU SSE block kernel
+                              2: GPU kernel
+                              3: Hybrid kernel
+    @param periods            Whether the grid is periodic in any of the directions
+    @param output_folder      The folder to write the snapshots in
+    @param verbose            Optional verbosity parameter
+    @param imag_time          Optional parameter to calculate imaginary time evolution
+    @param particle_tag       Optional parameter to tag a particle in the snapshots
 
 */
 
 void trotter(double h_a, double h_b, double coupling_const,
              double * external_pot_real, double * external_pot_imag,
+             double omega, int rot_coord_x, int rot_coord_y,
              double * p_real, double * p_imag, double delta_x, double delta_y,
-             const int matrix_width, const int matrix_height,
+             const int matrix_width, const int matrix_height, double delta_t,
              const int iterations, const int kernel_type,
              int *periods, double norm, bool imag_time);
              
 void solver(double * p_real, double * p_imag,
-			double particle_mass, double coupling_const, double * external_pot,
+			double particle_mass, double coupling_const, double * external_pot, double omega, int rot_coord_x, int rot_coord_y,
             const int matrix_width, const int matrix_height, double delta_x, double delta_y, double delta_t, const int iterations, const int kernel_type, int *periods, bool imag_time);
 
 struct energy_momentum_statistics {
@@ -65,14 +67,22 @@ struct energy_momentum_statistics {
         var_E(0.), var_Px(0.), var_Py(0.) {}
 };
 
+double Energy_rot(double * p_real, double * p_imag,
+				  double omega, double coord_rot_x, double coord_rot_y, double delta_x, double delta_y,
+				  double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
+double Energy_kin(double * p_real, double * p_imag, double particle_mass, double delta_x, double delta_y,
+                  double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
 double Energy_tot(double * p_real, double * p_imag,
-				  double particle_mass, double coupling_const, double * external_pot,
-				  const int matrix_width, const int matrix_height, double delta_x, double delta_y);
+				  double particle_mass, double coupling_const, double (*hamilt_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y), double * external_pot, double omega, double coord_rot_x, double coord_rot_y,
+				  double delta_x, double delta_y, double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y,
+				  int matrix_width, int matrix_height, int halo_x, int halo_y, int * periods);
+double Norm2(double * p_real, double * p_imag, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
+void get_wave_function_phase(double * phase, double * p_real, double * p_imag, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
+void get_wave_function_density(double * density, double * p_real, double * p_imag, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
 
-double Energy_kin(double * p_real, double * p_imag, double particle_mass,
-				  const int matrix_width, const int matrix_height, double delta_x, double delta_y);
-				  
-double Norm2(double * p_real, double * p_imag, const int matrix_width, const int matrix_height, double delta_x, double delta_y);
+void get_wave_function_phase(double * phase, double * p_real, double * p_imag, int width, int height);
+
+void get_wave_function_density(double * density, double * p_real, double * p_imag, int width, int height);
 
 void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, double particle_mass,
                    const char *dirname, int *periods, int halo_x, int halo_y, energy_momentum_statistics *sample);
