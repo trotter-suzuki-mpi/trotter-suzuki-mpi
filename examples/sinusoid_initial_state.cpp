@@ -39,7 +39,7 @@
 
 #define DIM 640
 #define ITERATIONS 100
-#define KERNEL_TYPE 0
+#define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 10
 
 double coupling_const = 0;
@@ -57,12 +57,13 @@ std::complex<double> sinus_state(int x, int y, int matrix_width, int matrix_heig
 }
 
 int main(int argc, char** argv) {
-    int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, kernel_type = KERNEL_TYPE;
+    int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS;
+    string kernel_type = KERNEL_TYPE;
     int periods[2] = {1, 1};
     bool verbose = true;
     char filename[1] = "";
     char pot_name[1] = "";
-    int halo_x = (kernel_type == 2 ? 3 : 4);
+    int halo_x = 4;
     int halo_y = 4;
     double norm = 1;
     int matrix_width = dim + periods[1] * 2 * halo_x;

@@ -47,7 +47,7 @@ void trotter(double h_a, double h_b, double coupling_const,
              double omega, int rot_coord_x, int rot_coord_y,
              double * p_real, double * p_imag, double delta_x, double delta_y,
              const int matrix_width, const int matrix_height, double delta_t,
-             const int iterations, const int kernel_type,
+             const int iterations, string kernel_type,
              int *periods, double norm, bool imag_time) {
     
     int start_x, end_x, inner_start_x, inner_end_x,
@@ -71,7 +71,7 @@ void trotter(double h_a, double h_b, double coupling_const,
     coords[0] = coords[1] = 0;
 #endif
 
-    int halo_x = (kernel_type == 2 ? 3 : 4);
+    int halo_x = (kernel_type == "sse" ? 3 : 4);
     halo_x = (omega == 0. ? halo_x : 8);
     int halo_y = (omega == 0. ? 4 : 8);
     calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
@@ -81,16 +81,13 @@ void trotter(double h_a, double h_b, double coupling_const,
 
     // Initialize kernel
     ITrotterKernel * kernel;
-    switch (kernel_type) {
-    case 0:
+    if (kernel_type == "cpu") {
         kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, coupling_const * delta_t, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time, omega * delta_t * delta_x / (2 * delta_y), omega * delta_t * delta_y / (2 * delta_x), rot_coord_x, rot_coord_y
 #ifdef HAVE_MPI
                               , cartcomm
 #endif
                              );
-        break;
-
-    case 1:
+    } else if (kernel_type == "sse") {
 #ifdef SSE
         kernel = new CPUBlockSSEKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
 #ifdef HAVE_MPI
@@ -103,9 +100,7 @@ void trotter(double h_a, double h_b, double coupling_const,
         }
         abort();
 #endif
-        break;
-
-    case 2:
+    } else if (kernel_type == "gpu") {
 #ifdef CUDA
         kernel = new CC2Kernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
 #ifdef HAVE_MPI
@@ -122,9 +117,7 @@ void trotter(double h_a, double h_b, double coupling_const,
         abort ();
 #endif
 #endif
-        break;
-
-    case 3:
+    } else if (kernel_type == "hybrid") {
 #ifdef CUDA
         kernel = new HybridKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, coupling_const, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
 #ifdef HAVE_MPI
@@ -141,15 +134,6 @@ void trotter(double h_a, double h_b, double coupling_const,
         abort();
 #endif
 #endif
-        break;
-
-    default:
-        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, coupling_const * delta_t, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time, omega * delta_t * delta_x / ( 2 * delta_y), omega * delta_t * delta_y / ( 2 * delta_x), rot_coord_x, rot_coord_y
-#ifdef HAVE_MPI
-                              , cartcomm
-#endif
-                             );
-        break;
     }
 
     // Main loop
@@ -167,5 +151,5 @@ void trotter(double h_a, double h_b, double coupling_const,
 
     kernel->get_sample(width, 0, 0, width, height, p_real, p_imag);
 
-    //delete kernel;
+    delete kernel;
 }

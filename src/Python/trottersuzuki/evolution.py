@@ -2,9 +2,10 @@ import numpy as np
 from .trottersuzuki import solver, H, K, Lz, Norm2, phase, density
 
 
-def evolve(p_real, p_imag, particle_mass, external_potential, omega, rot_coord_x, rot_coord_y, delta_x, delta_y,
-           delta_t, iterations, coupling_const=0.0, kernel_type=0,
-           periods=None, imag_time=False):
+def evolve(p_real, p_imag, particle_mass, external_potential, delta_x, delta_y,
+           delta_t, iterations, coupling_const=0.0, kernel_type="cpu",
+           periods=None, omega=0.0, rot_coord_x=0.0, rot_coord_y=0.0, 
+           imag_time=False):
     """Function for evolving a quantum state.
 
     :param p_real: The real part of the initial quantum state.
@@ -15,12 +16,6 @@ def evolve(p_real, p_imag, particle_mass, external_potential, omega, rot_coord_x
     :type particle_mass: float.
     :param external_potential: External potential.
     :type external_potential: 2D numpy.array of float64.
-    :param omega: angolar velocity of the frame system
-    :type omega: float.
-    :param rot_coord_x: x coordinate of the rotating axis
-    :type rot_coord_x: float.
-    :param rot_coord_y: y coordinate of the rotating axis
-    :type rot_coord_y: float.
     :param delta_x: Relative grid distance in the x direction.
     :type delta_x: float.
     :param delta_y: Relative grid distance in the y direction.
@@ -31,17 +26,17 @@ def evolve(p_real, p_imag, particle_mass, external_potential, omega, rot_coord_x
     :type iterations: int.
     :param coupling_const: Optional coupling constant between parameters.
     :type coupling_const: float.
-    :param kernel_type: Optional parameter to specify which kernel to use:
-
-                           * 0: CPU kernel (default)
-                           * 1: CPU SSE kernel (if compiled with it)
-                           * 2: GPU kernel (if compiled with it)
-                           * 3: Hybrid kernel (if compiled with it)
-                           
-    :type kernel_type: int.
+    :param kernel_type: Optional parameter to set kernel: cpu, gpu, or hybrid.
+    :type kernel_type: str.
     :param periods: Optional parameter to specify periodicity in x and y
                     directions.
     :type periods: [int, int]
+    :param omega: angular velocity of the frame system
+    :type omega: float.
+    :param rot_coord_x: x coordinate of the rotating axis
+    :type rot_coord_x: float.
+    :param rot_coord_y: y coordinate of the rotating axis
+    :type rot_coord_y: float.
     :param imag_time: Optional parameter to request imaginary time evolution.
                       Default: False.
     :type imag_time: bool.
@@ -50,13 +45,14 @@ def evolve(p_real, p_imag, particle_mass, external_potential, omega, rot_coord_x
         external_potential = np.zeros(p_real.shape)
     if periods is None:
         periods = [0, 0]
-    solver(p_real, p_imag, particle_mass, coupling_const, external_potential, omega, rot_coord_x, rot_coord_y,
-           delta_x, delta_y, delta_t, iterations, kernel_type, periods,
-           imag_time)
+    solver(p_real, p_imag, particle_mass, coupling_const, external_potential, 
+           omega, rot_coord_x, rot_coord_y, delta_x, delta_y, delta_t, 
+           iterations, kernel_type, periods, imag_time)
 
 
-def calculate_total_energy(p_real, p_imag, particle_mass, external_potential, omega, coord_rot_x, coord_rot_y,
-                           delta_x, delta_y, coupling_const=0.0):
+def calculate_total_energy(p_real, p_imag, particle_mass, external_potential, 
+                           delta_x, delta_y, coupling_const=0.0, omega=0.0, 
+                           coord_rot_x=0.0, coord_rot_y=0.0):
     """Function for calculating the expectation value of the Hamiltonian.
 
     :param p_real: The real part of the quantum state.
@@ -73,11 +69,17 @@ def calculate_total_energy(p_real, p_imag, particle_mass, external_potential, om
     :type delta_y: float.
     :param coupling_const: Optional coupling constant between parameters.
     :type coupling_const: float.
+    :param omega: angular velocity of the frame system
+    :type omega: float.
+    :param rot_coord_x: x coordinate of the rotating axis
+    :type rot_coord_x: float.
+    :param rot_coord_y: y coordinate of the rotating axis
+    :type rot_coord_y: float.
     """
     if external_potential is None:
         external_potential = np.zeros(p_real.shape)
-    return H(p_real, p_imag, particle_mass, coupling_const, external_potential, omega, coord_rot_x, coord_rot_y,
-             delta_x, delta_y)
+    return H(p_real, p_imag, particle_mass, coupling_const, external_potential, 
+             omega, coord_rot_x, coord_rot_y, delta_x, delta_y)
 
 
 def calculate_kinetic_energy(p_real, p_imag, particle_mass, delta_x, delta_y):
@@ -97,23 +99,24 @@ def calculate_kinetic_energy(p_real, p_imag, particle_mass, delta_x, delta_y):
     return K(p_real, p_imag, particle_mass, delta_x, delta_y)
 
 
-def calculate_rotational_energy(p_real, p_imag, omega, coord_rot_x, coord_rot_y, delta_x, delta_y):
+def calculate_rotational_energy(p_real, p_imag, delta_x, delta_y, omega=0.0, 
+                                coord_rot_x=0.0, coord_rot_y=0.0):
     """Function for calculating rotational energy of a system in a rotating frame of reference. The axis of rotation is parallel to z.
     
     :param p_real: The real part of the quantum state.
     :type p_real: 2D numpy.array of float64.
     :param p_imag: The imaginary part of the quantum state.
     :type p_imag: 2D numpy.array of float64.
+    :param delta_x: Relative grid distance in the x direction.
+    :type delta_x: float.
+    :param delta_y: Relative grid distance in the y direction.
+    :type delta_y: float.
     :param omega: Angular velocity of the frame system.
     :type omega: float.
     :param coord_rot_x: x-coordinate of the rotation axis.
     :type coord_rot_x: int.
     :param coord_rot_y: y-coordinate of the rotation axis.
     :type coord_rot_x: int.
-    :param delta_x: Relative grid distance in the x direction.
-    :type delta_x: float.
-    :param delta_y: Relative grid distance in the y direction.
-    :type delta_y: float.
     """
     return Lz(p_real, p_imag, omega, coord_rot_x, coord_rot_y, delta_x, delta_y)
 

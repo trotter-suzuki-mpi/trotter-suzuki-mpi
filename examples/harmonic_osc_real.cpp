@@ -37,7 +37,7 @@
 #define DIM 300					//Number of dots of the grid's edge
 #define DELTA_T 2.e-4			//Time step evolution
 #define ITERATIONS 1000			//Number of iterations before calculating expected values
-#define KERNEL_TYPE 2		
+#define KERNEL_TYPE "gpu"
 #define SNAPSHOTS 40			//Number of times the expected values are calculated
 #define SNAP_PER_STAMP 5		//The particles density and phase of the wave function are stamped every "SNAP_PER_STAMP" expected values calculations
 #define COUPLING_CONST_2D 0		// 0 for linear Schrodinger equation
@@ -77,7 +77,8 @@ double parabolic_potential(int m, int n, int matrix_width, int matrix_height, in
 }
 
 int main(int argc, char** argv) {
-    int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, snap_per_stamp = SNAP_PER_STAMP, kernel_type = KERNEL_TYPE;
+    int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, snap_per_stamp = SNAP_PER_STAMP;
+    string kernel_type = KERNEL_TYPE;
     int periods[2] = {0, 0};
     char file_name[] = "";
     char pot_name[1] = "";
@@ -89,7 +90,7 @@ int main(int argc, char** argv) {
 	double delta_t = double(DELTA_T);
 	double delta_x = double(EDGE_LENGTH)/double(DIM), delta_y = double(EDGE_LENGTH)/double(DIM);
 
-    int halo_x = (kernel_type == 2 ? 3 : 4);
+    int halo_x = 4;
     halo_x = (omega == 0. ? halo_x : 8);
     int halo_y = (omega == 0. ? 4 : 8);
     int matrix_width = dim + periods[1] * 2 * halo_x;
