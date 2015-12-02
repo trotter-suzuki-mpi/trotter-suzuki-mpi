@@ -87,4 +87,4 @@ $(srcdir)/%.cu.co: $(srcdir)/%.cu
 	$(MAKE) -C $(srcdir) $@
 
 clean:
-	-rm -f gaussian-like_initial_state sinusoid_initial_state exponential_initial_state imag_evolution two_particles_exponential_initial_state groundstate_of_BEC_in_harmonic_pot $(BOX_OBJS_1) $(BOX_OBJS_2) $(BOX_OBJS_3) $(IMAG_EVO) $(BEC) 1>/dev/null
+	-rm -f gaussian-like_initial_state sinusoid_initial_state exponential_initial_state imag_evolution two_particles_exponential_initial_state groundstate_of_BEC_in_harmonic_pot vortexes harmonic_osc_imag harmonic_osc_real $(BOX_OBJS_1) $(BOX_OBJS_2) $(BOX_OBJS_3) $(IMAG_EVO) $(BEC) $(VORTEXES) $(HARM_OSC_I) $(HARM_OSC_R) 1>/dev/null

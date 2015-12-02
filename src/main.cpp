@@ -44,7 +44,7 @@
 #define EDGE_LENGHT 640
 #define SINGLE_TIME_STEP 0.01
 #define ITERATIONS 1000
-#define KERNEL_TYPE 0
+#define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 1
 #define PARTICLE_MASS 1
 #define COUPLING_CONST 0
@@ -64,18 +64,14 @@ void print_usage() {
               "     -t NUMBER     Single time step (default: " << SINGLE_TIME_STEP << ")\n" \
               "     -i NUMBER     Number of iterations before a snapshot (default: " << ITERATIONS << ")\n" \
               "     -g            Imaginary time evolution to evolve towards the ground state\n" \
-              "     -k NUMBER     Kernel type (default: " << KERNEL_TYPE << "): \n" \
-              "                      0: CPU, cache-optimized\n" \
-              "                      1: CPU, SSE and cache-optimized\n" \
-              "                      2: GPU\n" \
-              "                      3: Hybrid (experimental) \n" \
+              "     -k STRING     Kernel type (cpu, gpu, or hybrid; default: " << KERNEL_TYPE << "): \n" \
               "     -s NUMBER     Snapshots are taken at every NUMBER of iterations.\n" \
               "                   Zero means no snapshots. Default: " << SNAPSHOTS << ".\n"\
               "     -n STRING     Name of file that defines the initial state.\n"\
               "     -p STRING     Name of file that stores the potential operator (in coordinate representation)\n";
 }
 
-void process_command_line(int argc, char** argv, int *dim, double *delta_x, double *delta_y, int *iterations, int *snapshots, int *kernel_type, char *filename, double *delta_t, double *coupling_const, double *particle_mass, char * pot_name, bool *imag_time) {
+void process_command_line(int argc, char** argv, int *dim, double *delta_x, double *delta_y, int *iterations, int *snapshots, string *kernel_type, char *filename, double *delta_t, double *coupling_const, double *particle_mass, char *pot_name, bool *imag_time) {
     // Setting default values
     *dim = DIM;
     *iterations = ITERATIONS;
@@ -112,10 +108,10 @@ void process_command_line(int argc, char** argv, int *dim, double *delta_x, doub
             abort ();
             break;
         case 'k':
-            *kernel_type = atoi(optarg);
-            if (*kernel_type < 0 || *kernel_type > 3) {
-                fprintf (stderr, "The argument of option -k should be a valid kernel.\n");
-                abort ();
+            *kernel_type = optarg;
+            if (*kernel_type != "cpu" && *kernel_type != "gpu" && *kernel_type != "hybrid") {
+                fprintf (stderr, "The argument of option -t should be cpu, gpu, or hybrid.");
+                abort();
             }
             break;
         case 's':
@@ -183,13 +179,13 @@ void process_command_line(int argc, char** argv, int *dim, double *delta_x, doub
         print_usage();
         abort();
     }
-    
     *delta_x = lenght / double(*dim);
     *delta_y = lenght / double(*dim);
 }
 
 int main(int argc, char** argv) {
-    int dim = 0, iterations = 0, snapshots = 0, kernel_type = 0;
+    int dim = 0, iterations = 0, snapshots = 0;
+    string kernel_type = KERNEL_TYPE;
     int periods[2] = {1, 1};
     double particle_mass = 1.;
     char filename[FILENAME_LENGTH] = "";
@@ -199,16 +195,16 @@ int main(int argc, char** argv) {
     double norm = 1;
     int time, tot_time = 0;
     char output_folder[2] = {'.', '\0'};
-	double delta_t = 0;
-	double coupling_const = 0;
-	double delta_x = 1, delta_y = 1;
+	  double delta_t = 0;
+	  double coupling_const = 0;
+	  double delta_x = 1, delta_y = 1;
 
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
     process_command_line(argc, argv, &dim, &delta_x, &delta_y, &iterations, &snapshots, &kernel_type, filename, &delta_t, &coupling_const, &particle_mass, pot_name, &imag_time);
 	
-    int halo_x = (kernel_type == 2 ? 3 : 4);
+    int halo_x = (kernel_type == "sse" ? 3 : 4);
     int halo_y = 4;
     int matrix_width = dim + periods[1] * 2 * halo_x;
     int matrix_height = dim + periods[0] * 2 * halo_y;

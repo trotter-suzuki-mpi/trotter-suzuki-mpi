@@ -1,6 +1,5 @@
-/*ss*/
-
 %module trottersuzuki
+%include <std_string.i>
 %{
 #define SWIG_FILE_WITH_INIT
 #include "src/trotter.h"
@@ -24,7 +23,7 @@ import_array();
                double * p_imag, int width_p_i, int height_p_i,
                double particle_mass, double coupling_const, double * external_pot, int width_ext_r, int height_ext_r,
                double omega, double rot_coord_x, double rot_coord_y, double delta_x, double delta_y, double delta_t,
-               const int iterations, const int kernel_type,
+               const int iterations, std::string kernel_type,
                int *periods, int size, bool imag_time) {
        
         solver(p_real, p_imag,

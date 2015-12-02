@@ -41,7 +41,7 @@
 #define DIM 640
 #define ITERATIONS 2000
 #define PARTICLES_NUM 1700000
-#define KERNEL_TYPE 0
+#define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 10
 #define SCATTER_LENGHT_2D 5.662739242e-5
 
@@ -64,12 +64,13 @@ double parabolic_potential(int m, int n, int matrix_width, int matrix_height, in
 
 int main(int argc, char** argv) {
 
-    int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, kernel_type = KERNEL_TYPE;
+    int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS;
+    string kernel_type = KERNEL_TYPE;
     int periods[2] = {0, 0};
     bool verbose = true;
     char filename[1] = "";
     char pot_name[1] = "";
-    int halo_x = (kernel_type == 2 ? 3 : 4);
+    int halo_x = 4;
     int halo_y = 4;
     int matrix_width = dim + periods[1] * 2 * halo_x;
     int matrix_height = dim + periods[0] * 2 * halo_y;

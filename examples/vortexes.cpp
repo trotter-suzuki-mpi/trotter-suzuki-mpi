@@ -36,7 +36,7 @@
 #define DIM 640
 #define ITERATIONS 10000
 #define PARTICLES_NUM 8.e+6
-#define KERNEL_TYPE 0
+#define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 400
 #define SNAP_PER_STAMP 20
 #define COUPLING_CONST_2D 7.116007999594e-4
@@ -65,7 +65,8 @@ double parabolic_potential(int m, int n, int matrix_width, int matrix_height, in
 }
 
 int main(int argc, char** argv) {
-    int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, snap_per_stamp = SNAP_PER_STAMP, kernel_type = KERNEL_TYPE;
+    int dim = DIM, iterations = ITERATIONS, snapshots = SNAPSHOTS, snap_per_stamp = SNAP_PER_STAMP;
+    string kernel_type = KERNEL_TYPE;
     int periods[2] = {0, 0};
     char file_name[] = "";
     char pot_name[1] = "";
@@ -77,7 +78,7 @@ int main(int argc, char** argv) {
 	double delta_t = 2.e-4;
 	double delta_x = double(LENGHT)/double(DIM), delta_y = double(LENGHT)/double(DIM);
 
-    int halo_x = (kernel_type == 2 ? 3 : 4);
+    int halo_x = 4;
     halo_x = (omega == 0. ? halo_x : 8);
     int halo_y = (omega == 0. ? 4 : 8);
     int matrix_width = dim + periods[1] * 2 * halo_x;
