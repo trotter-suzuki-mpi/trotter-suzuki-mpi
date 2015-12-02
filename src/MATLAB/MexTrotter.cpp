@@ -114,7 +114,15 @@ void mexFunction(int nlhs, mxArray *plhs[],
     double delta_y = (double)mxGetPr(prhs[6])[0];
     double delta_t = (double)mxGetPr(prhs[7])[0];
     int iterations = (int)mxGetPr(prhs[8])[0];
-    int kernel_type = (int)mxGetPr(prhs[9])[0];
+    char* kernel_type_c = mxArrayToString(prhs[9]);
+    string kernel_type;
+    if(kernel_type_c != NULL) {
+        kernel_type = kernel_type_c;
+    }
+    else {
+        kernel_type = "";
+    }
+    mxFree(kernel_type_c);
     bool imag_time = (bool)mxGetPr(prhs[11])[0];
     
     //launch the solver

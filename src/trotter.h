@@ -17,7 +17,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
+#include <string>
+using namespace std;
 #ifndef __TROTTER_H
 #define __TROTTER_H
 
@@ -35,11 +36,7 @@
     @param iterations        Number of iterations to be calculated
     @param snapshots         Number of iterations between taking snapshots
                              (0 means no snapshots)
-    @param kernel_type       The kernel type:
-                              0: CPU block kernel
-                              1: CPU SSE block kernel
-                              2: GPU kernel
-                              3: Hybrid kernel
+    @param kernel_type       The kernel type: "cpu", "gpu", or "hybrid"
     @param periods            Whether the grid is periodic in any of the directions
     @param output_folder      The folder to write the snapshots in
     @param verbose            Optional verbosity parameter
@@ -53,12 +50,12 @@ void trotter(double h_a, double h_b, double coupling_const,
              double omega, int rot_coord_x, int rot_coord_y,
              double * p_real, double * p_imag, double delta_x, double delta_y,
              const int matrix_width, const int matrix_height, double delta_t,
-             const int iterations, const int kernel_type,
+             const int iterations, string kernel_type,
              int *periods, double norm, bool imag_time);
              
 void solver(double * p_real, double * p_imag,
 			double particle_mass, double coupling_const, double * external_pot, double omega, int rot_coord_x, int rot_coord_y,
-            const int matrix_width, const int matrix_height, double delta_x, double delta_y, double delta_t, const int iterations, const int kernel_type, int *periods, bool imag_time);
+            const int matrix_width, const int matrix_height, double delta_x, double delta_y, double delta_t, const int iterations, string kernel_type, int *periods, bool imag_time);
 
 struct energy_momentum_statistics {
     double mean_E, mean_Px, mean_Py;
