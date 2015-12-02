@@ -44,7 +44,7 @@
 #define EDGE_LENGHT 640
 #define SINGLE_TIME_STEP 0.01
 #define ITERATIONS 1000
-#define KERNEL_TYPE 0
+#define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 1
 #define PARTICLE_MASS 1
 #define COUPLING_CONST 0
@@ -64,11 +64,7 @@ void print_usage() {
               "     -t NUMBER     Single time step (default: " << SINGLE_TIME_STEP << ")\n" \
               "     -i NUMBER     Number of iterations before a snapshot (default: " << ITERATIONS << ")\n" \
               "     -g            Imaginary time evolution to evolve towards the ground state\n" \
-              "     -k NUMBER     Kernel type (default: " << KERNEL_TYPE << "): \n" \
-              "                      0: CPU, cache-optimized\n" \
-              "                      1: CPU, SSE and cache-optimized\n" \
-              "                      2: GPU\n" \
-              "                      3: Hybrid (experimental) \n" \
+              "     -k STRING     Kernel type (cpu, gpu, or hybrid; default: " << KERNEL_TYPE << "): \n" \
               "     -s NUMBER     Snapshots are taken at every NUMBER of iterations.\n" \
               "                   Zero means no snapshots. Default: " << SNAPSHOTS << ".\n"\
               "     -n STRING     Name of file that defines the initial state.\n"\

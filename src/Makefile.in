@@ -79,7 +79,7 @@ matlab: lib
 	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexK.cpp ./common.o $(MEX_LIBS)
 	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexNorm.cpp ./common.o $(MEX_LIBS)
 
-matlab_clean: clean
+matlab_clean:
 	-rm -f Mex*
 
 python:
@@ -107,7 +107,7 @@ python_install: python python_doc
 python_clean:
 	-rm -rf Python/trottersuzuki/src Python/trottersuzuki/examples Python/trottersuzuki/test Python/*.pyc Python/trottersuzuki/*.pyc Python/trottersuzuki/*.h Python/trottersuzuki/*.cpp  Python/trottersuzuki/*.cxx Python/dist Python/trottersuzuki.egg* Python/build Python/trottersuzuki/trottersuzuki.py Python/trottersuzuki/*.so Python/trottersuzuki/Makefile* Python/trottersuzuki/config* Python/trottersuzuki/install*
 
-clean:
+clean: python_clean matlab_clean
 	-rm -f trotter $(OBJS) 1>/dev/null
 
 install: all

@@ -1,5 +1,6 @@
 Since 1.4:
  - New: CUDA support in Python and MATLAB interfaces.
+ - Changed: SSE kernel is deprecated.
  - Fixed: Code compiles again with the hybrid kernel.
 
 Version 1.4: 2015-10-25
