@@ -33,9 +33,9 @@
 #include <mpi.h>
 #endif
 
-#define EDGE_LENGTH 11			//Physical length of the grid's edge
-#define DIM 300					//Number of dots of the grid's edge
-#define DELTA_T 2.e-4			//Time step evolution
+#define EDGE_LENGTH 14.14			//Physical length of the grid's edge
+#define DIM 256					//Number of dots of the grid's edge
+#define DELTA_T 1.e-4			//Time step evolution
 #define ITERATIONS 1000			//Number of iterations before calculating expected values
 #define KERNEL_TYPE "gpu"
 #define SNAPSHOTS 20			//Number of times the expected values are calculated
@@ -322,7 +322,7 @@ int main(int argc, char** argv) {
 	out.close();
     
     if (coords[0] == 0 && coords[1] == 0) {
-        std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " kernel:" << kernel_type << " np:" << nProcs << " time:" << time << " usec" << std::endl;
+        std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " kernel:" << kernel_type << " np:" << nProcs << " time:" << tot_time << " usec" << std::endl;
     }
 
 #ifdef HAVE_MPI
