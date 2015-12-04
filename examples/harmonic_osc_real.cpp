@@ -33,12 +33,12 @@
 #include <mpi.h>
 #endif
 
-#define EDGE_LENGTH 15			//Physical length of the grid's edge
-#define DIM 300					//Number of dots of the grid's edge
-#define DELTA_T 2.e-4			//Time step evolution
+#define EDGE_LENGTH 14.14			//Physical length of the grid's edge
+#define DIM 256					//Number of dots of the grid's edge
+#define DELTA_T 1.e-4			//Time step evolution
 #define ITERATIONS 1000			//Number of iterations before calculating expected values
 #define KERNEL_TYPE "gpu"
-#define SNAPSHOTS 40			//Number of times the expected values are calculated
+#define SNAPSHOTS 20			//Number of times the expected values are calculated
 #define SNAP_PER_STAMP 5		//The particles density and phase of the wave function are stamped every "SNAP_PER_STAMP" expected values calculations
 #define COUPLING_CONST_2D 0		// 0 for linear Schrodinger equation
 #define PARTICLES_NUM 1			//Particle numbers (nonlinear Schrodinger equation)
@@ -332,7 +332,7 @@ int main(int argc, char** argv) {
 	out.close();
     
     if (coords[0] == 0 && coords[1] == 0) {
-        std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " kernel:" << kernel_type << " np:" << nProcs << " time:" << time << " usec" << std::endl;
+        std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " kernel:" << kernel_type << " np:" << nProcs << " time:" << tot_time << " usec" << std::endl;
     }
 
 #ifdef HAVE_MPI
