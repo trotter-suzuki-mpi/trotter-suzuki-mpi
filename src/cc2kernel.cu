@@ -663,9 +663,9 @@ CC2Kernel::~CC2Kernel() {
     CUDA_SAFE_CALL(cudaFreeHost(top_imag_receive));
     CUDA_SAFE_CALL(cudaFreeHost(top_imag_send));
 
-    CUDA_SAFE_CALL(cudaFree(pdev_real[0]));
+    //CUDA_SAFE_CALL(cudaFree(pdev_real[0]));
     CUDA_SAFE_CALL(cudaFree(pdev_real[1]));
-    CUDA_SAFE_CALL(cudaFree(pdev_imag[0]));
+    //CUDA_SAFE_CALL(cudaFree(pdev_imag[0]));
     CUDA_SAFE_CALL(cudaFree(pdev_imag[1]));
 
     cudaStreamDestroy(stream1);
