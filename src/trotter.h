@@ -56,9 +56,16 @@ void solver(double * p_real, double * p_imag,
 			double particle_mass, double coupling_const, double * external_pot, double omega, int rot_coord_x, int rot_coord_y,
             const int matrix_width, const int matrix_height, double delta_x, double delta_y, double delta_t, const int iterations, string kernel_type, int *periods, bool imag_time);
 
+/**
+ * \brief Structure defining expected values calculated by expect_values().
+ */
 struct energy_momentum_statistics {
-    double mean_E, mean_Px, mean_Py;
-    double var_E, var_Px, var_Py;
+    double mean_E;	///< Expected total energy.
+    double mean_Px; ///< Expected momentum along x axis.
+    double mean_Py; ///< Expected momentum along y axis.
+    double var_E;	///< Expected total energy variation.
+    double var_Px;	///< Expected momentum along x axis variation.
+    double var_Py;	///< Expected momentum along y axis variation.
     energy_momentum_statistics() : mean_E(0.), mean_Px(0.), mean_Py(0.),
         var_E(0.), var_Px(0.), var_Py(0.) {}
 };
