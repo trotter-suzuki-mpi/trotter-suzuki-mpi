@@ -63,6 +63,18 @@ void process_band_sse(double *var,   size_t tile_width, size_t block_width, size
                       double * next_r00, double * next_r01, double * next_r10, double * next_r11,
                       double * next_i00, double * next_i01, double * next_i10, double * next_i11, int inner, int sides);
 
+/**
+ * \brief This class define the SSE kernel.
+ *
+ * This kernel provides real time and imaginary time evolution exploiting CPUs.
+ * It implements a solver for a single wave function, whose evolution is governed by linear Schrodinger equation. The Hamiltonian of the physical system includes:
+ *  - static external potential
+ * 
+ * NB: the single N x N lattice tile is divided in N/2 x N/2 small 2 x 2 squared blocks. Each top-left complex number is stored in buffers pointed by r00[0] and i00[0]; 
+ * Each top-right complex number is stored in buffers pointed by r01[0] and i01[0]; Each bottom-left complex number is stored in buffers pointed by r10[0] and i10[0]; 
+ * Each bottom-right complex number is stored in buffers pointed by r11[0] and i11[0]. The same logic is applied to the storage of the matrix representation of the operator 
+ * given by the exponential of external potential.
+ */
 
 class CPUBlockSSEKernel: public ITrotterKernel {
 public:
@@ -72,52 +84,75 @@ public:
 #endif
                      );
     ~CPUBlockSSEKernel();
-    void run_kernel();
-    void run_kernel_on_halo();
-    void wait_for_completion(int iteration);
-    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const;
+    void run_kernel_on_halo();				    ///< Evolve blocks of wave function at the edge of the tile. This comprises the halos.
+    void run_kernel();							///< Evolve the remaining blocks in the inner part of the tile.
+    void wait_for_completion(int iteration);	///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
+    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const;  ///< Copy the wave function from the eight buffers pointed by r00, r01, r10, r11, i00, i01, i10 and i11, without halos, to dest_real and dest_imag.
 
     bool runs_in_place() const {
         return false;
     }
+    /// Get kernel name.
     std::string get_name() const {
         return "SSE";
     };
 
-    void start_halo_exchange();
-    void finish_halo_exchange();
+    void start_halo_exchange();					///< Start vertical halos exchange.
+    void finish_halo_exchange();				///< Start horizontal halos exchange.
 
 
 private:
-    double *p_real;
-    double *p_imag;
-    double *r00[2], *r01[2], *r10[2], *r11[2];
-    double *i00[2], *i01[2], *i10[2], *i11[2];
-    double *ext_pot_r00, *ext_pot_r01, *ext_pot_r10, *ext_pot_r11;
-    double *ext_pot_i00, *ext_pot_i01, *ext_pot_i10, *ext_pot_i11;
-    double a;
-    double b;
-    double delta_x, delta_y;
-    double norm;
-    int sense;
-    size_t halo_x, halo_y, tile_width, tile_height;
-    bool imag_time;
+    double *p_real;				///< Point to  the real part of the wave function.
+    double *p_imag;				///< Point to  the imaginary part of the wave function.
+    double *r00[2];				///< Array of two pointers that point to two buffers used to store the real part of the wave function at i-th time step and (i+1)-th time step (top-left part of the small blocks).
+    double *r01[2];				///< Array of two pointers that point to two buffers used to store the real part of the wave function at i-th time step and (i+1)-th time step (top-right part of the small blocks).
+    double *r10[2];				///< Array of two pointers that point to two buffers used to store the real part of the wave function at i-th time step and (i+1)-th time step (bottom-left part of the small blocks).
+    double *r11[2];				///< Array of two pointers that point to two buffers used to store the real part of the wave function at i-th time step and (i+1)-th time step (bottom-right part of the small blocks).
+    double *i00[2];				///< Array of two pointers that point to two buffers used to store the imaginary part of the wave function at i-th time step and (i+1)-th time step (top-left part of the small blocks).
+    double *i01[2];				///< Array of two pointers that point to two buffers used to store the imaginary part of the wave function at i-th time step and (i+1)-th time step (top-right part of the small blocks).
+    double *i10[2];				///< Array of two pointers that point to two buffers used to store the imaginary part of the wave function at i-th time step and (i+1)-th time step (bottom-left part of the small blocks).
+    double *i11[2];				///< Array of two pointers that point to two buffers used to store the imaginary part of the wave function at i-th time step and (i+1)-th time step (bottom-right part of the small blocks).
+    double *ext_pot_r00;		///< Points to the matrix representation (real entries) of the operator given by the exponential of external potential (top-left part of the small blocks).
+    double *ext_pot_r01;		///< Points to the matrix representation (real entries) of the operator given by the exponential of external potential (top-right part of the small blocks).
+    double *ext_pot_r10;		///< Points to the matrix representation (real entries) of the operator given by the exponential of external potential (bottom-left part of the small blocks).
+    double *ext_pot_r11;		///< Points to the matrix representation (real entries) of the operator given by the exponential of external potential (bottom-right part of the small blocks).
+    double *ext_pot_i00;		///< Points to the matrix representation (imaginary entries) of the operator given by the exponential of external potential (top-left part of the small blocks).
+    double *ext_pot_i01;		///< Points to the matrix representation (imaginary entries) of the operator given by the exponential of external potential (top-right part of the small blocks).
+    double *ext_pot_i10;		///< Points to the matrix representation (imaginary entries) of the operator given by the exponential of external potential (bottom-left part of the small blocks).
+    double *ext_pot_i11;		///< Points to the matrix representation (imaginary entries) of the operator given by the exponential of external potential (bottom-right part of the small blocks).
+    double a;						///< Diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
+    double b;						///< Off diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
+    double delta_x;					///< Physical length between two neighbour along x axis dots of the lattice.
+    double delta_y;					///< Physical length between two neighbour along y axis dots of the lattice.
+    double norm;					///< Squared norm of the wave function.
+    int sense;						///< Takes values 0 or 1 and tells which of the two buffers pointed by r00, r01, r10, r11, i00, i01, i10 and i11 is used to calculate the next time step.
+    size_t halo_x;					///< Thickness of the vertical halos (number of lattice's dots).
+    size_t halo_y;					///< Thickness of the horizontal halos (number of lattice's dots).
+    size_t tile_width;				///< Width of the tile (number of lattice's dots).
+    size_t tile_height;				///< Height of the tile (number of lattice's dots).
+    bool imag_time;					///< True: imaginary time evolution; False: real time evolution.
     // NOTE: block rows must be 16 byte aligned
     //       block height must be even
-    static const size_t block_width = BLOCK_WIDTH;
-    static const size_t block_height = BLOCK_HEIGHT;
+    static const size_t block_width = BLOCK_WIDTH;		///< Width of the lattice block which is cached (number of lattice's dots).
+    static const size_t block_height = BLOCK_HEIGHT;	///< Height of the lattice block which is cached (number of lattice's dots).
 
-    int start_x, inner_end_x, start_y, inner_start_y,  inner_end_y;
-    int inner_start_x, end_x, end_y;
-    int *periods;
+    int start_x;					///< X axis coordinate of the first dot of the processed tile.
+    int start_y;					///< Y axis coordinate of the first dot of the processed tile.
+    int end_x;						///< X axis coordinate of the last dot of the processed tile.
+    int end_y;						///< Y axis coordinate of the last dot of the processed tile.
+    int inner_start_x;				///< X axis coordinate of the first dot of the processed tile, which is not in the halo.
+    int inner_start_y;				///< Y axis coordinate of the first dot of the processed tile, which is not in the halo.
+    int inner_end_x;				///< X axis coordinate of the last dot of the processed tile, which is not in the halo.
+    int inner_end_y;				///< Y axis coordinate of the last dot of the processed tile, which is not in the halo.
+    int *periods;					///< Two dimensional array which takes entries 0 or 1. 1: periodic boundary condition along the corresponding axis; 0: closed boundary condition along the corresponding axis.
 #ifdef HAVE_MPI
-    MPI_Comm cartcomm;
-    int neighbors[4];
-    MPI_Request req[32];
-    MPI_Status statuses[32];
-    MPI_Datatype horizontalBorder, verticalBorder;
+    MPI_Comm cartcomm;				///< Ensemble of processes communicating the halos and evolving the tiles.
+    int neighbors[4];				///< Array that stores the processes' rank neighbour of the current process.
+    MPI_Request req[32];			///< Variable to manage MPI communication.
+    MPI_Status statuses[32];		///< Variable to manage MPI communication.
+    MPI_Datatype horizontalBorder;	///< Datatype for the horizontal halos.
+    MPI_Datatype verticalBorder;	///< Datatype for the vertical halos.
 #endif
 };
-
 
 #endif
