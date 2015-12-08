@@ -850,6 +850,7 @@ void CC2Kernel::finish_halo_exchange() {
     MPI_Isend(top_imag_send, height * width, MPI_DOUBLE, neighbors[UP], 4, cartcomm, req + 7);
 
     MPI_Waitall(8, req, statuses);
+    bool MPI = true;
 #else
     if(periods[0] != 0) {
         memcpy2D(top_real_receive, height * width * sizeof(double), bottom_real_send, height * width  * sizeof(double), height * width * sizeof(double), 1);
@@ -857,38 +858,43 @@ void CC2Kernel::finish_halo_exchange() {
         memcpy2D(bottom_real_receive, height * width * sizeof(double) , top_real_send, height * width * sizeof(double) , height * width * sizeof(double), 1);
         memcpy2D(bottom_imag_receive, height * width  * sizeof(double), top_imag_send, height * width * sizeof(double) , height * width * sizeof(double), 1);
     }
+    bool MPI = false;
 #endif
     // Copy back the halos to the GPU memory
 
-    height = inner_end_y - inner_start_y;	// The vertical halo in rows
-    width = halo_x;	// The number of columns of the matrix
-    stride = tile_width;	// The combined width of the matrix with the halo
+	height = inner_end_y - inner_start_y;	// The vertical halo in rows
+	width = halo_x;	// The number of columns of the matrix
+	stride = tile_width;	// The combined width of the matrix with the halo
+	
+	if(periods[1] != 0 || MPI) {
+		offset = (inner_start_y - start_y) * tile_width;
+		if (neighbors[LEFT] >= 0) {
+			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), left_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), left_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+		}
+		offset = (inner_start_y - start_y) * tile_width + inner_end_x - start_x;
+		if (neighbors[RIGHT] >= 0) {
+			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), right_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), right_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+		}
+	}
 
-    offset = (inner_start_y - start_y) * tile_width;
-    if (neighbors[LEFT] >= 0) {
-        CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), left_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-        CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), left_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-    }
-    offset = (inner_start_y - start_y) * tile_width + inner_end_x - start_x;
-    if (neighbors[RIGHT] >= 0) {
-        CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), right_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-        CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), right_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-    }
+	height = halo_y;	// The vertical halo in rows
+	width = tile_width;	// The number of columns of the matrix
+	stride = tile_width;	// The combined width of the matrix with the halo
+	
+	if(periods[0] != 0 || MPI) {
+		offset = 0;
+		if (neighbors[UP] >= 0) {
+			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), top_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), top_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+		}
 
-    height = halo_y;	// The vertical halo in rows
-    width = tile_width;	// The number of columns of the matrix
-    stride = tile_width;	// The combined width of the matrix with the halo
-
-    offset = 0;
-    if (neighbors[UP] >= 0) {
-        CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), top_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-        CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), top_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-    }
-
-    offset = (inner_end_y - start_y) * tile_width;
-    if (neighbors[DOWN] >= 0) {
-        CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), bottom_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-        CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), bottom_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-    }
+		offset = (inner_end_y - start_y) * tile_width;
+		if (neighbors[DOWN] >= 0) {
+			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), bottom_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), bottom_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+		}
+	}
 }
 

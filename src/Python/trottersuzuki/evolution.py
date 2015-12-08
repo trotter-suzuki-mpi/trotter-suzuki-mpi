@@ -28,8 +28,9 @@ def evolve(p_real, p_imag, particle_mass, external_potential, delta_x, delta_y,
     :type coupling_const: float.
     :param kernel_type: Optional parameter to set kernel: cpu, gpu, or hybrid.
     :type kernel_type: str.
-    :param periods: Optional parameter to specify periodicity in x and y
-                    directions.
+    :param periods: Optional parameter to specify periodicity in y and x directions.
+                    Examples - [0, 0] : closed boundary condition
+                             - [1, 0] : open along y axis and closed along x axis
     :type periods: [int, int]
     :param omega: angular velocity of the frame system
     :type omega: float.
@@ -79,7 +80,7 @@ def calculate_total_energy(p_real, p_imag, particle_mass, external_potential,
     if external_potential is None:
         external_potential = np.zeros(p_real.shape)
     return H(p_real, p_imag, particle_mass, coupling_const, external_potential, 
-             omega, coord_rot_x, coord_rot_y, delta_x, delta_y)
+             omega, rot_coord_x, rot_coord_y, delta_x, delta_y)
 
 
 def calculate_kinetic_energy(p_real, p_imag, particle_mass, delta_x, delta_y):
@@ -118,7 +119,7 @@ def calculate_rotational_energy(p_real, p_imag, delta_x, delta_y, omega=0.0,
     :param coord_rot_y: y-coordinate of the rotation axis.
     :type rot_coord_x: int.
     """
-    return Lz(p_real, p_imag, omega, coord_rot_x, coord_rot_y, delta_x, delta_y)
+    return Lz(p_real, p_imag, omega, rot_coord_x, rot_coord_y, delta_x, delta_y)
 
 
 def calculate_norm2(p_real, p_imag, delta_x, delta_y):
