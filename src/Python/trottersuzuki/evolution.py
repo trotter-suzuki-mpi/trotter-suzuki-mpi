@@ -28,8 +28,9 @@ def evolve(p_real, p_imag, particle_mass, external_potential, delta_x, delta_y,
     :type coupling_const: float.
     :param kernel_type: Optional parameter to set kernel: cpu, gpu, or hybrid.
     :type kernel_type: str.
-    :param periods: Optional parameter to specify periodicity in x and y
-                    directions.
+    :param periods: Optional parameter to specify periodicity in y and x directions.
+                    Examples - [0, 0] : closed boundary condition
+                             - [1, 0] : open along y axis and closed along x axis
     :type periods: [int, int]
     :param omega: angular velocity of the frame system
     :type omega: float.
