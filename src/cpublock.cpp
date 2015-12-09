@@ -24,9 +24,7 @@
 #include <mpi.h>
 #endif
 
-
 #include <math.h>
-// add delta_x, coupling_const = delta_time * g
 
 // Helpers
 void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag) {
@@ -349,22 +347,29 @@ CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real,
                    , MPI_Comm _cartcomm
 #endif
                   ):
-    a(_a),
-    b(_b),
-    coupling_const(_coupling_const),
     delta_x(_delta_x),
     delta_y(_delta_y),
     sense(0),
     halo_x(_halo_x),
     halo_y(_halo_y),
-    norm(_norm),
     imag_time(_imag_time),
     alpha_x(_alpha_x),
     alpha_y(_alpha_y),
     rot_coord_x(_rot_coord_x),
     rot_coord_y(_rot_coord_y) {
 
+	a = new double [1];
+	b = new double [1];
+	coupling_const = new double [1];
+	norm = new int [1];
+	
+	a[0] = _a;
+    b[0] = _b;
+    coupling_const[0] = _coupling_const;
+    norm[0] = _norm;
+    status = 0;
     periods = _periods;
+    
     int rank, coords[2], dims[2] = {0, 0};
 #ifdef HAVE_MPI
     cartcomm = _cartcomm;
@@ -383,12 +388,12 @@ CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real,
     tile_width = end_x - start_x;
     tile_height = end_y - start_y;
 
-    p_real[0] = _p_real;
-    p_imag[0] = _p_imag;
-    p_real[1] = new double[tile_width * tile_height];
-    p_imag[1] = new double[tile_width * tile_height];
-    external_pot_real = _external_pot_real;
-    external_pot_imag = _external_pot_imag;
+    p_real[0][0] = _p_real;
+    p_imag[0][0] = _p_imag;
+    p_real[1][0] = new double[tile_width * tile_height];
+    p_imag[1][0] = new double[tile_width * tile_height];
+    external_pot_real[0] = _external_pot_real;
+    external_pot_imag[0] = _external_pot_imag;
 
 #ifdef HAVE_MPI
     // Halo exchange uses wave pattern to communicate
@@ -408,6 +413,78 @@ CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real,
 #endif
 }
 
+CPUBlock::CPUBlock(double **_p_real, double **_p_imag, double **_external_pot_real, double **_external_pot_imag, double *_a, double *_b, double *_coupling_const, double _delta_x, double _delta_y, 
+                   int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *_periods, double *_norm, bool _imag_time, double _alpha_x, double _alpha_y, int _rot_coord_x, int _rot_coord_y
+#ifdef HAVE_MPI
+                   , MPI_Comm _cartcomm
+#endif
+                  ):    
+    delta_x(_delta_x),
+    delta_y(_delta_y),
+    sense(0),
+    state(0),
+    halo_x(_halo_x),
+    halo_y(_halo_y),
+    imag_time(_imag_time),
+    alpha_x(_alpha_x),
+    alpha_y(_alpha_y),
+    rot_coord_x(_rot_coord_x),
+    rot_coord_y(_rot_coord_y) {
+    
+    a = _a;
+    b = _b;
+    norm = _norm;
+    tot_norm = norm[0] + norm[1];
+
+    coupling_const = _coupling_const;
+    periods = _periods;
+    int rank, coords[2], dims[2] = {0, 0};
+#ifdef HAVE_MPI
+    cartcomm = _cartcomm;
+    MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
+    MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
+    MPI_Comm_rank(cartcomm, &rank);
+    MPI_Cart_get(cartcomm, 2, dims, periods, coords);
+#else
+    dims[0] = dims[1] = 1;
+    rank = 0;
+    coords[0] = coords[1] = 0;
+#endif
+
+    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
+    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
+    tile_width = end_x - start_x;
+    tile_height = end_y - start_y;
+    
+    for(int i = 0; i < 2; i++) {
+        p_real[i][0] = _p_real[i];
+        p_imag[i][0] = _p_imag[i];
+        p_real[i][1] = new double[tile_width * tile_height];
+        p_imag[i][1] = new double[tile_width * tile_height];
+        memcpy2D(p_real[i][1], tile_width * sizeof(double), p_real[i][0], tile_width * sizeof(double), tile_width * sizeof(double), tile_height);
+        memcpy2D(p_imag[i][1], tile_width * sizeof(double), p_imag[i][0], tile_width * sizeof(double), tile_width * sizeof(double), tile_height);
+        external_pot_real[i] = _external_pot_real[i];
+        external_pot_imag[i] = _external_pot_imag[i];
+    }
+
+#ifdef HAVE_MPI
+    // Halo exchange uses wave pattern to communicate
+    // halo_x-wide inner rows are sent first to left and right
+    // Then full length rows are exchanged to the top and bottom
+    int count = inner_end_y - inner_start_y;    // The number of rows in the halo submatrix
+    int block_length = halo_x;  // The number of columns in the halo submatrix
+    int stride = tile_width;    // The combined width of the matrix with the halo
+    MPI_Type_vector (count, block_length, stride, MPI_DOUBLE, &verticalBorder);
+    MPI_Type_commit (&verticalBorder);
+
+    count = halo_y; // The vertical halo in rows
+    block_length = tile_width;  // The number of columns of the matrix
+    stride = tile_width;    // The combined width of the matrix with the halo
+    MPI_Type_vector (count, block_length, stride, MPI_DOUBLE, &horizontalBorder);
+    MPI_Type_commit (&horizontalBorder);
+#endif
+}
+            
 CPUBlock::~CPUBlock() {
     delete[] p_real[1];
     delete[] p_imag[1];
