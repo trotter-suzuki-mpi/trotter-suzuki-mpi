@@ -565,6 +565,14 @@ void CPUBlock::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, 
     memcpy2D(dest_imag, dest_stride * sizeof(double), &(p_imag[sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
 }
 
+void CPUBlock::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double ** dest_real, double ** dest_imag) const {
+    memcpy2D(dest_real[0], dest_stride * sizeof(double), &(p_real[0][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
+    memcpy2D(dest_imag[0], dest_stride * sizeof(double), &(p_imag[0][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
+    
+    memcpy2D(dest_real[1], dest_stride * sizeof(double), &(p_real[1][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
+    memcpy2D(dest_imag[1], dest_stride * sizeof(double), &(p_imag[1][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
+}
+
 void CPUBlock::kernel8(const double *p_real, const double *p_imag, double * next_real, double * next_imag) {
     // Inner part
     int inner = 1, sides = 0;
