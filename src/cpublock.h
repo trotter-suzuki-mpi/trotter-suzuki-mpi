@@ -41,7 +41,7 @@ void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, s
 void block_kernel_vertical_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
 void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
 
-void process_band(int offset_tile_x, int offset_tile_y, double alpha_x, double alpha_y, size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, 
+void process_band(bool two_wavefunctions, int offset_tile_x, int offset_tile_y, double alpha_x, double alpha_y, size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, 
                   double a, double b, double coupling_a, double coupling_b, const double *external_pot_real, const double *external_pot_imag, const double * p_real, const double * p_imag, 
                   const double * pb_real, const double * pb_imag, double * next_real, double * next_imag, int inner, int sides, bool imag_time);
 
@@ -118,7 +118,8 @@ private:
     bool imag_time;					///< True: imaginary time evolution; False: real time evolution.
     static const size_t block_width = BLOCK_WIDTH;			///< Width of the lattice block which is cached (number of lattice's dots).
     static const size_t block_height = BLOCK_HEIGHT;		///< Height of the lattice block which is cached (number of lattice's dots).
-
+    bool two_wavefunctions;
+    
 	double alpha_x;					///< Real coupling constant associated to the X*P_y operator, part of the angular momentum.
 	double alpha_y;					///< Real coupling constant associated to the Y*P_x operator, part of the angular momentum.
 	int rot_coord_x;				///< X axis coordinate of the center of rotation.

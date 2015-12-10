@@ -96,38 +96,66 @@ void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_
 }
 
 //double time potential
-void block_kernel_potential(size_t stride, size_t width, size_t height, double a, double b, double coupling_a, double coupling_b, size_t tile_width, 
+void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width, size_t height, double a, double b, double coupling_a, double coupling_b, size_t tile_width, 
                             const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag) {
-    for (size_t y = 0; y < height; ++y) {
-        for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
-            double norm_2 = p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx];
-            double norm_2b = pb_real[idx_pot] * pb_real[idx_pot] + pb_imag[idx_pot] * pb_imag[idx_pot];
-            double c_cos = cos(coupling_a * norm_2 + coupling_b * norm_2b);
-            double c_sin = sin(coupling_a * norm_2 + coupling_b * norm_2b);
-            double tmp = p_real[idx];
-            p_real[idx] = external_pot_real[idx_pot] * tmp - external_pot_imag[idx_pot] * p_imag[idx];
-            p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx] + external_pot_imag[idx_pot] * tmp;
-            
-            tmp = p_real[idx];
-            p_real[idx] = c_cos * tmp + c_sin * p_imag[idx];
-            p_imag[idx] = c_cos * p_imag[idx] - c_sin * tmp;
-        }
-    }
+    if(two_wavefunctions) {
+		for (size_t y = 0; y < height; ++y) {
+			for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
+				double norm_2 = p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx];
+				double norm_2b = pb_real[idx_pot] * pb_real[idx_pot] + pb_imag[idx_pot] * pb_imag[idx_pot];
+				double c_cos = cos(coupling_a * norm_2 + coupling_b * norm_2b);
+				double c_sin = sin(coupling_a * norm_2 + coupling_b * norm_2b);
+				double tmp = p_real[idx];
+				p_real[idx] = external_pot_real[idx_pot] * tmp - external_pot_imag[idx_pot] * p_imag[idx];
+				p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx] + external_pot_imag[idx_pot] * tmp;
+				
+				tmp = p_real[idx];
+				p_real[idx] = c_cos * tmp + c_sin * p_imag[idx];
+				p_imag[idx] = c_cos * p_imag[idx] - c_sin * tmp;
+			}
+		}
+	} else {
+		for (size_t y = 0; y < height; ++y) {
+			for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
+				double norm_2 = p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx];
+				double tmp = p_real[idx];
+				p_real[idx] = external_pot_real[idx_pot] * tmp - external_pot_imag[idx_pot] * p_imag[idx];
+				p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx] + external_pot_imag[idx_pot] * tmp;
+				
+				tmp = p_real[idx];
+				p_real[idx] = cos(coupling_const * norm_2) * tmp + sin(coupling_const * norm_2) * p_imag[idx];
+				p_imag[idx] = cos(coupling_const * norm_2) * p_imag[idx] - sin(coupling_const * norm_2) * tmp;
+			}
+		}
+	}
 }
 
 //double time potential
-void block_kernel_potential_imaginary(size_t stride, size_t width, size_t height, double a, double b, double coupling_a, double coupling_b, size_t tile_width, 
+void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, size_t width, size_t height, double a, double b, double coupling_a, double coupling_b, size_t tile_width, 
                                       const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag) {
-    for (size_t y = 0; y < height; ++y) {
-        for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
-			double tmp = exp(-1. * (coupling_a * (p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx]) + coupling_b * (pb_real[idx_pot] * pb_real[idx_pot] + pb_imag[idx_pot] * pb_imag[idx_pot])));
-            p_real[idx] = external_pot_real[idx_pot] * p_real[idx];
-            p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx];
-            
-            p_real[idx] = tmp * p_real[idx];
-            p_imag[idx] = tmp * p_imag[idx];
-        }
-    }
+    if(two_wavefunctions) {
+		for (size_t y = 0; y < height; ++y) {
+			for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
+				double tmp = exp(-1. * (coupling_a * (p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx]) + coupling_b * (pb_real[idx_pot] * pb_real[idx_pot] + pb_imag[idx_pot] * pb_imag[idx_pot])));
+				p_real[idx] = external_pot_real[idx_pot] * p_real[idx];
+				p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx];
+				
+				p_real[idx] = tmp * p_real[idx];
+				p_imag[idx] = tmp * p_imag[idx];
+			}
+		}
+	} else {
+		for (size_t y = 0; y < height; ++y) {
+			for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
+				double tmp = exp(-1. * coupling_const * (p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx]));
+				p_real[idx] = external_pot_real[idx_pot] * p_real[idx];
+				p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx];
+				
+				p_real[idx] = tmp * p_real[idx];
+				p_imag[idx] = tmp * p_imag[idx];
+			}
+		}
+	}
 }
 
 //rotation
@@ -283,13 +311,13 @@ void rabi_coupling_imaginary(size_t stride, size_t width, size_t height, double 
     }
 }
 
-void full_step(size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double a, double b, double coupling_a, double coupling_b, 
+void full_step(bool two_wavefunctions, size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double a, double b, double coupling_a, double coupling_b, 
                size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * real, double * imag) {
     block_kernel_vertical  (0u, stride, width, height, a, b, real, imag);
     block_kernel_horizontal(0u, stride, width, height, a, b, real, imag);
     block_kernel_vertical  (1u, stride, width, height, a, b, real, imag);
     block_kernel_horizontal(1u, stride, width, height, a, b, real, imag);
-    block_kernel_potential (stride, width, height, a, b, coupling_a, coupling_b, tile_width, external_pot_real, external_pot_imag, pb_real, pb_imag, real, imag);
+    block_kernel_potential (two_wavefunctions, stride, width, height, a, b, coupling_a, coupling_b, tile_width, external_pot_real, external_pot_imag, pb_real, pb_imag, real, imag);
     block_kernel_rotation  (stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
     block_kernel_horizontal(1u, stride, width, height, a, b, real, imag);
     block_kernel_vertical  (1u, stride, width, height, a, b, real, imag);
@@ -297,13 +325,13 @@ void full_step(size_t stride, size_t width, size_t height, int offset_x, int off
     block_kernel_vertical  (0u, stride, width, height, a, b, real, imag);
 }
 
-void full_step_imaginary(size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double a, double b, double coupling_a, double coupling_b, 
+void full_step_imaginary(bool two_wavefunctions, size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double a, double b, double coupling_a, double coupling_b, 
                          size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * real, double * imag) {
     block_kernel_vertical_imaginary  (0u, stride, width, height, a, b, real, imag);
     block_kernel_horizontal_imaginary(0u, stride, width, height, a, b, real, imag);
     block_kernel_vertical_imaginary  (1u, stride, width, height, a, b, real, imag);
     block_kernel_horizontal_imaginary(1u, stride, width, height, a, b, real, imag);
-    block_kernel_potential_imaginary (stride, width, height, a, b, coupling_a, coupling_b, tile_width, external_pot_real, external_pot_imag, pb_real, pb_imag, real, imag);
+    block_kernel_potential_imaginary (two_wavefunctions, stride, width, height, a, b, coupling_a, coupling_b, tile_width, external_pot_real, external_pot_imag, pb_real, pb_imag, real, imag);
     block_kernel_rotation_imaginary  (stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
     block_kernel_horizontal_imaginary(1u, stride, width, height, a, b, real, imag);
     block_kernel_vertical_imaginary  (1u, stride, width, height, a, b, real, imag);
@@ -311,7 +339,7 @@ void full_step_imaginary(size_t stride, size_t width, size_t height, int offset_
     block_kernel_vertical_imaginary  (0u, stride, width, height, a, b, real, imag);
 }
 
-void process_sides(int offset_tile_x, int offset_tile_y, double alpha_x, double alpha_y, size_t tile_width, size_t block_width, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height,
+void process_sides(bool two_wavefunctions, int offset_tile_x, int offset_tile_y, double alpha_x, double alpha_y, size_t tile_width, size_t block_width, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height,
                    double a, double b, double coupling_a, double coupling_b, const double *external_pot_real, const double *external_pot_imag,
                    const double * p_real, const double * p_imag, const double * pb_real, const double * pb_imag, 
                    double * next_real, double * next_imag, double * block_real, double * block_imag, bool imag_time) {
@@ -320,10 +348,10 @@ void process_sides(int offset_tile_x, int offset_tile_y, double alpha_x, double 
     memcpy2D(block_real, block_width * sizeof(double), &p_real[read_y * tile_width], tile_width * sizeof(double), block_width * sizeof(double), read_height);
     memcpy2D(block_imag, block_width * sizeof(double), &p_imag[read_y * tile_width], tile_width * sizeof(double), block_width * sizeof(double), read_height);
     if(imag_time)
-        full_step_imaginary(block_width, block_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width, 
+        full_step_imaginary(two_wavefunctions, block_width, block_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width, 
                             &external_pot_real[read_y * tile_width], &external_pot_imag[read_y * tile_width], &pb_real[read_y * tile_width], &pb_imag[read_y * tile_width], block_real, block_imag);
     else
-        full_step(block_width, block_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width, 
+        full_step(two_wavefunctions, block_width, block_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width, 
                   &external_pot_real[read_y * tile_width], &external_pot_imag[read_y * tile_width], &pb_real[read_y * tile_width], &pb_imag[read_y * tile_width], block_real, block_imag);
 	memcpy2D(&next_real[(read_y + write_offset) * tile_width], tile_width * sizeof(double), &block_real[write_offset * block_width], block_width * sizeof(double), (block_width - halo_x) * sizeof(double), write_height);
     memcpy2D(&next_imag[(read_y + write_offset) * tile_width], tile_width * sizeof(double), &block_imag[write_offset * block_width], block_width * sizeof(double), (block_width - halo_x) * sizeof(double), write_height);
@@ -333,16 +361,16 @@ void process_sides(int offset_tile_x, int offset_tile_y, double alpha_x, double 
     memcpy2D(block_real, block_width * sizeof(double), &p_real[read_y * tile_width + block_start], tile_width * sizeof(double), (tile_width - block_start) * sizeof(double), read_height);
     memcpy2D(block_imag, block_width * sizeof(double), &p_imag[read_y * tile_width + block_start], tile_width * sizeof(double), (tile_width - block_start) * sizeof(double), read_height);
     if(imag_time)
-        full_step_imaginary(block_width, tile_width - block_start, read_height, offset_tile_x + block_start, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width, 
+        full_step_imaginary(two_wavefunctions, block_width, tile_width - block_start, read_height, offset_tile_x + block_start, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width, 
                             &external_pot_real[read_y * tile_width + block_start], &external_pot_imag[read_y * tile_width + block_start], &pb_real[read_y * tile_width + block_start], &pb_imag[read_y * tile_width + block_start], block_real, block_imag);
     else
-        full_step(block_width, tile_width - block_start, read_height, offset_tile_x + block_start, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width, 
+        full_step(two_wavefunctions, block_width, tile_width - block_start, read_height, offset_tile_x + block_start, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width, 
                   &external_pot_real[read_y * tile_width + block_start], &external_pot_imag[read_y * tile_width + block_start], &pb_real[read_y * tile_width + block_start], &pb_imag[read_y * tile_width + block_start], block_real, block_imag);
     memcpy2D(&next_real[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(double), &block_real[write_offset * block_width + halo_x], block_width * sizeof(double), (tile_width - block_start - halo_x) * sizeof(double), write_height);
     memcpy2D(&next_imag[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(double), &block_imag[write_offset * block_width + halo_x], block_width * sizeof(double), (tile_width - block_start - halo_x) * sizeof(double), write_height);
 }
 
-void process_band(int offset_tile_x, int offset_tile_y, double alpha_x, double alpha_y, size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, 
+void process_band(bool two_wavefunctions, int offset_tile_x, int offset_tile_y, double alpha_x, double alpha_y, size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, 
                   double a, double b, double coupling_a, double coupling_b, const double *external_pot_real, const double *external_pot_imag, const double * p_real, const double * p_imag, 
                   const double * pb_real, const double * pb_imag, double * next_real, double * next_imag, int inner, int sides, bool imag_time) {
     double *block_real = new double[block_height * block_width];
@@ -354,10 +382,10 @@ void process_band(int offset_tile_x, int offset_tile_y, double alpha_x, double a
             memcpy2D(block_real, block_width * sizeof(double), &p_real[read_y * tile_width], tile_width * sizeof(double), tile_width * sizeof(double), read_height);
             memcpy2D(block_imag, block_width * sizeof(double), &p_imag[read_y * tile_width], tile_width * sizeof(double), tile_width * sizeof(double), read_height);
             if(imag_time)
-                full_step_imaginary(block_width, tile_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width, 
+                full_step_imaginary(two_wavefunctions, block_width, tile_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width, 
                                     &external_pot_real[read_y * tile_width], &external_pot_imag[read_y * tile_width], &pb_real[read_y * tile_width], &pb_imag[read_y * tile_width], block_real, block_imag);
             else
-                full_step(block_width, tile_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width, 
+                full_step(two_wavefunctions, block_width, tile_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width, 
                           &external_pot_real[read_y * tile_width], &external_pot_imag[read_y * tile_width], &pb_real[read_y * tile_width], &pb_imag[read_y * tile_width], block_real, block_imag);
             memcpy2D(&next_real[(read_y + write_offset) * tile_width], tile_width * sizeof(double), &block_real[write_offset * block_width], block_width * sizeof(double), tile_width * sizeof(double), write_height);
             memcpy2D(&next_imag[(read_y + write_offset) * tile_width], tile_width * sizeof(double), &block_imag[write_offset * block_width], block_width * sizeof(double), tile_width * sizeof(double), write_height);
@@ -365,17 +393,17 @@ void process_band(int offset_tile_x, int offset_tile_y, double alpha_x, double a
     }
     else {
         if (sides) {
-            process_sides(offset_tile_x, offset_tile_y, alpha_x, alpha_y, tile_width, block_width, halo_x, read_y, read_height, write_offset, write_height, a, b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, next_real, next_imag, block_real, block_imag, imag_time);
+            process_sides(two_wavefunctions, offset_tile_x, offset_tile_y, alpha_x, alpha_y, tile_width, block_width, halo_x, read_y, read_height, write_offset, write_height, a, b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, next_real, next_imag, block_real, block_imag, imag_time);
         }
         if (inner) {
             for (size_t block_start = block_width - 2 * halo_x; block_start < tile_width - block_width; block_start += block_width - 2 * halo_x) {
                 memcpy2D(block_real, block_width * sizeof(double), &p_real[read_y * tile_width + block_start], tile_width * sizeof(double), block_width * sizeof(double), read_height);
                 memcpy2D(block_imag, block_width * sizeof(double), &p_imag[read_y * tile_width + block_start], tile_width * sizeof(double), block_width * sizeof(double), read_height);
                 if(imag_time)
-                    full_step_imaginary(block_width, block_width, read_height, offset_tile_x + block_start, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width, 
+                    full_step_imaginary(two_wavefunctions, block_width, block_width, read_height, offset_tile_x + block_start, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width, 
                                         &external_pot_real[read_y * tile_width + block_start], &external_pot_imag[read_y * tile_width + block_start], &pb_real[read_y * tile_width + block_start], &pb_imag[read_y * tile_width + block_start], block_real, block_imag);
                 else
-                    full_step(block_width, block_width, read_height, offset_tile_x + block_start, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width, 
+                    full_step(two_wavefunctions, block_width, block_width, read_height, offset_tile_x + block_start, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width, 
                               &external_pot_real[read_y * tile_width + block_start], &external_pot_imag[read_y * tile_width + block_start], &pb_real[read_y * tile_width + block_start], &pb_imag[read_y * tile_width + block_start], block_real, block_imag);
                 memcpy2D(&next_real[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(double), &block_real[write_offset * block_width + halo_x], block_width * sizeof(double), (block_width - 2 * halo_x) * sizeof(double), write_height);
                 memcpy2D(&next_imag[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(double), &block_imag[write_offset * block_width + halo_x], block_width * sizeof(double), (block_width - 2 * halo_x) * sizeof(double), write_height);
@@ -407,12 +435,14 @@ CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real,
 
 	a = new double [1];
 	b = new double [1];
-	coupling_const = new double [1];
+	coupling_const = new double [3];
 	norm = new int [1];
 	
 	a[0] = _a;
     b[0] = _b;
     coupling_const[0] = _coupling_const;
+    coupling_const[1] = 0.;
+    coupling_const[2] = 0.;
     norm[0] = _norm;
     status = 0;
     periods = _periods;
@@ -437,10 +467,15 @@ CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real,
 
     p_real[0][0] = _p_real;
     p_imag[0][0] = _p_imag;
-    p_real[1][0] = new double[tile_width * tile_height];
-    p_imag[1][0] = new double[tile_width * tile_height];
+    p_real[0][1] = new double[tile_width * tile_height];
+    p_imag[0][1] = new double[tile_width * tile_height];
+    p_real[1][0] = NULL;
+    p_imag[1][0] = NULL;
+    p_real[1][1] = NULL;
+    p_imag[1][1] = NULL;
     external_pot_real[0] = _external_pot_real;
     external_pot_imag[0] = _external_pot_imag;
+    two_wavefunctions = false;
 
 #ifdef HAVE_MPI
     // Halo exchange uses wave pattern to communicate
@@ -513,6 +548,7 @@ CPUBlock::CPUBlock(double **_p_real, double **_p_imag, double **_external_pot_re
         external_pot_real[i] = _external_pot_real[i];
         external_pot_imag[i] = _external_pot_imag[i];
     }
+    two_wavefunctions = true;
 
 #ifdef HAVE_MPI
     // Halo exchange uses wave pattern to communicate
@@ -548,7 +584,7 @@ void CPUBlock::run_kernel() {
         #pragma omp for
 #endif
         for (int block_start = block_height - 2 * halo_y; block_start < int(tile_height - block_height); block_start += block_height - 2 * halo_y) {
-            process_band(start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a[state], b[state], 
+            process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a[state], b[state], 
                          coupling_const[state], coupling_const[2], external_pot_real[state], external_pot_imag[state], p_real[state][sense], p_imag[state][sense], p_real[1 - state][sense], p_imag[1 - state][sense], p_real[state][1 - sense], p_imag[state][1 - sense], inner, sides, imag_time);
         }
     }
@@ -562,7 +598,7 @@ void CPUBlock::run_kernel_on_halo() {
         // One full band
         inner = 1;
         sides = 1;
-        process_band(start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, 0, tile_height, 0, tile_height, a[state], b[state],
+        process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, 0, tile_height, 0, tile_height, a[state], b[state],
                      coupling_const[state], coupling_const[2], external_pot_real[state], external_pot_imag[state], p_real[state][sense], p_imag[state][sense], 
                      p_real[1 - state][sense], p_imag[1 - state][sense], p_real[state][1 - sense], p_imag[state][1 - sense], inner, sides, imag_time);
     }
@@ -573,7 +609,7 @@ void CPUBlock::run_kernel_on_halo() {
         sides = 1;
         size_t block_start;
         for (block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
-            process_band(start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a[state], b[state],
+            process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a[state], b[state],
                          coupling_const[state], coupling_const[2], external_pot_real[state], external_pot_imag[state], p_real[state][sense], p_imag[state][sense], 
                          p_real[1 - state][sense], p_imag[1 - state][sense], p_real[state][1 - sense], p_imag[state][1 - sense], inner, sides, imag_time);
         }
@@ -581,14 +617,14 @@ void CPUBlock::run_kernel_on_halo() {
         // First band
         inner = 1;
         sides = 1;
-        process_band(start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, 0, block_height, 0, block_height - halo_y, a[state], b[state], 
+        process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, 0, block_height, 0, block_height - halo_y, a[state], b[state], 
                      coupling_const[state], coupling_const[2], external_pot_real[state], external_pot_imag[state], p_real[state][sense], p_imag[state][sense], 
                      p_real[1 - state][sense], p_imag[1 - state][sense], p_real[state][1 - sense], p_imag[state][1 - sense], inner, sides, imag_time);
 
         // Last band
         inner = 1;
         sides = 1;
-        process_band(start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a[state], b[state], 
+        process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a[state], b[state], 
                      coupling_const[state], coupling_const[2], external_pot_real[state], external_pot_imag[state], p_real[state][sense], p_imag[state][sense], 
                      p_real[1 - state][sense], p_imag[1 - state][sense], p_real[state][1 - sense], p_imag[state][1 - sense], inner, sides, imag_time);
     }
@@ -627,6 +663,12 @@ void CPUBlock::wait_for_completion(int iteration) {
         }
         delete[] sums;
     }
+    
+    if(two_wavefunctions) {
+		if(state == 0)
+			sense = 1 - sense;
+        state = 1 - state;
+	}
 }
 
 void CPUBlock::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const {

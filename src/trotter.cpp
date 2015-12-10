@@ -212,62 +212,15 @@ void trotter(double *h_a, double *h_b, double *coupling_const,
                                , cartcomm
  #endif
                               );
-    } else if (kernel_type == "sse") {
-#ifdef SSE
-        kernel = new CPUBlockSSEKernel(p_real[0], p_imag[0], external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
- #ifdef HAVE_MPI
-                                        , cartcomm
- #endif
-                                       );
-#else
-		if (coords[0] == 0 && coords[1] == 0) {
-            std::cerr << "SSE kernel not was not compiled.\n";
-        }
-        abort();
-#endif
-    } else if (kernel_type == "gpu") {
-#ifdef CUDA
-        kernel = new CC2Kernel(p_real[0], p_imag[0], external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
- #ifdef HAVE_MPI
-                                , cartcomm
- #endif
-                               );
-#else
-        if (coords[0] == 0 && coords[1] == 0) {
-            std::cerr << "Compiled without CUDA\n";
-        }
-#ifdef HAVE_MPI
-        MPI_Abort(MPI_COMM_WORLD, 2);
-#else
-        abort ();
-#endif
-#endif
-    } else if (kernel_type == "hybrid") {
-#ifdef CUDA
-        kernel = new HybridKernel(p_real[0], p_imag[0], external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
- #ifdef HAVE_MPI
-                                   , cartcomm
- #endif
-                                  );
-#else
-        if (coords[0] == 0 && coords[1] == 0) {
-            std::cerr << "Compiled without CUDA\n";
-        }
-#ifdef HAVE_MPI
-        MPI_Abort(MPI_COMM_WORLD, 2);
-#else
-        abort();
-#endif
-#endif
-    }
+    } 
     
     double var = 0.5;
 	kernel->rabi_coupling(var, delta_t);
 	var = 1.;
 	
-
     // Main loop
     for (int i = 0; i < iterations; i++) {
+		//first wave function
         kernel->run_kernel_on_halo();
         if (i != iterations - 1) {
             kernel->start_halo_exchange();
