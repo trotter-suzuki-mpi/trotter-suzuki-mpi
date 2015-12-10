@@ -44,6 +44,7 @@ public:
     virtual void wait_for_completion(int iteration) = 0;	///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
     virtual void get_sample() const = 0;					///< Get the evolved wave function.
     virtual void normalization() const = 0;
+    virtual void rabi_coupling(double var, double delta_t) = 0;
     
     virtual bool runs_in_place() const = 0;
     virtual std::string get_name() const = 0;				///< Get kernel name.

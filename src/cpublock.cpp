@@ -250,6 +250,34 @@ void block_kernel_rotation_imaginary(size_t stride, size_t width, size_t height,
 	}
 }
 
+void rabi_coupling_real(size_t stride, size_t width, size_t height, double cc, double cs_r, double cs_i, double *p_real, double *p_imag, double *pb_real, double *pb_imag) {
+    double real, imag;
+    for(size_t i = 0; i < height; i++) {
+        for(size_t j = 0, idx = i * stride; j < width; j++, idx++) {
+            real = p_real[idx];
+            imag = p_imag[idx];
+            p_real[idx] = cc * real - cs_i * pb_real[idx] - cs_r * pb_imag[idx];
+            p_imag[idx] = cc * imag + cs_r * pb_real[idx] - cs_i * pb_imag[idx];
+            pb_real[idx] = cc * pb_real[idx] + cs_i * real - cs_r * imag;
+            pb_imag[idx] = cc * pb_imag[idx] + cs_r * real + cs_i * imag;
+        }
+    }
+}
+
+void rabi_coupling_imaginary(size_t stride, size_t width, size_t height, double cc, double cs_r, double cs_i, double *p_real, double *p_imag, double *pb_real, double *pb_imag) {
+    double real, imag;
+    for(size_t i = 0; i < height; i++) {
+        for(size_t j = 0, idx = i * stride; j < width; j++, idx++) {
+            real = p_real[idx];
+            imag = p_imag[idx];
+            p_real[idx] = cc * real + cs_r * pb_real[idx] - cs_i * pb_imag[idx];
+            p_imag[idx] = cc * imag + cs_i * pb_real[idx] + cs_r * pb_imag[idx];
+            pb_real[idx] = cc * pb_real[idx] + cs_r * real + cs_i * imag;
+            pb_imag[idx] = cc * pb_imag[idx] - cs_i * real + cs_r * imag;
+        }
+    }
+}
+
 void full_step(size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double a, double b, double coupling_const, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, double * real, double * imag) {
     block_kernel_vertical  (0u, stride, width, height, a, b, real, imag);
     block_kernel_horizontal(0u, stride, width, height, a, b, real, imag);
@@ -586,6 +614,36 @@ void CPUBlock::kernel8(const double *p_real, const double *p_imag, double * next
         for (int block_start = block_height - 2 * halo_y; block_start < int(tile_height - block_height); block_start += block_height - 2 * halo_y) {
             process_band(start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, next_real, next_imag, inner, sides, imag_time);
         }
+    }
+}
+
+void CPUBlock::rabi_coupling(double var, double delta_t) {  
+
+    double norm_omega = sqrt(coupling_const[3] * coupling_const[3] + coupling_const[4] * coupling_const[4]);
+    double cc, cs_r, cs_i;
+    if(imag_time) {
+        cc = cosh(- delta_t * var * norm_omega);
+        if (norm_omega == 0) {
+            cs_r = 0;
+            cs_i = 0;
+        }
+        else {
+            cs_r = coupling_const[3] / norm_omega * sinh(- delta_t * var * norm_omega);
+            cs_i = coupling_const[4] / norm_omega * sinh(- delta_t * var * norm_omega);
+        }
+        rabi_coupling_imaginary(tile_width, tile_width, tile_height, cc, cs_r, cs_i, p_real[0][sense], p_imag[0][sense], p_real[1][sense], p_imag[1][sense]);
+    }
+    else {
+        cc = cos(- delta_t * var * norm_omega);
+        if (norm_omega == 0) {
+            cs_r = 0;
+            cs_i = 0;
+        }
+        else {
+            cs_r = coupling_const[3] / norm_omega * sin(- delta_t * var * norm_omega);
+            cs_i = coupling_const[4] / norm_omega * sin(- delta_t * var * norm_omega);
+        }
+        rabi_coupling_real(tile_width, tile_width, tile_height, cc, cs_r, cs_i, p_real[0][sense], p_imag[0][sense], p_real[1][sense], p_imag[1][sense]);
     }
 }
 

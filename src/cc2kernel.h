@@ -91,6 +91,7 @@ public:
     void copy_results();						///< Copy wave function from buffer pointed by pdev_real and pdev_imag to buffers pointed by p_real and p_imag.
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const;  ///< Copy the wave function from the two buffers pointed by pdev_real and pdev_imag, without halos, to dest_real and dest_imag.
 	void normalization() {};
+	void rabi_coupling(double var, double delta_t) {};
 	
     bool runs_in_place() const {
         return false;
