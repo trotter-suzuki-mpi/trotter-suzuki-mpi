@@ -88,6 +88,7 @@ public:
     void run_kernel();							///< Evolve the remaining blocks in the inner part of the tile.
     void wait_for_completion(int iteration);	///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const;  ///< Copy the wave function from the eight buffers pointed by r00, r01, r10, r11, i00, i01, i10 and i11, without halos, to dest_real and dest_imag.
+	void get_sample2(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double ** dest_real, double ** dest_imag) const;
 	void normalization() {};
 	void rabi_coupling(double var, double delta_t) {};
 	

@@ -88,9 +88,9 @@ void trotter(double h_a, double h_b, double coupling_const,
     if (kernel_type == "cpu") {
         kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, coupling_const * delta_t, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time, omega * delta_t * delta_x / (2 * delta_y), omega * delta_t * delta_y / (2 * delta_x), rot_coord_x, rot_coord_y
 #ifdef HAVE_MPI
-                              , cartcomm
+               , cartcomm
 #endif
-                             );
+               );
     } else if (kernel_type == "sse") {
 #ifdef SSE
         kernel = new CPUBlockSSEKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
@@ -100,7 +100,7 @@ void trotter(double h_a, double h_b, double coupling_const,
                                       );
 #else
 		if (coords[0] == 0 && coords[1] == 0) {
-            std::cerr << "SSE kernel not was not compiled.\n";
+            std::cerr << "SSE kernel was not compiled.\n";
         }
         abort();
 #endif
@@ -164,7 +164,7 @@ void trotter(double *h_a, double *h_b, double *coupling_const,
              double omega, int rot_coord_x, int rot_coord_y,
              double ** p_real, double ** p_imag, double delta_x, double delta_y,
              const int matrix_width, const int matrix_height, double delta_t,
-             const int iterations, const int kernel_type,
+             const int iterations, string kernel_type,
              int *periods, double *norm, bool imag_time) {
 
     if(periods == NULL) {
@@ -249,7 +249,7 @@ void trotter(double *h_a, double *h_b, double *coupling_const,
         kernel->normalization();
     }
 
-    kernel->get_sample(width, 0, 0, width, height, p_real, p_imag);
+    kernel->get_sample2(width, 0, 0, width, height, p_real, p_imag);
 
     delete kernel;
 }

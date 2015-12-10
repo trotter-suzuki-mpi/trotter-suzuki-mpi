@@ -123,8 +123,8 @@ void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width,
 				p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx] + external_pot_imag[idx_pot] * tmp;
 				
 				tmp = p_real[idx];
-				p_real[idx] = cos(coupling_const * norm_2) * tmp + sin(coupling_const * norm_2) * p_imag[idx];
-				p_imag[idx] = cos(coupling_const * norm_2) * p_imag[idx] - sin(coupling_const * norm_2) * tmp;
+				p_real[idx] = cos(coupling_a * norm_2) * tmp + sin(coupling_a * norm_2) * p_imag[idx];
+				p_imag[idx] = cos(coupling_a * norm_2) * p_imag[idx] - sin(coupling_a * norm_2) * tmp;
 			}
 		}
 	}
@@ -147,7 +147,7 @@ void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, siz
 	} else {
 		for (size_t y = 0; y < height; ++y) {
 			for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
-				double tmp = exp(-1. * coupling_const * (p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx]));
+				double tmp = exp(-1. * coupling_a * (p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx]));
 				p_real[idx] = external_pot_real[idx_pot] * p_real[idx];
 				p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx];
 				
@@ -393,7 +393,7 @@ void process_band(bool two_wavefunctions, int offset_tile_x, int offset_tile_y, 
     }
     else {
         if (sides) {
-            process_sides(two_wavefunctions, offset_tile_x, offset_tile_y, alpha_x, alpha_y, tile_width, block_width, halo_x, read_y, read_height, write_offset, write_height, a, b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, next_real, next_imag, block_real, block_imag, imag_time);
+            process_sides(two_wavefunctions, offset_tile_x, offset_tile_y, alpha_x, alpha_y, tile_width, block_width, halo_x, read_y, read_height, write_offset, write_height, a, b, coupling_a, coupling_b, external_pot_real, external_pot_imag, p_real, p_imag, pb_real, pb_imag, next_real, next_imag, block_real, block_imag, imag_time);
         }
         if (inner) {
             for (size_t block_start = block_width - 2 * halo_x; block_start < tile_width - block_width; block_start += block_width - 2 * halo_x) {
@@ -436,7 +436,7 @@ CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real,
 	a = new double [1];
 	b = new double [1];
 	coupling_const = new double [3];
-	norm = new int [1];
+	norm = new double [1];
 	
 	a[0] = _a;
     b[0] = _b;
@@ -444,7 +444,7 @@ CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real,
     coupling_const[1] = 0.;
     coupling_const[2] = 0.;
     norm[0] = _norm;
-    status = 0;
+    state = 0;
     periods = _periods;
     
     int rank, coords[2], dims[2] = {0, 0};
@@ -633,7 +633,7 @@ void CPUBlock::run_kernel_on_halo() {
 }
 
 void CPUBlock::wait_for_completion(int iteration) {
-    if(imag_time) {
+    if(imag_time && norm[state] != 0) {
         //normalization
         int nProcs = 1;
 #ifdef HAVE_MPI
@@ -644,7 +644,7 @@ void CPUBlock::wait_for_completion(int iteration) {
         sums = new double[nProcs];
         for(int i = inner_start_y - start_y; i < inner_end_y - start_y; i++) {
             for(int j = inner_start_x - start_x; j < inner_end_x - start_x; j++) {
-                sum += p_real[sense][j + i * tile_width] * p_real[sense][j + i * tile_width] + p_imag[sense][j + i * tile_width] * p_imag[sense][j + i * tile_width];
+                sum += p_real[state][sense][j + i * tile_width] * p_real[state][sense][j + i * tile_width] + p_imag[state][sense][j + i * tile_width] * p_imag[state][sense][j + i * tile_width];
             }
         }
 #ifdef HAVE_MPI
@@ -655,12 +655,12 @@ void CPUBlock::wait_for_completion(int iteration) {
         double tot_sum = 0.;
         for(int i = 0; i < nProcs; i++)
             tot_sum += sums[i];
-        double _norm = sqrt(tot_sum * delta_x * delta_y / norm);
+        double _norm = sqrt(tot_sum * delta_x * delta_y / norm[state]);
 
         for(size_t i = 0; i < tile_height; i++) {
             for(size_t j = 0; j < tile_width; j++) {
-                p_real[sense][j + i * tile_width] /= _norm;
-                p_imag[sense][j + i * tile_width] /= _norm;
+                p_real[state][sense][j + i * tile_width] /= _norm;
+                p_imag[state][sense][j + i * tile_width] /= _norm;
             }
         }
         delete[] sums;
@@ -674,11 +674,11 @@ void CPUBlock::wait_for_completion(int iteration) {
 }
 
 void CPUBlock::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const {
-    memcpy2D(dest_real, dest_stride * sizeof(double), &(p_real[sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
-    memcpy2D(dest_imag, dest_stride * sizeof(double), &(p_imag[sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
+    memcpy2D(dest_real, dest_stride * sizeof(double), &(p_real[0][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
+    memcpy2D(dest_imag, dest_stride * sizeof(double), &(p_imag[0][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
 }
 
-void CPUBlock::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double ** dest_real, double ** dest_imag) const {
+void CPUBlock::get_sample2(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double ** dest_real, double ** dest_imag) const {
     memcpy2D(dest_real[0], dest_stride * sizeof(double), &(p_real[0][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
     memcpy2D(dest_imag[0], dest_stride * sizeof(double), &(p_imag[0][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
     
