@@ -70,8 +70,9 @@ int main(int argc, char** argv) {
     bool verbose = true;
     char filename[1] = "";
     char pot_name[1] = "";
-    int halo_x = 4;
-    int halo_y = 4;
+    int halo_x = (kernel_type == "sse" ? 3 : 4);
+    halo_x = (omega == 0. ? halo_x : 8);
+    int halo_y = (omega == 0. ? 4 : 8);
     int matrix_width = dim + periods[1] * 2 * halo_x;
     int matrix_height = dim + periods[0] * 2 * halo_y;
     double norm = 1;
