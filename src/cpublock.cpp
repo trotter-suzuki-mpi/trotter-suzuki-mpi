@@ -519,9 +519,25 @@ CPUBlock::~CPUBlock() {
 }
 
 void CPUBlock::run_kernel() {
-    kernel8(p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense]);
+    // Inner part
+    int inner = 1, sides = 0;
+#ifndef HAVE_MPI
+    #pragma omp parallel default(shared)
+#endif
+    {
+#ifndef HAVE_MPI
+        #pragma omp for
+#endif
+        for (int block_start = block_height - 2 * halo_y; block_start < int(tile_height - block_height); block_start += block_height - 2 * halo_y) {
+            process_band(start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, coupling_const, external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
+        }
+    }
+
     sense = 1 - sense;
 }
+
+
+    
 
 void CPUBlock::run_kernel_on_halo() {
     int inner = 0, sides = 0;
@@ -599,22 +615,6 @@ void CPUBlock::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, 
     
     memcpy2D(dest_real[1], dest_stride * sizeof(double), &(p_real[1][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
     memcpy2D(dest_imag[1], dest_stride * sizeof(double), &(p_imag[1][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
-}
-
-void CPUBlock::kernel8(const double *p_real, const double *p_imag, double * next_real, double * next_imag) {
-    // Inner part
-    int inner = 1, sides = 0;
-#ifndef HAVE_MPI
-    #pragma omp parallel default(shared)
-#endif
-    {
-#ifndef HAVE_MPI
-        #pragma omp for
-#endif
-        for (int block_start = block_height - 2 * halo_y; block_start < int(tile_height - block_height); block_start += block_height - 2 * halo_y) {
-            process_band(start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a, b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, next_real, next_imag, inner, sides, imag_time);
-        }
-    }
 }
 
 void CPUBlock::rabi_coupling(double var, double delta_t) {  

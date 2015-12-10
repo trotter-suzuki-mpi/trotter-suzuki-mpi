@@ -97,7 +97,6 @@ public:
 
 
 private:
-    void kernel8(const double *p_real, const double *p_imag, double * next_real, double * next_imag);
     double *p_real[2][2];				///< Array of two pointers that point to two buffers used to store the real part of the wave function at i-th time step and (i+1)-th time step. 
     double *p_imag[2][2];				///< Array of two pointers that point to two buffers used to store the imaginary part of the wave function at i-th time step and (i+1)-th time step.
     double *external_pot_real[2];		///< Points to the matrix representation (real entries) of the operator given by the exponential of external potential.
