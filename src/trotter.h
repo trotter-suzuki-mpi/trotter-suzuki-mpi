@@ -63,6 +63,10 @@ void solver(double * p_real, double * p_imag,
 			double particle_mass, double coupling_const, double * external_pot, double omega, int rot_coord_x, int rot_coord_y,
             const int matrix_width, const int matrix_height, double delta_x, double delta_y, double delta_t, const int iterations, string kernel_type, int *periods, bool imag_time);
 
+void solver(double * p_real, double * p_imag, double * pb_real, double * pb_imag,
+			double particle_mass_a, double particle_mass_b, double *coupling_const, double * external_pot, double * external_pot_b, double omega, int rot_coord_x, int rot_coord_y,
+            const int matrix_width, const int matrix_height, double delta_x, double delta_y, double delta_t, const int iterations, const int kernel_type, int *periods, bool imag_time);
+            
 /**
  * \brief Structure defining expected values calculated by expect_values().
  */

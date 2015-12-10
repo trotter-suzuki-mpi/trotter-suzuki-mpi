@@ -161,11 +161,10 @@ void trotter(double h_a, double h_b, double coupling_const,
 
 void trotter(double *h_a, double *h_b, double *coupling_const,
              double ** external_pot_real, double ** external_pot_imag,
-             double omega, int rot_coord_x, int rot_coord_y,
              double ** p_real, double ** p_imag, double delta_x, double delta_y,
              const int matrix_width, const int matrix_height, double delta_t,
-             const int iterations, string kernel_type,
-             int *periods, double *norm, bool imag_time) {
+             const int iterations, double omega, int rot_coord_x, int rot_coord_y,
+             string kernel_type, double *norm, bool imag_time, int *periods) {
 
     if(periods == NULL) {
         periods = new int [2];
