@@ -99,9 +99,9 @@ python:
 	cp ./*.cpp ./Python/trottersuzuki/src/
 	cp ./*.cu ./Python/trottersuzuki/src/
 	swig -c++ -python ./Python/trottersuzuki/trotter.i
-	cd Python; python setup.py build
+	cd Python
 
-python_install: python python_doc
+python_install: python
 	cd Python; python setup.py install
 
 python_clean:
