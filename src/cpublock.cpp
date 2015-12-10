@@ -589,6 +589,73 @@ void CPUBlock::kernel8(const double *p_real, const double *p_imag, double * next
     }
 }
 
+void CPUBlock::normalization() {
+    if(imag_time && (coupling_const[3] != 0 || coupling_const[4] != 0)) {
+        //normalization
+        int nProcs = 1;
+#ifdef HAVE_MPI
+        MPI_Comm_size(cartcomm, &nProcs);
+#endif
+        
+        double sum, sum_a = 0., sum_b = 0., *sums, *sums_a, *sums_b;
+        sums = new double[nProcs];
+        sums_a = new double[nProcs];
+        sums_b = new double[nProcs];
+        for(int i = inner_start_y - start_y; i < inner_end_y - start_y; i++) {
+            for(int j = inner_start_x - start_x; j < inner_end_x - start_x; j++) {
+                sum_a += p_real[0][sense][j + i * tile_width] * p_real[0][sense][j + i * tile_width] + p_imag[0][sense][j + i * tile_width] * p_imag[0][sense][j + i * tile_width];
+            }
+        }
+        if(p_real[1] != NULL) {
+            for(int i = inner_start_y - start_y; i < inner_end_y - start_y; i++) {
+                for(int j = inner_start_x - start_x; j < inner_end_x - start_x; j++) {
+                    sum_b += p_real[1][sense][j + i * tile_width] * p_real[1][sense][j + i * tile_width] + p_imag[1][sense][j + i * tile_width] * p_imag[1][sense][j + i * tile_width];
+                }
+            }
+        }
+        //sum = sum_a + sum_b;
+#ifdef HAVE_MPI
+        //MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
+        MPI_Allgather(&sum_a, 1, MPI_DOUBLE, sums_a, 1, MPI_DOUBLE, cartcomm);
+        MPI_Allgather(&sum_b, 1, MPI_DOUBLE, sums_b, 1, MPI_DOUBLE, cartcomm);
+#else
+        sums_a[0] = sum_a;
+        sums_b[0] = sum_b;
+#endif
+        double tot_sum = 0., tot_sum_a = 0., tot_sum_b = 0.;
+        for(int i = 0; i < nProcs; i++) {
+            //tot_sum += sums[i];
+            tot_sum_a += sums_a[i];
+            tot_sum_b += sums_b[i];
+        }
+        double _norm = sqrt((tot_sum_a + tot_sum_b) * delta_x * delta_y / tot_norm);
+        
+       /* if(1. - tot_sum_a * delta_x * delta_y / norm[0] > 1.e-10)
+            norm[0] = tot_sum_a * delta_x * delta_y;
+        if(1. - tot_sum_a * delta_x * delta_y / norm[1] > 1.e-10)
+            norm[1] = tot_sum_b * delta_x * delta_y;
+*/
+
+        for(size_t i = 0; i < tile_height; i++) {
+            for(size_t j = 0; j < tile_width; j++) {
+                p_real[0][sense][j + i * tile_width] /= _norm;
+                p_imag[0][sense][j + i * tile_width] /= _norm;
+            }
+        }
+        norm[0] *= tot_norm / (tot_sum_a * delta_x * delta_y);
+        if(p_real[1] != NULL) {
+            for(size_t i = 0; i < tile_height; i++) {
+                for(size_t j = 0; j < tile_width; j++) {
+                    p_real[1][sense][j + i * tile_width] /= _norm;
+                    p_imag[1][sense][j + i * tile_width] /= _norm;
+                }
+            }
+            norm[1] *= tot_norm / (tot_sum_b * delta_x * delta_y);
+        }
+        delete[] sums;
+    }
+}
+
 void CPUBlock::start_halo_exchange() {
     // Halo exchange: LEFT/RIGHT
 #ifdef HAVE_MPI
