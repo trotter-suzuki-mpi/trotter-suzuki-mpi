@@ -318,7 +318,8 @@ void full_step(bool two_wavefunctions, size_t stride, size_t width, size_t heigh
     block_kernel_vertical  (1u, stride, width, height, a, b, real, imag);
     block_kernel_horizontal(1u, stride, width, height, a, b, real, imag);
     block_kernel_potential (two_wavefunctions, stride, width, height, a, b, coupling_a, coupling_b, tile_width, external_pot_real, external_pot_imag, pb_real, pb_imag, real, imag);
-    block_kernel_rotation  (stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
+    if (alpha_x == 0. && alpha_y == 0.)
+		block_kernel_rotation  (stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
     block_kernel_horizontal(1u, stride, width, height, a, b, real, imag);
     block_kernel_vertical  (1u, stride, width, height, a, b, real, imag);
     block_kernel_horizontal(0u, stride, width, height, a, b, real, imag);
@@ -332,7 +333,8 @@ void full_step_imaginary(bool two_wavefunctions, size_t stride, size_t width, si
     block_kernel_vertical_imaginary  (1u, stride, width, height, a, b, real, imag);
     block_kernel_horizontal_imaginary(1u, stride, width, height, a, b, real, imag);
     block_kernel_potential_imaginary (two_wavefunctions, stride, width, height, a, b, coupling_a, coupling_b, tile_width, external_pot_real, external_pot_imag, pb_real, pb_imag, real, imag);
-    block_kernel_rotation_imaginary  (stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
+    if (alpha_x == 0. && alpha_y == 0.)
+		block_kernel_rotation_imaginary  (stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
     block_kernel_horizontal_imaginary(1u, stride, width, height, a, b, real, imag);
     block_kernel_vertical_imaginary  (1u, stride, width, height, a, b, real, imag);
     block_kernel_horizontal_imaginary(0u, stride, width, height, a, b, real, imag);
