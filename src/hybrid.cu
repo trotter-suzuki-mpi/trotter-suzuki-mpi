@@ -257,7 +257,7 @@ void HybridKernel::run_kernel_on_halo() {
     }
 }
 
-void HybridKernel::wait_for_completion(int iteration) {
+void HybridKernel::wait_for_completion() {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
     //normalization for imaginary time evolution
     if(imag_time) {

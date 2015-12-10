@@ -150,7 +150,7 @@ void trotter(double h_a, double h_b, double coupling_const,
         if (i != iterations - 1) {
             kernel->finish_halo_exchange();
         }
-        kernel->wait_for_completion(i);
+        kernel->wait_for_completion();
     }
 
     kernel->get_sample(width, 0, 0, width, height, p_real, p_imag);
@@ -229,7 +229,7 @@ void trotter(double *h_a, double *h_b, double *coupling_const,
         if (i != iterations - 1) {
             kernel->finish_halo_exchange();
         }
-        kernel->wait_for_completion(i);
+        kernel->wait_for_completion();
         
         //second wave function
 		kernel->run_kernel_on_halo();
@@ -240,7 +240,7 @@ void trotter(double *h_a, double *h_b, double *coupling_const,
 		if (i != iterations - 1) {
 			kernel->finish_halo_exchange();
 		}
-		kernel->wait_for_completion(i);
+		kernel->wait_for_completion();
 		       
 		if (i == iterations - 1)
 			var = 0.5;

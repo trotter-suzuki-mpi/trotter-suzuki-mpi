@@ -632,7 +632,7 @@ void CPUBlock::run_kernel_on_halo() {
     }
 }
 
-void CPUBlock::wait_for_completion(int iteration) {
+void CPUBlock::wait_for_completion() {
     if(imag_time && norm[state] != 0) {
         //normalization
         int nProcs = 1;
