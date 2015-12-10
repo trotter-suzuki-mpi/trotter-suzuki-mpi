@@ -569,8 +569,10 @@ CPUBlock::CPUBlock(double **_p_real, double **_p_imag, double **_external_pot_re
 }
             
 CPUBlock::~CPUBlock() {
-    delete[] p_real[1];
-    delete[] p_imag[1];
+    delete[] p_real[0][1];
+    delete[] p_imag[0][1];
+    delete[] p_real[1][1];
+    delete[] p_imag[1][1];
 }
 
 void CPUBlock::run_kernel() {
