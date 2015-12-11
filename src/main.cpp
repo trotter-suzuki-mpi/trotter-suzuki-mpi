@@ -205,7 +205,8 @@ int main(int argc, char** argv) {
     process_command_line(argc, argv, &dim, &delta_x, &delta_y, &iterations, &snapshots, &kernel_type, filename, &delta_t, &coupling_const, &particle_mass, pot_name, &imag_time);
 	
     int halo_x = (kernel_type == "sse" ? 3 : 4);
-    int halo_y = 4;
+    halo_x = (omega == 0. ? halo_x : 8);
+    int halo_y = (omega == 0. ? 4 : 8);
     int matrix_width = dim + periods[1] * 2 * halo_x;
     int matrix_height = dim + periods[0] * 2 * halo_y;
 
