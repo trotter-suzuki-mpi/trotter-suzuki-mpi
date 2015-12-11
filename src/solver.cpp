@@ -130,7 +130,7 @@ void solver(double * p_real, double * p_imag,
             const int matrix_width, const int matrix_height, double delta_x, double delta_y, double delta_t, const int iterations, string kernel_type, int *periods, bool imag_time) {
 	
 	int halo_x = (kernel_type == "sse" ? 3 : 4);
-	halo_x = (omega == 0. ? halo_x : 8);
+    halo_x = (omega == 0. ? halo_x : 8);
     int halo_y = (omega == 0. ? 4 : 8);
 	int dimx = matrix_width + 2 * halo_x * periods[1];
 	int dimy = matrix_height + 2 * halo_y * periods[0];
@@ -177,12 +177,14 @@ void solver(double * p_real, double * p_imag,
 	}
 }
 
+
 void solver(double * p_real, double * p_imag, double * pb_real, double * pb_imag,
 			double particle_mass_a, double particle_mass_b, double *coupling_const, double * external_pot, double * external_pot_b, double omega, int rot_coord_x, int rot_coord_y,
             const int matrix_width, const int matrix_height, double delta_x, double delta_y, double delta_t, const int iterations, string kernel_type, int *periods, bool imag_time) {
 	
-	int halo_x = (kernel_type == "sse" ? 3 : 10);
-    int halo_y = 10;
+	int halo_x = (kernel_type == "sse" ? 3 : 4);
+    halo_x = (omega == 0. ? halo_x : 8);
+    int halo_y = (omega == 0. ? 4 : 8);
 	int dimx = matrix_width + 2 * halo_x * periods[1];
 	int dimy = matrix_height + 2 * halo_y * periods[0];
 	
