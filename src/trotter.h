@@ -49,13 +49,24 @@ void trotter(double h_a, double h_b, double coupling_const,
              double * external_pot_real, double * external_pot_imag,
              double * p_real, double * p_imag, double delta_x, double delta_y,
              const int matrix_width, const int matrix_height, double delta_t,
-             const int iterations, double omega = 0., int rot_coord_x = 0., int rot_coord_y = 0.,
-             string kernel_type = "sse", double norm = 1., bool imag_time = false, int *periods = NULL);             
-             
+             const int iterations, double omega = 0., int rot_coord_x = 0, int rot_coord_y = 0,
+             string kernel_type = "cpu", double norm = 1., bool imag_time = false, int *periods = NULL);             
+
+void trotter(double *h_a, double *h_b, double *coupling_const,
+             double ** external_pot_real, double ** external_pot_imag,
+             double ** p_real, double ** p_imag, double delta_x, double delta_y,
+             const int matrix_width, const int matrix_height, double delta_t,
+             const int iterations, double omega, int rot_coord_x, int rot_coord_y,
+             string kernel_type, double *norm, bool imag_time, int *periods);
+
 void solver(double * p_real, double * p_imag,
 			double particle_mass, double coupling_const, double * external_pot, double omega, int rot_coord_x, int rot_coord_y,
             const int matrix_width, const int matrix_height, double delta_x, double delta_y, double delta_t, const int iterations, string kernel_type, int *periods, bool imag_time);
 
+void solver(double * p_real, double * p_imag, double * pb_real, double * pb_imag,
+			double particle_mass_a, double particle_mass_b, double *coupling_const, double * external_pot, double * external_pot_b, double omega, int rot_coord_x, int rot_coord_y,
+            const int matrix_width, const int matrix_height, double delta_x, double delta_y, double delta_t, const int iterations, string kernel_type, int *periods, bool imag_time);
+            
 /**
  * \brief Structure defining expected values calculated by expect_values().
  */
@@ -79,7 +90,16 @@ double Energy_tot(double * p_real, double * p_imag,
 				  double particle_mass, double coupling_const, double (*hamilt_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y), double * external_pot, double omega, double coord_rot_x, double coord_rot_y,
 				  double delta_x, double delta_y, double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y,
 				  int matrix_width, int matrix_height, int halo_x, int halo_y, int * periods);
+double Energy_tot(double ** p_real, double ** p_imag,
+				       double particle_mass_a, double particle_mass_b, double *coupling_const, 
+				       double (*hamilt_pot_a)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
+				       double (*hamilt_pot_b)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y), 
+				       double ** external_pot, 
+				       double omega, double coord_rot_x, double coord_rot_y,
+				       double delta_x, double delta_y, double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y,
+				       int matrix_width, int matrix_height, int halo_x, int halo_y, int * periods);
 double Norm2(double * p_real, double * p_imag, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
+double Norm2(double **p_real, double **p_imag, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
 void get_wave_function_phase(double * phase, double * p_real, double * p_imag, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
 void get_wave_function_density(double * density, double * p_real, double * p_imag, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
 

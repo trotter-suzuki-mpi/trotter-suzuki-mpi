@@ -1024,7 +1024,7 @@ void CPUBlockSSEKernel::run_kernel() {
 }
 
 
-void CPUBlockSSEKernel::wait_for_completion(int iteration) {
+void CPUBlockSSEKernel::wait_for_completion() {
     if(imag_time) {
         //normalization
         int nProcs = 1;

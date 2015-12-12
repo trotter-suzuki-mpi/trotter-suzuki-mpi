@@ -70,8 +70,9 @@ int main(int argc, char** argv) {
     bool verbose = true;
     char filename[1] = "";
     char pot_name[1] = "";
-    int halo_x = 4;
-    int halo_y = 4;
+    int halo_x = (kernel_type == "sse" ? 3 : 4);
+    halo_x = (omega == 0. ? halo_x : 8);
+    int halo_y = (omega == 0. ? 4 : 8);
     int matrix_width = dim + periods[1] * 2 * halo_x;
     int matrix_height = dim + periods[0] * 2 * halo_y;
     double norm = 1;
@@ -107,7 +108,7 @@ int main(int argc, char** argv) {
     int tile_height = end_y - start_y;
 
     //set and calculate evolution operator variables from hamiltonian
-    double coupling_const = 4. * M_PI * double(SCATTER_LENGHT_2D) * double(PARTICLES_NUM);
+    double coupling_const = 4. * M_PI * double(SCATTER_LENGHT_2D);
     double delta_x = double(LENGHT)/double(DIM), delta_y = double(LENGHT)/double(DIM);
     double *external_pot_real = new double[tile_width * tile_height];
     double *external_pot_imag = new double[tile_width * tile_height];

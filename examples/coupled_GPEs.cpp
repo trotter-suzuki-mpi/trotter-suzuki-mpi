@@ -32,23 +32,22 @@
 #include <mpi.h>
 #endif
 
-#define LENGHT 50
-#define DIM 640
-#define ITERATIONS 10000
-#define PARTICLES_NUM 8.e+6
+#define LENGHT 20
+#define DIM 400
+#define ITERATIONS 400
+#define PARTICLES_NUM 1700000
 #define KERNEL_TYPE "cpu"
-#define SNAPSHOTS 400
-#define SNAP_PER_STAMP 20
-#define COUPLING_CONST_2D 7.116007999594e-4
+#define SNAPSHOTS 20
+#define SNAP_PER_STAMP 1
 
 int rot_coord_x = 320, rot_coord_y = 320;
-double omega = 0.9;
+double omega = 0.;
 
 std::complex<double> gauss_ini_state(int m, int n, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
 	double delta_x = double(LENGHT)/double(DIM);
     double x = (m - matrix_width / 2.) * delta_x, y = (n - matrix_height / 2.) * delta_x;
-    double w = 0.002/(delta_x * delta_x);
-    return std::complex<double>(sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w), sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w));
+    double w = 1.;
+    return std::complex<double>(sqrt(w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w), 0.);
 }
 
 std::complex<double> sinus_state(int m, int n, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
@@ -70,12 +69,12 @@ int main(int argc, char** argv) {
     int periods[2] = {0, 0};
     char file_name[] = "";
     char pot_name[1] = "";
-    const double particle_mass = 1.;
+    const double particle_mass_a = 1., particle_mass_b = 1.;
     bool imag_time = true;
-    double h_a = 0.;
-    double h_b = 0.;
+    double h_a[2];
+    double h_b[2];
 	
-	double delta_t = 2.e-4;
+	double delta_t = 5.e-5;
 	double delta_x = double(LENGHT)/double(DIM), delta_y = double(LENGHT)/double(DIM);
 
     int halo_x = (kernel_type == "sse" ? 3 : 4);
@@ -115,35 +114,47 @@ int main(int argc, char** argv) {
     
     //set and calculate evolution operator variables from hamiltonian
     double time_single_it;
-    double coupling_const = double(COUPLING_CONST_2D);
-    double *external_pot_real = new double[tile_width * tile_height];
-    double *external_pot_imag = new double[tile_width * tile_height];
+    double coupling_const[5] = {7.116007999594e-4, 7.116007999594e-4, 0., 0., 0.};
+    double *external_pot_real[2];
+	double *external_pot_imag[2];
+	external_pot_real[0] = new double[tile_width * tile_height];
+	external_pot_imag[0] = new double[tile_width * tile_height];
+	external_pot_real[1] = new double[tile_width * tile_height];
+	external_pot_imag[1] = new double[tile_width * tile_height];
     double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
     hamiltonian_pot = parabolic_potential;
 
     if(imag_time) {
         time_single_it = delta_t / 2.;	//second approx trotter-suzuki: time/2
-        if(h_a == 0. && h_b == 0.) {
-            h_a = cosh(time_single_it / (2. * particle_mass * delta_x * delta_y));
-            h_b = sinh(time_single_it / (2. * particle_mass * delta_x * delta_y));
-        }
+		h_a[0] = cosh(time_single_it / (2. * particle_mass_a * delta_x * delta_y));
+		h_b[0] = sinh(time_single_it / (2. * particle_mass_a * delta_x * delta_y));
+		h_a[1] = cosh(time_single_it / (2. * particle_mass_b * delta_x * delta_y));
+		h_b[1] = sinh(time_single_it / (2. * particle_mass_b * delta_x * delta_y));
     }
     else {
         time_single_it = delta_t / 2.;	//second approx trotter-suzuki: time/2
-        if(h_a == 0. && h_b == 0.) {
-            h_a = cos(time_single_it / (2. * particle_mass * delta_x * delta_y));
-            h_b = sin(time_single_it / (2. * particle_mass * delta_x * delta_y));
-        }
+		h_a[0] = cos(time_single_it / (2. * particle_mass_a * delta_x * delta_y));
+		h_b[0] = sin(time_single_it / (2. * particle_mass_a * delta_x * delta_y));
+		h_a[1] = cos(time_single_it / (2. * particle_mass_b * delta_x * delta_y));
+		h_b[1] = sin(time_single_it / (2. * particle_mass_b * delta_x * delta_y));
     }
-    initialize_exp_potential(external_pot_real, external_pot_imag, pot_name, hamiltonian_pot, tile_width, tile_height, matrix_width, matrix_height,
-                             start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, imag_time);
-
+    initialize_exp_potential(external_pot_real[0], external_pot_imag[0], pot_name, hamiltonian_pot, tile_width, tile_height, matrix_width, matrix_height,
+                             start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass_a, imag_time);
+	initialize_exp_potential(external_pot_real[1], external_pot_imag[1], pot_name, hamiltonian_pot, tile_width, tile_height, matrix_width, matrix_height,
+                             start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass_b, imag_time);
+                             
     //set initial state
-    double *p_real = new double[tile_width * tile_height];
-    double *p_imag = new double[tile_width * tile_height];
+    double *p_real[2];
+	double *p_imag[2];
+	p_real[0] = new double[tile_width * tile_height];
+	p_imag[0] = new double[tile_width * tile_height];
+	p_real[1] = new double[tile_width * tile_height];
+	p_imag[1] = new double[tile_width * tile_height];
     std::complex<double> (*ini_state)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
     ini_state = gauss_ini_state;
-    initialize_state(p_real, p_imag, file_name, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,
+    initialize_state(p_real[0], p_imag[0], file_name, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,
+                     periods, coords, dims, halo_x, halo_y);
+    initialize_state(p_real[1], p_imag[1], file_name, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,
                      periods, coords, dims, halo_x, halo_y);
 
     //set file output directory
@@ -153,7 +164,7 @@ int main(int argc, char** argv) {
         int status = 0;
 
         dirname.str("");
-        dirname << "vortexesdir";
+        dirname << "coupledGPE";
         dirnames = dirname.str();
 
         status = mkdir(dirnames.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -173,31 +184,30 @@ int main(int argc, char** argv) {
     double *sums = new double[nProcs];
     double _kin_energy, _tot_energy, _rot_energy, _norm2, sum;
     
-    double norm2;
+    double norm2[2];
 	//norm calculation
-	sum = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+	sum = Norm2(p_real[0], p_imag[0], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 #ifdef HAVE_MPI
 	MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
 #else
 	sums[0] = sum;
 #endif 
-	norm2 = 0.;
+	norm2[0] = 0.;
 	for(int i = 0; i < nProcs; i++)
-		norm2 += sums[i];
+		norm2[0] += sums[i];
 	
-	//rot-energy calculation
-	sum = Energy_rot(p_real, p_imag, omega, rot_coord_x, rot_coord_y, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+	sum = Norm2(p_real[1], p_imag[1], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 #ifdef HAVE_MPI
 	MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
 #else
 	sums[0] = sum;
 #endif 
-	_rot_energy = 0.;
+	norm2[1] = 0.;
 	for(int i = 0; i < nProcs; i++)
-		_rot_energy += sums[i];
+		norm2[1] += sums[i];
 	
 	//tot-energy calculation
-	sum = Energy_tot(p_real, p_imag, particle_mass, coupling_const, hamiltonian_pot, NULL, omega, rot_coord_x, rot_coord_y, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y, dim, dim, halo_x, halo_y, periods);
+	sum = Energy_tot(p_real, p_imag, particle_mass_a, particle_mass_b, coupling_const, hamiltonian_pot, hamiltonian_pot, NULL, omega, rot_coord_x, rot_coord_y, delta_x, delta_y, norm2[0] + norm2[1], inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y, dim, dim, halo_x, halo_y, periods);
 #ifdef HAVE_MPI
 	MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
 #else
@@ -206,27 +216,17 @@ int main(int argc, char** argv) {
 	_tot_energy = 0.;
 	for(int i = 0; i < nProcs; i++)
 		_tot_energy += sums[i];
-	
-	//kin energy
-	sum = Energy_kin(p_real, p_imag, particle_mass, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
-#ifdef HAVE_MPI
-	MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
-#else
-	sums[0] = sum;
-#endif 
-	_kin_energy = 0.;
-	for(int i = 0; i < nProcs; i++)
-		_kin_energy += sums[i];
 			  
 	if(rank == 0){
-		out << "iterations \t rotation energy \t kin energy \t total energy \t norm2\n";
-		out << "0\t" << _rot_energy << "\t" << _kin_energy << "\t" << _tot_energy << "\t" << norm2 << std::endl;
+		out << "iterations \t total energy \t norm2\n";
+		out << "0\t" << "\t" << _tot_energy << "\t" << norm2[0] + norm2[1] << std::endl;
 	}
 		
     for(int count_snap = 0; count_snap < snapshots; count_snap++) {
         
-        trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, delta_t, iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm2, imag_time, periods);
-      
+        trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, delta_t, 
+                iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm2, imag_time, periods);
+        
         //norm calculation
         sum = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 #ifdef HAVE_MPI
@@ -238,19 +238,11 @@ int main(int argc, char** argv) {
         for(int i = 0; i < nProcs; i++)
             _norm2 += sums[i];
        
-        //rot-energy calculation
-        sum = Energy_rot(p_real, p_imag, omega, rot_coord_x, rot_coord_y, delta_x, delta_y, _norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
-#ifdef HAVE_MPI
-        MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
-#else
-        sums[0] = sum;
-#endif 
-		_rot_energy = 0.;
-        for(int i = 0; i < nProcs; i++)
-            _rot_energy += sums[i];
         
         //tot-energy calculation
-        sum = Energy_tot(p_real, p_imag, particle_mass, coupling_const, hamiltonian_pot, NULL, omega, rot_coord_x, rot_coord_y, delta_x, delta_y, _norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y, matrix_width, matrix_height, halo_x, halo_y, periods);
+        sum = Energy_tot(p_real, p_imag, particle_mass_a, particle_mass_b, coupling_const, hamiltonian_pot, hamiltonian_pot, NULL, omega, rot_coord_x, rot_coord_y, 
+                         delta_x, delta_y, norm2[0] + norm2[1], inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y, dim, dim, halo_x, halo_y, periods);
+        
 #ifdef HAVE_MPI
         MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
 #else
@@ -260,26 +252,16 @@ int main(int argc, char** argv) {
         for(int i = 0; i < nProcs; i++)
             _tot_energy += sums[i];
         
-        //kin energy
-        sum = Energy_kin(p_real, p_imag, particle_mass, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
-#ifdef HAVE_MPI
-        MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
-#else
-        sums[0] = sum;
-#endif 
-		_kin_energy = 0.;
-        for(int i = 0; i < nProcs; i++)
-            _kin_energy += sums[i];
                   
         if(rank == 0){
-			out << (count_snap + 1) * iterations << "\t" << _rot_energy << "\t" << _kin_energy << "\t" << _tot_energy << "\t" << _norm2 << std::endl;
+			out << (count_snap + 1) * iterations << "\t" << _tot_energy << "\t" << _norm2 << std::endl;
 		}
 		
         //stamp phase and particles density
         if(count_snap % snap_per_stamp == 0.) {
 			//get and stamp phase
-			get_wave_function_phase(_matrix, p_real, p_imag, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
-			file_tags = "phase";
+			get_wave_function_phase(_matrix, p_real[0], p_imag[0], inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+			file_tags = "phase_a";
 			stamp_real(_matrix, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
 			   start_y, inner_start_y, inner_end_y, dims, coords, periods,
 			   iterations * (count_snap + 1), dirnames.c_str(), file_tags.c_str()
@@ -287,10 +269,30 @@ int main(int argc, char** argv) {
 			   , cartcomm
 #endif
                );
-        
+			
+			get_wave_function_phase(_matrix, p_real[1], p_imag[1], inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+			file_tags = "phase_b";
+			stamp_real(_matrix, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
+			   start_y, inner_start_y, inner_end_y, dims, coords, periods,
+			   iterations * (count_snap + 1), dirnames.c_str(), file_tags.c_str()
+#ifdef HAVE_MPI
+			   , cartcomm
+#endif
+               );
+               
 			//get and stamp particles density
-			get_wave_function_density(_matrix, p_real, p_imag, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
-			file_tags = "density";
+			get_wave_function_density(_matrix, p_real[0], p_imag[0], inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+			file_tags = "density_a";
+			stamp_real(_matrix, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
+			   start_y, inner_start_y, inner_end_y, dims, coords, periods,
+			   iterations * (count_snap + 1), dirnames.c_str(), file_tags.c_str()
+#ifdef HAVE_MPI
+				, cartcomm
+#endif
+				);
+				
+			get_wave_function_density(_matrix, p_real[1], p_imag[1], inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+			file_tags = "density_b";
 			stamp_real(_matrix, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
 			   start_y, inner_start_y, inner_end_y, dims, coords, periods,
 			   iterations * (count_snap + 1), dirnames.c_str(), file_tags.c_str()
@@ -302,7 +304,7 @@ int main(int argc, char** argv) {
     }
 	
 	out.close();
-	stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
+	stamp(p_real[0], p_imag[0], matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
               start_y, inner_start_y, inner_end_y, dims, coords, periods,
               0, iterations, snapshots, dirnames.c_str()
 #ifdef HAVE_MPI

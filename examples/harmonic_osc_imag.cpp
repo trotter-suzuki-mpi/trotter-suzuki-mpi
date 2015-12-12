@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
 	double delta_t = double(DELTA_T);
 	double delta_x = double(EDGE_LENGTH)/double(DIM), delta_y = double(EDGE_LENGTH)/double(DIM);
 
-    int halo_x = 4;
+    int halo_x = (kernel_type == "sse" ? 3 : 4);
     halo_x = (omega == 0. ? halo_x : 8);
     int halo_y = (omega == 0. ? 4 : 8);
     int matrix_width = dim + periods[1] * 2 * halo_x;

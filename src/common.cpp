@@ -927,6 +927,85 @@ double Norm2(double * p_real, double * p_imag, double delta_x, double delta_y, i
 	return norm2 * delta_x * delta_y;
 }
 
+double Norm2(double **p_real, double **p_imag, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
+	return Norm2(p_real[0], p_imag[0], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y) + Norm2(p_real[1], p_imag[1], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+}
+
+double Energy_tot(double ** p_real, double ** p_imag,
+				       double particle_mass_a, double particle_mass_b, double *coupling_const, 
+				       double (*hamilt_pot_a)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
+				       double (*hamilt_pot_b)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y), 
+				       double ** external_pot, 
+				       double omega, double coord_rot_x, double coord_rot_y,
+				       double delta_x, double delta_y, double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y,
+				       int matrix_width, int matrix_height, int halo_x, int halo_y, int * periods) {
+					
+	if(external_pot == NULL) {
+		external_pot = new double* [2];
+		external_pot[0] = NULL;
+		external_pot[1] = NULL;
+	}
+	double sum = 0;
+	if(norm2 == 0)
+		norm2 = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+	
+	sum += Energy_tot(p_real[0], p_imag[0], particle_mass_a, coupling_const[0], hamilt_pot_a, external_pot[0], omega, coord_rot_x, coord_rot_y, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y, matrix_width, matrix_height, halo_x, halo_y, periods);
+	sum += Energy_tot(p_real[1], p_imag[1], particle_mass_b, coupling_const[1], hamilt_pot_b, external_pot[1], omega, coord_rot_x, coord_rot_y, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y, matrix_width, matrix_height, halo_x, halo_y, periods);
+	sum += Energy_ab(p_real, p_imag, coupling_const[2], norm2, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+	sum += Energy_rabi_coupling(p_real, p_imag, coupling_const[3], coupling_const[4], norm2, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+
+	return sum;
+}
+
+double Energy_rabi_coupling(double **p_real, double **p_imag, double omega_r, double omega_i, double norm2, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
+	int ini_halo_x = inner_start_x - start_x;
+	int ini_halo_y = inner_start_y - start_y;
+	int end_halo_x = end_x - inner_end_x;
+	int end_halo_y = end_y - inner_end_y;
+	int tile_width = end_x - start_x;
+	
+	if(norm2 == 0)
+		norm2 = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+		
+	std::complex<double> sum = 0;
+	std::complex<double> psi_center_a, psi_center_b;
+	std::complex<double> omega = std::complex<double> (omega_r, omega_i);
+	
+	for(int i = inner_start_y - start_y + (ini_halo_y == 0), y = inner_start_y + (ini_halo_y == 0); i < inner_end_y - start_y - (end_halo_y == 0); i++, y++) {
+		for(int j = inner_start_x - start_x + (ini_halo_x == 0), x = inner_start_x + (ini_halo_x == 0); j < inner_end_x - start_x - (end_halo_x == 0); j++, x++) {
+			psi_center_a = std::complex<double> (p_real[0][i * tile_width + j], p_imag[0][i * tile_width + j]);
+			psi_center_b = std::complex<double> (p_real[1][i * tile_width + j], p_imag[1][i * tile_width + j]);
+			sum += conj(psi_center_a) * psi_center_b * omega +  conj(psi_center_b) * psi_center_a * conj(omega);
+		}
+	}
+	
+	return real(sum / norm2) * delta_x * delta_y;
+}
+
+double Energy_ab(double **p_real, double **p_imag, double coupling_const_ab, double norm2, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
+	int ini_halo_x = inner_start_x - start_x;
+	int ini_halo_y = inner_start_y - start_y;
+	int end_halo_x = end_x - inner_end_x;
+	int end_halo_y = end_y - inner_end_y;
+	int tile_width = end_x - start_x;
+	
+	if(norm2 == 0)
+		norm2 = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+		
+	std::complex<double> sum = 0;
+	std::complex<double> psi_center_a, psi_center_b;
+	
+	for(int i = inner_start_y - start_y + (ini_halo_y == 0), y = inner_start_y + (ini_halo_y == 0); i < inner_end_y - start_y - (end_halo_y == 0); i++, y++) {
+		for(int j = inner_start_x - start_x + (ini_halo_x == 0), x = inner_start_x + (ini_halo_x == 0); j < inner_end_x - start_x - (end_halo_x == 0); j++, x++) {
+			psi_center_a = std::complex<double> (p_real[0][i * tile_width + j], p_imag[0][i * tile_width + j]);
+			psi_center_b = std::complex<double> (p_real[1][i * tile_width + j], p_imag[1][i * tile_width + j]);
+			sum += conj(psi_center_a) * psi_center_a * conj(psi_center_b) * psi_center_b * std::complex<double> (coupling_const_ab);
+		}
+	}
+	
+	return real(sum / norm2) * delta_x * delta_y;
+}
+
 void get_wave_function_phase(double * phase, double * p_real, double * p_imag, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
 	int width = end_x - start_x;
 	double norm;

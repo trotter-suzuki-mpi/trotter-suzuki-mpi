@@ -711,10 +711,10 @@ void CC2Kernel::run_kernel() {
     CUT_CHECK_ERROR("Kernel error in CC2Kernel::run_kernel");
 }
 
-void CC2Kernel::wait_for_completion(int iteration) {
+void CC2Kernel::wait_for_completion() {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
     //normalization
-    if(imag_time && ((iteration % 1) == 0)) {
+    if(imag_time) {
 
         CUDA_SAFE_CALL(cudaMemcpy(p_real, pdev_real[sense], tile_width * tile_height * sizeof(double), cudaMemcpyDeviceToHost));
         CUDA_SAFE_CALL(cudaMemcpy(p_imag, pdev_imag[sense], tile_width * tile_height * sizeof(double), cudaMemcpyDeviceToHost));

@@ -41,8 +41,9 @@ void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, s
 void block_kernel_vertical_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
 void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
 
-void process_sides(int offset_tile_x, int offset_tile_y, double alpha_x, double alpha_y, size_t tile_width, size_t block_width, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b, double coupling_const, const double *external_pot_real, const double *external_pot_imag, const double * p_real, const double * p_imag, double * next_real, double * next_imag, double * block_real, double * block_imag, bool imag_time);
-void process_band(int offset_tile_x, int offset_tile_y, double alpha_x, double alpha_y, size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, double a, double b, double coupling_const, const double *external_pot_real, const double *external_pot_imag, const double * p_real, const double * p_imag, double * next_real, double * next_imag, int inner, int sides, bool imag_time);
+void process_band(bool two_wavefunctions, int offset_tile_x, int offset_tile_y, double alpha_x, double alpha_y, size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, 
+                  double a, double b, double coupling_a, double coupling_b, const double *external_pot_real, const double *external_pot_imag, const double * p_real, const double * p_imag, 
+                  const double * pb_real, const double * pb_imag, double * next_real, double * next_imag, int inner, int sides, bool imag_time);
 
 /**
  * \brief This class define the CPU kernel.
@@ -61,12 +62,24 @@ public:
              , MPI_Comm cartcomm
 #endif
             );
+           
+    
+    CPUBlock(double **_p_real, double **_p_imag, double **_external_pot_real, double **_external_pot_imag, double *_a, double *_b, double *_coupling_const, double _delta_x, double _delta_y, 
+             int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *_periods, double *_norm, bool _imag_time, double _alpha_x, double _alpha_y, int _rot_coord_x, int _rot_coord_y
+#ifdef HAVE_MPI
+             , MPI_Comm cartcomm
+#endif
+            );
+    
     ~CPUBlock();
     void run_kernel_on_halo();					///< Evolve blocks of wave function at the edge of the tile. This comprises the halos.
     void run_kernel();							///< Evolve the remaining blocks in the inner part of the tile.
-    void wait_for_completion(int iteration);	///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
+    void wait_for_completion();					///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const;  ///< Copy the wave function from the two buffers pointed by p_real and p_imag, without halos, to dest_real and dest_imag.
-
+	void get_sample2(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double ** dest_real, double ** dest_imag) const;
+	void normalization();
+	void rabi_coupling(double var, double delta_t);
+	
     bool runs_in_place() const {
         return false;
     }
@@ -81,18 +94,19 @@ public:
 
 
 private:
-    void kernel8(const double *p_real, const double *p_imag, double * next_real, double * next_imag);
-    double *p_real[2];				///< Array of two pointers that point to two buffers used to store the real part of the wave function at i-th time step and (i+1)-th time step. 
-    double *p_imag[2];				///< Array of two pointers that point to two buffers used to store the imaginary part of the wave function at i-th time step and (i+1)-th time step.
-    double *external_pot_real;		///< Points to the matrix representation (real entries) of the operator given by the exponential of external potential.
-    double *external_pot_imag;		///< Points to the matrix representation (immaginary entries) of the operator given by the exponential of external potential.
-    double a;						///< Diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
-    double b;						///< Off diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
+    double *p_real[2][2];				///< Array of two pointers that point to two buffers used to store the real part of the wave function at i-th time step and (i+1)-th time step. 
+    double *p_imag[2][2];				///< Array of two pointers that point to two buffers used to store the imaginary part of the wave function at i-th time step and (i+1)-th time step.
+    double *external_pot_real[2];		///< Points to the matrix representation (real entries) of the operator given by the exponential of external potential.
+    double *external_pot_imag[2];		///< Points to the matrix representation (immaginary entries) of the operator given by the exponential of external potential.
+    double *a;						///< Diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
+    double *b;						///< Off diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
     double delta_x;					///< Physical length between two neighbour along x axis dots of the lattice.
     double delta_y;					///< Physical length between two neighbour along y axis dots of the lattice.
-    double norm;					///< Squared norm of the wave function.
-    double coupling_const;			///< Coupling constant of the density self-interacting term.
+    double *norm;					///< Squared norm of the wave function.
+    double tot_norm;
+    double *coupling_const;			///< Coupling constant of the density self-interacting term.
     int sense;						///< Takes values 0 or 1 and tells which of the two buffers pointed by p_real and p_imag is used to calculate the next time step.
+    int state;
     size_t halo_x;					///< Thickness of the vertical halos (number of lattice's dots).
     size_t halo_y;					///< Thickness of the horizontal halos (number of lattice's dots).
     size_t tile_width;				///< Width of the tile (number of lattice's dots).
@@ -100,7 +114,8 @@ private:
     bool imag_time;					///< True: imaginary time evolution; False: real time evolution.
     static const size_t block_width = BLOCK_WIDTH;			///< Width of the lattice block which is cached (number of lattice's dots).
     static const size_t block_height = BLOCK_HEIGHT;		///< Height of the lattice block which is cached (number of lattice's dots).
-
+    bool two_wavefunctions;
+    
 	double alpha_x;					///< Real coupling constant associated to the X*P_y operator, part of the angular momentum.
 	double alpha_y;					///< Real coupling constant associated to the Y*P_x operator, part of the angular momentum.
 	int rot_coord_x;				///< X axis coordinate of the center of rotation.
