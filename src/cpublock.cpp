@@ -789,25 +789,25 @@ void CPUBlock::start_halo_exchange() {
     // Halo exchange: LEFT/RIGHT
 #ifdef HAVE_MPI
     int offset = (inner_start_y - start_y) * tile_width;
-    MPI_Irecv(p_real[1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 1, cartcomm, req);
-    MPI_Irecv(p_imag[1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 2, cartcomm, req + 1);
+    MPI_Irecv(p_real[state][1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 1, cartcomm, req);
+    MPI_Irecv(p_imag[state][1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 2, cartcomm, req + 1);
     offset = (inner_start_y - start_y) * tile_width + inner_end_x - start_x;
-    MPI_Irecv(p_real[1 - sense] + offset, 1, verticalBorder, neighbors[RIGHT], 3, cartcomm, req + 2);
-    MPI_Irecv(p_imag[1 - sense] + offset, 1, verticalBorder, neighbors[RIGHT], 4, cartcomm, req + 3);
+    MPI_Irecv(p_real[state][1 - sense] + offset, 1, verticalBorder, neighbors[RIGHT], 3, cartcomm, req + 2);
+    MPI_Irecv(p_imag[state][1 - sense] + offset, 1, verticalBorder, neighbors[RIGHT], 4, cartcomm, req + 3);
 
     offset = (inner_start_y - start_y) * tile_width + inner_end_x - halo_x - start_x;
-    MPI_Isend(p_real[1 - sense] + offset, 1, verticalBorder, neighbors[RIGHT], 1, cartcomm, req + 4);
-    MPI_Isend(p_imag[1 - sense] + offset, 1, verticalBorder, neighbors[RIGHT], 2, cartcomm, req + 5);
+    MPI_Isend(p_real[state][1 - sense] + offset, 1, verticalBorder, neighbors[RIGHT], 1, cartcomm, req + 4);
+    MPI_Isend(p_imag[state][1 - sense] + offset, 1, verticalBorder, neighbors[RIGHT], 2, cartcomm, req + 5);
     offset = (inner_start_y - start_y) * tile_width + halo_x;
-    MPI_Isend(p_real[1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 3, cartcomm, req + 6);
-    MPI_Isend(p_imag[1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 4, cartcomm, req + 7);
+    MPI_Isend(p_real[state][1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 3, cartcomm, req + 6);
+    MPI_Isend(p_imag[state][1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 4, cartcomm, req + 7);
 #else
     if(periods[1] != 0) {
         int offset = (inner_start_y - start_y) * tile_width;
-        memcpy2D(&(p_real[1 - sense][offset]), tile_width * sizeof(double), &(p_real[1 - sense][offset + tile_width - 2 * halo_x]), tile_width * sizeof(double), halo_x * sizeof(double), tile_height - 2 * halo_y);
-        memcpy2D(&(p_imag[1 - sense][offset]), tile_width * sizeof(double), &(p_imag[1 - sense][offset + tile_width - 2 * halo_x]), tile_width * sizeof(double), halo_x * sizeof(double), tile_height - 2 * halo_y);
-        memcpy2D(&(p_real[1 - sense][offset + tile_width - halo_x]), tile_width * sizeof(double), &(p_real[1 - sense][offset + halo_x]), tile_width * sizeof(double), halo_x * sizeof(double), tile_height - 2 * halo_y);
-        memcpy2D(&(p_imag[1 - sense][offset + tile_width - halo_x]), tile_width * sizeof(double), &(p_imag[1 - sense][offset + halo_x]), tile_width * sizeof(double), halo_x * sizeof(double), tile_height - 2 * halo_y);
+        memcpy2D(&(p_real[state][1 - sense][offset]), tile_width * sizeof(double), &(p_real[state][1 - sense][offset + tile_width - 2 * halo_x]), tile_width * sizeof(double), halo_x * sizeof(double), tile_height - 2 * halo_y);
+        memcpy2D(&(p_imag[state][1 - sense][offset]), tile_width * sizeof(double), &(p_imag[state][1 - sense][offset + tile_width - 2 * halo_x]), tile_width * sizeof(double), halo_x * sizeof(double), tile_height - 2 * halo_y);
+        memcpy2D(&(p_real[state][1 - sense][offset + tile_width - halo_x]), tile_width * sizeof(double), &(p_real[state][1 - sense][offset + halo_x]), tile_width * sizeof(double), halo_x * sizeof(double), tile_height - 2 * halo_y);
+        memcpy2D(&(p_imag[state][1 - sense][offset + tile_width - halo_x]), tile_width * sizeof(double), &(p_imag[state][1 - sense][offset + halo_x]), tile_width * sizeof(double), halo_x * sizeof(double), tile_height - 2 * halo_y);
     }
 #endif
 }
@@ -818,27 +818,27 @@ void CPUBlock::finish_halo_exchange() {
 
     // Halo exchange: UP/DOWN
     int offset = 0;
-    MPI_Irecv(p_real[sense] + offset, 1, horizontalBorder, neighbors[UP], 1, cartcomm, req);
-    MPI_Irecv(p_imag[sense] + offset, 1, horizontalBorder, neighbors[UP], 2, cartcomm, req + 1);
+    MPI_Irecv(p_real[state][sense] + offset, 1, horizontalBorder, neighbors[UP], 1, cartcomm, req);
+    MPI_Irecv(p_imag[state][sense] + offset, 1, horizontalBorder, neighbors[UP], 2, cartcomm, req + 1);
     offset = (inner_end_y - start_y) * tile_width;
-    MPI_Irecv(p_real[sense] + offset, 1, horizontalBorder, neighbors[DOWN], 3, cartcomm, req + 2);
-    MPI_Irecv(p_imag[sense] + offset, 1, horizontalBorder, neighbors[DOWN], 4, cartcomm, req + 3);
+    MPI_Irecv(p_real[state][sense] + offset, 1, horizontalBorder, neighbors[DOWN], 3, cartcomm, req + 2);
+    MPI_Irecv(p_imag[state][sense] + offset, 1, horizontalBorder, neighbors[DOWN], 4, cartcomm, req + 3);
 
     offset = (inner_end_y - halo_y - start_y) * tile_width;
-    MPI_Isend(p_real[sense] + offset, 1, horizontalBorder, neighbors[DOWN], 1, cartcomm, req + 4);
-    MPI_Isend(p_imag[sense] + offset, 1, horizontalBorder, neighbors[DOWN], 2, cartcomm, req + 5);
+    MPI_Isend(p_real[state][sense] + offset, 1, horizontalBorder, neighbors[DOWN], 1, cartcomm, req + 4);
+    MPI_Isend(p_imag[state][sense] + offset, 1, horizontalBorder, neighbors[DOWN], 2, cartcomm, req + 5);
     offset = halo_y * tile_width;
-    MPI_Isend(p_real[sense] + offset, 1, horizontalBorder, neighbors[UP], 3, cartcomm, req + 6);
-    MPI_Isend(p_imag[sense] + offset, 1, horizontalBorder, neighbors[UP], 4, cartcomm, req + 7);
+    MPI_Isend(p_real[state][sense] + offset, 1, horizontalBorder, neighbors[UP], 3, cartcomm, req + 6);
+    MPI_Isend(p_imag[state][sense] + offset, 1, horizontalBorder, neighbors[UP], 4, cartcomm, req + 7);
 
     MPI_Waitall(8, req, statuses);
 #else
     if(periods[0] != 0) {
         int offset = (inner_end_y - start_y) * tile_width;
-        memcpy2D(&(p_real[sense][0]), tile_width * sizeof(double), &(p_real[sense][offset - halo_y * tile_width]), tile_width * sizeof(double), tile_width * sizeof(double), halo_y);
-        memcpy2D(&(p_imag[sense][0]), tile_width * sizeof(double), &(p_imag[sense][offset - halo_y * tile_width]), tile_width * sizeof(double), tile_width * sizeof(double), halo_y);
-        memcpy2D(&(p_real[sense][offset]), tile_width * sizeof(double), &(p_real[sense][halo_y * tile_width]), tile_width * sizeof(double), tile_width * sizeof(double), halo_y);
-        memcpy2D(&(p_imag[sense][offset]), tile_width * sizeof(double), &(p_imag[sense][halo_y * tile_width]), tile_width * sizeof(double), tile_width * sizeof(double), halo_y);
+        memcpy2D(&(p_real[state][sense][0]), tile_width * sizeof(double), &(p_real[state][sense][offset - halo_y * tile_width]), tile_width * sizeof(double), tile_width * sizeof(double), halo_y);
+        memcpy2D(&(p_imag[state][sense][0]), tile_width * sizeof(double), &(p_imag[state][sense][offset - halo_y * tile_width]), tile_width * sizeof(double), tile_width * sizeof(double), halo_y);
+        memcpy2D(&(p_real[state][sense][offset]), tile_width * sizeof(double), &(p_real[state][sense][halo_y * tile_width]), tile_width * sizeof(double), tile_width * sizeof(double), halo_y);
+        memcpy2D(&(p_imag[state][sense][offset]), tile_width * sizeof(double), &(p_imag[state][sense][halo_y * tile_width]), tile_width * sizeof(double), tile_width * sizeof(double), halo_y);
     }
 #endif
 }
