@@ -118,13 +118,15 @@ void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width,
 		for (size_t y = 0; y < height; ++y) {
 			for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
 				double norm_2 = p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx];
+				double c_cos = cos(coupling_a * norm_2);
+				double c_sin = sin(coupling_a * norm_2);
 				double tmp = p_real[idx];
 				p_real[idx] = external_pot_real[idx_pot] * tmp - external_pot_imag[idx_pot] * p_imag[idx];
 				p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx] + external_pot_imag[idx_pot] * tmp;
 				
 				tmp = p_real[idx];
-				p_real[idx] = cos(coupling_a * norm_2) * tmp + sin(coupling_a * norm_2) * p_imag[idx];
-				p_imag[idx] = cos(coupling_a * norm_2) * p_imag[idx] - sin(coupling_a * norm_2) * tmp;
+				p_real[idx] = c_cos * tmp + c_sin * p_imag[idx];
+				p_imag[idx] = c_cos * p_imag[idx] - c_sin * tmp;
 			}
 		}
 	}
