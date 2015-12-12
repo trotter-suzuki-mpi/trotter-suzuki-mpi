@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
     int tile_height = end_y - start_y;
 
     //set and calculate evolution operator variables from hamiltonian
-    double coupling_const = 4. * M_PI * double(SCATTER_LENGHT_2D) * double(PARTICLES_NUM);
+    double coupling_const = 4. * M_PI * double(SCATTER_LENGHT_2D);
     double delta_x = double(LENGHT)/double(DIM), delta_y = double(LENGHT)/double(DIM);
     double *external_pot_real = new double[tile_width * tile_height];
     double *external_pot_imag = new double[tile_width * tile_height];
