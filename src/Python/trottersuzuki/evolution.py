@@ -1,5 +1,5 @@
 import numpy as np
-from .trottersuzuki import solver, H, K, Lz, Norm2, phase, density
+from .trottersuzuki import solver, H, K, Lz, Norm2, phase, density, H_2GPE, Norm2_2GPE, solver_2GPE
 
 
 def evolve(p_real, p_imag, particle_mass, external_potential, delta_x, delta_y,
@@ -46,9 +46,7 @@ def evolve(p_real, p_imag, particle_mass, external_potential, delta_x, delta_y,
         external_potential = np.zeros(p_real.shape)
     if periods is None:
         periods = [0, 0]
-    solver(p_real, p_imag, particle_mass, coupling_const, external_potential, 
-           omega, rot_coord_x, rot_coord_y, delta_x, delta_y, delta_t, 
-           iterations, kernel_type, periods, imag_time)
+    solver(p_real, p_imag, particle_mass, coupling_const, external_potential, omega, rot_coord_x, rot_coord_y, delta_x, delta_y, delta_t, iterations, kernel_type, periods, imag_time)
 
 
 def calculate_total_energy(p_real, p_imag, particle_mass, external_potential, 
@@ -139,7 +137,7 @@ def calculate_norm2(p_real, p_imag, delta_x, delta_y):
 
 def get_wave_function_phase(p_real, p_imag):
     """Function that return the phase of the wave function
-
+    
     :param p_real: The real part of the quantum state.
     :type p_real: 2D numpy.array of float64.
     :param p_imag: The imaginary part of the quantum state.
@@ -152,7 +150,7 @@ def get_wave_function_phase(p_real, p_imag):
 
 def get_wave_function_density(p_real, p_imag):
     """Function that return the particle denity of the wave function
-
+    
     :param p_real: The real part of the quantum state.
     :type p_real: 2D numpy.array of float64.
     :param p_imag: The imaginary part of the quantum state.
@@ -161,3 +159,22 @@ def get_wave_function_density(p_real, p_imag):
     density_matrix = np.zeros(p_real.shape)
     density(density_matrix, p_real, p_imag)
     return density_matrix
+
+def calculate_total_energy_2GPE(p_real, p_imag, pb_real, pb_imag, particle_mass_a, particle_mass_b, coupling_const, external_pot_a, external_pot_b, omega, coord_rot_x, coord_rot_y, delta_x, delta_y):
+    
+    return H_2GPE(p_real, p_imag, pb_real, pb_imag, particle_mass_a, particle_mass_b, coupling_const, external_pot_a, external_pot_b, omega, coord_rot_x, coord_rot_y, delta_x, delta_y)
+
+def calculate_norm2_2GPE(p_real, p_imag, pb_real, pb_imag, delta_x, delta_y):
+    
+    return Norm2_2GPE(p_real, p_imag, pb_real, pb_imag, delta_x, delta_y)
+
+
+def evolve_2GPE(p_real, p_imag, pb_real, pb_imag, particle_mass_a, particle_mass_b, external_potential, external_potential_b, omega, rot_coord_x, rot_coord_y, delta_x, delta_y,
+                delta_t, iterations, coupling_const, kernel_type= "cpu",
+                periods=None, imag_time=False):
+    if external_potential is None:
+        external_potential = np.zeros(p_real.shape)
+    if periods is None:
+        periods = [0, 0]
+    solver_2GPE(p_real, p_imag, pb_real, pb_imag, particle_mass_a, particle_mass_b, coupling_const, external_potential, external_potential_b, omega, rot_coord_x, rot_coord_y, delta_x, delta_y, delta_t, iterations, kernel_type, periods, imag_time)
+

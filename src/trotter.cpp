@@ -88,9 +88,9 @@ void trotter(double h_a, double h_b, double coupling_const,
     if (kernel_type == "cpu") {
         kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, coupling_const * delta_t, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time, omega * delta_t * delta_x / (2 * delta_y), omega * delta_t * delta_y / (2 * delta_x), rot_coord_x, rot_coord_y
 #ifdef HAVE_MPI
-                              , cartcomm
+               , cartcomm
 #endif
-                             );
+               );
     } else if (kernel_type == "sse") {
 #ifdef SSE
         kernel = new CPUBlockSSEKernel(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time
@@ -100,7 +100,7 @@ void trotter(double h_a, double h_b, double coupling_const,
                                       );
 #else
 		if (coords[0] == 0 && coords[1] == 0) {
-            std::cerr << "SSE kernel not was not compiled.\n";
+            std::cerr << "SSE kernel was not compiled.\n";
         }
         abort();
 #endif
@@ -150,10 +150,105 @@ void trotter(double h_a, double h_b, double coupling_const,
         if (i != iterations - 1) {
             kernel->finish_halo_exchange();
         }
-        kernel->wait_for_completion(i);
+        kernel->wait_for_completion();
     }
 
     kernel->get_sample(width, 0, 0, width, height, p_real, p_imag);
+
+    delete kernel;
+}
+
+
+void trotter(double *h_a, double *h_b, double *coupling_const,
+             double ** external_pot_real, double ** external_pot_imag,
+             double ** p_real, double ** p_imag, double delta_x, double delta_y,
+             const int matrix_width, const int matrix_height, double delta_t,
+             const int iterations, double omega, int rot_coord_x, int rot_coord_y,
+             string kernel_type, double *norm, bool imag_time, int *periods) {
+
+    if(periods == NULL) {
+        periods = new int [2];
+        periods[0] = 0; periods[1] = 0;
+	}
+	
+    int start_x, end_x, inner_start_x, inner_end_x,
+        start_y, end_y, inner_start_y, inner_end_y;
+
+    int coords[2], dims[2] = {0, 0};
+    int rank;
+    int nProcs;
+
+#ifdef HAVE_MPI
+    MPI_Comm cartcomm;
+    MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
+    MPI_Dims_create(nProcs, 2, dims);  //partition all the processes (the size of MPI_COMM_WORLD's group) into an 2-dimensional topology
+    MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, 0, &cartcomm);
+    MPI_Comm_rank(cartcomm, &rank);
+    MPI_Cart_coords(cartcomm, rank, 2, coords); //Determines process coords in cartesian topology given rank in group
+#else
+    nProcs = 1;
+    rank = 0;
+    dims[0] = dims[1] = 1;
+    coords[0] = coords[1] = 0;
+#endif
+
+    int halo_x = (kernel_type == "sse" ? 3 : 4);
+    halo_x = (omega == 0. ? halo_x : 8);
+    int halo_y = (omega == 0. ? 4 : 8);
+    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
+    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
+    int width = end_x - start_x;
+    int height = end_y - start_y;
+    
+    for(int i = 0; i < 3; i++)
+		coupling_const[i] *= delta_t;
+
+    // Initialize kernel
+    ITrotterKernel * kernel;
+    if (kernel_type == "cpu") {
+        kernel = new CPUBlock(p_real, p_imag, external_pot_real, external_pot_imag, h_a, h_b, coupling_const, delta_x, delta_y, matrix_width, matrix_height, halo_x, halo_y, periods, norm, imag_time, omega * delta_t * delta_x / (2 * delta_y), omega * delta_t * delta_y / (2 * delta_x), rot_coord_x, rot_coord_y
+ #ifdef HAVE_MPI
+                               , cartcomm
+ #endif
+                              );
+    } 
+    
+    double var = 0.5;
+	kernel->rabi_coupling(var, delta_t);
+	var = 1.;
+	
+    // Main loop
+    for (int i = 0; i < iterations; i++) {
+		//first wave function
+        kernel->run_kernel_on_halo();
+        if (i != iterations - 1) {
+            kernel->start_halo_exchange();
+        }
+        kernel->run_kernel();
+        if (i != iterations - 1) {
+            kernel->finish_halo_exchange();
+        }
+        kernel->wait_for_completion();
+        
+        //second wave function
+		kernel->run_kernel_on_halo();
+		if (i != iterations - 1) {
+			kernel->start_halo_exchange();
+		}
+		kernel->run_kernel();
+		if (i != iterations - 1) {
+			kernel->finish_halo_exchange();
+		}
+		kernel->wait_for_completion();
+		       
+		if (i == iterations - 1)
+			var = 0.5;
+		kernel->rabi_coupling(var, delta_t);
+		
+        kernel->normalization();
+    }
+
+    kernel->get_sample2(width, 0, 0, width, height, p_real, p_imag);
 
     delete kernel;
 }
