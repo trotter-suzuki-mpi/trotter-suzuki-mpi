@@ -49,11 +49,11 @@ double delta_t = 0.08;
 int rot_coord_x = 320, rot_coord_y = 320;
 double omega = 0;
 
-std::complex<double> exp_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
-    double L_x = matrix_width - periods[1] * 2 * halo_x;
-    double L_y = matrix_height - periods[0] * 2 * halo_y;
+std::complex<double> exp_state(int x, int y, Lattice *grid, int halo_x, int halo_y) {
+    double L_x = grid->global_dim_x - grid->periods[1] * 2 * halo_x;
+    double L_y = grid->global_dim_y - grid->periods[0] * 2 * halo_y;
 
-    return exp(std::complex<double>(0. , 2 * 3.14159 / L_x * (x - periods[1] * halo_x) + 2 * 3.14159 / L_y * (y - periods[0] * halo_y) ));
+    return exp(std::complex<double>(0. , 2 * 3.14159 / L_x * (x - grid->periods[1] * halo_x) + 2 * 3.14159 / L_y * (y - grid->periods[0] * halo_y) ));
 }
 
 int main(int argc, char** argv) {
@@ -113,12 +113,12 @@ int main(int argc, char** argv) {
                              start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, false);
 
     //set initial state
-    double *p_real = new double[tile_width * tile_height];
-    double *p_imag = new double[tile_width * tile_height];
-    std::complex<double> (*ini_state)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-    ini_state = exp_state;
-    initialize_state(p_real, p_imag, filename, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,
-                     periods, coords, dims, halo_x, halo_y);
+    Lattice *grid = new Lattice(tile_width * delta_x, tile_height * delta_y, 
+                                tile_width, tile_height, 
+                                matrix_width, matrix_height, periods);
+    State *state = new State(grid);
+    state->init_state(exp_state, start_x, start_y, halo_x, halo_y);
+
 
     if(rank == 0) {
         std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
@@ -145,19 +145,18 @@ int main(int argc, char** argv) {
     }
     else
         dirnames = ".";
-
-    stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
-          start_y, inner_start_y, inner_end_y, dims, coords, periods,
+    stamp(grid, state, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
+          start_y, inner_start_y, inner_end_y, dims, coords, 
           0, iterations, 0, dirnames.c_str()
 #ifdef HAVE_MPI
           , cartcomm
 #endif
          );
-    for(int count_snap = 1; count_snap <= snapshots; count_snap++) {
-        trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, delta_t, iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm, imag_time, periods);
-        
-        stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
-              start_y, inner_start_y, inner_end_y, dims, coords, periods,
+    for(int count_snap = 0; count_snap < snapshots; count_snap++) {
+        trotter(grid, state, h_a, h_b, coupling_const, external_pot_real, external_pot_imag, delta_t, iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm, imag_time);
+
+        stamp(grid, state, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
+              start_y, inner_start_y, inner_end_y, dims, coords, 
               0, iterations, count_snap, dirnames.c_str()
 #ifdef HAVE_MPI
               , cartcomm

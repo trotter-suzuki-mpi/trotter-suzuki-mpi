@@ -195,9 +195,9 @@ int main(int argc, char** argv) {
     double norm = 1;
     int time, tot_time = 0;
     char output_folder[2] = {'.', '\0'};
-	double delta_t = 0;
-	double coupling_const = 0;
-	double delta_x = 1, delta_y = 1;
+    double delta_t = 0;
+    double coupling_const = 0;
+    double delta_x = 1, delta_y = 1;
 
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
@@ -236,72 +236,71 @@ int main(int argc, char** argv) {
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     int tile_width = end_x - start_x;
     int tile_height = end_y - start_y;
-
+    Lattice *grid = new Lattice(tile_width * delta_x, tile_height * delta_y, 
+                                tile_width, tile_height, 
+                                matrix_width, matrix_height, periods);
     
-	int read_offset = 0;
+    int read_offset = 0;
 
-	//set and calculate evolution operator variables from hamiltonian
-	double time_single_it;
-	double *external_pot_real = new double[tile_width * tile_height];
-	double *external_pot_imag = new double[tile_width * tile_height];
-	double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-	hamiltonian_pot = const_potential;
+    //set and calculate evolution operator variables from hamiltonian
+    double time_single_it;
+    double *external_pot_real = new double[tile_width * tile_height];
+    double *external_pot_imag = new double[tile_width * tile_height];
+    double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
+    hamiltonian_pot = const_potential;
 
-	if(imag_time) {
-		double constant = 6.;
-		time_single_it = delta_t / 2.;	//second approx trotter-suzuki: time/2
-		if(h_a == 0. && h_b == 0.) {
-			h_a = cosh(time_single_it / (2. * particle_mass)) / constant;
-			h_b = sinh(time_single_it / (2. * particle_mass)) / constant;
-		}
-	}
-	else {
-		time_single_it = delta_t / 2.;	//second approx trotter-suzuki: time/2
-		if(h_a == 0. && h_b == 0.) {
-			h_a = cos(time_single_it / (2. * particle_mass));
-			h_b = sin(time_single_it / (2. * particle_mass));
-		}
-	}
-	initialize_exp_potential(external_pot_real, external_pot_imag, pot_name, hamiltonian_pot, tile_width, tile_height, matrix_width, matrix_height,
-							 start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, imag_time);
+    if(imag_time) {
+      double constant = 6.;
+      time_single_it = delta_t / 2.;	//second approx trotter-suzuki: time/2
+      if(h_a == 0. && h_b == 0.) {
+        h_a = cosh(time_single_it / (2. * particle_mass)) / constant;
+        h_b = sinh(time_single_it / (2. * particle_mass)) / constant;
+      }
+    }
+    else {
+      time_single_it = delta_t / 2.;	//second approx trotter-suzuki: time/2
+      if(h_a == 0. && h_b == 0.) {
+        h_a = cos(time_single_it / (2. * particle_mass));
+        h_b = sin(time_single_it / (2. * particle_mass));
+      }
+    }
+    initialize_exp_potential(external_pot_real, external_pot_imag, pot_name, hamiltonian_pot, tile_width, tile_height, matrix_width, matrix_height,
+                 start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, imag_time);
 
-	//set initial state
-	double *p_real = new double[tile_width * tile_height];
-	double *p_imag = new double[tile_width * tile_height];
-	std::complex<double> (*ini_state)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-	ini_state = NULL;
-	initialize_state(p_real, p_imag, filename, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,
-					 periods, coords, dims, halo_x, halo_y, read_offset);
+    //set initial state
+    State *state = new State(grid);
+    state->read_state(filename, start_x, start_y,
+                      coords, dims, halo_x, halo_y, read_offset);
 
-	for(int count_snap = 0; count_snap <= snapshots; count_snap++) {
-		stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
-			  start_y, inner_start_y, inner_end_y, dims, coords, periods,
-			  0, iterations, count_snap, output_folder
+    for(int count_snap = 0; count_snap <= snapshots; count_snap++) {
+      stamp(grid, state, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
+            start_y, inner_start_y, inner_end_y, dims, coords,
+            0, iterations, count_snap, output_folder
 #ifdef HAVE_MPI
-			  , cartcomm
+          , cartcomm
 #endif
-			 );
+        );
 
-		if(count_snap != snapshots) {
+      if(count_snap != snapshots) {
 #ifdef WIN32
-			SYSTEMTIME start;
-			GetSystemTime(&start);
+        SYSTEMTIME start;
+        GetSystemTime(&start);
 #else
-			struct timeval start, end;
-			gettimeofday(&start, NULL);
+        struct timeval start, end;
+        gettimeofday(&start, NULL);
 #endif
-			trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, delta_t, iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm, imag_time);
+        trotter(grid, state, h_a, h_b, coupling_const, external_pot_real, external_pot_imag, delta_t, iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm, imag_time);
 #ifdef WIN32
-			SYSTEMTIME end;
-			GetSystemTime(&end);
-			time = (end.wMinute - start.wMinute) * 60000 + (end.wSecond - start.wSecond) * 1000 + (end.wMilliseconds - start.wMilliseconds);
+        SYSTEMTIME end;
+        GetSystemTime(&end);
+        time = (end.wMinute - start.wMinute) * 60000 + (end.wSecond - start.wSecond) * 1000 + (end.wMilliseconds - start.wMilliseconds);
 #else
-			gettimeofday(&end, NULL);
-			time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
+        gettimeofday(&end, NULL);
+        time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
 #endif
-			tot_time += time;
-		}
-	}
+        tot_time += time;
+      }
+    }
 
     if (coords[0] == 0 && coords[1] == 0 && verbose == true) {
         std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " kernel:" << kernel_type << " np:" << nProcs << " " << tot_time << std::endl;

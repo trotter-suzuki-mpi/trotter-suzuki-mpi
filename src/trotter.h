@@ -22,6 +22,48 @@ using namespace std;
 #ifndef __TROTTER_H
 #define __TROTTER_H
 
+class Lattice {
+public:
+    Lattice(double _length_x=20., double _length_y=20., 
+            int _dim_x=100, int _dim_y=100, 
+            int _global_dim_x=0, int _global_dim_y=0, 
+            int _periods[2]=0);
+    double length_x, length_y;
+    int dim_x, dim_y;
+    int global_dim_x, global_dim_y;
+    double delta_x, delta_y;
+    int periods[2];
+  
+};
+
+class State{
+public:
+    double *p_real;
+    double *p_imag;
+
+    State(Lattice *_grid, double *_p_real=0, double *_p_imag=0);
+    ~State();
+    void init_state(std::complex<double> (*ini_state)(int x, int y, Lattice *grid, int halo_x, int halo_y),
+                    int start_x, int start_y, int halo_x, int halo_y);
+    void read_state(char *file_name, int start_x, int start_y,
+                    int *coords, int *dims, int halo_x, int halo_y, int read_offset);
+
+    double calculate_squared_norm(State *psi_b=0);
+    double *get_particle_density(double *density=0, 
+                                 int inner_start_x=0, int start_x=0, 
+                                 int inner_end_x=0, int end_x=0, 
+                                 int inner_start_y=0, int start_y=0, 
+                                 int inner_end_y=0, int end_y=0);
+    double *get_phase(double *phase=0, int inner_start_x=0, int start_x=0, 
+                      int inner_end_x=0, int end_x=0, 
+                      int inner_start_y=0, int start_y=0, 
+                      int inner_end_y=0, int end_y=0);
+
+private:
+    Lattice *grid;
+    bool self_init;
+};
+
 /**
     API call to calculate the evolution through the Trotter-Suzuki decomposition.
 
@@ -45,23 +87,23 @@ using namespace std;
 
 */
 
-void trotter(double h_a, double h_b, double coupling_const,
+void trotter(Lattice *grid, State *state, double h_a, double h_b, 
+             double coupling_const,
              double * external_pot_real, double * external_pot_imag,
-             double * p_real, double * p_imag, double delta_x, double delta_y,
-             const int matrix_width, const int matrix_height, double delta_t,
+             double delta_t,
              const int iterations, double omega = 0., int rot_coord_x = 0, int rot_coord_y = 0,
-             string kernel_type = "cpu", double norm = 1., bool imag_time = false, int *periods = NULL);             
+             string kernel_type = "cpu", double norm = 1., bool imag_time = false);             
 
-void trotter(double *h_a, double *h_b, double *coupling_const,
+void trotter(Lattice *grid, State *state1, State *state2, 
+             double *h_a, double *h_b, double *coupling_const,
              double ** external_pot_real, double ** external_pot_imag,
-             double ** p_real, double ** p_imag, double delta_x, double delta_y,
-             const int matrix_width, const int matrix_height, double delta_t,
+             double delta_t,
              const int iterations, double omega, int rot_coord_x, int rot_coord_y,
-             string kernel_type, double *norm, bool imag_time, int *periods);
+             string kernel_type, double *norm, bool imag_time);
 
-void solver(double * p_real, double * p_imag,
+void solver(Lattice *grid, State *state,
 			double particle_mass, double coupling_const, double * external_pot, double omega, int rot_coord_x, int rot_coord_y,
-            const int matrix_width, const int matrix_height, double delta_x, double delta_y, double delta_t, const int iterations, string kernel_type, int *periods, bool imag_time);
+            double delta_t, const int iterations, string kernel_type, bool imag_time);
 
 void solver(double * p_real, double * p_imag, double * pb_real, double * pb_imag,
 			double particle_mass_a, double particle_mass_b, double *coupling_const, double * external_pot, double * external_pot_b, double omega, int rot_coord_x, int rot_coord_y,
@@ -98,22 +140,6 @@ double Energy_tot(double ** p_real, double ** p_imag,
 				       double omega, double coord_rot_x, double coord_rot_y,
 				       double delta_x, double delta_y, double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y,
 				       int matrix_width, int matrix_height, int halo_x, int halo_y, int * periods);
-double Norm2(double * p_real, double * p_imag, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
-double Norm2(double **p_real, double **p_imag, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
-void get_wave_function_phase(double * phase, double * p_real, double * p_imag, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
-void get_wave_function_density(double * density, double * p_real, double * p_imag, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
-
-void get_wave_function_phase(double * phase, double * p_real, double * p_imag, int width, int height);
-
-void get_wave_function_density(double * density, double * p_real, double * p_imag, int width, int height);
-
 void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, double particle_mass,
                    const char *dirname, int *periods, int halo_x, int halo_y, energy_momentum_statistics *sample);
-void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x,
-           int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords, int * periods,
-           int tag_particle, int iterations, int count_snap, const char * output_folder
-#ifdef HAVE_MPI
-           , MPI_Comm cartcomm
-#endif
-          );
 #endif

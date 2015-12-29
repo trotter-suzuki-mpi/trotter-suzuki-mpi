@@ -559,27 +559,26 @@ void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, s
     CUT_CHECK_ERROR("Kernel error in cc2kernel_wrapper");
 }
 
-CC2Kernel::CC2Kernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, double _delta_x, double _delta_y, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *_periods, double _norm, bool _imag_time
+CC2Kernel::CC2Kernel(Lattice *grid, State *state, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, int _halo_x, int _halo_y, double _norm, bool _imag_time
 #ifdef HAVE_MPI
                      , MPI_Comm _cartcomm
 #endif
                     ):
-    p_real(_p_real),
-    p_imag(_p_imag),
     external_pot_real(_external_pot_real),
     external_pot_imag(_external_pot_imag),
     threadsPerBlock(BLOCK_X, STRIDE_Y),
     sense(0),
     a(_a),
     b(_b),
-    delta_x(_delta_x),
-    delta_y(_delta_y),
     halo_x(_halo_x),
     halo_y(_halo_y),
     norm(_norm),
     imag_time(_imag_time) {
-
-    periods = _periods;
+    p_real = state->p_real;
+    p_imag = state->_p_imag;
+    delta_x = grid->delta_x;
+    delta_y = grid->delta_y;
+    periods = grid->periods;
     int rank, coords[2], dims[2] = {0, 0};
 #ifdef HAVE_MPI
     cartcomm = _cartcomm;
@@ -593,8 +592,8 @@ CC2Kernel::CC2Kernel(double *_p_real, double *_p_imag, double *_external_pot_rea
     rank = 0;
     coords[0] = coords[1] = 0;
 #endif
-    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
-    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
+    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, grid->global_dim_x - 2 * periods[1]*halo_x, halo_x, periods[1]);
+    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, grid->global_dim_y - 2 * periods[0]*halo_y, halo_y, periods[0]);
     tile_width = end_x - start_x;
     tile_height = end_y - start_y;
 

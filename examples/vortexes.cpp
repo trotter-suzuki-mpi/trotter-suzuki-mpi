@@ -34,7 +34,7 @@
 
 #define LENGHT 50
 #define DIM 640
-#define ITERATIONS 10000
+#define ITERATIONS 2
 #define PARTICLES_NUM 8.e+6
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 400
@@ -44,9 +44,9 @@
 int rot_coord_x = 320, rot_coord_y = 320;
 double omega = 0.9;
 
-std::complex<double> gauss_ini_state(int m, int n, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
+std::complex<double> gauss_ini_state(int m, int n, Lattice *grid, int halo_x, int halo_y) {
 	double delta_x = double(LENGHT)/double(DIM);
-    double x = (m - matrix_width / 2.) * delta_x, y = (n - matrix_height / 2.) * delta_x;
+    double x = (m - grid->global_dim_x / 2.) * delta_x, y = (n - grid->global_dim_y / 2.) * delta_x;
     double w = 0.002/(delta_x * delta_x);
     return std::complex<double>(sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w), sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w));
 }
@@ -75,8 +75,8 @@ int main(int argc, char** argv) {
     double h_a = 0.;
     double h_b = 0.;
 	
-	double delta_t = 2.e-4;
-	double delta_x = double(LENGHT)/double(DIM), delta_y = double(LENGHT)/double(DIM);
+    double delta_t = 2.e-4;
+    double delta_x = double(LENGHT)/double(DIM), delta_y = double(LENGHT)/double(DIM);
 
     int halo_x = (kernel_type == "sse" ? 3 : 4);
     halo_x = (omega == 0. ? halo_x : 8);
@@ -139,12 +139,11 @@ int main(int argc, char** argv) {
                              start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, imag_time);
 
     //set initial state
-    double *p_real = new double[tile_width * tile_height];
-    double *p_imag = new double[tile_width * tile_height];
-    std::complex<double> (*ini_state)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-    ini_state = gauss_ini_state;
-    initialize_state(p_real, p_imag, file_name, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,
-                     periods, coords, dims, halo_x, halo_y);
+    Lattice *grid = new Lattice(tile_width * delta_x, tile_height * delta_y, 
+                                tile_width, tile_height, 
+                                matrix_width, matrix_height, periods);
+    State *state = new State(grid);
+    state->init_state(gauss_ini_state, start_x, start_y, halo_x, halo_y);
 
     //set file output directory
     std::stringstream dirname, file_info;
@@ -175,7 +174,7 @@ int main(int argc, char** argv) {
     
     double norm2;
 	//norm calculation
-	sum = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+	sum = get_norm2(state->p_real, state->p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 #ifdef HAVE_MPI
 	MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
 #else
@@ -186,7 +185,7 @@ int main(int argc, char** argv) {
 		norm2 += sums[i];
 	
 	//rot-energy calculation
-	sum = Energy_rot(p_real, p_imag, omega, rot_coord_x, rot_coord_y, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+	sum = Energy_rot(state->p_real, state->p_imag, omega, rot_coord_x, rot_coord_y, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 #ifdef HAVE_MPI
 	MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
 #else
@@ -197,7 +196,7 @@ int main(int argc, char** argv) {
 		_rot_energy += sums[i];
 	
 	//tot-energy calculation
-	sum = Energy_tot(p_real, p_imag, particle_mass, coupling_const, hamiltonian_pot, NULL, omega, rot_coord_x, rot_coord_y, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y, dim, dim, halo_x, halo_y, periods);
+	sum = Energy_tot(state->p_real, state->p_imag, particle_mass, coupling_const, hamiltonian_pot, NULL, omega, rot_coord_x, rot_coord_y, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y, dim, dim, halo_x, halo_y, periods);
 #ifdef HAVE_MPI
 	MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
 #else
@@ -208,7 +207,7 @@ int main(int argc, char** argv) {
 		_tot_energy += sums[i];
 	
 	//kin energy
-	sum = Energy_kin(p_real, p_imag, particle_mass, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+	sum = Energy_kin(state->p_real, state->p_imag, particle_mass, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 #ifdef HAVE_MPI
 	MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
 #else
@@ -225,10 +224,10 @@ int main(int argc, char** argv) {
 		
     for(int count_snap = 0; count_snap < snapshots; count_snap++) {
         
-        trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, delta_t, iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm2, imag_time, periods);
+        trotter(grid, state, h_a, h_b, coupling_const, external_pot_real, external_pot_imag, delta_t, iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm2, imag_time);
       
         //norm calculation
-        sum = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+        sum = get_norm2(state->p_real, state->p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 #ifdef HAVE_MPI
         MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
 #else
@@ -239,7 +238,7 @@ int main(int argc, char** argv) {
             _norm2 += sums[i];
        
         //rot-energy calculation
-        sum = Energy_rot(p_real, p_imag, omega, rot_coord_x, rot_coord_y, delta_x, delta_y, _norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+        sum = Energy_rot(state->p_real, state->p_imag, omega, rot_coord_x, rot_coord_y, delta_x, delta_y, _norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 #ifdef HAVE_MPI
         MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
 #else
@@ -250,7 +249,7 @@ int main(int argc, char** argv) {
             _rot_energy += sums[i];
         
         //tot-energy calculation
-        sum = Energy_tot(p_real, p_imag, particle_mass, coupling_const, hamiltonian_pot, NULL, omega, rot_coord_x, rot_coord_y, delta_x, delta_y, _norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y, matrix_width, matrix_height, halo_x, halo_y, periods);
+        sum = Energy_tot(state->p_real, state->p_imag, particle_mass, coupling_const, hamiltonian_pot, NULL, omega, rot_coord_x, rot_coord_y, delta_x, delta_y, _norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y, matrix_width, matrix_height, halo_x, halo_y, periods);
 #ifdef HAVE_MPI
         MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
 #else
@@ -261,7 +260,7 @@ int main(int argc, char** argv) {
             _tot_energy += sums[i];
         
         //kin energy
-        sum = Energy_kin(p_real, p_imag, particle_mass, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+        sum = Energy_kin(state->p_real, state->p_imag, particle_mass, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 #ifdef HAVE_MPI
         MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
 #else
@@ -278,21 +277,20 @@ int main(int argc, char** argv) {
         //stamp phase and particles density
         if(count_snap % snap_per_stamp == 0.) {
 			//get and stamp phase
-			get_wave_function_phase(_matrix, p_real, p_imag, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+			state->get_phase(_matrix, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 			file_tags = "phase";
-			stamp_real(_matrix, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
-			   start_y, inner_start_y, inner_end_y, dims, coords, periods,
+			stamp_real(grid, _matrix, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
+			   start_y, inner_start_y, inner_end_y, dims, coords,
 			   iterations * (count_snap + 1), dirnames.c_str(), file_tags.c_str()
 #ifdef HAVE_MPI
 			   , cartcomm
 #endif
                );
-        
 			//get and stamp particles density
-			get_wave_function_density(_matrix, p_real, p_imag, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+			state->get_particle_density(_matrix, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 			file_tags = "density";
-			stamp_real(_matrix, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
-			   start_y, inner_start_y, inner_end_y, dims, coords, periods,
+			stamp_real(grid, _matrix, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
+			   start_y, inner_start_y, inner_end_y, dims, coords,
 			   iterations * (count_snap + 1), dirnames.c_str(), file_tags.c_str()
 #ifdef HAVE_MPI
 				, cartcomm
@@ -302,8 +300,8 @@ int main(int argc, char** argv) {
     }
 	
 	out.close();
-	stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
-              start_y, inner_start_y, inner_end_y, dims, coords, periods,
+	stamp(grid, state, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
+              start_y, inner_start_y, inner_end_y, dims, coords,
               0, iterations, snapshots, dirnames.c_str()
 #ifdef HAVE_MPI
               , cartcomm

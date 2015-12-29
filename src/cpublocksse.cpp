@@ -746,25 +746,24 @@ void process_band_sse(size_t tile_width, size_t block_width, size_t block_height
     delete[] block_ext_pot_i11;
 }
 
-CPUBlockSSEKernel::CPUBlockSSEKernel(double *_p_real, double *_p_imag, double *external_potential_real, double *external_potential_imag,
-                                     double _a, double _b, double _delta_x, double _delta_y, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *_periods, double _norm, bool _imag_time
+CPUBlockSSEKernel::CPUBlockSSEKernel(Lattice *grid, State *state, double *external_potential_real, double *external_potential_imag,
+                                     double _a, double _b, int _halo_x, int _halo_y, double _norm, bool _imag_time
 #ifdef HAVE_MPI
                                      , MPI_Comm _cartcomm
 #endif
                                     ):
-    p_real(_p_real),
-    p_imag(_p_imag),
     a(_a),
     b(_b),
-    delta_x(_delta_x),
-    delta_y(_delta_y),
     sense(0),
     halo_x(_halo_x),
     halo_y(_halo_y),
     norm(_norm),
     imag_time(_imag_time) {
-
-    periods = _periods;
+    p_real = state->p_real;
+    p_imag = state->p_imag;
+    delta_x = grid->delta_x;
+    delta_y = grid->delta_y;
+    periods = grid->periods;
     int rank, coords[2], dims[2] = {0, 0};
 #ifdef HAVE_MPI
     cartcomm = _cartcomm;

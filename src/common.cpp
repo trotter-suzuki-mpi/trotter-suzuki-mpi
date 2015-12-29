@@ -58,80 +58,6 @@ void calculate_borders(int coord, int dim, int * start, int *end, int *inner_sta
         *inner_end = ( *end == length ? *end : *end - halo );
 }
 
-void read_initial_state(double * p_real, double * p_imag, int tile_width, int tile_height,
-                        char * file_name, int matrix_width, int matrix_height, int start_x, int start_y,
-                        int * periods, int * coords, int * dims, int halo_x, int halo_y, int read_offset) {
-    std::ifstream input(file_name);
-
-    int in_width = matrix_width - 2 * periods[1] * halo_x;
-    int in_height = matrix_height - 2 * periods[0] * halo_y;
-    std::complex<double> tmp;
-    for(int i = 0; i < read_offset; i++)
-        input >> tmp;
-    for(int i = 0; i < in_height; i++) {
-        for(int j = 0; j < in_width; j++) {
-            input >> tmp;
-            if((i - start_y) >= 0 && (i - start_y) < tile_height && (j - start_x) >= 0 && (j - start_x) < tile_width) {
-                p_real[(i - start_y) * tile_width + j - start_x] = real(tmp);
-                p_imag[(i - start_y) * tile_width + j - start_x] = imag(tmp);
-            }
-
-            //Down band
-            if(i < halo_y && coords[0] == dims[0] - 1 && periods[0] != 0) {
-                if((j - start_x) >= 0 && (j - start_x) < tile_width) {
-                    p_real[(i + tile_height - halo_y) * tile_width + j - start_x] = real(tmp);
-                    p_imag[(i + tile_height - halo_y) * tile_width + j - start_x] = imag(tmp);
-                }
-                //Down right corner
-                if(j < halo_x && periods[1] != 0 && coords[1] == dims[1] - 1) {
-                    p_real[(i + tile_height - halo_y) * tile_width + j + tile_width - halo_x] = real(tmp);
-                    p_imag[(i + tile_height - halo_y) * tile_width + j + tile_width - halo_x] = imag(tmp);
-                }
-                //Down left corner
-                if(j >= in_width - halo_x && periods[1] != 0 && coords[1] == 0) {
-                    p_real[(i + tile_height - halo_y) * tile_width + j - (in_width - halo_x)] = real(tmp);
-                    p_imag[(i + tile_height - halo_y) * tile_width + j - (in_width - halo_x)] = imag(tmp);
-                }
-            }
-
-            //Upper band
-            if(i >= in_height - halo_y && periods[0] != 0 && coords[0] == 0) {
-                if((j - start_x) >= 0 && (j - start_x) < tile_width) {
-                    p_real[(i - (in_height - halo_y)) * tile_width + j - start_x] = real(tmp);
-                    p_imag[(i - (in_height - halo_y)) * tile_width + j - start_x] = imag(tmp);
-                }
-                //Up right corner
-                if(j < halo_x && periods[1] != 0 && coords[1] == dims[1] - 1) {
-                    p_real[(i - (in_height - halo_y)) * tile_width + j + tile_width - halo_x] = real(tmp);
-                    p_imag[(i - (in_height - halo_y)) * tile_width + j + tile_width - halo_x] = imag(tmp);
-                }
-                //Up left corner
-                if(j >= in_width - halo_x && periods[1] != 0 && coords[1] == 0) {
-                    p_real[(i - (in_height - halo_y)) * tile_width + j - (in_width - halo_x)] = real(tmp);
-                    p_imag[(i - (in_height - halo_y)) * tile_width + j - (in_width - halo_x)] = imag(tmp);
-                }
-            }
-
-            //Right band
-            if(j < halo_x && periods[1] != 0 && coords[1] == dims[1] - 1) {
-                if((i - start_y) >= 0 && (i - start_y) < tile_height) {
-                    p_real[(i - start_y) * tile_width + j + tile_width - halo_x] = real(tmp);
-                    p_imag[(i - start_y) * tile_width + j + tile_width - halo_x] = imag(tmp);
-                }
-            }
-
-            //Left band
-            if(j >= in_width - halo_x && periods[1] != 0 && coords[1] == 0) {
-                if((i - start_y) >= 0 && (i - start_y) < tile_height) {
-                    p_real[(i - start_y) * tile_width + j - (in_width - halo_x)] = real(tmp);
-                    p_imag[(i - start_y) * tile_width + j - (in_width - halo_x)] = imag(tmp);
-                }
-            }
-        }
-    }
-    input.close();
-}
-
 void read_potential(double * external_pot_real, double * external_pot_imag, int tile_width, int tile_height,
                     char * pot_name, int matrix_width, int matrix_height, int start_x, int start_y,
                     int * periods, int * coords, int * dims, int halo_x, int halo_y, double time_single_it, double particle_mass, bool imag_time) {
@@ -212,23 +138,6 @@ void read_potential(double * external_pot_real, double * external_pot_imag, int 
         }
     }
     input.close();
-}
-
-void initialize_state(double * p_real, double * p_imag, char * filename, std::complex<double> (*ini_state)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
-                      int tile_width, int tile_height, int matrix_width, int matrix_height, int start_x, int start_y,
-                      int * periods, int * coords, int * dims, int halo_x, int halo_y, int read_offset) {
-    if(filename[0] != '\0')
-        read_initial_state(p_real, p_imag, tile_width, tile_height, filename, matrix_width, matrix_height, start_x, start_y, periods, coords, dims, halo_x, halo_y, read_offset);
-    else if(ini_state != NULL) {
-        std::complex<double> tmp;
-        for (int y = 0, idy = start_y; y < tile_height; y++, idy++) {
-            for (int x = 0, idx = start_x; x < tile_width; x++, idx++) {
-                tmp = ini_state(idx, idy, matrix_width, matrix_height, periods, halo_x, halo_y);
-                p_real[y * tile_width + x] = real(tmp);
-                p_imag[y * tile_width + x] = imag(tmp);
-            }
-        }
-    }
 }
 
 double const_potential(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
@@ -401,8 +310,8 @@ void get_quadrant_sample_to_buffer(const double * r00, const double * r01, const
     assert (dest_y == y + height);
 }
 
-void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x, int end_x,
-           int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords, int * periods,
+void stamp(Lattice *grid, State *state, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x, int end_x,
+           int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords, 
            int tag_particle, int iterations, int count_snap, const char * output_folder
 #ifdef HAVE_MPI
            , MPI_Comm cartcomm
@@ -431,15 +340,14 @@ void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height
     MPI_Type_commit(&num_as_string);
 
     // create a type describing our piece of the array
-    int globalsizes[2] = {matrix_height - 2 * periods[0] * halo_y, matrix_width - 2 * periods[1] * halo_x};
+    int globalsizes[2] = {grid->global_dim_y - 2 * grid->periods[0] * halo_y, grid->global_dim_x - 2 * grid->periods[1] * halo_x};
     int localsizes [2] = {inner_end_y - inner_start_y, inner_end_x - inner_start_x};
     int starts[2]      = {inner_start_y, inner_start_x};
     int order          = MPI_ORDER_C;
 
     MPI_Datatype complex_localarray;
     MPI_Type_create_subarray(2, globalsizes, localsizes, starts, order, complex_num_as_string, &complex_localarray);
-    MPI_Type_commit(&complex_localarray);
-
+        MPI_Type_commit(&complex_localarray);
     MPI_Datatype localarray;
     MPI_Type_create_subarray(2, globalsizes, localsizes, starts, order, num_as_string, &localarray);
     MPI_Type_commit(&localarray);
@@ -451,15 +359,15 @@ void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height
     count = 0;
     for (int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
         for (int k = inner_start_x - start_x; k < inner_end_x - start_x - 1; k++) {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)   ", p_real[j * tile_width + k], p_imag[j * tile_width + k]);
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)   ", state->p_real[j * tile_width + k], state->p_imag[j * tile_width + k]);
             count++;
         }
         if(coords[1] == dims[1] - 1) {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)\n  ", p_real[j * tile_width + (inner_end_x - start_x) - 1], p_imag[j * tile_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)\n  ", state->p_real[j * tile_width + (inner_end_x - start_x) - 1], state->p_imag[j * tile_width + (inner_end_x - start_x) - 1]);
             count++;
         }
         else {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)   ", p_real[j * tile_width + (inner_end_x - start_x) - 1], p_imag[j * tile_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)   ", state->p_real[j * tile_width + (inner_end_x - start_x) - 1], state->p_imag[j * tile_width + (inner_end_x - start_x) - 1]);
             count++;
         }
     }
@@ -482,15 +390,15 @@ void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height
     count = 0;
     for (int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
         for (int k = inner_start_x - start_x; k < inner_end_x - start_x - 1; k++) {
-            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", p_real[j * tile_width + k]);
+            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", state->p_real[j * tile_width + k]);
             count++;
         }
         if(coords[1] == dims[1] - 1) {
-            sprintf(&data_as_txt[count * charspernum], "%+.5e\n ", p_real[j * tile_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * charspernum], "%+.5e\n ", state->p_real[j * tile_width + (inner_end_x - start_x) - 1]);
             count++;
         }
         else {
-            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", p_real[j * tile_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", state->p_real[j * tile_width + (inner_end_x - start_x) - 1]);
             count++;
         }
     }
@@ -508,18 +416,18 @@ void stamp(double * p_real, double * p_imag, int matrix_width, int matrix_height
     delete [] data_as_txt;
 #else
     sprintf(output_filename, "%s/%i-%i-iter-real.dat", output_folder, tag_particle + 1, iterations * count_snap);
-    print_matrix(output_filename, &(p_real[matrix_width * (inner_start_y - start_y) + inner_start_x - start_x]), matrix_width,
-                 matrix_width - 2 * periods[1]*halo_x, matrix_height - 2 * periods[0]*halo_y);
+    print_matrix(output_filename, &(state->p_real[grid->global_dim_x * (inner_start_y - start_y) + inner_start_x - start_x]), grid->global_dim_x,
+                 grid->global_dim_x - 2 * grid->periods[1]*halo_x, grid->global_dim_y - 2 * grid->periods[0]*halo_y);
 
     sprintf(output_filename, "%s/%i-%i-iter-comp.dat", output_folder, tag_particle + 1, iterations * count_snap);
-    print_complex_matrix(output_filename, &(p_real[matrix_width * (inner_start_y - start_y) + inner_start_x - start_x]), &(p_imag[matrix_width * (inner_start_y - start_y) + inner_start_x - start_x]), matrix_width,
-                         matrix_width - 2 * periods[1]*halo_x, matrix_height - 2 * periods[0]*halo_y);
+    print_complex_matrix(output_filename, &(state->p_real[grid->global_dim_x * (inner_start_y - start_y) + inner_start_x - start_x]), &(state->p_imag[grid->global_dim_x * (inner_start_y - start_y) + inner_start_x - start_x]), grid->global_dim_x,
+                         grid->global_dim_x - 2 * grid->periods[1]*halo_x, grid->global_dim_y - 2 * grid->periods[0]*halo_y);
 #endif
     return;
 }
 
-void stamp_real(double * p_real, int matrix_width, int matrix_height, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x, int end_x,
-           int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords, int * periods,
+void stamp_real(Lattice *grid, double *matrix, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x, int end_x,
+           int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords,
            int iterations, const char * output_folder, const char * file_tag
 #ifdef HAVE_MPI
            , MPI_Comm cartcomm
@@ -543,7 +451,7 @@ void stamp_real(double * p_real, int matrix_width, int matrix_height, int halo_x
     MPI_Type_commit(&num_as_string);
 
     // create a type describing our piece of the array
-    int globalsizes[2] = {matrix_height - 2 * periods[0] * halo_y, matrix_width - 2 * periods[1] * halo_x};
+    int globalsizes[2] = {grid->global_dim_y - 2 * grid->periods[0] * halo_y, grid->global_dim_x - 2 * grid->periods[1] * halo_x};
     int localsizes [2] = {inner_end_y - inner_start_y, inner_end_x - inner_start_x};
     int starts[2]      = {inner_start_y, inner_start_x};
     int order          = MPI_ORDER_C;
@@ -559,15 +467,15 @@ void stamp_real(double * p_real, int matrix_width, int matrix_height, int halo_x
     count = 0;
     for (int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
         for (int k = inner_start_x - start_x; k < inner_end_x - start_x - 1; k++) {
-            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", p_real[j * tile_width + k]);
+            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", matrix[j * tile_width + k]);
             count++;
         }
         if(coords[1] == dims[1] - 1) {
-            sprintf(&data_as_txt[count * charspernum], "%+.5e\n ", p_real[j * tile_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * charspernum], "%+.5e\n ", matrix[j * tile_width + (inner_end_x - start_x) - 1]);
             count++;
         }
         else {
-            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", p_real[j * tile_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", matrix[j * tile_width + (inner_end_x - start_x) - 1]);
             count++;
         }
     }
@@ -585,8 +493,8 @@ void stamp_real(double * p_real, int matrix_width, int matrix_height, int halo_x
     delete [] data_as_txt;
 #else
     sprintf(output_filename, "%s/%i-%s", output_folder, iterations, file_tag);
-    print_matrix(output_filename, &(p_real[matrix_width * (inner_start_y - start_y) + inner_start_x - start_x]), matrix_width,
-                 matrix_width - 2 * periods[1]*halo_x, matrix_height - 2 * periods[0]*halo_y);
+    print_matrix(output_filename, &(matrix[grid->global_dim_x * (inner_start_y - start_y) + inner_start_x - start_x]), grid->global_dim_x,
+                 grid->global_dim_x - 2 * grid->periods[1]*halo_x, grid->global_dim_y - 2 * grid->periods[0]*halo_y);
 #endif
     return;
 }
@@ -732,7 +640,7 @@ double Energy_tot(double * p_real, double * p_imag,
 	int tile_width = end_x - start_x;
 	
 	if(norm2 == 0)
-		norm2 = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+		norm2 = get_norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 		
 	std::complex<double> sum = 0;
 	std::complex<double> cost_E = -1. / (2. * particle_mass);
@@ -790,7 +698,7 @@ double Energy_kin(double * p_real, double * p_imag, double particle_mass, double
 	int tile_width = end_x - start_x;
 	
 	if(norm2 == 0)
-		norm2 = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+		norm2 = get_norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 		
 	std::complex<double> sum = 0;
 	std::complex<double> cost_E = -1. / (2. * particle_mass);
@@ -821,7 +729,7 @@ double Energy_rot(double * p_real, double * p_imag,
 	int tile_width = end_x - start_x;
 	
 	if(norm2 == 0)
-		norm2 = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+		norm2 = get_norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 		
 	std::complex<double> sum = 0;
 	std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
@@ -855,7 +763,7 @@ void mean_position(double * p_real, double * p_imag, double delta_x, double delt
 	int tile_width = end_x - start_x;
 	
 	if(norm2 == 0)
-		norm2 = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+		norm2 = get_norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 		
 	std::complex<double> sum_x_mean = 0, sum_xx_mean = 0, sum_y_mean = 0, sum_yy_mean = 0;
 	std::complex<double> psi_center;
@@ -885,7 +793,7 @@ void mean_momentum(double * p_real, double * p_imag, double delta_x, double delt
 	int tile_width = end_x - start_x;
 	
 	if(norm2 == 0)
-		norm2 = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+		norm2 = get_norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 		
 	std::complex<double> sum_px_mean = 0, sum_pxpx_mean = 0, sum_py_mean = 0, sum_pypy_mean = 0, var_px = std::complex<double>(0., - 0.5 / delta_x), var_py = std::complex<double>(0., - 0.5 / delta_y);
 	std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
@@ -915,22 +823,6 @@ void mean_momentum(double * p_real, double * p_imag, double delta_x, double delt
 	results[3] = real(sum_pypy_mean / norm2) * delta_x * delta_y - results[2] * results[2];
 }
 
-double Norm2(double * p_real, double * p_imag, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
-	double norm2 = 0;
-	int tile_width = end_x - start_x;
-	for(int i = inner_start_y - start_y; i < inner_end_y - start_y; i++) {
-		for(int j = inner_start_x - start_x; j < inner_end_x - start_x; j++) {
-			norm2 += p_real[j + i * tile_width] * p_real[j + i * tile_width] + p_imag[j + i * tile_width] * p_imag[j + i * tile_width];
-		}
-	}
-	
-	return norm2 * delta_x * delta_y;
-}
-
-double Norm2(double **p_real, double **p_imag, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
-	return Norm2(p_real[0], p_imag[0], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y) + Norm2(p_real[1], p_imag[1], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
-}
-
 double Energy_tot(double ** p_real, double ** p_imag,
 				       double particle_mass_a, double particle_mass_b, double *coupling_const, 
 				       double (*hamilt_pot_a)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
@@ -947,7 +839,8 @@ double Energy_tot(double ** p_real, double ** p_imag,
 	}
 	double sum = 0;
 	if(norm2 == 0)
-		norm2 = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+		norm2 = get_norm2(p_real[0], p_imag[0], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y) + 
+            get_norm2(p_real[1], p_imag[1], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 	
 	sum += Energy_tot(p_real[0], p_imag[0], particle_mass_a, coupling_const[0], hamilt_pot_a, external_pot[0], omega, coord_rot_x, coord_rot_y, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y, matrix_width, matrix_height, halo_x, halo_y, periods);
 	sum += Energy_tot(p_real[1], p_imag[1], particle_mass_b, coupling_const[1], hamilt_pot_b, external_pot[1], omega, coord_rot_x, coord_rot_y, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y, matrix_width, matrix_height, halo_x, halo_y, periods);
@@ -965,7 +858,8 @@ double Energy_rabi_coupling(double **p_real, double **p_imag, double omega_r, do
 	int tile_width = end_x - start_x;
 	
 	if(norm2 == 0)
-		norm2 = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+		norm2 = get_norm2(p_real[0], p_imag[0], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y) + 
+            get_norm2(p_real[1], p_imag[1], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 		
 	std::complex<double> sum = 0;
 	std::complex<double> psi_center_a, psi_center_b;
@@ -990,7 +884,8 @@ double Energy_ab(double **p_real, double **p_imag, double coupling_const_ab, dou
 	int tile_width = end_x - start_x;
 	
 	if(norm2 == 0)
-		norm2 = Norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+		norm2 = get_norm2(p_real[0], p_imag[0], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y) + 
+            get_norm2(p_real[1], p_imag[1], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
 		
 	std::complex<double> sum = 0;
 	std::complex<double> psi_center_a, psi_center_b;
@@ -1006,25 +901,230 @@ double Energy_ab(double **p_real, double **p_imag, double coupling_const_ab, dou
 	return real(sum / norm2) * delta_x * delta_y;
 }
 
-void get_wave_function_phase(double * phase, double * p_real, double * p_imag, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
-	int width = end_x - start_x;
-	double norm;
-	for(int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
-		for(int i = inner_start_x - start_x; i < inner_end_x - start_x; i++) {
-			norm = sqrt(p_real[j * width + i] * p_real[j * width + i] + p_imag[j * width + i] * p_imag[j * width + i]);
-			if(norm == 0)
-				phase[j * width + i] = 0;
-			else
-				phase[j * width + i] = acos(p_real[j * width + i] / norm) * ((p_imag[j * width + i] > 0) - (p_imag[j * width + i] < 0));
+double get_norm2(double * p_real, double * p_imag, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
+	double norm2 = 0;
+	int tile_width = end_x - start_x;
+	for(int i = inner_start_y - start_y; i < inner_end_y - start_y; i++) {
+		for(int j = inner_start_x - start_x; j < inner_end_x - start_x; j++) {
+			norm2 += p_real[j + i * tile_width] * p_real[j + i * tile_width] + p_imag[j + i * tile_width] * p_imag[j + i * tile_width];
 		}
 	}
+	
+	return norm2 * delta_x * delta_y;
 }
 
-void get_wave_function_density(double * density, double * p_real, double * p_imag, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
-	int width = end_x - start_x;
-	for(int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
-		for(int i = inner_start_x - start_x; i < inner_end_x - start_x; i++) {
-			density[j * width + i] = p_real[j * width + i] * p_real[j * width + i] + p_imag[j * width + i] * p_imag[j * width + i];
-		}
-	}
+Lattice::Lattice(double _length_x, double _length_y, int _dim_x, int _dim_y, 
+                 int _global_dim_x, int _global_dim_y, int _periods[2]): 
+          length_x(_length_x), length_y(_length_y), 
+          dim_x(_dim_x), dim_y(_dim_y) {
+    if (_global_dim_x == 0) {
+        global_dim_x = dim_x;
+    } else {
+        global_dim_x = _global_dim_x;
+    }
+    if (_global_dim_y == 0) {
+        global_dim_y = dim_y;
+    } else {
+        global_dim_y = _global_dim_y;
+    }
+    delta_x = length_x / (double)dim_x;
+    delta_y = length_y / (double)dim_y;
+    if (_periods == 0) {
+          periods[0] = 0;
+          periods[1] = 0;
+    } else {
+          periods[0] = _periods[0];
+          periods[1] = _periods[1];
+    }
 }
+
+State::State(Lattice *_grid, double *_p_real, double *_p_imag): grid(_grid){
+        if (_p_real == 0) {
+            self_init = true;
+            p_real = new double[grid->dim_x * grid->dim_y];
+        } else {
+            self_init = false;
+            p_real = _p_real;
+        }
+        if (_p_imag == 0) {
+            p_imag = new double[grid->dim_x * grid->dim_y];
+        } else {
+            p_imag = _p_imag;
+        }
+    }
+    
+State::~State() {
+        if (self_init) {
+            delete p_real;
+            delete p_imag;
+        }
+    }
+
+void State::init_state(std::complex<double> (*ini_state)(int x, int y, Lattice *grid, int halo_x, int halo_y),
+                      int start_x, int start_y, int halo_x, int halo_y) {
+    std::complex<double> tmp;
+    for (int y = 0, idy = start_y; y < grid->dim_y; y++, idy++) {
+        for (int x = 0, idx = start_x; x < grid->dim_x; x++, idx++) {
+            tmp = ini_state(idx, idy, grid, halo_x, halo_y);
+            p_real[y * grid->dim_x + x] = real(tmp);
+            p_imag[y * grid->dim_x + x] = imag(tmp);
+        }
+    }
+}
+
+
+void State::read_state(char *file_name, int start_x, int start_y,
+                       int *coords, int *dims, int halo_x, int halo_y, int read_offset) {
+    std::ifstream input(file_name);
+
+    int in_width = grid->global_dim_x - 2 * grid->periods[1] * halo_x;
+    int in_height = grid->global_dim_y - 2 * grid->periods[0] * halo_y;
+    std::complex<double> tmp;
+    for(int i = 0; i < read_offset; i++)
+        input >> tmp;
+    for(int i = 0; i < in_height; i++) {
+        for(int j = 0; j < in_width; j++) {
+            input >> tmp;
+            if((i - start_y) >= 0 && (i - start_y) < grid->dim_y && (j - start_x) >= 0 && (j - start_x) < grid->dim_x) {
+                p_real[(i - start_y) * grid->dim_x + j - start_x] = real(tmp);
+                p_imag[(i - start_y) * grid->dim_x + j - start_x] = imag(tmp);
+            }
+
+            //Down band
+            if(i < halo_y && coords[0] == dims[0] - 1 && grid->periods[0] != 0) {
+                if((j - start_x) >= 0 && (j - start_x) < grid->dim_x) {
+                    p_real[(i + grid->dim_y - halo_y) * grid->dim_x + j - start_x] = real(tmp);
+                    p_imag[(i + grid->dim_y - halo_y) * grid->dim_x + j - start_x] = imag(tmp);
+                }
+                //Down right corner
+                if(j < halo_x && grid->periods[1] != 0 && coords[1] == dims[1] - 1) {
+                    p_real[(i + grid->dim_y - halo_y) * grid->dim_x + j + grid->dim_x - halo_x] = real(tmp);
+                    p_imag[(i + grid->dim_y - halo_y) * grid->dim_x + j + grid->dim_x - halo_x] = imag(tmp);
+                }
+                //Down left corner
+                if(j >= in_width - halo_x && grid->periods[1] != 0 && coords[1] == 0) {
+                    p_real[(i + grid->dim_y - halo_y) * grid->dim_x + j - (in_width - halo_x)] = real(tmp);
+                    p_imag[(i + grid->dim_y - halo_y) * grid->dim_x + j - (in_width - halo_x)] = imag(tmp);
+                }
+            }
+
+            //Upper band
+            if(i >= in_height - halo_y && grid->periods[0] != 0 && coords[0] == 0) {
+                if((j - start_x) >= 0 && (j - start_x) < grid->dim_x) {
+                    p_real[(i - (in_height - halo_y)) * grid->dim_x + j - start_x] = real(tmp);
+                    p_imag[(i - (in_height - halo_y)) * grid->dim_x + j - start_x] = imag(tmp);
+                }
+                //Up right corner
+                if(j < halo_x && grid->periods[1] != 0 && coords[1] == dims[1] - 1) {
+                    p_real[(i - (in_height - halo_y)) * grid->dim_x + j + grid->dim_x - halo_x] = real(tmp);
+                    p_imag[(i - (in_height - halo_y)) * grid->dim_x + j + grid->dim_x - halo_x] = imag(tmp);
+                }
+                //Up left corner
+                if(j >= in_width - halo_x && grid->periods[1] != 0 && coords[1] == 0) {
+                    p_real[(i - (in_height - halo_y)) * grid->dim_x + j - (in_width - halo_x)] = real(tmp);
+                    p_imag[(i - (in_height - halo_y)) * grid->dim_x + j - (in_width - halo_x)] = imag(tmp);
+                }
+            }
+
+            //Right band
+            if(j < halo_x && grid->periods[1] != 0 && coords[1] == dims[1] - 1) {
+                if((i - start_y) >= 0 && (i - start_y) < grid->dim_y) {
+                    p_real[(i - start_y) * grid->dim_x + j + grid->dim_x - halo_x] = real(tmp);
+                    p_imag[(i - start_y) * grid->dim_x + j + grid->dim_x - halo_x] = imag(tmp);
+                }
+            }
+
+            //Left band
+            if(j >= in_width - halo_x && grid->periods[1] != 0 && coords[1] == 0) {
+                if((i - start_y) >= 0 && (i - start_y) < grid->dim_y) {
+                    p_real[(i - start_y) * grid->dim_x + j - (in_width - halo_x)] = real(tmp);
+                    p_imag[(i - start_y) * grid->dim_x + j - (in_width - halo_x)] = imag(tmp);
+                }
+            }
+        }
+    }
+    input.close();
+}
+
+double State::calculate_squared_norm(State *psi_b) {
+        if (psi_b == 0) {
+            return get_norm2(p_real, p_imag, grid->delta_x, grid->delta_y, 
+                         0, 0, grid->dim_x, grid->dim_x, 
+                         0, 0, grid->dim_y, grid->dim_y);
+        } else {
+        return get_norm2(p_real, p_imag, grid->delta_x, grid->delta_y, 
+                         0, 0, grid->dim_x, grid->dim_x, 
+                         0, 0, grid->dim_y, grid->dim_y) +
+               get_norm2(psi_b->p_real, psi_b->p_imag, grid->delta_x, grid->delta_y, 
+                         0, 0, grid->dim_x, grid->dim_x, 
+                         0, 0, grid->dim_y, grid->dim_y);
+
+        }
+    }
+
+double *State::get_particle_density(double *_density, int inner_start_x, int start_x, 
+                                 int inner_end_x, int end_x, 
+                                 int inner_start_y, int start_y, 
+                                 int inner_end_y, int end_y) {
+        if (inner_end_x == 0) {
+            inner_end_x = grid->dim_x;
+        }
+        if (end_x == 0) {
+            end_x = grid->dim_x;
+        }
+        if (inner_end_y == 0) {
+            inner_end_y = grid->dim_y;
+        }
+        if (end_y == 0) {
+            end_y = grid->dim_y;
+        }
+        int width = end_x - start_x;
+        double *density;
+        if (_density == 0) { 
+          density = new double[width * (end_y - start_y)];
+        } else {
+          density = _density;
+        }
+        for(int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
+            for(int i = inner_start_x - start_x; i < inner_end_x - start_x; i++) {
+                density[j * width + i] = p_real[j * width + i] * p_real[j * width + i] + p_imag[j * width + i] * p_imag[j * width + i];
+          }
+        }
+        return density;
+    }
+
+double *State::get_phase(double *_phase, int inner_start_x, int start_x, 
+                      int inner_end_x, int end_x, 
+                      int inner_start_y, int start_y, 
+                      int inner_end_y, int end_y) {
+        if (inner_end_x == 0) {
+            inner_end_x = grid->dim_x;
+        }
+        if (end_x == 0) {
+            end_x = grid->dim_x;
+        }
+        if (inner_end_y == 0) {
+            inner_end_y = grid->dim_y;
+        }
+        if (end_y == 0) {
+            end_y = grid->dim_y;
+        }
+        int width = end_x - start_x;
+        double *phase;
+        if (_phase == 0) { 
+          phase = new double[width * (end_y - start_y)];
+        } else {
+          phase = _phase;
+        }
+        double norm;
+        for(int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
+            for(int i = inner_start_x - start_x; i < inner_end_x - start_x; i++) {
+                norm = sqrt(p_real[j * width + i] * p_real[j * width + i] + p_imag[j * width + i] * p_imag[j * width + i]);
+                if(norm == 0)
+                    phase[j * width + i] = 0;
+                else
+                    phase[j * width + i] = acos(p_real[j * width + i] / norm) * ((p_imag[j * width + i] > 0) - (p_imag[j * width + i] < 0));
+            }
+        }
+        return phase;
+    }

@@ -38,7 +38,7 @@
 #endif
 
 #define DIM 640
-#define ITERATIONS 100
+#define ITERATIONS 10
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 10
 
@@ -49,8 +49,8 @@ double delta_t = 0.08;
 int rot_coord_x = 320, rot_coord_y = 320;
 double omega = 0;
 
-std::complex<double> gauss_state(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
-    double s = 64.0; // FIXME: y esto?
+std::complex<double> gauss_state(int x, int y, Lattice *grid, int halo_x, int halo_y) {
+    double s = 64.0;
     return std::complex<double>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
            * exp(std::complex<double>(0.0, 0.4 * (x + y - 480.0)));
 }
@@ -98,7 +98,6 @@ int main(int argc, char** argv) {
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
     int tile_width = end_x - start_x;
     int tile_height = end_y - start_y;
-
     //set and calculate evolution operator variables from hamiltonian
     const double particle_mass = 1.;
     double *external_pot_real = new double[tile_width * tile_height];
@@ -113,12 +112,11 @@ int main(int argc, char** argv) {
                              start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, false);
 
     //set initial state
-    double *p_real = new double[tile_width * tile_height];
-    double *p_imag = new double[tile_width * tile_height];
-    std::complex<double> (*ini_state)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-    ini_state = gauss_state;
-    initialize_state(p_real, p_imag, filename, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,
-                     periods, coords, dims, halo_x, halo_y);
+    Lattice *grid = new Lattice(tile_width * delta_x, tile_height * delta_y, 
+                                tile_width, tile_height, 
+                                matrix_width, matrix_height, periods);
+    State *state = new State(grid);
+    state->init_state(gauss_state, start_x, start_y, halo_x, halo_y);
 
     if(rank == 0) {
         std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
@@ -144,20 +142,18 @@ int main(int argc, char** argv) {
     }
     else
         dirnames = ".";
-
-
-    stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
-          start_y, inner_start_y, inner_end_y, dims, coords, periods,
+    stamp(grid, state, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
+          start_y, inner_start_y, inner_end_y, dims, coords, 
           0, iterations, 0, dirnames.c_str()
 #ifdef HAVE_MPI
           , cartcomm
 #endif
          );
     for(int count_snap = 0; count_snap < snapshots; count_snap++) {
-        trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, delta_t, iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm, imag_time, periods);
+        trotter(grid, state, h_a, h_b, coupling_const, external_pot_real, external_pot_imag, delta_t, iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm, imag_time);
 
-        stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
-              start_y, inner_start_y, inner_end_y, dims, coords, periods,
+        stamp(grid, state, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
+              start_y, inner_start_y, inner_end_y, dims, coords, 
               0, iterations, count_snap, dirnames.c_str()
 #ifdef HAVE_MPI
               , cartcomm

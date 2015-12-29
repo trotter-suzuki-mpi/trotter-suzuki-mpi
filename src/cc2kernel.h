@@ -2,7 +2,7 @@
  * Distributed Trotter-Suzuki solver
  * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
  * 2010-2012 Carlos Bederián
- *
+- *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -78,8 +78,8 @@ void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, s
  
 class CC2Kernel: public ITrotterKernel {
 public:
-    CC2Kernel(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b, double _delta_x, double _delta_y,
-              int matrix_width, int matrix_height, int halo_x, int halo_y, int *_periods, double _norm, bool _imag_time
+    CC2Kernel(Lattice *grid, State *state, double *_external_pot_real, double *_external_pot_imag, double a, double b, int halo_x, int halo_y, 
+              double _norm, bool _imag_time
 #ifdef HAVE_MPI
               , MPI_Comm cartcomm
 #endif

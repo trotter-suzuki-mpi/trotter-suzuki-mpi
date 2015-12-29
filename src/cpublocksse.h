@@ -78,7 +78,7 @@ void process_band_sse(double *var,   size_t tile_width, size_t block_width, size
 
 class CPUBlockSSEKernel: public ITrotterKernel {
 public:
-    CPUBlockSSEKernel(double *p_real, double *p_imag, double *external_potential_real, double *external_potential_imag, double a, double b, double _delta_x, double _delta_y, int matrix_width, int matrix_height, int halo_x, int halo_y, int *_periods, double _norm, bool _imag_time
+    CPUBlockSSEKernel(Lattice *grid, State *state, double *external_potential_real, double *external_potential_imag, double a, double b, int halo_x, int halo_y,  double _norm, bool _imag_time
 #ifdef HAVE_MPI
                       , MPI_Comm cartcomm
 #endif
