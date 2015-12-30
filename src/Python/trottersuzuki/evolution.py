@@ -26,7 +26,7 @@ class Lattice(object):
 
 class State(object):
 
-    def __init__(self, grid, p_real=None, p_imag=None, function=None):
+    def __init__(self, grid, p_real=None, p_imag=None):
 
         if not isinstance(grid, Lattice):
             raise TypeError("First parameter is not a instance of Lattice "
@@ -41,8 +41,6 @@ class State(object):
             self.p_imag = np.zeros((self.grid.dim_y, self.grid.dim_x))
         else:
             self.p_imag = p_imag
-        if function is not None:
-            self.init_state(function)
 
     def init_state(self, function):
         for i in range(0, self.grid.dim_y):
@@ -68,8 +66,8 @@ class State(object):
                               psi_b.p_real, psi_b.p_imag,
                               self.grid.delta_x, self.grid.delta_y)
 
-    def get_particles_density(self):
-        """Function that return the particle denity of the wave function"""
+    def get_particle_density(self):
+        """Returns the particle density of the wave function"""
         density_matrix = np.zeros(self.p_real.shape)
         density(density_matrix, self.p_real, self.p_imag)
         return density_matrix
@@ -82,15 +80,18 @@ class State(object):
 
 class Hamiltonian(object):
 
-    def __init__(self, grid, coupling_a=0., coupling_ab=0.,
-                 mass=1., angular_velocity=0., rot_coord_x=None,
-                 rot_coord_y=None, external_pot=None):
+    def __init__(self, grid, mass=1., coupling_a=0., coupling_ab=0.,
+                 angular_velocity=0., rot_coord_x=None,
+                 rot_coord_y=None, omega=0., external_pot=None):
         if not isinstance(grid, Lattice):
             raise TypeError("First parameter is not a instance of Lattice "
                             "class.")
         self.grid = grid
         self.mass = mass
         self.external_pot = external_pot
+        if self.external_pot is None:
+            self.external_pot = np.zeros((self.grid.dim_y, self.grid.dim_x))
+
         self.coupling_a = coupling_a
         self.coupling_ab = coupling_ab
         self.angular_velocity = angular_velocity
@@ -104,11 +105,9 @@ class Hamiltonian(object):
             self.rot_coord_x = grid.dim_x * 0.5
         else:
             self.rot_coord_x = rot_coord_x
+        self.omega = omega
 
     def init_external_pot(self, function):
-
-        if self.external_pot is None:
-            self.external_pot = np.zeros((self.grid.dim_y, self.grid.dim_x))
 
         for i in range(0, self.grid.dim_y):
             for j in range(0, self.grid.dim_x):
@@ -128,10 +127,11 @@ class Hamiltonian(object):
 
 class Hamiltonian2Component(Hamiltonian):
 
-    def __init__(self, grid, coupling_a=0., coupling_ab=0., coupling_b=0.,
-                 mass_a=1., mass_b=1., angular_velocity=0., rot_coord_x=None,
-                 rot_coord_y=None, external_pot_a=None, external_pot_b=None,
-                 omega=0.):
+    def __init__(self, grid, mass_a=1., mass_b=1.,
+                 coupling_a=0., coupling_ab=0., coupling_b=0.,
+                 angular_velocity=0., rot_coord_x=None,
+                 rot_coord_y=None, omega=0.,
+                 external_pot_a=None, external_pot_b=None):
         super(Hamiltonian2Component, self).__init__(grid, coupling_a,
                                                     coupling_ab, mass_a,
                                                     angular_velocity,

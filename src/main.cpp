@@ -266,6 +266,7 @@ int main(int argc, char** argv) {
     }
     initialize_exp_potential(external_pot_real, external_pot_imag, pot_name, hamiltonian_pot, tile_width, tile_height, matrix_width, matrix_height,
                  start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, imag_time);
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
 
     //set initial state
     State *state = new State(grid);
@@ -289,7 +290,7 @@ int main(int argc, char** argv) {
         struct timeval start, end;
         gettimeofday(&start, NULL);
 #endif
-        trotter(grid, state, h_a, h_b, coupling_const, external_pot_real, external_pot_imag, delta_t, iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm, imag_time);
+        trotter(grid, state, hamiltonian, h_a, h_b, external_pot_real, external_pot_imag, delta_t, iterations, kernel_type, norm, imag_time);
 #ifdef WIN32
         SYSTEMTIME end;
         GetSystemTime(&end);

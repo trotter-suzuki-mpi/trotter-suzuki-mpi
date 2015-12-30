@@ -161,18 +161,10 @@ void initialize_exp_potential(double * external_pot_real, double * external_pot_
                     tmp = exp(std::complex<double> (CONST_1 * hamilt_pot(idx, idy, matrix_width, matrix_height, periods, halo_x, halo_y) , CONST_2));
                 else
                     tmp = exp(std::complex<double> (0., CONST_1 * hamilt_pot(idx, idy, matrix_width, matrix_height, periods, halo_x, halo_y) + CONST_2));
+
                 external_pot_real[y * tile_width + x] = real(tmp);
                 external_pot_imag[y * tile_width + x] = imag(tmp);
             }
-        }
-    }
-}
-
-void initialize_potential(double * hamilt_pot, double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
-                          int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
-    for(int y = 0; y < matrix_height; y++) {
-        for(int x = 0; x < matrix_width; x++) {
-            hamilt_pot[y * matrix_width + x] = hamiltonian_pot(x, y, matrix_width, matrix_height, periods, halo_x, halo_y);
         }
     }
 }
@@ -1127,4 +1119,79 @@ double *State::get_phase(double *_phase, int inner_start_x, int start_x,
             }
         }
         return phase;
+    }
+
+
+Hamiltonian::Hamiltonian(Lattice *_grid, double _mass, double _coupling_a, 
+                         double _coupling_ab, double _angular_velocity, 
+                         double _rot_coord_x, double _rot_coord_y, 
+                         double _omega,
+                         double *_external_pot): grid(_grid), mass(_mass),
+                         coupling_a(_coupling_a), coupling_ab(_coupling_ab),
+                         angular_velocity(_angular_velocity), omega(_omega) {
+        if (_rot_coord_x == DBL_MAX) {
+            rot_coord_x = grid->dim_x * 0.5;
+        } else {
+            rot_coord_y = _rot_coord_y;
+        }
+        if (_rot_coord_y == DBL_MAX) {
+            rot_coord_y = grid->dim_y * 0.5;
+        } else {
+            rot_coord_y = _rot_coord_y;
+        }
+        if (_external_pot == 0) {
+            external_pot = new double[grid->dim_y * grid->dim_x];
+            self_init = true;
+        } else {
+            external_pot = _external_pot;
+            self_init = false;
+        }
+    }
+
+Hamiltonian::~Hamiltonian() {
+        if (self_init) {
+            delete [] external_pot;
+        }
+    }
+
+void Hamiltonian::initialize_potential(double (*hamiltonian_pot)(int x, int y, Lattice *grid, int halo_x, int halo_y),
+                              int halo_x, int halo_y) {
+        for(int y = 0; y < grid->dim_y; y++) {
+            for(int x = 0; x < grid->dim_x; x++) {
+                external_pot[y * grid->dim_y + x] = hamiltonian_pot(x, y, grid, halo_x, halo_y);
+            }
+        }
+    }
+
+Hamiltonian2Component::Hamiltonian2Component(Lattice *_grid, double _mass, 
+                         double _mass_b, double _coupling_a, 
+                         double _coupling_ab, double _coupling_b,
+                         double _angular_velocity, 
+                         double _rot_coord_x, double _rot_coord_y, double _omega,
+                         double *_external_pot, double *_external_pot_b):
+                         Hamiltonian(_grid, _mass, _coupling_a, _coupling_ab, _angular_velocity, _rot_coord_x, rot_coord_y, _omega, _external_pot),
+                         coupling_b(_coupling_b) {
+        if (_external_pot_b == 0) {
+            external_pot_b = new double[grid->dim_y * grid->dim_x];
+            self_init = true;
+        } else {
+            external_pot_b = _external_pot_b;
+            self_init = false;
+        }
+    }
+
+Hamiltonian2Component::~Hamiltonian2Component() {
+        if (self_init) {
+            delete [] external_pot;          
+            delete [] external_pot_b;
+        }
+    }
+
+void Hamiltonian2Component::initialize_potential_b(double (*hamiltonian_pot)(int x, int y, Lattice *grid, int halo_x, int halo_y),
+                                                   int halo_x, int halo_y) {
+        for(int y = 0; y < grid->dim_y; y++) {
+            for(int x = 0; x < grid->dim_x; x++) {
+                external_pot_b[y * grid->dim_y + x] = hamiltonian_pot(x, y, grid, halo_x, halo_y);
+            }
+        }
     }

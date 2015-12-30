@@ -156,7 +156,7 @@ int main(int argc, char** argv) {
                                 matrix_width, matrix_height, periods);
     State *state = new State(grid);
     state->init_state(gauss_ini_state, start_x, start_y, halo_x, halo_y);
-
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
     //set file output directory
     std::stringstream dirname, file_info;
     std::string dirnames, file_infos, file_tags;
@@ -255,7 +255,7 @@ int main(int argc, char** argv) {
     for(int count_snap = 0; count_snap < snapshots; count_snap++) {
         
         gettimeofday(&start, NULL);
-        trotter(grid, state, h_a, h_b, coupling_const, external_pot_real, external_pot_imag, delta_t, iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm2, imag_time);
+        trotter(grid, state, hamiltonian, h_a, h_b, external_pot_real, external_pot_imag, delta_t, iterations, kernel_type, norm2, imag_time);
 		gettimeofday(&end, NULL);
         time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
         tot_time += time;

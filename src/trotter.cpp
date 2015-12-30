@@ -42,11 +42,11 @@
 #include "hybrid.h"
 #endif
 
-void trotter(Lattice *grid, State *state, double h_a, double h_b, 
-             double coupling_const,
-             double * external_pot_real, double * external_pot_imag,
+void trotter(Lattice *grid, State *state, Hamiltonian *hamiltonian,
+             double h_a, double h_b, 
+             double *external_pot_real, double *external_pot_imag,
              double delta_t,
-             const int iterations, double omega, int rot_coord_x, int rot_coord_y,
+             const int iterations,
              string kernel_type, double norm, bool imag_time) {
 
     int start_x, end_x, inner_start_x, inner_end_x,
@@ -71,8 +71,8 @@ void trotter(Lattice *grid, State *state, double h_a, double h_b,
 #endif
 
     int halo_x = (kernel_type == "sse" ? 3 : 4);
-    halo_x = (omega == 0. ? halo_x : 8);
-    int halo_y = (omega == 0. ? 4 : 8);
+    halo_x = (hamiltonian->omega == 0. ? halo_x : 8);
+    int halo_y = (hamiltonian->omega == 0. ? 4 : 8);
     calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, grid->global_dim_x - 2 * grid->periods[1]*halo_x, halo_x, grid->periods[1]);
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, grid->global_dim_y - 2 * grid->periods[0]*halo_y, halo_y, grid->periods[0]);
     int width = end_x - start_x;
@@ -81,7 +81,7 @@ void trotter(Lattice *grid, State *state, double h_a, double h_b,
     // Initialize kernel
     ITrotterKernel * kernel;
     if (kernel_type == "cpu") {
-        kernel = new CPUBlock(grid, state, external_pot_real, external_pot_imag, h_a, h_b, coupling_const * delta_t, halo_x, halo_y, norm, imag_time, omega * delta_t * grid->delta_x / (2 * grid->delta_y), omega * delta_t * grid->delta_y / (2 * grid->delta_x), rot_coord_x, rot_coord_y
+        kernel = new CPUBlock(grid, state, hamiltonian, external_pot_real, external_pot_imag, h_a, h_b, delta_t, halo_x, halo_y, norm, imag_time 
 #ifdef HAVE_MPI
                , cartcomm
 #endif
@@ -155,10 +155,11 @@ void trotter(Lattice *grid, State *state, double h_a, double h_b,
 
 
 void trotter(Lattice *grid, State *state1, State *state2, 
-double *h_a, double *h_b, double *coupling_const,
-             double ** external_pot_real, double ** external_pot_imag,
+             Hamiltonian2Component *hamiltonian,
+             double *h_a, double *h_b, 
+             double **external_pot_real, double **external_pot_imag,
              double delta_t,
-             const int iterations, double omega, int rot_coord_x, int rot_coord_y,
+             const int iterations,
              string kernel_type, double *norm, bool imag_time) {
 
     int start_x, end_x, inner_start_x, inner_end_x,
@@ -183,20 +184,17 @@ double *h_a, double *h_b, double *coupling_const,
 #endif
 
     int halo_x = (kernel_type == "sse" ? 3 : 4);
-    halo_x = (omega == 0. ? halo_x : 8);
-    int halo_y = (omega == 0. ? 4 : 8);
+    halo_x = (hamiltonian->omega == 0. ? halo_x : 8);
+    int halo_y = (hamiltonian->omega == 0. ? 4 : 8);
     calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, grid->global_dim_x - 2 * grid->periods[1]*halo_x, halo_x, grid->periods[1]);
     calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, grid->global_dim_y - 2 * grid->periods[0]*halo_y, halo_y, grid->periods[0]);
     int width = end_x - start_x;
     int height = end_y - start_y;
     
-    for(int i = 0; i < 3; i++)
-		coupling_const[i] *= delta_t;
-
     // Initialize kernel
     ITrotterKernel * kernel;
     if (kernel_type == "cpu") {
-        kernel = new CPUBlock(grid, state1, state2, external_pot_real, external_pot_imag, h_a, h_b, coupling_const, halo_x, halo_y, norm, imag_time, omega * delta_t * grid->delta_x / (2 * grid->delta_y), omega * delta_t * grid->delta_y / (2 * grid->delta_x), rot_coord_x, rot_coord_y
+        kernel = new CPUBlock(grid, state1, state2, hamiltonian, external_pot_real, external_pot_imag, h_a, h_b, delta_t, halo_x, halo_y, norm, imag_time 
  #ifdef HAVE_MPI
                                , cartcomm
  #endif

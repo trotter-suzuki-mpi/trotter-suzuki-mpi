@@ -18,6 +18,7 @@
  *
  */
 #include <string>
+#include <cfloat>
 using namespace std;
 #ifndef __TROTTER_H
 #define __TROTTER_H
@@ -64,6 +65,53 @@ private:
     bool self_init;
 };
 
+
+class Hamiltonian {
+public:
+    Lattice *grid;
+    double mass;
+    double coupling_a;
+    double coupling_ab;
+    double angular_velocity;
+    double rot_coord_x;
+    double rot_coord_y;
+    double omega;
+    double *external_pot;
+    bool self_init;
+    
+    Hamiltonian(Lattice *_grid, double _mass=1., double _coupling_a=0., 
+                double coupling_ab=0., double _angular_velocity=0., 
+                double _rot_coord_x=DBL_MAX, double _rot_coord_y=DBL_MAX, 
+                double _omega=0.,
+                double *_external_pot=0);
+    ~Hamiltonian();
+    void initialize_potential(double (*hamiltonian_pot)(int x, int y, Lattice *grid, int halo_x, int halo_y),
+                              int halo_x, int halo_y);
+    
+};
+
+class Hamiltonian2Component: public Hamiltonian {
+public:
+    double mass_b;
+    double coupling_b;
+    double *external_pot_b;
+
+    Hamiltonian2Component(Lattice *_grid, double _mass=1., double _mass_b=1., 
+                          double _coupling_a=0., double coupling_ab=0., 
+                          double _coupling_b=0.,
+                          double _angular_velocity=0., 
+                          double _rot_coord_x=DBL_MAX, 
+                          double _rot_coord_y=DBL_MAX, 
+                          double _omega=0,
+                          double *_external_pot=0, 
+                          double *_external_pot_b=0);
+    ~Hamiltonian2Component();
+    void initialize_potential_b(double (*hamiltonian_pot)(int x, int y, Lattice *grid, int halo_x, int halo_y),
+                                int halo_x, int halo_y);
+    
+};
+
+
 /**
     API call to calculate the evolution through the Trotter-Suzuki decomposition.
 
@@ -87,22 +135,22 @@ private:
 
 */
 
-void trotter(Lattice *grid, State *state, double h_a, double h_b, 
-             double coupling_const,
+void trotter(Lattice *grid, State *state, Hamiltonian *hamiltonian,
+             double h_a, double h_b, 
              double * external_pot_real, double * external_pot_imag,
              double delta_t,
-             const int iterations, double omega = 0., int rot_coord_x = 0, int rot_coord_y = 0,
+             const int iterations,
              string kernel_type = "cpu", double norm = 1., bool imag_time = false);             
 
 void trotter(Lattice *grid, State *state1, State *state2, 
-             double *h_a, double *h_b, double *coupling_const,
-             double ** external_pot_real, double ** external_pot_imag,
+             Hamiltonian2Component *hamiltonian,
+             double *h_a, double *h_b, 
+             double **external_pot_real, double **external_pot_imag,
              double delta_t,
-             const int iterations, double omega, int rot_coord_x, int rot_coord_y,
+             const int iterations, 
              string kernel_type, double *norm, bool imag_time);
 
-void solver(Lattice *grid, State *state,
-			double particle_mass, double coupling_const, double * external_pot, double omega, int rot_coord_x, int rot_coord_y,
+void solver(Lattice *grid, State *state, Hamiltonian *hamiltonian,
             double delta_t, const int iterations, string kernel_type, bool imag_time);
 
 void solver(double * p_real, double * p_imag, double * pb_real, double * pb_imag,

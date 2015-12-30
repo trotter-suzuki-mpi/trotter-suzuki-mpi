@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
                                 matrix_width, matrix_height, periods);
     State *state = new State(grid);
     state->init_state(gauss_state, start_x, start_y, halo_x, halo_y);
-
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
     if(rank == 0) {
         std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
         std::cout << "* It calculates the time-evolution of a particle in a box, where the initial\n";
@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
 #endif
          );
     for(int count_snap = 0; count_snap < snapshots; count_snap++) {
-        trotter(grid, state, h_a, h_b, coupling_const, external_pot_real, external_pot_imag, delta_t, iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm, imag_time);
+        trotter(grid, state, hamiltonian, h_a, h_b, external_pot_real, external_pot_imag, delta_t, iterations, kernel_type, norm, imag_time);
 
         stamp(grid, state, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
               start_y, inner_start_y, inner_end_y, dims, coords, 

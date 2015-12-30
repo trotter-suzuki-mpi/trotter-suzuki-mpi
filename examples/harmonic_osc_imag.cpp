@@ -36,8 +36,8 @@
 #define EDGE_LENGTH 14.14			//Physical length of the grid's edge
 #define DIM 256					//Number of dots of the grid's edge
 #define DELTA_T 1.e-4			//Time step evolution
-#define ITERATIONS 1000			//Number of iterations before calculating expected values
-#define KERNEL_TYPE "gpu"
+#define ITERATIONS 10		//Number of iterations before calculating expected values
+#define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 20			//Number of times the expected values are calculated
 #define SNAP_PER_STAMP 5		//The particles density and phase of the wave function are stamped every "SNAP_PER_STAMP" expected values calculations
 #define COUPLING_CONST_2D 0		// 0 for linear Schrodinger equation
@@ -146,6 +146,7 @@ int main(int argc, char** argv) {
                                 matrix_width, matrix_height, periods);
     State *state = new State(grid);
     state->init_state(sinus_state, start_x, start_y, halo_x, halo_y);
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
 
     //set file output directory
     std::stringstream dirname, file_info;
@@ -245,7 +246,7 @@ int main(int argc, char** argv) {
     for(int count_snap = 0; count_snap < snapshots; count_snap++) {
         
         gettimeofday(&start, NULL);
-        trotter(grid, state, h_a, h_b, coupling_const, external_pot_real, external_pot_imag, delta_t, iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm2, imag_time);
+        trotter(grid, state, hamiltonian, h_a, h_b, external_pot_real, external_pot_imag, delta_t, iterations, kernel_type, norm2, imag_time);
         gettimeofday(&end, NULL);
         time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
         tot_time += time;

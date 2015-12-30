@@ -57,14 +57,22 @@ void process_band(bool two_wavefunctions, int offset_tile_x, int offset_tile_y, 
 
 class CPUBlock: public ITrotterKernel {
 public:
-    CPUBlock(Lattice *grid, State *state, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, double _coupling_const, int _halo_x, int _halo_y, double _norm, bool _imag_time, double _alpha_x, double _alpha_y, int _rot_coord_x, int _rot_coord_y
+    CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian, 
+             double *_external_pot_real, double *_external_pot_imag, 
+             double _a, double _b, double delta_t, 
+             int _halo_x, int _halo_y, double _norm, bool _imag_time
 #ifdef HAVE_MPI
              , MPI_Comm cartcomm
 #endif
             );
            
     
-    CPUBlock(Lattice *grid, State *state1, State *state2, double **_external_pot_real, double **_external_pot_imag, double *_a, double *_b, double *_coupling_const, int _halo_x, int _halo_y, double *_norm, bool _imag_time, double _alpha_x, double _alpha_y, int _rot_coord_x, int _rot_coord_y
+    CPUBlock(Lattice *grid, State *state1, State *state2, 
+             Hamiltonian2Component *hamiltonian, 
+             double **_external_pot_real, double **_external_pot_imag, 
+             double *_a, double *_b, double delta_t,
+             int _halo_x, int _halo_y, 
+             double *_norm, bool _imag_time
 #ifdef HAVE_MPI
              , MPI_Comm cartcomm
 #endif

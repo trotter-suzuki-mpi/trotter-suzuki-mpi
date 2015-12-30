@@ -157,6 +157,7 @@ int main(int argc, char** argv) {
     p_imag[0] = state1->p_imag;
     p_real[1] = state2->p_real;
     p_imag[1] = state2->p_imag;
+    Hamiltonian2Component *hamiltonian = new Hamiltonian2Component(grid, particle_mass_a, particle_mass_b, coupling_const[0], coupling_const[2], coupling_const[1], rot_coord_x, rot_coord_y, omega);
 
     //set file output directory
     std::stringstream dirname, file_info;
@@ -225,8 +226,8 @@ int main(int argc, char** argv) {
 		
     for(int count_snap = 0; count_snap < snapshots; count_snap++) {
         
-        trotter(grid, state1, state2, h_a, h_b, coupling_const, external_pot_real, external_pot_imag, delta_t, 
-                iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm2, imag_time);
+        trotter(grid, state1, state2, hamiltonian, h_a, h_b, external_pot_real, external_pot_imag, delta_t, 
+                iterations, kernel_type, norm2, imag_time);
         
         //norm calculation
         sum = get_norm2(p_real[0], p_imag[0], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y) +

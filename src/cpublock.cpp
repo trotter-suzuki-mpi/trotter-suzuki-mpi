@@ -421,7 +421,7 @@ void process_band(bool two_wavefunctions, int offset_tile_x, int offset_tile_y, 
 }
 
 // Class methods
-CPUBlock::CPUBlock(Lattice *grid, State *state, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, double _coupling_const, int _halo_x, int _halo_y, double _norm, bool _imag_time, double _alpha_x, double _alpha_y, int _rot_coord_x, int _rot_coord_y
+CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, double delta_t, int _halo_x, int _halo_y, double _norm, bool _imag_time 
 #ifdef HAVE_MPI
                    , MPI_Comm _cartcomm
 #endif
@@ -429,14 +429,15 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, double *_external_pot_real, doub
     sense(0),
     halo_x(_halo_x),
     halo_y(_halo_y),
-    imag_time(_imag_time),
-    alpha_x(_alpha_x),
-    alpha_y(_alpha_y),
-    rot_coord_x(_rot_coord_x),
-    rot_coord_y(_rot_coord_y) {
+    imag_time(_imag_time) {
     delta_x = grid->delta_x;
     delta_y = grid->delta_y;
     periods = grid->periods;
+    rot_coord_x = hamiltonian->rot_coord_x;
+    rot_coord_y = hamiltonian->rot_coord_y;
+    alpha_x = hamiltonian->omega*delta_t*grid->delta_x / (2*grid->delta_y); 
+    alpha_y = hamiltonian->omega*delta_t*grid->delta_y / (2*grid->delta_x);
+    
 	  a = new double [1];
 	  b = new double [1];
 	  coupling_const = new double [3];
@@ -444,7 +445,7 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, double *_external_pot_real, doub
 	
   	a[0] = _a;
     b[0] = _b;
-    coupling_const[0] = _coupling_const;
+    coupling_const[0] = hamiltonian->coupling_a * delta_t;
     coupling_const[1] = 0.;
     coupling_const[2] = 0.;
     norm[0] = _norm;
@@ -498,7 +499,12 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, double *_external_pot_real, doub
 #endif
 }
 
-CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2, double **_external_pot_real, double **_external_pot_imag, double *_a, double *_b, double *_coupling_const, int _halo_x, int _halo_y, double *_norm, bool _imag_time, double _alpha_x, double _alpha_y, int _rot_coord_x, int _rot_coord_y
+CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2, 
+                   Hamiltonian2Component *hamiltonian,
+                   double **_external_pot_real, double **_external_pot_imag, 
+                   double *_a, double *_b, double delta_t,
+                   int _halo_x, int _halo_y, 
+                   double *_norm, bool _imag_time
 #ifdef HAVE_MPI
                    , MPI_Comm _cartcomm
 #endif
@@ -507,20 +513,22 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2, double **_extern
     state_index(0),
     halo_x(_halo_x),
     halo_y(_halo_y),
-    imag_time(_imag_time),
-    alpha_x(_alpha_x),
-    alpha_y(_alpha_y),
-    rot_coord_x(_rot_coord_x),
-    rot_coord_y(_rot_coord_y) {
+    imag_time(_imag_time) {
     delta_x = grid->delta_x;
     delta_y = grid->delta_y;
+    alpha_x = hamiltonian->omega * delta_t * grid->delta_x / (2 * grid->delta_y), 
+    alpha_y = hamiltonian->omega * delta_t * grid->delta_y / (2 * grid->delta_x),
+    rot_coord_x = hamiltonian->rot_coord_x;
+    rot_coord_y = hamiltonian->rot_coord_y;
     
     a = _a;
     b = _b;
     norm = _norm;
     tot_norm = norm[0] + norm[1];
 
-    coupling_const = _coupling_const;
+    coupling_const[0] = delta_t*hamiltonian->coupling_a;
+    coupling_const[1] = delta_t*hamiltonian->coupling_b;
+    coupling_const[2] = delta_t*hamiltonian->coupling_ab;
     periods = grid->periods;
     int rank, coords[2], dims[2] = {0, 0};
 #ifdef HAVE_MPI
