@@ -48,66 +48,15 @@ void trotter(Lattice *grid, State *state, Hamiltonian *hamiltonian,
              double delta_t,
              const int iterations,
              string kernel_type, double norm, bool imag_time) {
-
-    int start_x, end_x, inner_start_x, inner_end_x,
-        start_y, end_y, inner_start_y, inner_end_y;
-
-    int coords[2], dims[2] = {0, 0};
-    int rank;
-    int nProcs;
-
-#ifdef HAVE_MPI
-    MPI_Comm cartcomm;
-    MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
-    MPI_Dims_create(nProcs, 2, dims);  //partition all the processes (the size of MPI_COMM_WORLD's group) into an 2-dimensional topology
-    MPI_Cart_create(MPI_COMM_WORLD, 2, dims, grid->periods, 0, &cartcomm);
-    MPI_Comm_rank(cartcomm, &rank);
-    MPI_Cart_coords(cartcomm, rank, 2, coords); //Determines process coords in cartesian topology given rank in group
-#else
-    nProcs = 1;
-    rank = 0;
-    dims[0] = dims[1] = 1;
-    coords[0] = coords[1] = 0;
-#endif
-
-    int halo_x = (kernel_type == "sse" ? 3 : 4);
-    halo_x = (hamiltonian->omega == 0. ? halo_x : 8);
-    int halo_y = (hamiltonian->omega == 0. ? 4 : 8);
-    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, grid->global_dim_x - 2 * grid->periods[1]*halo_x, halo_x, grid->periods[1]);
-    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, grid->global_dim_y - 2 * grid->periods[0]*halo_y, halo_y, grid->periods[0]);
-    int width = end_x - start_x;
-    int height = end_y - start_y;
-
     // Initialize kernel
     ITrotterKernel * kernel;
     if (kernel_type == "cpu") {
-        kernel = new CPUBlock(grid, state, hamiltonian, external_pot_real, external_pot_imag, h_a, h_b, delta_t, halo_x, halo_y, norm, imag_time 
-#ifdef HAVE_MPI
-               , cartcomm
-#endif
-               );
-    } else if (kernel_type == "sse") {
-#ifdef SSE
-        kernel = new CPUBlockSSEKernel(grid, state, external_pot_real, external_pot_imag, h_a, h_b, halo_x, halo_y, norm, imag_time
-#ifdef HAVE_MPI
-                                       , cartcomm
-#endif
-                                      );
-#else
-		if (coords[0] == 0 && coords[1] == 0) {
-            std::cerr << "SSE kernel was not compiled.\n";
-        }
-        abort();
-#endif
+        kernel = new CPUBlock(grid, state, hamiltonian, external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm, imag_time);
     } else if (kernel_type == "gpu") {
 #ifdef CUDA
-        kernel = new CC2Kernel(grid, state, external_pot_real, external_pot_imag, h_a, h_b, halo_x, halo_y, norm, imag_time
-#ifdef HAVE_MPI
-                               , cartcomm
-#endif
-                              );
+        kernel = new CC2Kernel(grid, state, hamiltonian, external_pot_real, external_pot_imag, h_a, h_b, norm, imag_time);
 #else
-        if (coords[0] == 0 && coords[1] == 0) {
+        if (grid->mpi_coords[0] == 0 && grid->mpi_coords[1] == 0) {
             std::cerr << "Compiled without CUDA\n";
         }
 #ifdef HAVE_MPI
@@ -118,13 +67,9 @@ void trotter(Lattice *grid, State *state, Hamiltonian *hamiltonian,
 #endif
     } else if (kernel_type == "hybrid") {
 #ifdef CUDA
-        kernel = new HybridKernel(grid, state, external_pot_real, external_pot_imag, h_a, h_b, coupling_const, halo_x, halo_y, norm, imag_time
-#ifdef HAVE_MPI
-                                  , cartcomm
-#endif
-                                 );
+        kernel = new HybridKernel(grid, state, external_pot_real, external_pot_imag, h_a, h_b, coupling_const, norm, imag_time);
 #else
-        if (coords[0] == 0 && coords[1] == 0) {
+        if (grid->mpi_coords[0] == 0 && grid->mpi_coords[1] == 0) {
             std::cerr << "Compiled without CUDA\n";
         }
 #ifdef HAVE_MPI
@@ -148,7 +93,7 @@ void trotter(Lattice *grid, State *state, Hamiltonian *hamiltonian,
         kernel->wait_for_completion();
     }
 
-    kernel->get_sample(width, 0, 0, width, height, state->p_real, state->p_imag);
+    kernel->get_sample(grid->dim_x, 0, 0, grid->dim_x, grid->dim_y, state->p_real, state->p_imag);
 
     delete kernel;
 }
@@ -161,50 +106,15 @@ void trotter(Lattice *grid, State *state1, State *state2,
              double delta_t,
              const int iterations,
              string kernel_type, double *norm, bool imag_time) {
-
-    int start_x, end_x, inner_start_x, inner_end_x,
-        start_y, end_y, inner_start_y, inner_end_y;
-
-    int coords[2], dims[2] = {0, 0};
-    int rank;
-    int nProcs;
-
-#ifdef HAVE_MPI
-    MPI_Comm cartcomm;
-    MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
-    MPI_Dims_create(nProcs, 2, dims);  //partition all the processes (the size of MPI_COMM_WORLD's group) into an 2-dimensional topology
-    MPI_Cart_create(MPI_COMM_WORLD, 2, dims, grid->periods, 0, &cartcomm);
-    MPI_Comm_rank(cartcomm, &rank);
-    MPI_Cart_coords(cartcomm, rank, 2, coords); //Determines process coords in cartesian topology given rank in group
-#else
-    nProcs = 1;
-    rank = 0;
-    dims[0] = dims[1] = 1;
-    coords[0] = coords[1] = 0;
-#endif
-
-    int halo_x = (kernel_type == "sse" ? 3 : 4);
-    halo_x = (hamiltonian->omega == 0. ? halo_x : 8);
-    int halo_y = (hamiltonian->omega == 0. ? 4 : 8);
-    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, grid->global_dim_x - 2 * grid->periods[1]*halo_x, halo_x, grid->periods[1]);
-    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, grid->global_dim_y - 2 * grid->periods[0]*halo_y, halo_y, grid->periods[0]);
-    int width = end_x - start_x;
-    int height = end_y - start_y;
-    
     // Initialize kernel
     ITrotterKernel * kernel;
     if (kernel_type == "cpu") {
-        kernel = new CPUBlock(grid, state1, state2, hamiltonian, external_pot_real, external_pot_imag, h_a, h_b, delta_t, halo_x, halo_y, norm, imag_time 
- #ifdef HAVE_MPI
-                               , cartcomm
- #endif
-                              );
+        kernel = new CPUBlock(grid, state1, state2, hamiltonian, external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm, imag_time);
     } 
-    
     double var = 0.5;
 	kernel->rabi_coupling(var, delta_t);
 	var = 1.;
-	
+        
     // Main loop
     for (int i = 0; i < iterations; i++) {
 		//first wave function
@@ -236,7 +146,7 @@ void trotter(Lattice *grid, State *state1, State *state2,
         kernel->normalization();
     }
 
-    kernel->get_sample(width, 0, 0, width, height, state1->p_real, state1->p_imag, state2->p_real, state2->p_imag);
+    kernel->get_sample(grid->dim_x, 0, 0, grid->dim_x, grid->dim_y, state1->p_real, state1->p_imag, state2->p_real, state2->p_imag);
 
     delete kernel;
 }

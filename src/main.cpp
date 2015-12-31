@@ -204,48 +204,14 @@ int main(int argc, char** argv) {
 #endif
     process_command_line(argc, argv, &dim, &delta_x, &delta_y, &iterations, &snapshots, &kernel_type, filename, &delta_t, &coupling_const, &particle_mass, pot_name, &imag_time);
 	
-    int halo_x = (kernel_type == "sse" ? 3 : 4);
-    halo_x = (omega == 0. ? halo_x : 8);
-    int halo_y = (omega == 0. ? 4 : 8);
-    int matrix_width = dim + periods[1] * 2 * halo_x;
-    int matrix_height = dim + periods[0] * 2 * halo_y;
-
-    //define the topology
-    int coords[2], dims[2] = {0, 0};
-    int rank;
-    int nProcs;
-
-#ifdef HAVE_MPI
-    MPI_Comm cartcomm;
-    MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
-    MPI_Dims_create(nProcs, 2, dims);  //partition all the processes (the size of MPI_COMM_WORLD's group) into an 2-dimensional topology
-    MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, 0, &cartcomm);
-    MPI_Comm_rank(cartcomm, &rank);
-    MPI_Cart_coords(cartcomm, rank, 2, coords);
-#else
-    nProcs = 1;
-    rank = 0;
-    dims[0] = dims[1] = 1;
-    coords[0] = coords[1] = 0;
-#endif
-
-    //set dimension of tiles and offsets
-    int start_x, end_x, inner_start_x, inner_end_x,
-        start_y, end_y, inner_start_y, inner_end_y;
-    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
-    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
-    int tile_width = end_x - start_x;
-    int tile_height = end_y - start_y;
-    Lattice *grid = new Lattice(tile_width * delta_x, tile_height * delta_y, 
-                                tile_width, tile_height, 
-                                matrix_width, matrix_height, periods);
+    Lattice *grid = new Lattice(dim, delta_x, delta_y, periods, omega);
     
     int read_offset = 0;
 
     //set and calculate evolution operator variables from hamiltonian
     double time_single_it;
-    double *external_pot_real = new double[tile_width * tile_height];
-    double *external_pot_imag = new double[tile_width * tile_height];
+    double *external_pot_real = new double[grid->dim_x * grid->dim_y];
+    double *external_pot_imag = new double[grid->dim_x * grid->dim_y];
     double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
     hamiltonian_pot = const_potential;
 
@@ -264,23 +230,16 @@ int main(int argc, char** argv) {
         h_b = sin(time_single_it / (2. * particle_mass));
       }
     }
-    initialize_exp_potential(external_pot_real, external_pot_imag, pot_name, hamiltonian_pot, tile_width, tile_height, matrix_width, matrix_height,
-                 start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, imag_time);
+    initialize_exp_potential(external_pot_real, external_pot_imag, pot_name, hamiltonian_pot, grid->dim_x, grid->dim_y, grid->global_dim_x, grid->global_dim_y,
+                 grid->start_x, grid->start_y, periods, grid->mpi_coords, grid->mpi_dims, grid->halo_x, grid->halo_y, time_single_it, particle_mass, imag_time);
     Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
 
     //set initial state
     State *state = new State(grid);
-    state->read_state(filename, start_x, start_y,
-                      coords, dims, halo_x, halo_y, read_offset);
+    state->read_state(filename, read_offset);
 
     for(int count_snap = 0; count_snap <= snapshots; count_snap++) {
-      stamp(grid, state, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
-            start_y, inner_start_y, inner_end_y, dims, coords,
-            0, iterations, count_snap, output_folder
-#ifdef HAVE_MPI
-          , cartcomm
-#endif
-        );
+      stamp(grid, state, 0, iterations, count_snap, output_folder);
 
       if(count_snap != snapshots) {
 #ifdef WIN32
@@ -303,8 +262,8 @@ int main(int argc, char** argv) {
       }
     }
 
-    if (coords[0] == 0 && coords[1] == 0 && verbose == true) {
-        std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " kernel:" << kernel_type << " np:" << nProcs << " " << tot_time << std::endl;
+    if (grid->mpi_coords[0] == 0 && grid->mpi_coords[1] == 0 && verbose == true) {
+        std::cout << "TROTTER " << dim << "x" << dim << " kernel:" << kernel_type << " np:" << grid->mpi_procs << " " << tot_time << std::endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize();

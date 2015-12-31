@@ -37,11 +37,11 @@ MEX_BIN        = @MEX_BIN@
 srcdir	 = @srcdir@
 VPATH	  = @srcdir@
 
-LIBOBJS=common.o cpublock.o trotter.o solver.o
+LIBOBJS=common.o cpublock.o trotter.o
 
 MEX_FLAGS=-I./
 MEX_LIBS=-lgomp
-MEX_OBJS=common.o cpublock.o trotter.o solver.o
+MEX_OBJS=common.o cpublock.o trotter.o
 
 platform=$(shell uname -s)
 
@@ -56,7 +56,7 @@ ifdef CUDA_LIBS
 	MEX_OBJS+=cc2kernel.cu.o hybrid.cu.o
 endif
 
-OBJS=$(LIBOBJS) main.o solver.o
+OBJS=$(LIBOBJS) main.o
 
 all: trotter lib
 

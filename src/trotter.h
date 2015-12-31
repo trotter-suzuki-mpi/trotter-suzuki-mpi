@@ -19,22 +19,32 @@
  */
 #include <string>
 #include <cfloat>
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 using namespace std;
 #ifndef __TROTTER_H
 #define __TROTTER_H
 
 class Lattice {
 public:
-    Lattice(double _length_x=20., double _length_y=20., 
-            int _dim_x=100, int _dim_y=100, 
-            int _global_dim_x=0, int _global_dim_y=0, 
-            int _periods[2]=0);
-    double length_x, length_y;
+    Lattice(int _dim=100, double _delta_x=1., double _delta_y=1., 
+            int _periods[2]=0, double omega=0.);
+    double delta_x, delta_y;
     int dim_x, dim_y;
     int global_dim_x, global_dim_y;
-    double delta_x, delta_y;
     int periods[2];
-  
+    
+    // Computational topology
+    int halo_x, halo_y;
+    int start_x, end_x, inner_start_x, inner_end_x,
+        start_y, end_y, inner_start_y, inner_end_y;
+    int mpi_coords[2], mpi_dims[2];
+    int mpi_rank;
+    int mpi_procs;
+#ifdef HAVE_MPI
+    MPI_Comm cartcomm;
+#endif  
 };
 
 class State{
@@ -44,21 +54,12 @@ public:
 
     State(Lattice *_grid, double *_p_real=0, double *_p_imag=0);
     ~State();
-    void init_state(std::complex<double> (*ini_state)(int x, int y, Lattice *grid, int halo_x, int halo_y),
-                    int start_x, int start_y, int halo_x, int halo_y);
-    void read_state(char *file_name, int start_x, int start_y,
-                    int *coords, int *dims, int halo_x, int halo_y, int read_offset);
+    void init_state(std::complex<double> (*ini_state)(int x, int y, Lattice *grid));
+    void read_state(char *file_name, int read_offset);
 
-    double calculate_squared_norm(State *psi_b=0);
-    double *get_particle_density(double *density=0, 
-                                 int inner_start_x=0, int start_x=0, 
-                                 int inner_end_x=0, int end_x=0, 
-                                 int inner_start_y=0, int start_y=0, 
-                                 int inner_end_y=0, int end_y=0);
-    double *get_phase(double *phase=0, int inner_start_x=0, int start_x=0, 
-                      int inner_end_x=0, int end_x=0, 
-                      int inner_start_y=0, int start_y=0, 
-                      int inner_end_y=0, int end_y=0);
+    double calculate_squared_norm(bool global=true);
+    double *get_particle_density(double *density=0);
+    double *get_phase(double *phase=0);
 
 private:
     Lattice *grid;
@@ -85,8 +86,7 @@ public:
                 double _omega=0.,
                 double *_external_pot=0);
     ~Hamiltonian();
-    void initialize_potential(double (*hamiltonian_pot)(int x, int y, Lattice *grid, int halo_x, int halo_y),
-                              int halo_x, int halo_y);
+    void initialize_potential(double (*hamiltonian_pot)(int x, int y, Lattice *grid));
     
 };
 
@@ -95,19 +95,21 @@ public:
     double mass_b;
     double coupling_b;
     double *external_pot_b;
-
+    double omega_r;
+    double omega_i;
+    
     Hamiltonian2Component(Lattice *_grid, double _mass=1., double _mass_b=1., 
                           double _coupling_a=0., double coupling_ab=0., 
                           double _coupling_b=0.,
                           double _angular_velocity=0., 
                           double _rot_coord_x=DBL_MAX, 
                           double _rot_coord_y=DBL_MAX, 
-                          double _omega=0,
+                          double _omega=0, double _omega_r=0,
+                          double _omega_i=0,
                           double *_external_pot=0, 
                           double *_external_pot_b=0);
     ~Hamiltonian2Component();
-    void initialize_potential_b(double (*hamiltonian_pot)(int x, int y, Lattice *grid, int halo_x, int halo_y),
-                                int halo_x, int halo_y);
+    void initialize_potential_b(double (*hamiltonian_pot)(int x, int y, Lattice *grid));
     
 };
 
@@ -152,10 +154,6 @@ void trotter(Lattice *grid, State *state1, State *state2,
 
 void solver(Lattice *grid, State *state, Hamiltonian *hamiltonian,
             double delta_t, const int iterations, string kernel_type, bool imag_time);
-
-void solver(double * p_real, double * p_imag, double * pb_real, double * pb_imag,
-			double particle_mass_a, double particle_mass_b, double *coupling_const, double * external_pot, double * external_pot_b, double omega, int rot_coord_x, int rot_coord_y,
-            const int matrix_width, const int matrix_height, double delta_x, double delta_y, double delta_t, const int iterations, string kernel_type, int *periods, bool imag_time);
             
 /**
  * \brief Structure defining expected values calculated by expect_values().
@@ -170,24 +168,30 @@ struct energy_momentum_statistics {
     energy_momentum_statistics() : mean_E(0.), mean_Px(0.), mean_Py(0.),
         var_E(0.), var_Px(0.), var_Py(0.) {}
 };
-
-double Energy_rot(double * p_real, double * p_imag,
-				  double omega, double coord_rot_x, double coord_rot_y, double delta_x, double delta_y,
-				  double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
-double Energy_kin(double * p_real, double * p_imag, double particle_mass, double delta_x, double delta_y,
-                  double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y);
-double Energy_tot(double * p_real, double * p_imag,
-				  double particle_mass, double coupling_const, double (*hamilt_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y), double * external_pot, double omega, double coord_rot_x, double coord_rot_y,
-				  double delta_x, double delta_y, double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y,
-				  int matrix_width, int matrix_height, int halo_x, int halo_y, int * periods);
-double Energy_tot(double ** p_real, double ** p_imag,
-				       double particle_mass_a, double particle_mass_b, double *coupling_const, 
-				       double (*hamilt_pot_a)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
-				       double (*hamilt_pot_b)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y), 
-				       double ** external_pot, 
-				       double omega, double coord_rot_x, double coord_rot_y,
-				       double delta_x, double delta_y, double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y,
-				       int matrix_width, int matrix_height, int halo_x, int halo_y, int * periods);
+double calculate_rotational_energy(Lattice *grid, State *state, 
+                                   Hamiltonian *hamiltonian, double norm2, 
+                                   bool global=true);
+double calculate_kinetic_energy(Lattice *grid, State *state, 
+                                Hamiltonian *hamiltonian, double norm2, 
+                                bool global=true);
+double calculate_total_energy(Lattice *grid, State *state, 
+                              Hamiltonian *hamiltonian, 
+                              double (*hamilt_pot)(int x, int y, Lattice *grid)=0, 
+                              double * external_pot=0, double norm2=0, bool global=true);
+double calculate_total_energy(Lattice *grid, State *state1, State *state2, 
+                              Hamiltonian2Component *hamiltonian,
+                              double (*hamilt_pot_a)(int x, int y, Lattice *grid)=0,
+                              double (*hamilt_pot_b)(int x, int y, Lattice *grid)=0, 
+                              double **external_pot=0, double norm2=0, bool global=true);
+void calculate_mean_position(Lattice *grid, State *state, int grid_origin_x, int grid_origin_y, 
+                             double *results, double norm2=0);
+void calculate_mean_momentum(Lattice *grid, State *state, double *results,
+                             double norm2=0);
 void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, double particle_mass,
                    const char *dirname, int *periods, int halo_x, int halo_y, energy_momentum_statistics *sample);
+void initialize_exp_potential(Lattice *grid, double * external_pot_real, double * external_pot_imag, double (*hamilt_pot)(int x, int y, Lattice *grid),
+                              double time_single_it, double particle_mass, bool imag_time);
+double const_potential(int x, int y, Lattice *grid);
+void stamp(Lattice *grid, State *state, int tag_particle, int iterations, int count_snap, const char * output_folder);
+void stamp_real(Lattice *grid, double *matrix, int iterations, const char * output_folder, const char * file_tag);
 #endif

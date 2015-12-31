@@ -140,33 +140,28 @@ void read_potential(double * external_pot_real, double * external_pot_imag, int 
     input.close();
 }
 
-double const_potential(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y) {
+double const_potential(int x, int y, Lattice *grid) {
     return 0.;
 }
 
-void initialize_exp_potential(double * external_pot_real, double * external_pot_imag, char * pot_name, double (*hamilt_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
-                              int tile_width, int tile_height, int matrix_width, int matrix_height, int start_x, int start_y,
-                              int * periods, int * coords, int * dims, int halo_x, int halo_y, double time_single_it, double particle_mass, bool imag_time) {
-    if(pot_name[0] != '\0')
-        read_potential(external_pot_real, external_pot_imag, tile_width, tile_height, pot_name, matrix_width, matrix_height, start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, imag_time);
-    else if(hamilt_pot != NULL) {
-        double order_approx = 2.;
-        double CONST_1 = -1. * time_single_it * order_approx;
-        double CONST_2 = 2. * time_single_it / particle_mass * order_approx;		//CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
+void initialize_exp_potential(Lattice *grid, double * external_pot_real, double * external_pot_imag, double (*hamilt_pot)(int x, int y, Lattice *grid),
+                              double time_single_it, double particle_mass, bool imag_time) {
+      double order_approx = 2.;
+      double CONST_1 = -1. * time_single_it * order_approx;
+      double CONST_2 = 2. * time_single_it / particle_mass * order_approx;		//CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
 
-        std::complex<double> tmp;
-        for (int y = 0, idy = start_y; y < tile_height; y++, idy++) {
-            for (int x = 0, idx = start_x; x < tile_width; x++, idx++) {
-                if(imag_time)
-                    tmp = exp(std::complex<double> (CONST_1 * hamilt_pot(idx, idy, matrix_width, matrix_height, periods, halo_x, halo_y) , CONST_2));
-                else
-                    tmp = exp(std::complex<double> (0., CONST_1 * hamilt_pot(idx, idy, matrix_width, matrix_height, periods, halo_x, halo_y) + CONST_2));
+      std::complex<double> tmp;
+      for (int y = 0, idy = grid->start_y; y < grid->dim_y; y++, idy++) {
+          for (int x = 0, idx = grid->start_x; x < grid->dim_x; x++, idx++) {
+              if(imag_time)
+                  tmp = exp(std::complex<double> (CONST_1 * hamilt_pot(idx, idy, grid) , CONST_2));
+              else
+                  tmp = exp(std::complex<double> (0., CONST_1 * hamilt_pot(idx, idy, grid) + CONST_2));
 
-                external_pot_real[y * tile_width + x] = real(tmp);
-                external_pot_imag[y * tile_width + x] = imag(tmp);
-            }
-        }
-    }
+              external_pot_real[y * grid->dim_x + x] = real(tmp);
+              external_pot_imag[y * grid->dim_x + x] = imag(tmp);
+          }
+      }
 }
 
 void print_complex_matrix(char * filename, double * matrix_real, double * matrix_imag, size_t stride, size_t width, size_t height) {
@@ -302,13 +297,8 @@ void get_quadrant_sample_to_buffer(const double * r00, const double * r01, const
     assert (dest_y == y + height);
 }
 
-void stamp(Lattice *grid, State *state, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x, int end_x,
-           int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords, 
-           int tag_particle, int iterations, int count_snap, const char * output_folder
-#ifdef HAVE_MPI
-           , MPI_Comm cartcomm
-#endif
-          ) {
+void stamp(Lattice *grid, State *state, int tag_particle, int iterations, 
+           int count_snap, const char * output_folder) {
 
     char * output_filename;
     output_filename = new char[51];
@@ -332,9 +322,9 @@ void stamp(Lattice *grid, State *state, int halo_x, int halo_y, int start_x, int
     MPI_Type_commit(&num_as_string);
 
     // create a type describing our piece of the array
-    int globalsizes[2] = {grid->global_dim_y - 2 * grid->periods[0] * halo_y, grid->global_dim_x - 2 * grid->periods[1] * halo_x};
-    int localsizes [2] = {inner_end_y - inner_start_y, inner_end_x - inner_start_x};
-    int starts[2]      = {inner_start_y, inner_start_x};
+    int globalsizes[2] = {grid->global_dim_y - 2 * grid->periods[0] * grid->halo_y, grid->global_dim_x - 2 * grid->periods[1] * grid->halo_x};
+    int localsizes [2] = {grid->inner_end_y - grid->inner_start_y, grid->inner_end_x - grid->inner_start_x};
+    int starts[2]      = {grid->inner_start_y, grid->inner_start_x};
     int order          = MPI_ORDER_C;
 
     MPI_Datatype complex_localarray;
@@ -346,85 +336,78 @@ void stamp(Lattice *grid, State *state, int halo_x, int halo_y, int start_x, int
 
     // output complex matrix
     // conversion
-    int tile_width = end_x - start_x;
-    data_as_txt = new char[(inner_end_x - inner_start_x) * (inner_end_y - inner_start_y) * chars_per_complex_num];
+    data_as_txt = new char[(grid->inner_end_x - grid->inner_start_x) * (grid->inner_end_y - grid->inner_start_y) * chars_per_complex_num];
     count = 0;
-    for (int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
-        for (int k = inner_start_x - start_x; k < inner_end_x - start_x - 1; k++) {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)   ", state->p_real[j * tile_width + k], state->p_imag[j * tile_width + k]);
+    for (int j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; j++) {
+        for (int k = grid->inner_start_x - grid->start_x; k < grid->inner_end_x - grid->start_x - 1; k++) {
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)   ", state->p_real[j * grid->dim_x + k], state->p_imag[j * grid->dim_x + k]);
             count++;
         }
-        if(coords[1] == dims[1] - 1) {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)\n  ", state->p_real[j * tile_width + (inner_end_x - start_x) - 1], state->p_imag[j * tile_width + (inner_end_x - start_x) - 1]);
+        if(grid->mpi_coords[1] == grid->mpi_dims[1] - 1) {
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)\n  ", state->p_real[j * grid->dim_x + (grid->inner_end_x - grid->start_x) - 1], state->p_imag[j * grid->dim_x + (grid->inner_end_x - grid->start_x) - 1]);
             count++;
         }
         else {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)   ", state->p_real[j * tile_width + (inner_end_x - start_x) - 1], state->p_imag[j * tile_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)   ", state->p_real[j * grid->dim_x + (grid->inner_end_x - grid->start_x) - 1], state->p_imag[j * grid->dim_x + (grid->inner_end_x - grid->start_x) - 1]);
             count++;
         }
     }
 
     // open the file, and set the view
     sprintf(output_filename, "%s/%i-%i-iter-comp.dat", output_folder, tag_particle + 1, iterations * count_snap);
-    MPI_File_open(cartcomm, output_filename,
+    MPI_File_open(grid->cartcomm, output_filename,
                   MPI_MODE_CREATE | MPI_MODE_WRONLY,
                   MPI_INFO_NULL, &file);
 
     MPI_File_set_view(file, 0,  MPI_CHAR, complex_localarray, "native", MPI_INFO_NULL);
 
-    MPI_File_write_all(file, data_as_txt, (inner_end_x - inner_start_x) * (inner_end_y - inner_start_y), complex_num_as_string, &status);
+    MPI_File_write_all(file, data_as_txt, (grid->inner_end_x - grid->inner_start_x) * (grid->inner_end_y - grid->inner_start_y), complex_num_as_string, &status);
     MPI_File_close(&file);
     delete [] data_as_txt;
 
     // output real matrix
     //conversion
-    data_as_txt = new char[(inner_end_x - inner_start_x) * (inner_end_y - inner_start_y) * charspernum];
+    data_as_txt = new char[(grid->inner_end_x - grid->inner_start_x) * (grid->inner_end_y - grid->inner_start_y) * charspernum];
     count = 0;
-    for (int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
-        for (int k = inner_start_x - start_x; k < inner_end_x - start_x - 1; k++) {
-            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", state->p_real[j * tile_width + k]);
+    for (int j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; j++) {
+        for (int k = grid->inner_start_x - grid->start_x; k < grid->inner_end_x - grid->start_x - 1; k++) {
+            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", state->p_real[j * grid->dim_x + k]);
             count++;
         }
-        if(coords[1] == dims[1] - 1) {
-            sprintf(&data_as_txt[count * charspernum], "%+.5e\n ", state->p_real[j * tile_width + (inner_end_x - start_x) - 1]);
+        if(grid->mpi_coords[1] == grid->mpi_dims[1] - 1) {
+            sprintf(&data_as_txt[count * charspernum], "%+.5e\n ", state->p_real[j * grid->dim_x + (grid->inner_end_x - grid->start_x) - 1]);
             count++;
         }
         else {
-            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", state->p_real[j * tile_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", state->p_real[j * grid->dim_x + (grid->inner_end_x - grid->start_x) - 1]);
             count++;
         }
     }
 
     // open the file, and set the view
     sprintf(output_filename, "%s/%i-%i-iter-real.dat", output_folder, tag_particle + 1, iterations * count_snap);
-    MPI_File_open(cartcomm, output_filename,
+    MPI_File_open(grid->cartcomm, output_filename,
                   MPI_MODE_CREATE | MPI_MODE_WRONLY,
                   MPI_INFO_NULL, &file);
 
     MPI_File_set_view(file, 0,  MPI_CHAR, localarray, "native", MPI_INFO_NULL);
 
-    MPI_File_write_all(file, data_as_txt, (inner_end_x - inner_start_x) * ( inner_end_y - inner_start_y), num_as_string, &status);
+    MPI_File_write_all(file, data_as_txt, (grid->inner_end_x - grid->inner_start_x) * ( grid->inner_end_y - grid->inner_start_y), num_as_string, &status);
     MPI_File_close(&file);
     delete [] data_as_txt;
 #else
     sprintf(output_filename, "%s/%i-%i-iter-real.dat", output_folder, tag_particle + 1, iterations * count_snap);
     print_matrix(output_filename, &(state->p_real[grid->global_dim_x * (inner_start_y - start_y) + inner_start_x - start_x]), grid->global_dim_x,
-                 grid->global_dim_x - 2 * grid->periods[1]*halo_x, grid->global_dim_y - 2 * grid->periods[0]*halo_y);
+                 grid->global_dim_x - 2 * grid->periods[1]*grid->halo_x, grid->global_dim_y - 2 * grid->periods[0]*grid->halo_y);
 
     sprintf(output_filename, "%s/%i-%i-iter-comp.dat", output_folder, tag_particle + 1, iterations * count_snap);
     print_complex_matrix(output_filename, &(state->p_real[grid->global_dim_x * (inner_start_y - start_y) + inner_start_x - start_x]), &(state->p_imag[grid->global_dim_x * (inner_start_y - start_y) + inner_start_x - start_x]), grid->global_dim_x,
-                         grid->global_dim_x - 2 * grid->periods[1]*halo_x, grid->global_dim_y - 2 * grid->periods[0]*halo_y);
+                         grid->global_dim_x - 2 * grid->periods[1]*grid->halo_x, grid->global_dim_y - 2 * grid->periods[0]*grid->halo_y);
 #endif
     return;
 }
 
-void stamp_real(Lattice *grid, double *matrix, int halo_x, int halo_y, int start_x, int inner_start_x, int inner_end_x, int end_x,
-           int start_y, int inner_start_y, int inner_end_y, int * dims, int * coords,
-           int iterations, const char * output_folder, const char * file_tag
-#ifdef HAVE_MPI
-           , MPI_Comm cartcomm
-#endif
-          ) {
+void stamp_real(Lattice *grid, double *matrix, int iterations, const char * output_folder, const char * file_tag) {
 
     char * output_filename;
     output_filename = new char[51];
@@ -443,9 +426,9 @@ void stamp_real(Lattice *grid, double *matrix, int halo_x, int halo_y, int start
     MPI_Type_commit(&num_as_string);
 
     // create a type describing our piece of the array
-    int globalsizes[2] = {grid->global_dim_y - 2 * grid->periods[0] * halo_y, grid->global_dim_x - 2 * grid->periods[1] * halo_x};
-    int localsizes [2] = {inner_end_y - inner_start_y, inner_end_x - inner_start_x};
-    int starts[2]      = {inner_start_y, inner_start_x};
+    int globalsizes[2] = {grid->global_dim_y - 2 * grid->periods[0] * grid->halo_y, grid->global_dim_x - 2 * grid->periods[1] * grid->halo_x};
+    int localsizes [2] = {grid->inner_end_y - grid->inner_start_y, grid->inner_end_x - grid->inner_start_x};
+    int starts[2]      = {grid->inner_start_y, grid->inner_start_x};
     int order          = MPI_ORDER_C;
 
     MPI_Datatype localarray;
@@ -454,39 +437,38 @@ void stamp_real(Lattice *grid, double *matrix, int halo_x, int halo_y, int start
 
     // output real matrix
     //conversion
-    data_as_txt = new char[(inner_end_x - inner_start_x) * (inner_end_y - inner_start_y) * charspernum];
-    int tile_width = end_x - start_x;
+    data_as_txt = new char[(grid->inner_end_x - grid->inner_start_x) * (grid->inner_end_y - grid->inner_start_y) * charspernum];
     count = 0;
-    for (int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
-        for (int k = inner_start_x - start_x; k < inner_end_x - start_x - 1; k++) {
-            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", matrix[j * tile_width + k]);
+    for (int j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; j++) {
+        for (int k = grid->inner_start_x - grid->start_x; k < grid->inner_end_x - grid->start_x - 1; k++) {
+            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", matrix[j * grid->dim_x + k]);
             count++;
         }
-        if(coords[1] == dims[1] - 1) {
-            sprintf(&data_as_txt[count * charspernum], "%+.5e\n ", matrix[j * tile_width + (inner_end_x - start_x) - 1]);
+        if(grid->mpi_coords[1] == grid->mpi_dims[1] - 1) {
+            sprintf(&data_as_txt[count * charspernum], "%+.5e\n ", matrix[j * grid->dim_x + (grid->inner_end_x - grid->start_x) - 1]);
             count++;
         }
         else {
-            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", matrix[j * tile_width + (inner_end_x - start_x) - 1]);
+            sprintf(&data_as_txt[count * charspernum], "%+.5e  ", matrix[j * grid->dim_x + (grid->inner_end_x - grid->start_x) - 1]);
             count++;
         }
     }
 
     // open the file, and set the view
     sprintf(output_filename, "%s/%i-%s", output_folder, iterations, file_tag);
-    MPI_File_open(cartcomm, output_filename,
+    MPI_File_open(grid->cartcomm, output_filename,
                   MPI_MODE_CREATE | MPI_MODE_WRONLY,
                   MPI_INFO_NULL, &file);
 
     MPI_File_set_view(file, 0,  MPI_CHAR, localarray, "native", MPI_INFO_NULL);
 
-    MPI_File_write_all(file, data_as_txt, (inner_end_x - inner_start_x) * ( inner_end_y - inner_start_y), num_as_string, &status);
+    MPI_File_write_all(file, data_as_txt, (grid->inner_end_x - grid->inner_start_x) * (grid->inner_end_y - grid->inner_start_y), num_as_string, &status);
     MPI_File_close(&file);
     delete [] data_as_txt;
 #else
     sprintf(output_filename, "%s/%i-%s", output_folder, iterations, file_tag);
-    print_matrix(output_filename, &(matrix[grid->global_dim_x * (inner_start_y - start_y) + inner_start_x - start_x]), grid->global_dim_x,
-                 grid->global_dim_x - 2 * grid->periods[1]*halo_x, grid->global_dim_y - 2 * grid->periods[0]*halo_y);
+    print_matrix(output_filename, &(matrix[grid->global_dim_x * (grid->inner_start_y - grid->start_y) + grid->inner_start_x - grid->start_x]), grid->global_dim_x,
+                 grid->global_dim_x - 2 * grid->periods[1]*grid->halo_x, grid->global_dim_y - 2 * grid->periods[0]*grid->halo_y);
 #endif
     return;
 }
@@ -620,209 +602,328 @@ void expect_values(int dimx, int dimy, double delta_x, double delta_y, double de
     sample->var_Py = sqrt(sample->var_Py);
 }
 
-double Energy_tot(double * p_real, double * p_imag,
-				  double particle_mass, double coupling_const, double (*hamilt_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y), double * external_pot, double omega, double coord_rot_x, double coord_rot_y,
-				  double delta_x, double delta_y, double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y,
-				  int matrix_width, int matrix_height, int halo_x, int halo_y, int * periods) {
+double calculate_total_energy(Lattice *grid, State *state, 
+                              Hamiltonian *hamiltonian, 
+                              double (*hamilt_pot)(int x, int y, Lattice *grid), 
+                              double * external_pot, double norm2, bool global) {
 	
-	int ini_halo_x = inner_start_x - start_x;
-	int ini_halo_y = inner_start_y - start_y;
-	int end_halo_x = end_x - inner_end_x;
-	int end_halo_y = end_y - inner_end_y;
-	int tile_width = end_x - start_x;
-	
-	if(norm2 == 0)
-		norm2 = get_norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
-		
-	std::complex<double> sum = 0;
-	std::complex<double> cost_E = -1. / (2. * particle_mass);
-	std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
-	std::complex<double> rot_y, rot_x;
-	double cost_rot_x = 0.5 * omega * delta_y / delta_x;
-	double cost_rot_y = 0.5 * omega * delta_x / delta_y;
-	if(external_pot == NULL) {
-		for(int i = inner_start_y - start_y + (ini_halo_y == 0), y = inner_start_y + (ini_halo_y == 0); i < inner_end_y - start_y - (end_halo_y == 0); i++, y++) {
-			for(int j = inner_start_x - start_x + (ini_halo_x == 0), x = inner_start_x + (ini_halo_x == 0); j < inner_end_x - start_x - (end_halo_x == 0); j++, x++) {
-				psi_center = std::complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
-				psi_up = std::complex<double> (p_real[(i - 1) * tile_width + j], p_imag[(i - 1) * tile_width + j]);
-				psi_down = std::complex<double> (p_real[(i + 1) * tile_width + j], p_imag[(i + 1) * tile_width + j]);
-				psi_right = std::complex<double> (p_real[i * tile_width + j + 1], p_imag[i * tile_width + j + 1]);
-				psi_left = std::complex<double> (p_real[i * tile_width + j - 1], p_imag[i * tile_width + j - 1]);
-				
-				rot_x = std::complex<double>(0., cost_rot_x * (y - coord_rot_y));
-				rot_y = std::complex<double>(0., cost_rot_y * (x - coord_rot_x));
-				sum += conj(psi_center) * (cost_E * (std::complex<double> (1. / (delta_x * delta_x), 0.) * (psi_right + psi_left - psi_center * std::complex<double> (2., 0.)) + std::complex<double> (1. / (delta_y * delta_y), 0.) * (psi_down + psi_up - psi_center * std::complex<double> (2., 0.))) + 
-				                           psi_center * std::complex<double> (hamilt_pot(x, y, matrix_width, matrix_height, periods, halo_x, halo_y), 0.) + 
-				                           psi_center * psi_center * conj(psi_center) * std::complex<double> (0.5 * coupling_const, 0.) + 
-				                           rot_y * (psi_down - psi_up) - rot_x * (psi_right - psi_left));
-			}
-		}
-	}
-	else {
-		for(int i = inner_start_y - start_y + (ini_halo_y == 0), y = inner_start_y + (ini_halo_y == 0); i < inner_end_y - start_y - (end_halo_y == 0); i++, y++) {
-			for(int j = inner_start_x - start_x + (ini_halo_x == 0), x = inner_start_x + (ini_halo_x == 0); j < inner_end_x - start_x - (end_halo_x == 0); j++, x++) {
-				psi_center = std::complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
-				psi_up = std::complex<double> (p_real[(i - 1) * tile_width + j], p_imag[(i - 1) * tile_width + j]);
-				psi_down = std::complex<double> (p_real[(i + 1) * tile_width + j], p_imag[(i + 1) * tile_width + j]);
-				psi_right = std::complex<double> (p_real[i * tile_width + j + 1], p_imag[i * tile_width + j + 1]);
-				psi_left = std::complex<double> (p_real[i * tile_width + j - 1], p_imag[i * tile_width + j - 1]);
-				
-				rot_x = std::complex<double>(0., cost_rot_x * (y - coord_rot_y));
-				rot_y = std::complex<double>(0., cost_rot_y * (x - coord_rot_x));
-				sum += conj(psi_center) * (cost_E * (std::complex<double> (1. / (delta_x * delta_x), 0.) * (psi_right + psi_left - psi_center * std::complex<double> (2., 0.)) + std::complex<double> (1. / (delta_y * delta_y), 0.) * (psi_down + psi_up - psi_center * std::complex<double> (2., 0.))) + 
-				                           psi_center * std::complex<double> (external_pot[y * matrix_width + x], 0.) + 
-				                           psi_center * psi_center * conj(psi_center) * std::complex<double> (0.5 * coupling_const, 0.) + 
-				                           rot_y * (psi_down - psi_up) - rot_x * (psi_right - psi_left));
-			}
-		}
-	}
-	
-	return real(sum / norm2) * delta_x * delta_y;
+    int ini_halo_x = grid->inner_start_x - grid->start_x;
+    int ini_halo_y = grid->inner_start_y - grid->start_y;
+    int end_halo_x = grid->end_x - grid->inner_end_x;
+    int end_halo_y = grid->end_y - grid->inner_end_y;
+    int tile_width = grid->end_x - grid->start_x;
+    
+    if(norm2 == 0)
+        norm2 = state->calculate_squared_norm(false);
+      
+    std::complex<double> sum = 0;
+    std::complex<double> cost_E = -1. / (2. * hamiltonian->mass);
+    std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
+    std::complex<double> rot_y, rot_x;
+    double cost_rot_x = 0.5 * hamiltonian->omega * grid->delta_y / grid->delta_x;
+    double cost_rot_y = 0.5 * hamiltonian->omega * grid->delta_x / grid->delta_y;
+
+    for (int i = grid->inner_start_y - grid->start_y + (ini_halo_y == 0), 
+         y = grid->inner_start_y + (ini_halo_y == 0); 
+         i < grid->inner_end_y - grid->start_y - (end_halo_y == 0); i++, y++) {
+        for (int j = grid->inner_start_x - grid->start_x + (ini_halo_x == 0), 
+             x = grid->inner_start_x + (ini_halo_x == 0); 
+             j < grid->inner_end_x - grid->start_x - (end_halo_x == 0); j++, x++) {
+            std::complex<double> potential_term;
+            if(external_pot == NULL) {
+                potential_term = std::complex<double> (hamilt_pot(x, y, grid), 0.);
+            } else {
+                potential_term = std::complex<double> (external_pot[y * grid->global_dim_x + x], 0.);
+            }
+            psi_center = std::complex<double> (state->p_real[i * tile_width + j], 
+                                               state->p_imag[i * tile_width + j]);
+            psi_up = std::complex<double> (state->p_real[(i - 1) * tile_width + j], 
+                                           state->p_imag[(i - 1) * tile_width + j]);
+            psi_down = std::complex<double> (state->p_real[(i + 1) * tile_width + j], 
+                                             state->p_imag[(i + 1) * tile_width + j]);
+            psi_right = std::complex<double> (state->p_real[i * tile_width + j + 1], 
+                                              state->p_imag[i * tile_width + j + 1]);
+            psi_left = std::complex<double> (state->p_real[i * tile_width + j - 1], 
+                                             state->p_imag[i * tile_width + j - 1]);
+            
+            rot_x = std::complex<double>(0., cost_rot_x * (y - hamiltonian->rot_coord_y));
+            rot_y = std::complex<double>(0., cost_rot_y * (x - hamiltonian->rot_coord_x));
+            sum += conj(psi_center) * (cost_E * (
+                std::complex<double> (1. / (grid->delta_x * grid->delta_x), 0.) * 
+                  (psi_right + psi_left - psi_center * std::complex<double> (2., 0.)) + 
+                std::complex<double> (1. / (grid->delta_y * grid->delta_y), 0.) * 
+                  (psi_down + psi_up - psi_center * std::complex<double> (2., 0.))) + 
+                psi_center * potential_term + 
+                psi_center * psi_center * conj(psi_center) * std::complex<double> (0.5 * hamiltonian->coupling_a, 0.) + 
+                rot_y * (psi_down - psi_up) - rot_x * (psi_right - psi_left));
+        }
+    }
+	double total_energy = real(sum / norm2) * grid->delta_x * grid->delta_y;
+#ifdef HAVE_MPI
+    if (global) {
+        double *sums = new double[grid->mpi_procs];
+        MPI_Allgather(&total_energy, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, grid->cartcomm);
+        sums[0] = total_energy;
+        total_energy = 0.;
+        for(int i = 0; i < grid->mpi_procs; i++)
+            total_energy += sums[i];
+        delete [] sums;
+    } 
+#endif   
+  return total_energy;
 }
 
-double Energy_kin(double * p_real, double * p_imag, double particle_mass, double delta_x, double delta_y,
-                  double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
+double calculate_kinetic_energy(Lattice *grid, State *state, Hamiltonian *hamiltonian, double norm2, bool global) {
 	
-	int ini_halo_x = inner_start_x - start_x;
-	int ini_halo_y = inner_start_y - start_y;
-	int end_halo_x = end_x - inner_end_x;
-	int end_halo_y = end_y - inner_end_y;
-	int tile_width = end_x - start_x;
+	int ini_halo_x = grid->inner_start_x - grid->start_x;
+	int ini_halo_y = grid->inner_start_y - grid->start_y;
+	int end_halo_x = grid->end_x - grid->inner_end_x;
+	int end_halo_y = grid->end_y - grid->inner_end_y;
+	int tile_width = grid->end_x - grid->start_x;
 	
 	if(norm2 == 0)
-		norm2 = get_norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
-		
+      norm2 = state->calculate_squared_norm(false);
+      
 	std::complex<double> sum = 0;
-	std::complex<double> cost_E = -1. / (2. * particle_mass);
+	std::complex<double> cost_E = -1. / (2. * hamiltonian->mass);
 	std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
-	for(int i = inner_start_y - start_y + (ini_halo_y == 0); i < inner_end_y - start_y - (end_halo_y == 0); i++) {
-		for(int j = inner_start_x - start_x + (ini_halo_x == 0); j < inner_end_x - start_x - (end_halo_x == 0); j++) {
-			psi_center = std::complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
-			psi_up = std::complex<double> (p_real[(i - 1) * tile_width + j], p_imag[(i - 1) * tile_width + j]);
-			psi_down = std::complex<double> (p_real[(i + 1) * tile_width + j], p_imag[(i + 1) * tile_width + j]);
-			psi_right = std::complex<double> (p_real[i * tile_width + j + 1], p_imag[i * tile_width + j + 1]);
-			psi_left = std::complex<double> (p_real[i * tile_width + j - 1], p_imag[i * tile_width + j - 1]);
-			
-			sum += conj(psi_center) * (cost_E * (std::complex<double> (1. / (delta_x * delta_x), 0.) * (psi_right + psi_left - psi_center * std::complex<double> (2., 0.)) + std::complex<double> (1. / (delta_y * delta_y), 0.) * (psi_down + psi_up - psi_center * std::complex<double> (2., 0.))) );
+	for (int i = grid->inner_start_y - grid->start_y + (ini_halo_y == 0); 
+       i < grid->inner_end_y - grid->start_y - (end_halo_y == 0); i++) {
+      for (int j = grid->inner_start_x - grid->start_x + (ini_halo_x == 0); 
+           j < grid->inner_end_x - grid->start_x - (end_halo_x == 0); j++) {
+          psi_center = std::complex<double> (state->p_real[i * tile_width + j], 
+                                             state->p_imag[i * tile_width + j]);
+          psi_up = std::complex<double> (state->p_real[(i - 1) * tile_width + j], 
+                                         state->p_imag[(i - 1) * tile_width + j]);
+          psi_down = std::complex<double> (state->p_real[(i + 1) * tile_width + j], 
+                                           state->p_imag[(i + 1) * tile_width + j]);
+          psi_right = std::complex<double> (state->p_real[i * tile_width + j + 1], 
+                                            state->p_imag[i * tile_width + j + 1]);
+          psi_left = std::complex<double> (state->p_real[i * tile_width + j - 1], 
+                                           state->p_imag[i * tile_width + j - 1]);
+          sum += conj(psi_center) * (cost_E * 
+            (std::complex<double>(1./(grid->delta_x * grid->delta_x), 0.) * 
+               (psi_right + psi_left - psi_center * std::complex<double>(2., 0.)) + 
+             std::complex<double>(1./(grid->delta_y * grid->delta_y), 0.) * 
+               (psi_down + psi_up - psi_center * std::complex<double> (2., 0.))));
 		}
 	}
-	
-	return real(sum / norm2) * delta_x * delta_y;
+	double kinetic_energy =  real(sum / norm2) * grid->delta_x * grid->delta_y;
+#ifdef HAVE_MPI
+    if (global) {
+        double *sums = new double[grid->mpi_procs];
+        MPI_Allgather(&kinetic_energy, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, grid->cartcomm);
+        sums[0] = kinetic_energy;
+        kinetic_energy = 0.;
+        for(int i = 0; i < grid->mpi_procs; i++)
+            kinetic_energy += sums[i];
+        delete [] sums;
+    } 
+#endif 
+  return kinetic_energy;
 }
 
-double Energy_rot(double * p_real, double * p_imag,
-				  double omega, double coord_rot_x, double coord_rot_y, double delta_x, double delta_y,
-				  double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
+double calculate_rotational_energy(Lattice *grid, State *state, Hamiltonian *hamiltonian, double norm2, bool global) {
 					  
-	int ini_halo_x = inner_start_x - start_x;
-	int ini_halo_y = inner_start_y - start_y;
-	int end_halo_x = end_x - inner_end_x;
-	int end_halo_y = end_y - inner_end_y;
-	int tile_width = end_x - start_x;
+	int ini_halo_x = grid->inner_start_x - grid->start_x;
+	int ini_halo_y = grid->inner_start_y - grid->start_y;
+	int end_halo_x = grid->end_x - grid->inner_end_x;
+	int end_halo_y = grid->end_y - grid->inner_end_y;
+	int tile_width = grid->end_x - grid->start_x;
 	
 	if(norm2 == 0)
-		norm2 = get_norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
-		
+      norm2 = state->calculate_squared_norm(false);
 	std::complex<double> sum = 0;
 	std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
 	std::complex<double> rot_y, rot_x;
-	double cost_rot_x = 0.5 * omega * delta_y / delta_x;
-	double cost_rot_y = 0.5 * omega * delta_x / delta_y;
-	for(int i = inner_start_y - start_y + (ini_halo_y == 0), y = inner_start_y + (ini_halo_y == 0); i < inner_end_y - start_y - (end_halo_y == 0); i++, y++) {
-		for(int j = inner_start_x - start_x + (ini_halo_x == 0), x = inner_start_x + (ini_halo_x == 0); j < inner_end_x - start_x - (end_halo_x == 0); j++, x++) {
-			psi_center = std::complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
-			psi_up = std::complex<double> (p_real[(i - 1) * tile_width + j], p_imag[(i - 1) * tile_width + j]);
-			psi_down = std::complex<double> (p_real[(i + 1) * tile_width + j], p_imag[(i + 1) * tile_width + j]);
-			psi_right = std::complex<double> (p_real[i * tile_width + j + 1], p_imag[i * tile_width + j + 1]);
-			psi_left = std::complex<double> (p_real[i * tile_width + j - 1], p_imag[i * tile_width + j - 1]);
-			
-			rot_x = std::complex<double>(0. ,cost_rot_x * (y - coord_rot_y));
-			rot_y = std::complex<double>(0. ,cost_rot_y * (x - coord_rot_x));
-			sum += conj(psi_center) * (rot_y * (psi_down - psi_up) - rot_x * (psi_right - psi_left)) ;
+	double cost_rot_x = 0.5 * hamiltonian->omega * grid->delta_y / grid->delta_x;
+	double cost_rot_y = 0.5 * hamiltonian->omega * grid->delta_x / grid->delta_y;
+	for(int i = grid->inner_start_y - grid->start_y + (ini_halo_y == 0), 
+          y = grid->inner_start_y + (ini_halo_y == 0); 
+          i <grid->inner_end_y - grid->start_y - (end_halo_y == 0); i++, y++) {
+      for(int j = grid->inner_start_x - grid->start_x + (ini_halo_x == 0), 
+              x = grid->inner_start_x + (ini_halo_x == 0); 
+              j < grid->inner_end_x - grid->start_x - (end_halo_x == 0); j++, x++) {
+          psi_center = std::complex<double> (state->p_real[i * tile_width + j], 
+                                             state->p_imag[i * tile_width + j]);
+          psi_up = std::complex<double> (state->p_real[(i - 1) * tile_width + j], 
+                                         state->p_imag[(i - 1) * tile_width + j]);
+          psi_down = std::complex<double> (state->p_real[(i + 1) * tile_width + j], 
+                                           state->p_imag[(i + 1) * tile_width + j]);
+          psi_right = std::complex<double> (state->p_real[i * tile_width + j + 1], 
+                                            state->p_imag[i * tile_width + j + 1]);
+          psi_left = std::complex<double> (state->p_real[i * tile_width + j - 1], 
+                                           state->p_imag[i * tile_width + j - 1]);
+          
+          rot_x = std::complex<double>(0., cost_rot_x * (y - hamiltonian->rot_coord_y));
+          rot_y = std::complex<double>(0., cost_rot_y * (x - hamiltonian->rot_coord_x));
+          sum += conj(psi_center) * (rot_y * (psi_down - psi_up) - rot_x * (psi_right - psi_left)) ;
 		}
 	}
 	
-	return real(sum / norm2) * delta_x * delta_y;
+	double energy_rot = real(sum / norm2) * grid->delta_x * grid->delta_y;
+#ifdef HAVE_MPI
+    if (global) {
+        double *sums = new double[grid->mpi_procs];
+        MPI_Allgather(&energy_rot, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, grid->cartcomm);
+        sums[0] = energy_rot;
+        energy_rot = 0.;
+        for(int i = 0; i < grid->mpi_procs; i++)
+            energy_rot += sums[i];
+        delete [] sums;
+    } 
+#endif 
+    return energy_rot;
 }
 
-void mean_position(double * p_real, double * p_imag, double delta_x, double delta_y, int grid_origin_x, int grid_origin_y, double *results,
-                       double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
+void calculate_mean_position(Lattice *grid, State *state, int grid_origin_x, int grid_origin_y, 
+                             double *results, double norm2) {
 	
-	int ini_halo_x = inner_start_x - start_x;
-	int ini_halo_y = inner_start_y - start_y;
-	int end_halo_x = end_x - inner_end_x;
-	int end_halo_y = end_y - inner_end_y;
-	int tile_width = end_x - start_x;
+    int ini_halo_x = grid->inner_start_x - grid->start_x;
+    int ini_halo_y = grid->inner_start_y - grid->start_y;
+    int end_halo_x = grid->end_x - grid->inner_end_x;
+    int end_halo_y = grid->end_y - grid->inner_end_y;
+    int tile_width = grid->end_x - grid->start_x;
+    
+    if(norm2 == 0)
+        norm2 = state->calculate_squared_norm(false);
+            
+    std::complex<double> sum_x_mean = 0, sum_xx_mean = 0, sum_y_mean = 0, sum_yy_mean = 0;
+    std::complex<double> psi_center;
+    for (int i = grid->inner_start_y - grid->start_y + (ini_halo_y == 0); 
+         i < grid->inner_end_y - grid->start_y - (end_halo_y == 0); i++) {
+        for (int j = grid->inner_start_x - grid->start_x + (ini_halo_x == 0); 
+             j < grid->inner_end_x - grid->start_x - (end_halo_x == 0); j++) {
+            psi_center = std::complex<double> (state->p_real[i * tile_width + j], state->p_imag[i * tile_width + j]);
+            sum_x_mean += conj(psi_center) * psi_center * std::complex<double>(grid->delta_x * (j - grid_origin_x), 0.);
+            sum_y_mean += conj(psi_center) * psi_center * std::complex<double>(grid->delta_y * (i - grid_origin_y), 0.);
+            sum_xx_mean += conj(psi_center) * psi_center * std::complex<double>(grid->delta_x * (j - grid_origin_x), 0.) * std::complex<double>(grid->delta_x * (j - grid_origin_x), 0.);
+            sum_yy_mean += conj(psi_center) * psi_center * std::complex<double>(grid->delta_y * (i - grid_origin_y), 0.) * std::complex<double>(grid->delta_y * (i - grid_origin_y), 0.);
+      }
+    }
+    
+    results[0] = real(sum_x_mean / norm2) * grid->delta_x * grid->delta_y;
+    results[2] = real(sum_y_mean / norm2) * grid->delta_x * grid->delta_y;
+    results[1] = real(sum_xx_mean / norm2) * grid->delta_x * grid->delta_y - results[0] * results[0];
+    results[3] = real(sum_yy_mean / norm2) * grid->delta_x * grid->delta_y - results[2] * results[2];
+}
+
+void calculate_mean_momentum(Lattice *grid, State *state, double *results,
+                             double norm2) {
+	
+    int ini_halo_x = grid->inner_start_x - grid->start_x;
+    int ini_halo_y = grid->inner_start_y - grid->start_y;
+    int end_halo_x = grid->end_x - grid->inner_end_x;
+    int end_halo_y = grid->end_y - grid->inner_end_y;
+    int tile_width = grid->end_x - grid->start_x;
+    
+    if(norm2 == 0)
+        norm2 = state->calculate_squared_norm(false);
+      
+    std::complex<double> sum_px_mean = 0, sum_pxpx_mean = 0, sum_py_mean = 0, 
+                         sum_pypy_mean = 0, 
+                         var_px = std::complex<double>(0., - 0.5 / grid->delta_x), 
+                         var_py = std::complex<double>(0., - 0.5 / grid->delta_y);
+    std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
+    for (int i = grid->inner_start_y - grid->start_y + (ini_halo_y == 0); 
+         i < grid->inner_end_y - grid->start_y - (end_halo_y == 0); i++) {
+        for (int j = grid->inner_start_x - grid->start_x + (ini_halo_x == 0); 
+             j < grid->inner_end_x - grid->start_x - (end_halo_x == 0); j++) {
+            psi_center = std::complex<double> (state->p_real[i * tile_width + j], 
+                                               state->p_imag[i * tile_width + j]);
+            psi_up = std::complex<double> (state->p_real[(i - 1) * tile_width + j], 
+                                           state->p_imag[(i - 1) * tile_width + j]);
+            psi_down = std::complex<double> (state->p_real[(i + 1) * tile_width + j], 
+                                             state->p_imag[(i + 1) * tile_width + j]);
+            psi_right = std::complex<double> (state->p_real[i * tile_width + j + 1], 
+                                              state->p_imag[i * tile_width + j + 1]);
+            psi_left = std::complex<double> (state->p_real[i * tile_width + j - 1], 
+                                             state->p_imag[i * tile_width + j - 1]);
+            
+            sum_px_mean += conj(psi_center) * (psi_right - psi_left);
+            sum_py_mean += conj(psi_center) * (psi_up - psi_down);
+            sum_pxpx_mean += conj(psi_center) * (psi_right - 2. * psi_center + psi_left);
+            sum_pypy_mean += conj(psi_center) * (psi_up - 2. * psi_center + psi_down);
+        }
+    }
+
+    sum_px_mean = sum_px_mean * var_px;
+    sum_py_mean = sum_py_mean * var_py;
+    sum_pxpx_mean = sum_pxpx_mean * (-1.)/(grid->delta_x * grid->delta_x);
+    sum_pypy_mean = sum_pypy_mean * (-1.)/(grid->delta_y * grid->delta_y);
+    
+    results[0] = real(sum_px_mean / norm2) * grid->delta_x * grid->delta_y;
+    results[2] = real(sum_py_mean / norm2) * grid->delta_x * grid->delta_y;
+    results[1] = real(sum_pxpx_mean / norm2) * grid->delta_x * grid->delta_y - results[0] * results[0];
+    results[3] = real(sum_pypy_mean / norm2) * grid->delta_x * grid->delta_y - results[2] * results[2];
+}
+
+double calculate_rabi_coupling_energy(Lattice *grid, State *state1, State *state2, double omega_r, double omega_i, double norm2) {
+	int ini_halo_x = grid->inner_start_x - grid->start_x;
+	int ini_halo_y = grid->inner_start_y - grid->start_y;
+	int end_halo_x = grid->end_x - grid->inner_end_x;
+	int end_halo_y = grid->end_y - grid->inner_end_y;
+	int tile_width = grid->end_x - grid->start_x;
 	
 	if(norm2 == 0)
-		norm2 = get_norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+      norm2 = state1->calculate_squared_norm(false) + 
+              state2->calculate_squared_norm(false);
 		
-	std::complex<double> sum_x_mean = 0, sum_xx_mean = 0, sum_y_mean = 0, sum_yy_mean = 0;
-	std::complex<double> psi_center;
-	for(int i = inner_start_y - start_y + (ini_halo_y == 0); i < inner_end_y - start_y - (end_halo_y == 0); i++) {
-		for(int j = inner_start_x - start_x + (ini_halo_x == 0); j < inner_end_x - start_x - (end_halo_x == 0); j++) {
-			psi_center = std::complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
-			sum_x_mean += conj(psi_center) * psi_center * std::complex<double>(delta_x * (j - grid_origin_x), 0.);
-			sum_y_mean += conj(psi_center) * psi_center * std::complex<double>(delta_y * (i - grid_origin_y), 0.);
-			sum_xx_mean += conj(psi_center) * psi_center * std::complex<double>(delta_x * (j - grid_origin_x), 0.) * std::complex<double>(delta_x * (j - grid_origin_x), 0.);
-			sum_yy_mean += conj(psi_center) * psi_center * std::complex<double>(delta_y * (i - grid_origin_y), 0.) * std::complex<double>(delta_y * (i - grid_origin_y), 0.);
+	std::complex<double> sum = 0;
+	std::complex<double> psi_center_a, psi_center_b;
+	std::complex<double> omega = std::complex<double> (omega_r, omega_i);
+	
+	for (int i = grid->inner_start_y - grid->start_y + (ini_halo_y == 0), 
+       y = grid->inner_start_y + (ini_halo_y == 0); 
+       i < grid->inner_end_y - grid->start_y - (end_halo_y == 0); i++, y++) {
+      for (int j = grid->inner_start_x - grid->start_x + (ini_halo_x == 0), 
+           x = grid->inner_start_x + (ini_halo_x == 0); 
+           j < grid->inner_end_x - grid->start_x - (end_halo_x == 0); j++, x++) {
+          psi_center_a = std::complex<double> (state1->p_real[i * tile_width + j], 
+                                               state1->p_imag[i * tile_width + j]);
+          psi_center_b = std::complex<double> (state2->p_real[i * tile_width + j], 
+                                               state2->p_imag[i * tile_width + j]);
+          sum += conj(psi_center_a) * psi_center_b * omega +  conj(psi_center_b) * psi_center_a * conj(omega);
 		}
 	}
 	
-	results[0] = real(sum_x_mean / norm2) * delta_x * delta_y;
-	results[2] = real(sum_y_mean / norm2) * delta_x * delta_y;
-	results[1] = real(sum_xx_mean / norm2) * delta_x * delta_y - results[0] * results[0];
-	results[3] = real(sum_yy_mean / norm2) * delta_x * delta_y - results[2] * results[2];
+	return real(sum / norm2) * grid->delta_x * grid->delta_y;
 }
 
-void mean_momentum(double * p_real, double * p_imag, double delta_x, double delta_y, double *results,
-                   double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
-	
-	int ini_halo_x = inner_start_x - start_x;
-	int ini_halo_y = inner_start_y - start_y;
-	int end_halo_x = end_x - inner_end_x;
-	int end_halo_y = end_y - inner_end_y;
-	int tile_width = end_x - start_x;
+double calculate_ab_energy(Lattice *grid, State *state1, State *state2, 
+                 double coupling_const_ab, double norm2) {
+	int ini_halo_x = grid->inner_start_x - grid->start_x;
+	int ini_halo_y = grid->inner_start_y - grid->start_y;
+	int end_halo_x = grid->end_x - grid->inner_end_x;
+	int end_halo_y = grid->end_y - grid->inner_end_y;
+	int tile_width = grid->end_x - grid->start_x;
 	
 	if(norm2 == 0)
-		norm2 = get_norm2(p_real, p_imag, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+      norm2 = state1->calculate_squared_norm(false) + 
+              state2->calculate_squared_norm(false);
 		
-	std::complex<double> sum_px_mean = 0, sum_pxpx_mean = 0, sum_py_mean = 0, sum_pypy_mean = 0, var_px = std::complex<double>(0., - 0.5 / delta_x), var_py = std::complex<double>(0., - 0.5 / delta_y);
-	std::complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
-	for(int i = inner_start_y - start_y + (ini_halo_y == 0); i < inner_end_y - start_y - (end_halo_y == 0); i++) {
-		for(int j = inner_start_x - start_x + (ini_halo_x == 0); j < inner_end_x - start_x - (end_halo_x == 0); j++) {
-			psi_center = std::complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
-			psi_up = std::complex<double> (p_real[(i - 1) * tile_width + j], p_imag[(i - 1) * tile_width + j]);
-			psi_down = std::complex<double> (p_real[(i + 1) * tile_width + j], p_imag[(i + 1) * tile_width + j]);
-			psi_right = std::complex<double> (p_real[i * tile_width + j + 1], p_imag[i * tile_width + j + 1]);
-			psi_left = std::complex<double> (p_real[i * tile_width + j - 1], p_imag[i * tile_width + j - 1]);
-			
-			sum_px_mean += conj(psi_center) * (psi_right - psi_left);
-			sum_py_mean += conj(psi_center) * (psi_up - psi_down);
-			sum_pxpx_mean += conj(psi_center) * (psi_right - 2. * psi_center + psi_left);
-			sum_pypy_mean += conj(psi_center) * (psi_up - 2. * psi_center + psi_down);
+	std::complex<double> sum = 0;
+	std::complex<double> psi_center_a, psi_center_b;
+	
+	for (int i = grid->inner_start_y - grid->start_y + (ini_halo_y == 0), 
+       y = grid->inner_start_y + (ini_halo_y == 0); 
+       i < grid->inner_end_y - grid->start_y - (end_halo_y == 0); i++, y++) {
+		  for (int j = grid->inner_start_x - grid->start_x + (ini_halo_x == 0), 
+           x = grid->inner_start_x + (ini_halo_x == 0); 
+           j < grid->inner_end_x - grid->start_x - (end_halo_x == 0); j++, x++) {
+          psi_center_a = std::complex<double> (state1->p_real[i * tile_width + j], state1->p_imag[i * tile_width + j]);
+          psi_center_b = std::complex<double> (state2->p_real[i * tile_width + j], state2->p_imag[i * tile_width + j]);
+          sum += conj(psi_center_a) * psi_center_a * conj(psi_center_b) * psi_center_b * std::complex<double> (coupling_const_ab);
 		}
 	}
-
-	sum_px_mean = sum_px_mean * var_px;
-	sum_py_mean = sum_py_mean * var_py;
-	sum_pxpx_mean = sum_pxpx_mean * (-1.)/(delta_x * delta_x);
-	sum_pypy_mean = sum_pypy_mean * (-1.)/(delta_y * delta_y);
-	
-	results[0] = real(sum_px_mean / norm2) * delta_x * delta_y;
-	results[2] = real(sum_py_mean / norm2) * delta_x * delta_y;
-	results[1] = real(sum_pxpx_mean / norm2) * delta_x * delta_y - results[0] * results[0];
-	results[3] = real(sum_pypy_mean / norm2) * delta_x * delta_y - results[2] * results[2];
+	return real(sum / norm2) * grid->delta_x * grid->delta_y;
 }
 
-double Energy_tot(double ** p_real, double ** p_imag,
-				       double particle_mass_a, double particle_mass_b, double *coupling_const, 
-				       double (*hamilt_pot_a)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y),
-				       double (*hamilt_pot_b)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y), 
-				       double ** external_pot, 
-				       double omega, double coord_rot_x, double coord_rot_y,
-				       double delta_x, double delta_y, double norm2, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y,
-				       int matrix_width, int matrix_height, int halo_x, int halo_y, int * periods) {
+double calculate_total_energy(Lattice *grid, State *state1, State *state2, 
+                              Hamiltonian2Component *hamiltonian,
+                              double (*hamilt_pot_a)(int x, int y, Lattice *grid),
+                              double (*hamilt_pot_b)(int x, int y, Lattice *grid), 
+                              double **external_pot, double norm2, bool global) {
 					
 	if(external_pot == NULL) {
 		external_pot = new double* [2];
@@ -831,96 +932,22 @@ double Energy_tot(double ** p_real, double ** p_imag,
 	}
 	double sum = 0;
 	if(norm2 == 0)
-		norm2 = get_norm2(p_real[0], p_imag[0], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y) + 
-            get_norm2(p_real[1], p_imag[1], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
+		norm2 = state1->calculate_squared_norm() + state2->calculate_squared_norm();
 	
-	sum += Energy_tot(p_real[0], p_imag[0], particle_mass_a, coupling_const[0], hamilt_pot_a, external_pot[0], omega, coord_rot_x, coord_rot_y, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y, matrix_width, matrix_height, halo_x, halo_y, periods);
-	sum += Energy_tot(p_real[1], p_imag[1], particle_mass_b, coupling_const[1], hamilt_pot_b, external_pot[1], omega, coord_rot_x, coord_rot_y, delta_x, delta_y, norm2, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y, matrix_width, matrix_height, halo_x, halo_y, periods);
-	sum += Energy_ab(p_real, p_imag, coupling_const[2], norm2, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
-	sum += Energy_rabi_coupling(p_real, p_imag, coupling_const[3], coupling_const[4], norm2, delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
-
+  Hamiltonian *hamiltonian_b = new Hamiltonian(grid, hamiltonian->mass_b, hamiltonian->coupling_b, 
+                hamiltonian->coupling_ab, hamiltonian->angular_velocity, 
+                hamiltonian->rot_coord_x, hamiltonian->rot_coord_y, 
+                hamiltonian->omega, hamiltonian->external_pot);
+	sum += calculate_total_energy(grid, state1, hamiltonian, hamilt_pot_a, external_pot[0], norm2);
+	sum += calculate_total_energy(grid, state2, hamiltonian_b, hamilt_pot_b, external_pot[1], norm2);
+	sum += calculate_ab_energy(grid, state1, state2, hamiltonian->coupling_ab, norm2);
+	sum += calculate_rabi_coupling_energy(grid, state1, state2, hamiltonian->omega_r, hamiltonian->omega_i, norm2);
+  delete hamiltonian_b;
 	return sum;
 }
 
-double Energy_rabi_coupling(double **p_real, double **p_imag, double omega_r, double omega_i, double norm2, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
-	int ini_halo_x = inner_start_x - start_x;
-	int ini_halo_y = inner_start_y - start_y;
-	int end_halo_x = end_x - inner_end_x;
-	int end_halo_y = end_y - inner_end_y;
-	int tile_width = end_x - start_x;
-	
-	if(norm2 == 0)
-		norm2 = get_norm2(p_real[0], p_imag[0], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y) + 
-            get_norm2(p_real[1], p_imag[1], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
-		
-	std::complex<double> sum = 0;
-	std::complex<double> psi_center_a, psi_center_b;
-	std::complex<double> omega = std::complex<double> (omega_r, omega_i);
-	
-	for(int i = inner_start_y - start_y + (ini_halo_y == 0), y = inner_start_y + (ini_halo_y == 0); i < inner_end_y - start_y - (end_halo_y == 0); i++, y++) {
-		for(int j = inner_start_x - start_x + (ini_halo_x == 0), x = inner_start_x + (ini_halo_x == 0); j < inner_end_x - start_x - (end_halo_x == 0); j++, x++) {
-			psi_center_a = std::complex<double> (p_real[0][i * tile_width + j], p_imag[0][i * tile_width + j]);
-			psi_center_b = std::complex<double> (p_real[1][i * tile_width + j], p_imag[1][i * tile_width + j]);
-			sum += conj(psi_center_a) * psi_center_b * omega +  conj(psi_center_b) * psi_center_a * conj(omega);
-		}
-	}
-	
-	return real(sum / norm2) * delta_x * delta_y;
-}
-
-double Energy_ab(double **p_real, double **p_imag, double coupling_const_ab, double norm2, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
-	int ini_halo_x = inner_start_x - start_x;
-	int ini_halo_y = inner_start_y - start_y;
-	int end_halo_x = end_x - inner_end_x;
-	int end_halo_y = end_y - inner_end_y;
-	int tile_width = end_x - start_x;
-	
-	if(norm2 == 0)
-		norm2 = get_norm2(p_real[0], p_imag[0], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y) + 
-            get_norm2(p_real[1], p_imag[1], delta_x, delta_y, inner_start_x, start_x, inner_end_x, end_x, inner_start_y, start_y, inner_end_y, end_y);
-		
-	std::complex<double> sum = 0;
-	std::complex<double> psi_center_a, psi_center_b;
-	
-	for(int i = inner_start_y - start_y + (ini_halo_y == 0), y = inner_start_y + (ini_halo_y == 0); i < inner_end_y - start_y - (end_halo_y == 0); i++, y++) {
-		for(int j = inner_start_x - start_x + (ini_halo_x == 0), x = inner_start_x + (ini_halo_x == 0); j < inner_end_x - start_x - (end_halo_x == 0); j++, x++) {
-			psi_center_a = std::complex<double> (p_real[0][i * tile_width + j], p_imag[0][i * tile_width + j]);
-			psi_center_b = std::complex<double> (p_real[1][i * tile_width + j], p_imag[1][i * tile_width + j]);
-			sum += conj(psi_center_a) * psi_center_a * conj(psi_center_b) * psi_center_b * std::complex<double> (coupling_const_ab);
-		}
-	}
-	
-	return real(sum / norm2) * delta_x * delta_y;
-}
-
-double get_norm2(double * p_real, double * p_imag, double delta_x, double delta_y, int inner_start_x, int start_x, int inner_end_x, int end_x, int inner_start_y, int start_y, int inner_end_y, int end_y) {
-	double norm2 = 0;
-	int tile_width = end_x - start_x;
-	for(int i = inner_start_y - start_y; i < inner_end_y - start_y; i++) {
-		for(int j = inner_start_x - start_x; j < inner_end_x - start_x; j++) {
-			norm2 += p_real[j + i * tile_width] * p_real[j + i * tile_width] + p_imag[j + i * tile_width] * p_imag[j + i * tile_width];
-		}
-	}
-	
-	return norm2 * delta_x * delta_y;
-}
-
-Lattice::Lattice(double _length_x, double _length_y, int _dim_x, int _dim_y, 
-                 int _global_dim_x, int _global_dim_y, int _periods[2]): 
-          length_x(_length_x), length_y(_length_y), 
-          dim_x(_dim_x), dim_y(_dim_y) {
-    if (_global_dim_x == 0) {
-        global_dim_x = dim_x;
-    } else {
-        global_dim_x = _global_dim_x;
-    }
-    if (_global_dim_y == 0) {
-        global_dim_y = dim_y;
-    } else {
-        global_dim_y = _global_dim_y;
-    }
-    delta_x = length_x / (double)dim_x;
-    delta_y = length_y / (double)dim_y;
+Lattice::Lattice(int dim, double _delta_x, double _delta_y, int _periods[2], 
+                 double omega): delta_x(_delta_x), delta_y(_delta_y) {
     if (_periods == 0) {
           periods[0] = 0;
           periods[1] = 0;
@@ -928,6 +955,31 @@ Lattice::Lattice(double _length_x, double _length_y, int _dim_x, int _dim_y,
           periods[0] = _periods[0];
           periods[1] = _periods[1];
     }
+#ifdef HAVE_MPI
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_procs);
+    MPI_Dims_create(mpi_procs, 2, mpi_dims);  //partition all the processes (the size of MPI_COMM_WORLD's group) into an 2-dimensional topology
+    MPI_Cart_create(MPI_COMM_WORLD, 2, mpi_dims, periods, 0, &cartcomm);
+    MPI_Comm_rank(cartcomm, &mpi_rank);
+    MPI_Cart_coords(cartcomm, mpi_rank, 2, mpi_coords);
+#else
+    mpi_procs = 1;
+    mpi_rank = 0;
+    mpi_dims[0] = mpi_dims[1] = 1;
+    mpi_coords[0] = mpi_coords[1] = 0;
+#endif
+    halo_x = (omega == 0. ? 4 : 8);
+    halo_y = (omega == 0. ? 4 : 8);
+    global_dim_x = dim + periods[1] * 2 * halo_x;
+    global_dim_y = dim + periods[0] * 2 * halo_y;
+    //set dimension of tiles and offsets
+    calculate_borders(mpi_coords[1], mpi_dims[1], &start_x, &end_x, 
+                      &inner_start_x, &inner_end_x, 
+                      global_dim_x - 2 * periods[1]*halo_x, halo_x, periods[1]);
+    calculate_borders(mpi_coords[0], mpi_dims[0], &start_y, &end_y, 
+                      &inner_start_y, &inner_end_y, 
+                      global_dim_y - 2 * periods[0]*halo_y, halo_y, periods[0]);
+    dim_x = end_x - start_x;
+    dim_y = end_y - start_y;
 }
 
 State::State(Lattice *_grid, double *_p_real, double *_p_imag): grid(_grid){
@@ -952,12 +1004,11 @@ State::~State() {
         }
     }
 
-void State::init_state(std::complex<double> (*ini_state)(int x, int y, Lattice *grid, int halo_x, int halo_y),
-                      int start_x, int start_y, int halo_x, int halo_y) {
+void State::init_state(std::complex<double> (*ini_state)(int x, int y, Lattice *grid)) {
     std::complex<double> tmp;
-    for (int y = 0, idy = start_y; y < grid->dim_y; y++, idy++) {
-        for (int x = 0, idx = start_x; x < grid->dim_x; x++, idx++) {
-            tmp = ini_state(idx, idy, grid, halo_x, halo_y);
+    for (int y = 0, idy = grid->start_y; y < grid->dim_y; y++, idy++) {
+        for (int x = 0, idx = grid->start_x; x < grid->dim_x; x++, idx++) {
+            tmp = ini_state(idx, idy, grid);
             p_real[y * grid->dim_x + x] = real(tmp);
             p_imag[y * grid->dim_x + x] = imag(tmp);
         }
@@ -965,72 +1016,70 @@ void State::init_state(std::complex<double> (*ini_state)(int x, int y, Lattice *
 }
 
 
-void State::read_state(char *file_name, int start_x, int start_y,
-                       int *coords, int *dims, int halo_x, int halo_y, int read_offset) {
+void State::read_state(char *file_name, int read_offset) {
     std::ifstream input(file_name);
-
-    int in_width = grid->global_dim_x - 2 * grid->periods[1] * halo_x;
-    int in_height = grid->global_dim_y - 2 * grid->periods[0] * halo_y;
+    int in_width = grid->global_dim_x - 2 * grid->periods[1] * grid->halo_x;
+    int in_height = grid->global_dim_y - 2 * grid->periods[0] * grid->halo_y;
     std::complex<double> tmp;
     for(int i = 0; i < read_offset; i++)
         input >> tmp;
     for(int i = 0; i < in_height; i++) {
         for(int j = 0; j < in_width; j++) {
             input >> tmp;
-            if((i - start_y) >= 0 && (i - start_y) < grid->dim_y && (j - start_x) >= 0 && (j - start_x) < grid->dim_x) {
-                p_real[(i - start_y) * grid->dim_x + j - start_x] = real(tmp);
-                p_imag[(i - start_y) * grid->dim_x + j - start_x] = imag(tmp);
+            if((i - grid->start_y) >= 0 && (i - grid->start_y) < grid->dim_y && (j - grid->start_x) >= 0 && (j - grid->start_x) < grid->dim_x) {
+                p_real[(i - grid->start_y) * grid->dim_x + j - grid->start_x] = real(tmp);
+                p_imag[(i - grid->start_y) * grid->dim_x + j - grid->start_x] = imag(tmp);
             }
 
             //Down band
-            if(i < halo_y && coords[0] == dims[0] - 1 && grid->periods[0] != 0) {
-                if((j - start_x) >= 0 && (j - start_x) < grid->dim_x) {
-                    p_real[(i + grid->dim_y - halo_y) * grid->dim_x + j - start_x] = real(tmp);
-                    p_imag[(i + grid->dim_y - halo_y) * grid->dim_x + j - start_x] = imag(tmp);
+            if(i < grid->halo_y && grid->mpi_coords[0] == grid->mpi_dims[0] - 1 && grid->periods[0] != 0) {
+                if((j - grid->start_x) >= 0 && (j - grid->start_x) < grid->dim_x) {
+                    p_real[(i + grid->dim_y - grid->halo_y) * grid->dim_x + j - grid->start_x] = real(tmp);
+                    p_imag[(i + grid->dim_y - grid->halo_y) * grid->dim_x + j - grid->start_x] = imag(tmp);
                 }
                 //Down right corner
-                if(j < halo_x && grid->periods[1] != 0 && coords[1] == dims[1] - 1) {
-                    p_real[(i + grid->dim_y - halo_y) * grid->dim_x + j + grid->dim_x - halo_x] = real(tmp);
-                    p_imag[(i + grid->dim_y - halo_y) * grid->dim_x + j + grid->dim_x - halo_x] = imag(tmp);
+                if(j < grid->halo_x && grid->periods[1] != 0 && grid->mpi_coords[1] == grid->mpi_dims[1] - 1) {
+                    p_real[(i + grid->dim_y - grid->halo_y) * grid->dim_x + j + grid->dim_x - grid->halo_x] = real(tmp);
+                    p_imag[(i + grid->dim_y - grid->halo_y) * grid->dim_x + j + grid->dim_x - grid->halo_x] = imag(tmp);
                 }
                 //Down left corner
-                if(j >= in_width - halo_x && grid->periods[1] != 0 && coords[1] == 0) {
-                    p_real[(i + grid->dim_y - halo_y) * grid->dim_x + j - (in_width - halo_x)] = real(tmp);
-                    p_imag[(i + grid->dim_y - halo_y) * grid->dim_x + j - (in_width - halo_x)] = imag(tmp);
+                if(j >= in_width - grid->halo_x && grid->periods[1] != 0 && grid->mpi_coords[1] == 0) {
+                    p_real[(i + grid->dim_y - grid->halo_y) * grid->dim_x + j - (in_width - grid->halo_x)] = real(tmp);
+                    p_imag[(i + grid->dim_y - grid->halo_y) * grid->dim_x + j - (in_width - grid->halo_x)] = imag(tmp);
                 }
             }
 
             //Upper band
-            if(i >= in_height - halo_y && grid->periods[0] != 0 && coords[0] == 0) {
-                if((j - start_x) >= 0 && (j - start_x) < grid->dim_x) {
-                    p_real[(i - (in_height - halo_y)) * grid->dim_x + j - start_x] = real(tmp);
-                    p_imag[(i - (in_height - halo_y)) * grid->dim_x + j - start_x] = imag(tmp);
+            if(i >= in_height - grid->halo_y && grid->periods[0] != 0 && grid->mpi_coords[0] == 0) {
+                if((j - grid->start_x) >= 0 && (j - grid->start_x) < grid->dim_x) {
+                    p_real[(i - (in_height - grid->halo_y)) * grid->dim_x + j - grid->start_x] = real(tmp);
+                    p_imag[(i - (in_height - grid->halo_y)) * grid->dim_x + j - grid->start_x] = imag(tmp);
                 }
                 //Up right corner
-                if(j < halo_x && grid->periods[1] != 0 && coords[1] == dims[1] - 1) {
-                    p_real[(i - (in_height - halo_y)) * grid->dim_x + j + grid->dim_x - halo_x] = real(tmp);
-                    p_imag[(i - (in_height - halo_y)) * grid->dim_x + j + grid->dim_x - halo_x] = imag(tmp);
+                if(j < grid->halo_x && grid->periods[1] != 0 && grid->mpi_coords[1] == grid->mpi_dims[1] - 1) {
+                    p_real[(i - (in_height - grid->halo_y)) * grid->dim_x + j + grid->dim_x - grid->halo_x] = real(tmp);
+                    p_imag[(i - (in_height - grid->halo_y)) * grid->dim_x + j + grid->dim_x - grid->halo_x] = imag(tmp);
                 }
                 //Up left corner
-                if(j >= in_width - halo_x && grid->periods[1] != 0 && coords[1] == 0) {
-                    p_real[(i - (in_height - halo_y)) * grid->dim_x + j - (in_width - halo_x)] = real(tmp);
-                    p_imag[(i - (in_height - halo_y)) * grid->dim_x + j - (in_width - halo_x)] = imag(tmp);
+                if(j >= in_width - grid->halo_x && grid->periods[1] != 0 && grid->mpi_coords[1] == 0) {
+                    p_real[(i - (in_height - grid->halo_y)) * grid->dim_x + j - (in_width - grid->halo_x)] = real(tmp);
+                    p_imag[(i - (in_height - grid->halo_y)) * grid->dim_x + j - (in_width - grid->halo_x)] = imag(tmp);
                 }
             }
 
             //Right band
-            if(j < halo_x && grid->periods[1] != 0 && coords[1] == dims[1] - 1) {
-                if((i - start_y) >= 0 && (i - start_y) < grid->dim_y) {
-                    p_real[(i - start_y) * grid->dim_x + j + grid->dim_x - halo_x] = real(tmp);
-                    p_imag[(i - start_y) * grid->dim_x + j + grid->dim_x - halo_x] = imag(tmp);
+            if(j < grid->halo_x && grid->periods[1] != 0 && grid->mpi_coords[1] == grid->mpi_dims[1] - 1) {
+                if((i - grid->start_y) >= 0 && (i - grid->start_y) < grid->dim_y) {
+                    p_real[(i - grid->start_y) * grid->dim_x + j + grid->dim_x - grid->halo_x] = real(tmp);
+                    p_imag[(i - grid->start_y) * grid->dim_x + j + grid->dim_x - grid->halo_x] = imag(tmp);
                 }
             }
 
             //Left band
-            if(j >= in_width - halo_x && grid->periods[1] != 0 && coords[1] == 0) {
-                if((i - start_y) >= 0 && (i - start_y) < grid->dim_y) {
-                    p_real[(i - start_y) * grid->dim_x + j - (in_width - halo_x)] = real(tmp);
-                    p_imag[(i - start_y) * grid->dim_x + j - (in_width - halo_x)] = imag(tmp);
+            if(j >= in_width - grid->halo_x && grid->periods[1] != 0 && grid->mpi_coords[1] == 0) {
+                if((i - grid->start_y) >= 0 && (i - grid->start_y) < grid->dim_y) {
+                    p_real[(i - grid->start_y) * grid->dim_x + j - (in_width - grid->halo_x)] = real(tmp);
+                    p_imag[(i - grid->start_y) * grid->dim_x + j - (in_width - grid->halo_x)] = imag(tmp);
                 }
             }
         }
@@ -1038,84 +1087,58 @@ void State::read_state(char *file_name, int start_x, int start_y,
     input.close();
 }
 
-double State::calculate_squared_norm(State *psi_b) {
-        if (psi_b == 0) {
-            return get_norm2(p_real, p_imag, grid->delta_x, grid->delta_y, 
-                         0, 0, grid->dim_x, grid->dim_x, 
-                         0, 0, grid->dim_y, grid->dim_y);
-        } else {
-        return get_norm2(p_real, p_imag, grid->delta_x, grid->delta_y, 
-                         0, 0, grid->dim_x, grid->dim_x, 
-                         0, 0, grid->dim_y, grid->dim_y) +
-               get_norm2(psi_b->p_real, psi_b->p_imag, grid->delta_x, grid->delta_y, 
-                         0, 0, grid->dim_x, grid->dim_x, 
-                         0, 0, grid->dim_y, grid->dim_y);
-
-        }
+double State::calculate_squared_norm(bool global) {
+    double norm2 = 0;
+    int tile_width = grid->end_x - grid->start_x;
+    for(int i = grid->inner_start_y - grid->start_y; i < grid->inner_end_y - grid->start_y; i++) {
+      for(int j = grid->inner_start_x - grid->start_x; j < grid->inner_end_x - grid->start_x; j++) {
+        norm2 += p_real[j + i * tile_width] * p_real[j + i * tile_width] + p_imag[j + i * tile_width] * p_imag[j + i * tile_width];
+      }
+    }
+#ifdef HAVE_MPI
+    if (global) {
+        double *sums = new double[grid->mpi_procs];
+        MPI_Allgather(&norm2, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, grid->cartcomm);
+        sums[0] = norm2;
+        norm2 = 0.;
+        for(int i = 0; i < grid->mpi_procs; i++)
+            norm2 += sums[i];
+        delete [] sums;
+    } 
+#endif 
+    return norm2;
     }
 
-double *State::get_particle_density(double *_density, int inner_start_x, int start_x, 
-                                 int inner_end_x, int end_x, 
-                                 int inner_start_y, int start_y, 
-                                 int inner_end_y, int end_y) {
-        if (inner_end_x == 0) {
-            inner_end_x = grid->dim_x;
-        }
-        if (end_x == 0) {
-            end_x = grid->dim_x;
-        }
-        if (inner_end_y == 0) {
-            inner_end_y = grid->dim_y;
-        }
-        if (end_y == 0) {
-            end_y = grid->dim_y;
-        }
-        int width = end_x - start_x;
+double *State::get_particle_density(double *_density) {
         double *density;
         if (_density == 0) { 
-          density = new double[width * (end_y - start_y)];
+          density = new double[grid->dim_x * grid->dim_y];
         } else {
           density = _density;
         }
-        for(int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
-            for(int i = inner_start_x - start_x; i < inner_end_x - start_x; i++) {
-                density[j * width + i] = p_real[j * width + i] * p_real[j * width + i] + p_imag[j * width + i] * p_imag[j * width + i];
+        for(int j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; j++) {
+            for(int i = grid->inner_start_x - grid->start_x; i < grid->inner_end_x - grid->start_x; i++) {
+                density[j * grid->dim_x + i] = p_real[j * grid->dim_x + i] * p_real[j * grid->dim_x + i] + p_imag[j * grid->dim_x + i] * p_imag[j * grid->dim_x + i];
           }
         }
         return density;
     }
 
-double *State::get_phase(double *_phase, int inner_start_x, int start_x, 
-                      int inner_end_x, int end_x, 
-                      int inner_start_y, int start_y, 
-                      int inner_end_y, int end_y) {
-        if (inner_end_x == 0) {
-            inner_end_x = grid->dim_x;
-        }
-        if (end_x == 0) {
-            end_x = grid->dim_x;
-        }
-        if (inner_end_y == 0) {
-            inner_end_y = grid->dim_y;
-        }
-        if (end_y == 0) {
-            end_y = grid->dim_y;
-        }
-        int width = end_x - start_x;
+double *State::get_phase(double *_phase) {
         double *phase;
         if (_phase == 0) { 
-          phase = new double[width * (end_y - start_y)];
+          phase = new double[grid->dim_x * grid->dim_y];
         } else {
           phase = _phase;
         }
         double norm;
-        for(int j = inner_start_y - start_y; j < inner_end_y - start_y; j++) {
-            for(int i = inner_start_x - start_x; i < inner_end_x - start_x; i++) {
-                norm = sqrt(p_real[j * width + i] * p_real[j * width + i] + p_imag[j * width + i] * p_imag[j * width + i]);
+        for(int j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; j++) {
+            for(int i = grid->inner_start_x - grid->start_x; i < grid->inner_end_x - grid->start_x; i++) {
+                norm = sqrt(p_real[j * grid->dim_x + i] * p_real[j * grid->dim_x + i] + p_imag[j * grid->dim_x + i] * p_imag[j * grid->dim_x + i]);
                 if(norm == 0)
-                    phase[j * width + i] = 0;
+                    phase[j * grid->dim_x + i] = 0;
                 else
-                    phase[j * width + i] = acos(p_real[j * width + i] / norm) * ((p_imag[j * width + i] > 0) - (p_imag[j * width + i] < 0));
+                    phase[j * grid->dim_x + i] = acos(p_real[j * grid->dim_x + i] / norm) * ((p_imag[j * grid->dim_x + i] > 0) - (p_imag[j * grid->dim_x + i] < 0));
             }
         }
         return phase;
@@ -1154,11 +1177,10 @@ Hamiltonian::~Hamiltonian() {
         }
     }
 
-void Hamiltonian::initialize_potential(double (*hamiltonian_pot)(int x, int y, Lattice *grid, int halo_x, int halo_y),
-                              int halo_x, int halo_y) {
+void Hamiltonian::initialize_potential(double (*hamiltonian_pot)(int x, int y, Lattice *grid)) {
         for(int y = 0; y < grid->dim_y; y++) {
             for(int x = 0; x < grid->dim_x; x++) {
-                external_pot[y * grid->dim_y + x] = hamiltonian_pot(x, y, grid, halo_x, halo_y);
+                external_pot[y * grid->dim_y + x] = hamiltonian_pot(x, y, grid);
             }
         }
     }
@@ -1168,9 +1190,10 @@ Hamiltonian2Component::Hamiltonian2Component(Lattice *_grid, double _mass,
                          double _coupling_ab, double _coupling_b,
                          double _angular_velocity, 
                          double _rot_coord_x, double _rot_coord_y, double _omega,
+                         double _omega_r, double _omega_i,
                          double *_external_pot, double *_external_pot_b):
                          Hamiltonian(_grid, _mass, _coupling_a, _coupling_ab, _angular_velocity, _rot_coord_x, rot_coord_y, _omega, _external_pot),
-                         coupling_b(_coupling_b) {
+                         coupling_b(_coupling_b), omega_r(_omega_r), omega_i(_omega_i) {
         if (_external_pot_b == 0) {
             external_pot_b = new double[grid->dim_y * grid->dim_x];
             self_init = true;
@@ -1187,11 +1210,10 @@ Hamiltonian2Component::~Hamiltonian2Component() {
         }
     }
 
-void Hamiltonian2Component::initialize_potential_b(double (*hamiltonian_pot)(int x, int y, Lattice *grid, int halo_x, int halo_y),
-                                                   int halo_x, int halo_y) {
+void Hamiltonian2Component::initialize_potential_b(double (*hamiltonian_pot)(int x, int y, Lattice *grid)) {
         for(int y = 0; y < grid->dim_y; y++) {
             for(int x = 0; x < grid->dim_x; x++) {
-                external_pot_b[y * grid->dim_y + x] = hamiltonian_pot(x, y, grid, halo_x, halo_y);
+                external_pot_b[y * grid->dim_y + x] = hamiltonian_pot(x, y, grid);
             }
         }
     }

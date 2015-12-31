@@ -225,12 +225,12 @@ void solver(Lattice *grid, State *state, Hamiltonian *hamiltonian,
 }
 
 
-void solver(Lattice *grid, State *state1, State *state2, 
-      double particle_mass_a, double particle_mass_b, double *coupling_const, double * external_pot, double * external_pot_b, double omega, int rot_coord_x, int rot_coord_y, double delta_t, const int iterations, string kernel_type, bool imag_time) {
+void solver(Lattice *grid, State *state1, State *state2, Hamiltonian2Component *hamiltonian,
+      double * external_pot, double * external_pot_b, double delta_t, const int iterations, string kernel_type, bool imag_time) {
   
   int halo_x = (kernel_type == "sse" ? 3 : 4);
-    halo_x = (omega == 0. ? halo_x : 8);
-    int halo_y = (omega == 0. ? 4 : 8);
+    halo_x = (hamiltonian->omega == 0. ? halo_x : 8);
+    int halo_y = (hamiltonian->omega == 0. ? 4 : 8);
   int dimx = grid->global_dim_x + 2 * halo_x * grid->periods[1];
   int dimy = grid->global_dim_y + 2 * halo_y * grid->periods[0];
   
@@ -277,20 +277,20 @@ void solver(Lattice *grid, State *state1, State *state2,
   
     double h_a[2], h_b[2];
     if(imag_time) {
-    h_a[0] = cosh(delta_t / (4. * particle_mass_a * grid->delta_x * grid->delta_y));
-    h_b[0] = sinh(delta_t / (4. * particle_mass_a * grid->delta_x * grid->delta_y));  
-    h_a[1] = cosh(delta_t / (4. * particle_mass_b * grid->delta_x * grid->delta_y));
-    h_b[1] = sinh(delta_t / (4. * particle_mass_b * grid->delta_x * grid->delta_y));  
+    h_a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
+    h_b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));  
+    h_a[1] = cosh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_y));
+    h_b[1] = sinh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_y));  
     }
     else {
-    h_a[0] = cos(delta_t / (4. * particle_mass_a * grid->delta_x * grid->delta_y));
-    h_b[0] = sin(delta_t / (4. * particle_mass_a * grid->delta_x * grid->delta_y));
-    h_a[1] = cos(delta_t / (4. * particle_mass_b * grid->delta_x * grid->delta_y));
-    h_b[1] = sin(delta_t / (4. * particle_mass_b * grid->delta_x * grid->delta_y));
+    h_a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
+    h_b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
+    h_a[1] = cos(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_y));
+    h_b[1] = sin(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_y));
     }
   
   //launch kernel
-  trotter(padded_grid, padded_state1, padded_state2, h_a, h_b, coupling_const, external_pot_real, external_pot_imag, delta_t, iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm, imag_time);
+  trotter(padded_grid, padded_state1, padded_state2, hamiltonian, h_a, h_b, external_pot_real, external_pot_imag, delta_t, iterations, kernel_type, norm, imag_time);
   
   //copy back the final state
   for(int i = 0; i < grid->global_dim_y; i++) {

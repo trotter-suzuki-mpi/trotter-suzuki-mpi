@@ -421,23 +421,21 @@ void process_band(bool two_wavefunctions, int offset_tile_x, int offset_tile_y, 
 }
 
 // Class methods
-CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, double delta_t, int _halo_x, int _halo_y, double _norm, bool _imag_time 
-#ifdef HAVE_MPI
-                   , MPI_Comm _cartcomm
-#endif
-                  ):
+CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian, 
+                   double *_external_pot_real, double *_external_pot_imag, 
+                   double _a, double _b, double delta_t, 
+                   double _norm, bool _imag_time):
     sense(0),
-    halo_x(_halo_x),
-    halo_y(_halo_y),
     imag_time(_imag_time) {
     delta_x = grid->delta_x;
     delta_y = grid->delta_y;
+    halo_x = grid->halo_x;
+    halo_y = grid->halo_y;
     periods = grid->periods;
     rot_coord_x = hamiltonian->rot_coord_x;
     rot_coord_y = hamiltonian->rot_coord_y;
     alpha_x = hamiltonian->omega*delta_t*grid->delta_x / (2*grid->delta_y); 
     alpha_y = hamiltonian->omega*delta_t*grid->delta_y / (2*grid->delta_x);
-    
 	  a = new double [1];
 	  b = new double [1];
 	  coupling_const = new double [3];
@@ -450,10 +448,9 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian, double
     coupling_const[2] = 0.;
     norm[0] = _norm;
     state_index = 0;
-    
     int rank, coords[2], dims[2] = {0, 0};
 #ifdef HAVE_MPI
-    cartcomm = _cartcomm;
+    cartcomm = grid->cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
     MPI_Comm_rank(cartcomm, &rank);
@@ -503,19 +500,14 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
                    Hamiltonian2Component *hamiltonian,
                    double **_external_pot_real, double **_external_pot_imag, 
                    double *_a, double *_b, double delta_t,
-                   int _halo_x, int _halo_y, 
-                   double *_norm, bool _imag_time
-#ifdef HAVE_MPI
-                   , MPI_Comm _cartcomm
-#endif
-                  ):    
+                   double *_norm, bool _imag_time):    
     sense(0),
     state_index(0),
-    halo_x(_halo_x),
-    halo_y(_halo_y),
     imag_time(_imag_time) {
     delta_x = grid->delta_x;
     delta_y = grid->delta_y;
+    halo_x = grid->halo_x;
+    halo_y = grid->halo_y;
     alpha_x = hamiltonian->omega * delta_t * grid->delta_x / (2 * grid->delta_y), 
     alpha_y = hamiltonian->omega * delta_t * grid->delta_y / (2 * grid->delta_x),
     rot_coord_x = hamiltonian->rot_coord_x;
@@ -525,14 +517,14 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
     b = _b;
     norm = _norm;
     tot_norm = norm[0] + norm[1];
-
+    coupling_const = new double[3];
     coupling_const[0] = delta_t*hamiltonian->coupling_a;
     coupling_const[1] = delta_t*hamiltonian->coupling_b;
     coupling_const[2] = delta_t*hamiltonian->coupling_ab;
     periods = grid->periods;
     int rank, coords[2], dims[2] = {0, 0};
 #ifdef HAVE_MPI
-    cartcomm = _cartcomm;
+    cartcomm = grid->cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
     MPI_Comm_rank(cartcomm, &rank);

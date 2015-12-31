@@ -60,32 +60,23 @@ public:
     CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian, 
              double *_external_pot_real, double *_external_pot_imag, 
              double _a, double _b, double delta_t, 
-             int _halo_x, int _halo_y, double _norm, bool _imag_time
-#ifdef HAVE_MPI
-             , MPI_Comm cartcomm
-#endif
-            );
+             double _norm, bool _imag_time);
            
     
     CPUBlock(Lattice *grid, State *state1, State *state2, 
              Hamiltonian2Component *hamiltonian, 
              double **_external_pot_real, double **_external_pot_imag, 
              double *_a, double *_b, double delta_t,
-             int _halo_x, int _halo_y, 
-             double *_norm, bool _imag_time
-#ifdef HAVE_MPI
-             , MPI_Comm cartcomm
-#endif
-            );
+             double *_norm, bool _imag_time);
     
     ~CPUBlock();
-    void run_kernel_on_halo();					///< Evolve blocks of wave function at the edge of the tile. This comprises the halos.
-    void run_kernel();							///< Evolve the remaining blocks in the inner part of the tile.
-    void wait_for_completion();					///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
+    void run_kernel_on_halo();          ///< Evolve blocks of wave function at the edge of the tile. This comprises the halos.
+    void run_kernel();              ///< Evolve the remaining blocks in the inner part of the tile.
+    void wait_for_completion();         ///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2=0, double * dest_imag2=0) const;  ///< Copy the wave function from the two buffers pointed by p_real and p_imag, without halos, to dest_real and dest_imag.
-	void normalization();
-	void rabi_coupling(double var, double delta_t);
-	
+    void normalization();
+    void rabi_coupling(double var, double delta_t);
+  
     bool runs_in_place() const {
         return false;
     }
@@ -94,54 +85,54 @@ public:
         return "CPU";
     };
 
-    void start_halo_exchange();					///< Start vertical halos exchange.
-    void finish_halo_exchange();				///< Start horizontal halos exchange.
+    void start_halo_exchange();         ///< Start vertical halos exchange.
+    void finish_halo_exchange();        ///< Start horizontal halos exchange.
 
 
 
 private:
-    double *p_real[2][2];				///< Array of two pointers that point to two buffers used to store the real part of the wave function at i-th time step and (i+1)-th time step. 
-    double *p_imag[2][2];				///< Array of two pointers that point to two buffers used to store the imaginary part of the wave function at i-th time step and (i+1)-th time step.
-    double *external_pot_real[2];		///< Points to the matrix representation (real entries) of the operator given by the exponential of external potential.
-    double *external_pot_imag[2];		///< Points to the matrix representation (immaginary entries) of the operator given by the exponential of external potential.
-    double *a;						///< Diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
-    double *b;						///< Off diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
-    double delta_x;					///< Physical length between two neighbour along x axis dots of the lattice.
-    double delta_y;					///< Physical length between two neighbour along y axis dots of the lattice.
-    double *norm;					///< Squared norm of the wave function.
+    double *p_real[2][2];       ///< Array of two pointers that point to two buffers used to store the real part of the wave function at i-th time step and (i+1)-th time step. 
+    double *p_imag[2][2];       ///< Array of two pointers that point to two buffers used to store the imaginary part of the wave function at i-th time step and (i+1)-th time step.
+    double *external_pot_real[2];   ///< Points to the matrix representation (real entries) of the operator given by the exponential of external potential.
+    double *external_pot_imag[2];   ///< Points to the matrix representation (immaginary entries) of the operator given by the exponential of external potential.
+    double *a;            ///< Diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
+    double *b;            ///< Off diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
+    double delta_x;         ///< Physical length between two neighbour along x axis dots of the lattice.
+    double delta_y;         ///< Physical length between two neighbour along y axis dots of the lattice.
+    double *norm;         ///< Squared norm of the wave function.
     double tot_norm;
-    double *coupling_const;			///< Coupling constant of the density self-interacting term.
-    int sense;						///< Takes values 0 or 1 and tells which of the two buffers pointed by p_real and p_imag is used to calculate the next time step.
+    double *coupling_const;     ///< Coupling constant of the density self-interacting term.
+    int sense;            ///< Takes values 0 or 1 and tells which of the two buffers pointed by p_real and p_imag is used to calculate the next time step.
     int state_index;
-    size_t halo_x;					///< Thickness of the vertical halos (number of lattice's dots).
-    size_t halo_y;					///< Thickness of the horizontal halos (number of lattice's dots).
-    size_t tile_width;				///< Width of the tile (number of lattice's dots).
-    size_t tile_height;				///< Height of the tile (number of lattice's dots).
-    bool imag_time;					///< True: imaginary time evolution; False: real time evolution.
-    static const size_t block_width = BLOCK_WIDTH;			///< Width of the lattice block which is cached (number of lattice's dots).
-    static const size_t block_height = BLOCK_HEIGHT;		///< Height of the lattice block which is cached (number of lattice's dots).
+    size_t halo_x;          ///< Thickness of the vertical halos (number of lattice's dots).
+    size_t halo_y;          ///< Thickness of the horizontal halos (number of lattice's dots).
+    size_t tile_width;        ///< Width of the tile (number of lattice's dots).
+    size_t tile_height;       ///< Height of the tile (number of lattice's dots).
+    bool imag_time;         ///< True: imaginary time evolution; False: real time evolution.
+    static const size_t block_width = BLOCK_WIDTH;      ///< Width of the lattice block which is cached (number of lattice's dots).
+    static const size_t block_height = BLOCK_HEIGHT;    ///< Height of the lattice block which is cached (number of lattice's dots).
     bool two_wavefunctions;
     
-	double alpha_x;					///< Real coupling constant associated to the X*P_y operator, part of the angular momentum.
-	double alpha_y;					///< Real coupling constant associated to the Y*P_x operator, part of the angular momentum.
-	int rot_coord_x;				///< X axis coordinate of the center of rotation.
-	int rot_coord_y;				///< Y axis coordinate of the center of rotation.
-    int start_x;					///< X axis coordinate of the first dot of the processed tile.
-    int start_y;					///< Y axis coordinate of the first dot of the processed tile.
-    int end_x;						///< X axis coordinate of the last dot of the processed tile.
-    int end_y;						///< Y axis coordinate of the last dot of the processed tile.
-    int inner_start_x;				///< X axis coordinate of the first dot of the processed tile, which is not in the halo.
-    int inner_start_y;				///< Y axis coordinate of the first dot of the processed tile, which is not in the halo.
-    int inner_end_x;				///< X axis coordinate of the last dot of the processed tile, which is not in the halo.
-    int inner_end_y;				///< Y axis coordinate of the last dot of the processed tile, which is not in the halo.
-    int *periods;					///< Two dimensional array which takes entries 0 or 1. 1: periodic boundary condition along the corresponding axis; 0: closed boundary condition along the corresponding axis.
+    double alpha_x;         ///< Real coupling constant associated to the X*P_y operator, part of the angular momentum.
+    double alpha_y;         ///< Real coupling constant associated to the Y*P_x operator, part of the angular momentum.
+    int rot_coord_x;        ///< X axis coordinate of the center of rotation.
+    int rot_coord_y;        ///< Y axis coordinate of the center of rotation.
+    int start_x;          ///< X axis coordinate of the first dot of the processed tile.
+    int start_y;          ///< Y axis coordinate of the first dot of the processed tile.
+    int end_x;            ///< X axis coordinate of the last dot of the processed tile.
+    int end_y;            ///< Y axis coordinate of the last dot of the processed tile.
+    int inner_start_x;        ///< X axis coordinate of the first dot of the processed tile, which is not in the halo.
+    int inner_start_y;        ///< Y axis coordinate of the first dot of the processed tile, which is not in the halo.
+    int inner_end_x;        ///< X axis coordinate of the last dot of the processed tile, which is not in the halo.
+    int inner_end_y;        ///< Y axis coordinate of the last dot of the processed tile, which is not in the halo.
+    int *periods;         ///< Two dimensional array which takes entries 0 or 1. 1: periodic boundary condition along the corresponding axis; 0: closed boundary condition along the corresponding axis.
 #ifdef HAVE_MPI
-    MPI_Comm cartcomm;				///< Ensemble of processes communicating the halos and evolving the tiles.
-    int neighbors[4];				///< Array that stores the processes' rank neighbour of the current process.
-    MPI_Request req[8];				///< Variable to manage MPI communication.
-    MPI_Status statuses[8];			///< Variable to manage MPI communication.
-    MPI_Datatype horizontalBorder;	///< Datatype for the horizontal halos.
-    MPI_Datatype verticalBorder;	///< Datatype for the vertical halos.
+    MPI_Comm cartcomm;        ///< Ensemble of processes communicating the halos and evolving the tiles.
+    int neighbors[4];       ///< Array that stores the processes' rank neighbour of the current process.
+    MPI_Request req[8];       ///< Variable to manage MPI communication.
+    MPI_Status statuses[8];     ///< Variable to manage MPI communication.
+    MPI_Datatype horizontalBorder;  ///< Datatype for the horizontal halos.
+    MPI_Datatype verticalBorder;  ///< Datatype for the vertical halos.
 #endif
 };
 
