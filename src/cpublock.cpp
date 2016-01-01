@@ -1,7 +1,5 @@
 /**
- * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
- * 2010-2012 Carlos Bederián
+ * Massively Parallel Trotter-Suzuki Solver
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,14 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-#include <iostream>
 #include "common.h"
-#include "cpublock.h"
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
-#include <math.h>
+#include "kernel.h"
 
 // Helpers
 void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag) {
@@ -421,39 +413,36 @@ void process_band(bool two_wavefunctions, int offset_tile_x, int offset_tile_y, 
 }
 
 // Class methods
-CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, double _coupling_const, double _delta_x, double _delta_y, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *_periods, double _norm, bool _imag_time, double _alpha_x, double _alpha_y, int _rot_coord_x, int _rot_coord_y
-#ifdef HAVE_MPI
-                   , MPI_Comm _cartcomm
-#endif
-                  ):
-    delta_x(_delta_x),
-    delta_y(_delta_y),
+CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian, 
+                   double *_external_pot_real, double *_external_pot_imag, 
+                   double _a, double _b, double delta_t, 
+                   double _norm, bool _imag_time):
     sense(0),
-    halo_x(_halo_x),
-    halo_y(_halo_y),
-    imag_time(_imag_time),
-    alpha_x(_alpha_x),
-    alpha_y(_alpha_y),
-    rot_coord_x(_rot_coord_x),
-    rot_coord_y(_rot_coord_y) {
-
-	a = new double [1];
-	b = new double [1];
-	coupling_const = new double [3];
-	norm = new double [1];
+    imag_time(_imag_time) {
+    delta_x = grid->delta_x;
+    delta_y = grid->delta_y;
+    halo_x = grid->halo_x;
+    halo_y = grid->halo_y;
+    periods = grid->periods;
+    rot_coord_x = hamiltonian->rot_coord_x;
+    rot_coord_y = hamiltonian->rot_coord_y;
+    alpha_x = hamiltonian->omega*delta_t*grid->delta_x / (2*grid->delta_y); 
+    alpha_y = hamiltonian->omega*delta_t*grid->delta_y / (2*grid->delta_x);
+	  a = new double [1];
+	  b = new double [1];
+	  coupling_const = new double [3];
+	  norm = new double [1];
 	
-	a[0] = _a;
+  	a[0] = _a;
     b[0] = _b;
-    coupling_const[0] = _coupling_const;
+    coupling_const[0] = hamiltonian->coupling_a * delta_t;
     coupling_const[1] = 0.;
     coupling_const[2] = 0.;
     norm[0] = _norm;
-    state = 0;
-    periods = _periods;
-    
+    state_index = 0;
     int rank, coords[2], dims[2] = {0, 0};
 #ifdef HAVE_MPI
-    cartcomm = _cartcomm;
+    cartcomm = grid->cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
     MPI_Comm_rank(cartcomm, &rank);
@@ -464,13 +453,19 @@ CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real,
     coords[0] = coords[1] = 0;
 #endif
 
-    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
-    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
+    start_x = grid->start_x;
+    end_x = grid->end_x;
+    inner_start_x = grid->inner_start_x;
+    inner_end_x = grid->inner_end_x;
+    start_y = grid->start_y;
+    end_y = grid->end_y;
+    inner_start_y = grid->inner_start_y;
+    inner_end_y = grid->inner_end_y;
     tile_width = end_x - start_x;
     tile_height = end_y - start_y;
 
-    p_real[0][0] = _p_real;
-    p_imag[0][0] = _p_imag;
+    p_real[0][0] = state->p_real;
+    p_imag[0][0] = state->p_imag;
     p_real[0][1] = new double[tile_width * tile_height];
     p_imag[0][1] = new double[tile_width * tile_height];
     p_real[1][0] = NULL;
@@ -499,34 +494,35 @@ CPUBlock::CPUBlock(double *_p_real, double *_p_imag, double *_external_pot_real,
 #endif
 }
 
-CPUBlock::CPUBlock(double **_p_real, double **_p_imag, double **_external_pot_real, double **_external_pot_imag, double *_a, double *_b, double *_coupling_const, double _delta_x, double _delta_y, 
-                   int matrix_width, int matrix_height, int _halo_x, int _halo_y, int *_periods, double *_norm, bool _imag_time, double _alpha_x, double _alpha_y, int _rot_coord_x, int _rot_coord_y
-#ifdef HAVE_MPI
-                   , MPI_Comm _cartcomm
-#endif
-                  ):    
-    delta_x(_delta_x),
-    delta_y(_delta_y),
+CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2, 
+                   Hamiltonian2Component *hamiltonian,
+                   double **_external_pot_real, double **_external_pot_imag, 
+                   double *_a, double *_b, double delta_t,
+                   double *_norm, bool _imag_time):    
     sense(0),
-    state(0),
-    halo_x(_halo_x),
-    halo_y(_halo_y),
-    imag_time(_imag_time),
-    alpha_x(_alpha_x),
-    alpha_y(_alpha_y),
-    rot_coord_x(_rot_coord_x),
-    rot_coord_y(_rot_coord_y) {
+    state_index(0),
+    imag_time(_imag_time) {
+    delta_x = grid->delta_x;
+    delta_y = grid->delta_y;
+    halo_x = grid->halo_x;
+    halo_y = grid->halo_y;
+    alpha_x = hamiltonian->omega * delta_t * grid->delta_x / (2 * grid->delta_y), 
+    alpha_y = hamiltonian->omega * delta_t * grid->delta_y / (2 * grid->delta_x),
+    rot_coord_x = hamiltonian->rot_coord_x;
+    rot_coord_y = hamiltonian->rot_coord_y;
     
     a = _a;
     b = _b;
     norm = _norm;
     tot_norm = norm[0] + norm[1];
-
-    coupling_const = _coupling_const;
-    periods = _periods;
+    coupling_const = new double[3];
+    coupling_const[0] = delta_t*hamiltonian->coupling_a;
+    coupling_const[1] = delta_t*hamiltonian->coupling_b;
+    coupling_const[2] = delta_t*hamiltonian->coupling_ab;
+    periods = grid->periods;
     int rank, coords[2], dims[2] = {0, 0};
 #ifdef HAVE_MPI
-    cartcomm = _cartcomm;
+    cartcomm = grid->cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
     MPI_Comm_rank(cartcomm, &rank);
@@ -537,14 +533,22 @@ CPUBlock::CPUBlock(double **_p_real, double **_p_imag, double **_external_pot_re
     coords[0] = coords[1] = 0;
 #endif
 
-    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
-    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
+    start_x = grid->start_x;
+    end_x = grid->end_x;
+    inner_start_x = grid->inner_start_x;
+    inner_end_x = grid->inner_end_x;
+    start_y = grid->start_y;
+    end_y = grid->end_y;
+    inner_start_y = grid->inner_start_y;
+    inner_end_y = grid->inner_end_y;
     tile_width = end_x - start_x;
     tile_height = end_y - start_y;
-    
-    for(int i = 0; i < 2; i++) {
-        p_real[i][0] = _p_real[i];
-        p_imag[i][0] = _p_imag[i];
+    p_real[0][0] = state1->p_real;
+    p_imag[0][0] = state1->p_imag;
+    p_real[1][0] = state2->p_real;
+    p_imag[1][0] = state2->p_imag;
+
+     for(int i = 0; i < 2; i++) {
         p_real[i][1] = new double[tile_width * tile_height];
         p_imag[i][1] = new double[tile_width * tile_height];
         memcpy2D(p_real[i][1], tile_width * sizeof(double), p_real[i][0], tile_width * sizeof(double), tile_width * sizeof(double), tile_height);
@@ -590,8 +594,8 @@ void CPUBlock::run_kernel() {
         #pragma omp for
 #endif
         for (int block_start = block_height - 2 * halo_y; block_start < int(tile_height - block_height); block_start += block_height - 2 * halo_y) {
-            process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a[state], b[state], 
-                         coupling_const[state], coupling_const[2], external_pot_real[state], external_pot_imag[state], p_real[state][sense], p_imag[state][sense], p_real[1 - state][sense], p_imag[1 - state][sense], p_real[state][1 - sense], p_imag[state][1 - sense], inner, sides, imag_time);
+            process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a[state_index], b[state_index], 
+                         coupling_const[state_index], coupling_const[2], external_pot_real[state_index], external_pot_imag[state_index], p_real[state_index][sense], p_imag[state_index][sense], p_real[1 - state_index][sense], p_imag[1 - state_index][sense], p_real[state_index][1 - sense], p_imag[state_index][1 - sense], inner, sides, imag_time);
         }
     }
 
@@ -604,9 +608,9 @@ void CPUBlock::run_kernel_on_halo() {
         // One full band
         inner = 1;
         sides = 1;
-        process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, 0, tile_height, 0, tile_height, a[state], b[state],
-                     coupling_const[state], coupling_const[2], external_pot_real[state], external_pot_imag[state], p_real[state][sense], p_imag[state][sense], 
-                     p_real[1 - state][sense], p_imag[1 - state][sense], p_real[state][1 - sense], p_imag[state][1 - sense], inner, sides, imag_time);
+        process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, 0, tile_height, 0, tile_height, a[state_index], b[state_index],
+                     coupling_const[state_index], coupling_const[2], external_pot_real[state_index], external_pot_imag[state_index], p_real[state_index][sense], p_imag[state_index][sense], 
+                     p_real[1 - state_index][sense], p_imag[1 - state_index][sense], p_real[state_index][1 - sense], p_imag[state_index][1 - sense], inner, sides, imag_time);
     }
     else {
 
@@ -615,29 +619,29 @@ void CPUBlock::run_kernel_on_halo() {
         sides = 1;
         size_t block_start;
         for (block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
-            process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a[state], b[state],
-                         coupling_const[state], coupling_const[2], external_pot_real[state], external_pot_imag[state], p_real[state][sense], p_imag[state][sense], 
-                         p_real[1 - state][sense], p_imag[1 - state][sense], p_real[state][1 - sense], p_imag[state][1 - sense], inner, sides, imag_time);
+            process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a[state_index], b[state_index],
+                         coupling_const[state_index], coupling_const[2], external_pot_real[state_index], external_pot_imag[state_index], p_real[state_index][sense], p_imag[state_index][sense], 
+                         p_real[1 - state_index][sense], p_imag[1 - state_index][sense], p_real[state_index][1 - sense], p_imag[state_index][1 - sense], inner, sides, imag_time);
         }
 
         // First band
         inner = 1;
         sides = 1;
-        process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, 0, block_height, 0, block_height - halo_y, a[state], b[state], 
-                     coupling_const[state], coupling_const[2], external_pot_real[state], external_pot_imag[state], p_real[state][sense], p_imag[state][sense], 
-                     p_real[1 - state][sense], p_imag[1 - state][sense], p_real[state][1 - sense], p_imag[state][1 - sense], inner, sides, imag_time);
+        process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, 0, block_height, 0, block_height - halo_y, a[state_index], b[state_index], 
+                     coupling_const[state_index], coupling_const[2], external_pot_real[state_index], external_pot_imag[state_index], p_real[state_index][sense], p_imag[state_index][sense], 
+                     p_real[1 - state_index][sense], p_imag[1 - state_index][sense], p_real[state_index][1 - sense], p_imag[state_index][1 - sense], inner, sides, imag_time);
 
         // Last band
         inner = 1;
         sides = 1;
-        process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a[state], b[state], 
-                     coupling_const[state], coupling_const[2], external_pot_real[state], external_pot_imag[state], p_real[state][sense], p_imag[state][sense], 
-                     p_real[1 - state][sense], p_imag[1 - state][sense], p_real[state][1 - sense], p_imag[state][1 - sense], inner, sides, imag_time);
+        process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y, a[state_index], b[state_index], 
+                     coupling_const[state_index], coupling_const[2], external_pot_real[state_index], external_pot_imag[state_index], p_real[state_index][sense], p_imag[state_index][sense], 
+                     p_real[1 - state_index][sense], p_imag[1 - state_index][sense], p_real[state_index][1 - sense], p_imag[state_index][1 - sense], inner, sides, imag_time);
     }
 }
 
 void CPUBlock::wait_for_completion() {
-    if(imag_time && norm[state] != 0) {
+    if(imag_time && norm[state_index] != 0) {
         //normalization
         int nProcs = 1;
 #ifdef HAVE_MPI
@@ -648,7 +652,7 @@ void CPUBlock::wait_for_completion() {
         sums = new double[nProcs];
         for(int i = inner_start_y - start_y; i < inner_end_y - start_y; i++) {
             for(int j = inner_start_x - start_x; j < inner_end_x - start_x; j++) {
-                sum += p_real[state][sense][j + i * tile_width] * p_real[state][sense][j + i * tile_width] + p_imag[state][sense][j + i * tile_width] * p_imag[state][sense][j + i * tile_width];
+                sum += p_real[state_index][sense][j + i * tile_width] * p_real[state_index][sense][j + i * tile_width] + p_imag[state_index][sense][j + i * tile_width] * p_imag[state_index][sense][j + i * tile_width];
             }
         }
 #ifdef HAVE_MPI
@@ -659,35 +663,31 @@ void CPUBlock::wait_for_completion() {
         double tot_sum = 0.;
         for(int i = 0; i < nProcs; i++)
             tot_sum += sums[i];
-        double _norm = sqrt(tot_sum * delta_x * delta_y / norm[state]);
+        double _norm = sqrt(tot_sum * delta_x * delta_y / norm[state_index]);
 
         for(size_t i = 0; i < tile_height; i++) {
             for(size_t j = 0; j < tile_width; j++) {
-                p_real[state][sense][j + i * tile_width] /= _norm;
-                p_imag[state][sense][j + i * tile_width] /= _norm;
+                p_real[state_index][sense][j + i * tile_width] /= _norm;
+                p_imag[state_index][sense][j + i * tile_width] /= _norm;
             }
         }
         delete[] sums;
     }
     
     if(two_wavefunctions) {
-		if(state == 0)
+		if(state_index == 0)
 			sense = 1 - sense;
-        state = 1 - state;
+        state_index = 1 - state_index;
 	}
 }
 
-void CPUBlock::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const {
+void CPUBlock::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double *dest_real2, double * dest_imag2) const {
     memcpy2D(dest_real, dest_stride * sizeof(double), &(p_real[0][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
     memcpy2D(dest_imag, dest_stride * sizeof(double), &(p_imag[0][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
-}
-
-void CPUBlock::get_sample2(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double ** dest_real, double ** dest_imag) const {
-    memcpy2D(dest_real[0], dest_stride * sizeof(double), &(p_real[0][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
-    memcpy2D(dest_imag[0], dest_stride * sizeof(double), &(p_imag[0][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
-    
-    memcpy2D(dest_real[1], dest_stride * sizeof(double), &(p_real[1][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
-    memcpy2D(dest_imag[1], dest_stride * sizeof(double), &(p_imag[1][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
+    if (dest_real2 != 0) {
+        memcpy2D(dest_real2, dest_stride * sizeof(double), &(p_real[1][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
+        memcpy2D(dest_imag2, dest_stride * sizeof(double), &(p_imag[1][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
+    }
 }
 
 void CPUBlock::rabi_coupling(double var, double delta_t) {  
@@ -791,25 +791,25 @@ void CPUBlock::start_halo_exchange() {
     // Halo exchange: LEFT/RIGHT
 #ifdef HAVE_MPI
     int offset = (inner_start_y - start_y) * tile_width;
-    MPI_Irecv(p_real[state][1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 1, cartcomm, req);
-    MPI_Irecv(p_imag[state][1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 2, cartcomm, req + 1);
+    MPI_Irecv(p_real[state_index][1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 1, cartcomm, req);
+    MPI_Irecv(p_imag[state_index][1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 2, cartcomm, req + 1);
     offset = (inner_start_y - start_y) * tile_width + inner_end_x - start_x;
-    MPI_Irecv(p_real[state][1 - sense] + offset, 1, verticalBorder, neighbors[RIGHT], 3, cartcomm, req + 2);
-    MPI_Irecv(p_imag[state][1 - sense] + offset, 1, verticalBorder, neighbors[RIGHT], 4, cartcomm, req + 3);
+    MPI_Irecv(p_real[state_index][1 - sense] + offset, 1, verticalBorder, neighbors[RIGHT], 3, cartcomm, req + 2);
+    MPI_Irecv(p_imag[state_index][1 - sense] + offset, 1, verticalBorder, neighbors[RIGHT], 4, cartcomm, req + 3);
 
     offset = (inner_start_y - start_y) * tile_width + inner_end_x - halo_x - start_x;
-    MPI_Isend(p_real[state][1 - sense] + offset, 1, verticalBorder, neighbors[RIGHT], 1, cartcomm, req + 4);
-    MPI_Isend(p_imag[state][1 - sense] + offset, 1, verticalBorder, neighbors[RIGHT], 2, cartcomm, req + 5);
+    MPI_Isend(p_real[state_index][1 - sense] + offset, 1, verticalBorder, neighbors[RIGHT], 1, cartcomm, req + 4);
+    MPI_Isend(p_imag[state_index][1 - sense] + offset, 1, verticalBorder, neighbors[RIGHT], 2, cartcomm, req + 5);
     offset = (inner_start_y - start_y) * tile_width + halo_x;
-    MPI_Isend(p_real[state][1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 3, cartcomm, req + 6);
-    MPI_Isend(p_imag[state][1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 4, cartcomm, req + 7);
+    MPI_Isend(p_real[state_index][1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 3, cartcomm, req + 6);
+    MPI_Isend(p_imag[state_index][1 - sense] + offset, 1, verticalBorder, neighbors[LEFT], 4, cartcomm, req + 7);
 #else
     if(periods[1] != 0) {
         int offset = (inner_start_y - start_y) * tile_width;
-        memcpy2D(&(p_real[state][1 - sense][offset]), tile_width * sizeof(double), &(p_real[state][1 - sense][offset + tile_width - 2 * halo_x]), tile_width * sizeof(double), halo_x * sizeof(double), tile_height - 2 * halo_y);
-        memcpy2D(&(p_imag[state][1 - sense][offset]), tile_width * sizeof(double), &(p_imag[state][1 - sense][offset + tile_width - 2 * halo_x]), tile_width * sizeof(double), halo_x * sizeof(double), tile_height - 2 * halo_y);
-        memcpy2D(&(p_real[state][1 - sense][offset + tile_width - halo_x]), tile_width * sizeof(double), &(p_real[state][1 - sense][offset + halo_x]), tile_width * sizeof(double), halo_x * sizeof(double), tile_height - 2 * halo_y);
-        memcpy2D(&(p_imag[state][1 - sense][offset + tile_width - halo_x]), tile_width * sizeof(double), &(p_imag[state][1 - sense][offset + halo_x]), tile_width * sizeof(double), halo_x * sizeof(double), tile_height - 2 * halo_y);
+        memcpy2D(&(p_real[state_index][1 - sense][offset]), tile_width * sizeof(double), &(p_real[state_index][1 - sense][offset + tile_width - 2 * halo_x]), tile_width * sizeof(double), halo_x * sizeof(double), tile_height - 2 * halo_y);
+        memcpy2D(&(p_imag[state_index][1 - sense][offset]), tile_width * sizeof(double), &(p_imag[state_index][1 - sense][offset + tile_width - 2 * halo_x]), tile_width * sizeof(double), halo_x * sizeof(double), tile_height - 2 * halo_y);
+        memcpy2D(&(p_real[state_index][1 - sense][offset + tile_width - halo_x]), tile_width * sizeof(double), &(p_real[state_index][1 - sense][offset + halo_x]), tile_width * sizeof(double), halo_x * sizeof(double), tile_height - 2 * halo_y);
+        memcpy2D(&(p_imag[state_index][1 - sense][offset + tile_width - halo_x]), tile_width * sizeof(double), &(p_imag[state_index][1 - sense][offset + halo_x]), tile_width * sizeof(double), halo_x * sizeof(double), tile_height - 2 * halo_y);
     }
 #endif
 }
@@ -820,27 +820,27 @@ void CPUBlock::finish_halo_exchange() {
 
     // Halo exchange: UP/DOWN
     int offset = 0;
-    MPI_Irecv(p_real[state][sense] + offset, 1, horizontalBorder, neighbors[UP], 1, cartcomm, req);
-    MPI_Irecv(p_imag[state][sense] + offset, 1, horizontalBorder, neighbors[UP], 2, cartcomm, req + 1);
+    MPI_Irecv(p_real[state_index][sense] + offset, 1, horizontalBorder, neighbors[UP], 1, cartcomm, req);
+    MPI_Irecv(p_imag[state_index][sense] + offset, 1, horizontalBorder, neighbors[UP], 2, cartcomm, req + 1);
     offset = (inner_end_y - start_y) * tile_width;
-    MPI_Irecv(p_real[state][sense] + offset, 1, horizontalBorder, neighbors[DOWN], 3, cartcomm, req + 2);
-    MPI_Irecv(p_imag[state][sense] + offset, 1, horizontalBorder, neighbors[DOWN], 4, cartcomm, req + 3);
+    MPI_Irecv(p_real[state_index][sense] + offset, 1, horizontalBorder, neighbors[DOWN], 3, cartcomm, req + 2);
+    MPI_Irecv(p_imag[state_index][sense] + offset, 1, horizontalBorder, neighbors[DOWN], 4, cartcomm, req + 3);
 
     offset = (inner_end_y - halo_y - start_y) * tile_width;
-    MPI_Isend(p_real[state][sense] + offset, 1, horizontalBorder, neighbors[DOWN], 1, cartcomm, req + 4);
-    MPI_Isend(p_imag[state][sense] + offset, 1, horizontalBorder, neighbors[DOWN], 2, cartcomm, req + 5);
+    MPI_Isend(p_real[state_index][sense] + offset, 1, horizontalBorder, neighbors[DOWN], 1, cartcomm, req + 4);
+    MPI_Isend(p_imag[state_index][sense] + offset, 1, horizontalBorder, neighbors[DOWN], 2, cartcomm, req + 5);
     offset = halo_y * tile_width;
-    MPI_Isend(p_real[state][sense] + offset, 1, horizontalBorder, neighbors[UP], 3, cartcomm, req + 6);
-    MPI_Isend(p_imag[state][sense] + offset, 1, horizontalBorder, neighbors[UP], 4, cartcomm, req + 7);
+    MPI_Isend(p_real[state_index][sense] + offset, 1, horizontalBorder, neighbors[UP], 3, cartcomm, req + 6);
+    MPI_Isend(p_imag[state_index][sense] + offset, 1, horizontalBorder, neighbors[UP], 4, cartcomm, req + 7);
 
     MPI_Waitall(8, req, statuses);
 #else
     if(periods[0] != 0) {
         int offset = (inner_end_y - start_y) * tile_width;
-        memcpy2D(&(p_real[state][sense][0]), tile_width * sizeof(double), &(p_real[state][sense][offset - halo_y * tile_width]), tile_width * sizeof(double), tile_width * sizeof(double), halo_y);
-        memcpy2D(&(p_imag[state][sense][0]), tile_width * sizeof(double), &(p_imag[state][sense][offset - halo_y * tile_width]), tile_width * sizeof(double), tile_width * sizeof(double), halo_y);
-        memcpy2D(&(p_real[state][sense][offset]), tile_width * sizeof(double), &(p_real[state][sense][halo_y * tile_width]), tile_width * sizeof(double), tile_width * sizeof(double), halo_y);
-        memcpy2D(&(p_imag[state][sense][offset]), tile_width * sizeof(double), &(p_imag[state][sense][halo_y * tile_width]), tile_width * sizeof(double), tile_width * sizeof(double), halo_y);
+        memcpy2D(&(p_real[state_index][sense][0]), tile_width * sizeof(double), &(p_real[state_index][sense][offset - halo_y * tile_width]), tile_width * sizeof(double), tile_width * sizeof(double), halo_y);
+        memcpy2D(&(p_imag[state_index][sense][0]), tile_width * sizeof(double), &(p_imag[state_index][sense][offset - halo_y * tile_width]), tile_width * sizeof(double), tile_width * sizeof(double), halo_y);
+        memcpy2D(&(p_real[state_index][sense][offset]), tile_width * sizeof(double), &(p_real[state_index][sense][halo_y * tile_width]), tile_width * sizeof(double), tile_width * sizeof(double), halo_y);
+        memcpy2D(&(p_imag[state_index][sense][offset]), tile_width * sizeof(double), &(p_imag[state_index][sense][halo_y * tile_width]), tile_width * sizeof(double), tile_width * sizeof(double), halo_y);
     }
 #endif
 }

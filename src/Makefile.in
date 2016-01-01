@@ -22,7 +22,6 @@ INSTALL	       = @INSTALL@
 INSTALL_DATA   = @INSTALL_DATA@
 INSTALL_PROGRAM= @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
-HAVE_SSE       = @HAVE_SSE@
 CUDA_CFLAGS    = @CUDA_CFLAGS@
 CUDA_LIBS      = @CUDA_LIBS@
 CUDA_LDFLAGS   = @CUDA_LDFLAGS@
@@ -37,17 +36,11 @@ MEX_BIN        = @MEX_BIN@
 srcdir	 = @srcdir@
 VPATH	  = @srcdir@
 
-LIBOBJS=common.o cpublock.o trotter.o solver.o
+LIBOBJS=common.o cpublock.o solver.o model.o
 
 MEX_FLAGS=-I./
 MEX_LIBS=-lgomp
-MEX_OBJS=common.o cpublock.o trotter.o solver.o
-
-platform=$(shell uname -s)
-
-ifeq ($(HAVE_SSE),1)
-	LIBOBJS+=cpublocksse.o 
-endif
+MEX_OBJS=common.o cpublock.o solver.o model.o
 
 ifdef CUDA_LIBS
 	LIBOBJS+=cc2kernel.cu.co hybrid.cu.co
@@ -56,14 +49,14 @@ ifdef CUDA_LIBS
 	MEX_OBJS+=cc2kernel.cu.o hybrid.cu.o
 endif
 
-OBJS=$(LIBOBJS) main.o solver.o
+OBJS=$(LIBOBJS) main.o
 
-all: trotter lib
+all: trottersuzuki lib
 
 lib: $(LIBOBJS)
-	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -shared -o trotter.so $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
+	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -shared -o trottersuzuki.so $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
 	
-trotter: $(OBJS)
+trottersuzuki: $(OBJS)
 	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o $@ $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
 
 %.o: %.cpp
@@ -74,7 +67,7 @@ trotter: $(OBJS)
 
 matlab: lib
 	if [ -e cc2kernel.cu.co ]; then cp cc2kernel.cu.co cc2kernel.cu.o; cp hybrid.cu.co hybrid.cu.o; fi
-	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexTrotter.cpp $(MEX_OBJS) $(MEX_LIBS)
+	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexSolver.cpp $(MEX_OBJS) $(MEX_LIBS)
 	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexH.cpp ./common.o $(MEX_LIBS)
 	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexK.cpp ./common.o $(MEX_LIBS)
 	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexNorm.cpp ./common.o $(MEX_LIBS)
@@ -98,7 +91,7 @@ python:
 	cp ./*.h ./Python/trottersuzuki/src/
 	cp ./*.cpp ./Python/trottersuzuki/src/
 	cp ./*.cu ./Python/trottersuzuki/src/
-	swig -c++ -python ./Python/trottersuzuki/trotter.i
+	swig -c++ -python ./Python/trottersuzuki/trottersuzuki.i
 	cd Python
 
 python_install: python
@@ -108,18 +101,18 @@ python_clean:
 	-rm -rf Python/trottersuzuki/src Python/trottersuzuki/examples Python/trottersuzuki/test Python/*.pyc Python/trottersuzuki/*.pyc Python/trottersuzuki/*.h Python/trottersuzuki/*.cpp  Python/trottersuzuki/*.cxx Python/dist Python/trottersuzuki.egg* Python/build Python/trottersuzuki/trottersuzuki.py Python/trottersuzuki/*.so Python/trottersuzuki/Makefile* Python/trottersuzuki/config* Python/trottersuzuki/install*
 
 clean: python_clean matlab_clean
-	-rm -f trotter trotter.so $(OBJS) 1>/dev/null
+	-rm -f trottersuzuki trottersuzuki.so $(OBJS) 1>/dev/null
 
 install: all
 	$(INSTALL) -d $(DESTDIR)$(bindir)
-	$(INSTALL_PROGRAM) -m 0755 trotter \
+	$(INSTALL_PROGRAM) -m 0755 trottersuzuki \
 	 $(DESTDIR)$(bindir)
-	$(INSTALL_PROGRAM) -m 0755 trotter.so \
+	$(INSTALL_PROGRAM) -m 0755 trottersuzuki.so \
 	 $(DESTDIR)$(libdir)
-	$(INSTALL_PROGRAM) -m 0644 trotter.h $(DESTDIR)$(incdir)	 
+	$(INSTALL_PROGRAM) -m 0644 trottersuzuki.h $(DESTDIR)$(incdir)	 
 
 uninstall:
-	-rm $(DESTDIR)$(bindir)/trotter &>/dev/null
+	-rm $(DESTDIR)$(bindir)/trottersuzuki &>/dev/null
 
 Makefile: Makefile.in ../config.status
 	cd .. && ./config.status $@

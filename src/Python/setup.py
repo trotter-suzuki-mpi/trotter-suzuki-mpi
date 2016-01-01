@@ -8,8 +8,6 @@ import os
 import sys
 import platform
 
-sse = False
-
 def find_cuda():
     if 'CUDAHOME' in os.environ:
         home = os.environ['CUDAHOME']
@@ -94,12 +92,10 @@ else:
         openmp = 'gomp'
 sources_files = ['trottersuzuki/src/common.cpp',
                  'trottersuzuki/src/cpublock.cpp',
-                 'trottersuzuki/src/trotter.cpp',
+                 'trottersuzuki/src/model.cpp',
                  'trottersuzuki/src/solver.cpp',
                  'trottersuzuki/trotter_wrap.cxx']
 
-if sse:
-    sources_files.append('trottersuzuki/src/cpublocksse.cpp')
 ts_module = Extension('_trottersuzuki', sources=sources_files,
                       include_dirs=[numpy_include, 'src'],
                       extra_compile_args={'cc': extra_compile_args},

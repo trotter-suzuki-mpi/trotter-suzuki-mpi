@@ -1,7 +1,5 @@
 /**
- * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
- * 2010-2012 Carlos Bederián
+ * Massively Parallel Trotter-Suzuki Solver
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,12 +16,14 @@
  *
  */
 
-#include <string.h>
-#include <fstream>
-#include <stdlib.h>
 #include <iostream>
-#include <complex>
-
+#include <sstream>
+#include <cstring>
+#include <cstdlib>
+#include "trottersuzuki.h"
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 #ifdef WIN32
 #include "unistd.h"
 #include <windows.h>
@@ -31,15 +31,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 #endif
-
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include "common.h"
-#include "trotter.h"
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
+
 #define DIM 640
 #define EDGE_LENGHT 640
 #define SINGLE_TIME_STEP 0.01
@@ -54,7 +47,7 @@ int rot_coord_x = 320, rot_coord_y = 320;
 double omega = 0;
 
 void print_usage() {
-    std::cout << "Usage:\n" \
+    cout << "Usage:\n" \
               "     trotter [OPTION] -n filename\n" \
               "Arguments:\n" \
               "     -m NUMBER     Particle mass (default: " << PARTICLE_MASS << ")\n"\
@@ -92,33 +85,32 @@ void process_command_line(int argc, char** argv, int *dim, double *delta_x, doub
         case 'd':
             *dim = atoi(optarg);
             if (*dim <= 0) {
-                fprintf (stderr, "The argument of option -d should be a positive integer.\n");
-                abort ();
+                my_abort("The argument of option -d should be a positive integer.\n");
             }
             break;
         case 'i':
             *iterations = atoi(optarg);
             if (*iterations <= 0) {
-                fprintf (stderr, "The argument of option -i should be a positive integer.\n");
-                abort ();
+                my_abort("The argument of option -i should be a positive integer.\n");
             }
             break;
         case 'h':
             print_usage();
-            abort ();
+#ifdef HAVE_MPI
+            MPI_Finalize();
+#endif
+            my_abort("");
             break;
         case 'k':
             *kernel_type = optarg;
             if (*kernel_type != "cpu" && *kernel_type != "gpu" && *kernel_type != "hybrid") {
-                fprintf (stderr, "The argument of option -t should be cpu, gpu, or hybrid.");
-                abort();
+                my_abort("The argument of option -t should be cpu, gpu, or hybrid.");
             }
             break;
         case 's':
             *snapshots = atoi(optarg);
             if (*snapshots <= 0) {
-                fprintf (stderr, "The argument of option -s should be a positive integer.\n");
-                abort ();
+                my_abort("The argument of option -s should be a positive integer.\n");
             }
             break;
         case 'n':
@@ -132,15 +124,13 @@ void process_command_line(int argc, char** argv, int *dim, double *delta_x, doub
         case 'm':
             *particle_mass = atoi(optarg);
             if (delta_t <= 0) {
-                fprintf (stderr, "The argument of option -m should be a positive real number.\n");
-                abort ();
+                my_abort("The argument of option -m should be a positive real number.\n");
             }
             break;
         case 't':
             *delta_t = atoi(optarg);
             if (delta_t <= 0) {
-                fprintf (stderr, "The argument of option -t should be a positive real number.\n");
-                abort ();
+                my_abort("The argument of option -t should be a positive real number.\n");
             }
             break;
         case 'p':
@@ -150,34 +140,33 @@ void process_command_line(int argc, char** argv, int *dim, double *delta_x, doub
         case 'l':
             lenght = atoi(optarg);
             if (lenght <= 0) {
-                fprintf (stderr, "The argument of option -l should be a positive real number.\n");
-                abort ();
+                my_abort("The argument of option -l should be a positive real number.\n");
             }
             break;
         case '?':
             if (optopt == 'd' || optopt == 'i' || optopt == 'k' || optopt == 's') {
-                fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-                print_usage();
-                abort ();
+                stringstream sstm;
+                sstm << "Option -" <<  optopt << " requires an argument.";
+                my_abort(sstm.str());
             }
             else if (isprint (optopt)) {
-                fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-                print_usage();
-                abort ();
+                stringstream sstm;
+                sstm << "Unknown option -" << optopt;
+                my_abort(sstm.str());
             }
             else {
-                fprintf (stderr, "Unknown option character `\\x%x'.\n",  optopt);
-                print_usage();
-                abort ();
+                stringstream sstm;
+                sstm << "Unknown option -" << optopt;
+                my_abort(sstm.str());
             }
         default:
-            abort ();
+                stringstream sstm;
+                sstm << "Unknown option -" << optopt;
+                my_abort(sstm.str());
         }
     }
     if(!file_supplied) {
-        fprintf (stderr, "Initial state file has not been supplied\n");
-        print_usage();
-        abort();
+        my_abort("Initial state file has not been supplied\n");
     }
     *delta_x = lenght / double(*dim);
     *delta_y = lenght / double(*dim);
@@ -195,117 +184,62 @@ int main(int argc, char** argv) {
     double norm = 1;
     int time, tot_time = 0;
     char output_folder[2] = {'.', '\0'};
-	double delta_t = 0;
-	double coupling_const = 0;
-	double delta_x = 1, delta_y = 1;
+    double delta_t = 0;
+    double coupling_const = 0;
+    double delta_x = 1, delta_y = 1;
 
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    process_command_line(argc, argv, &dim, &delta_x, &delta_y, &iterations, &snapshots, &kernel_type, filename, &delta_t, &coupling_const, &particle_mass, pot_name, &imag_time);
-	
-    int halo_x = (kernel_type == "sse" ? 3 : 4);
-    halo_x = (omega == 0. ? halo_x : 8);
-    int halo_y = (omega == 0. ? 4 : 8);
-    int matrix_width = dim + periods[1] * 2 * halo_x;
-    int matrix_height = dim + periods[0] * 2 * halo_y;
-
-    //define the topology
-    int coords[2], dims[2] = {0, 0};
-    int rank;
-    int nProcs;
-
-#ifdef HAVE_MPI
-    MPI_Comm cartcomm;
-    MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
-    MPI_Dims_create(nProcs, 2, dims);  //partition all the processes (the size of MPI_COMM_WORLD's group) into an 2-dimensional topology
-    MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, 0, &cartcomm);
-    MPI_Comm_rank(cartcomm, &rank);
-    MPI_Cart_coords(cartcomm, rank, 2, coords);
-#else
-    nProcs = 1;
-    rank = 0;
-    dims[0] = dims[1] = 1;
-    coords[0] = coords[1] = 0;
-#endif
-
-    //set dimension of tiles and offsets
-    int start_x, end_x, inner_start_x, inner_end_x,
-        start_y, end_y, inner_start_y, inner_end_y;
-    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
-    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
-    int tile_width = end_x - start_x;
-    int tile_height = end_y - start_y;
-
-    
-	int read_offset = 0;
-
-	//set and calculate evolution operator variables from hamiltonian
-	double time_single_it;
-	double *external_pot_real = new double[tile_width * tile_height];
-	double *external_pot_imag = new double[tile_width * tile_height];
-	double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-	hamiltonian_pot = const_potential;
-
-	if(imag_time) {
-		double constant = 6.;
-		time_single_it = delta_t / 2.;	//second approx trotter-suzuki: time/2
-		if(h_a == 0. && h_b == 0.) {
-			h_a = cosh(time_single_it / (2. * particle_mass)) / constant;
-			h_b = sinh(time_single_it / (2. * particle_mass)) / constant;
-		}
-	}
-	else {
-		time_single_it = delta_t / 2.;	//second approx trotter-suzuki: time/2
-		if(h_a == 0. && h_b == 0.) {
-			h_a = cos(time_single_it / (2. * particle_mass));
-			h_b = sin(time_single_it / (2. * particle_mass));
-		}
-	}
-	initialize_exp_potential(external_pot_real, external_pot_imag, pot_name, hamiltonian_pot, tile_width, tile_height, matrix_width, matrix_height,
-							 start_x, start_y, periods, coords, dims, halo_x, halo_y, time_single_it, particle_mass, imag_time);
-
-	//set initial state
-	double *p_real = new double[tile_width * tile_height];
-	double *p_imag = new double[tile_width * tile_height];
-	std::complex<double> (*ini_state)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-	ini_state = NULL;
-	initialize_state(p_real, p_imag, filename, ini_state, tile_width, tile_height, matrix_width, matrix_height, start_x, start_y,
-					 periods, coords, dims, halo_x, halo_y, read_offset);
-
-	for(int count_snap = 0; count_snap <= snapshots; count_snap++) {
-		stamp(p_real, p_imag, matrix_width, matrix_height, halo_x, halo_y, start_x, inner_start_x, inner_end_x, end_x,
-			  start_y, inner_start_y, inner_end_y, dims, coords, periods,
-			  0, iterations, count_snap, output_folder
-#ifdef HAVE_MPI
-			  , cartcomm
-#endif
-			 );
-
-		if(count_snap != snapshots) {
-#ifdef WIN32
-			SYSTEMTIME start;
-			GetSystemTime(&start);
-#else
-			struct timeval start, end;
-			gettimeofday(&start, NULL);
-#endif
-			trotter(h_a, h_b, coupling_const, external_pot_real, external_pot_imag, p_real, p_imag, delta_x, delta_y, matrix_width, matrix_height, delta_t, iterations, omega, rot_coord_x, rot_coord_y, kernel_type, norm, imag_time);
-#ifdef WIN32
-			SYSTEMTIME end;
-			GetSystemTime(&end);
-			time = (end.wMinute - start.wMinute) * 60000 + (end.wSecond - start.wSecond) * 1000 + (end.wMilliseconds - start.wMilliseconds);
-#else
-			gettimeofday(&end, NULL);
-			time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
-#endif
-			tot_time += time;
-		}
-	}
-
-    if (coords[0] == 0 && coords[1] == 0 && verbose == true) {
-        std::cout << "TROTTER " << matrix_width - periods[1] * 2 * halo_x << "x" << matrix_height - periods[0] * 2 * halo_y << " kernel:" << kernel_type << " np:" << nProcs << " " << tot_time << std::endl;
+    try {
+        process_command_line(argc, argv, &dim, &delta_x, &delta_y, &iterations, &snapshots, &kernel_type, filename, &delta_t, &coupling_const, &particle_mass, pot_name, &imag_time);
+    } catch (const std::runtime_error& e) {
+        return 1; // exit is okay here because an MPI runtime would have aborted in my_abort
     }
+	
+    Lattice *grid = new Lattice(dim, delta_x, delta_y, periods, omega);
+    
+    int read_offset = 0;
+
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
+    hamiltonian->initialize_potential(const_potential);
+
+    //set initial state
+    State *state = new State(grid);
+    state->read_state(filename, read_offset);
+    
+    Solver *solver = new Solver(grid, state, hamiltonian, delta_t, kernel_type);
+
+    for(int count_snap = 0; count_snap <= snapshots; count_snap++) {
+
+      if(count_snap != snapshots) {
+#ifdef WIN32
+        SYSTEMTIME start;
+        GetSystemTime(&start);
+#else
+        struct timeval start, end;
+        gettimeofday(&start, NULL);
+#endif
+        solver->evolve(iterations, imag_time);
+#ifdef WIN32
+        SYSTEMTIME end;
+        GetSystemTime(&end);
+        time = (end.wMinute - start.wMinute) * 60000 + (end.wSecond - start.wSecond) * 1000 + (end.wMilliseconds - start.wMilliseconds);
+#else
+        gettimeofday(&end, NULL);
+        time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
+#endif
+        tot_time += time;
+      }
+    }
+
+    if (grid->mpi_coords[0] == 0 && grid->mpi_coords[1] == 0 && verbose == true) {
+        cout << "TROTTER " << dim << "x" << dim << " kernel:" << kernel_type << " np:" << grid->mpi_procs << " " << tot_time << endl;
+    }
+    delete solver;
+    delete hamiltonian;
+    delete state;
+    delete grid;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif

@@ -1,6 +1,5 @@
 /**
- * Distributed Trotter-Suzuki solver
- * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek
+ * Massively Parallel Trotter-Suzuki Solver
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,40 +17,31 @@
  */
 
 #include <stdio.h>
-
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include "common.h"
-#include "hybrid.h"
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
+#include "kernel.h"
 
 // Class methods
-HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, double _coupling_const, double _delta_x, double _delta_y, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int * _periods, double _norm, bool _imag_time
-#ifdef HAVE_MPI
-                           , MPI_Comm _cartcomm
-#endif
-                          ):
+HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian, 
+                           double *_external_pot_real, double *_external_pot_imag, 
+                           double a, double b, double delta_t, 
+                           double _norm, bool _imag_time):
     threadsPerBlock(BLOCK_X, STRIDE_Y),
     a(_a),
     b(_b),
-    coupling_const(_coupling_const),
-    delta_x(_delta_x),
-    delta_y(_delta_y),
     external_pot_real(_external_pot_real),
     external_pot_imag(_external_pot_imag),
     sense(0),
-    halo_x(_halo_x),
-    halo_y(_halo_y),
     norm(_norm),
     imag_time(_imag_time) {
-
-    periods = _periods;
+    delta_x = grid->delta_x;
+    delta_y = grid->delta_y;
+    halo_x = grid->halo_x;
+    halo_y = grid->halo_y;
+    coupling_const = hamiltonian->coupling_a * delta_t;
+    periods = grid->periods;
     int rank, coords[2], dims[2] = {0, 0};
 #ifdef HAVE_MPI
-    cartcomm = _cartcomm;
+    cartcomm = grid->cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
     MPI_Comm_rank(cartcomm, &rank);
@@ -61,8 +51,14 @@ HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_p
     rank = 0;
     coords[0] = coords[1] = 0;
 #endif
-    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, matrix_width - 2 * periods[1]*halo_x, halo_x, periods[1]);
-    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, matrix_height - 2 * periods[0]*halo_y, halo_y, periods[0]);
+    start_x = grid->start_x;
+    end_x = grid->end_x;
+    inner_start_x = grid->inner_start_x;
+    inner_end_x = grid->inner_end_x;
+    start_y = grid->start_y;
+    end_y = grid->end_y;
+    inner_start_y = grid->inner_start_y;
+    inner_end_y = grid->inner_end_y;
     tile_width = end_x - start_x;
     tile_height = end_y - start_y;
 
@@ -295,10 +291,12 @@ void HybridKernel::wait_for_completion() {
     }
 }
 
-void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const {
+void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y, 
+                              size_t width, size_t height, 
+                              double *dest_real, double *dest_imag, 
+                              double *dest_real2=0, double *dest_imag2=0) const {
     if ( (x != 0) || (y != 0) || (width != tile_width) || (height != tile_height)) {
-        //printf("Only full tile samples are implementedaaa!\n");
-        //return;
+        my_abort("Only full tile samples are implemented!\n");
     }
     memcpy2D(dest_real, dest_stride * sizeof(double), &(p_real[sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);
     memcpy2D(dest_imag, dest_stride * sizeof(double), &(p_imag[sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height);

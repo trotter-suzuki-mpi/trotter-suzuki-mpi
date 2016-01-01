@@ -5,7 +5,7 @@ AC_PREREQ([2.61])
 AC_INIT([trotter-suzuki], [1.4])
 m4_include([m4/ax_mpi_options.m4])
 m4_include([m4/ax_mpi_tests.m4])
-AC_CONFIG_SRCDIR([src/trotter.cpp])
+AC_CONFIG_SRCDIR([src/trottersuzuki.h])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
@@ -45,28 +45,6 @@ then
 else
   SUFFIX=""
 fi
-
-# Check if SSE kernel is requested
-# ------------------------------------------------------------------------------
-sse_enabled=no
-HAVE_SSE=0  
-AC_ARG_WITH([sse],
-   [  --with-sse   Compile with the SSE kernel included])
-if test x"$with_sse" = x"yes" ; then
-  AC_MSG_CHECKING(whether we can compile with SSE kernel)
-  AC_LANG([C++])
-  AC_COMPILE_IFELSE(
-  [AC_LANG_SOURCE([[#include <stdlib.h>]],
-                  [[const double * r00 = reinterpret_cast<double*>(aligned_alloc(64, sizeof(double)));]])],
-  [
-    AC_MSG_RESULT(yes)
-    HAVE_SSE=1
-    sse_enabled=yes
-  ],[
-    AC_MSG_RESULT(no)
-  ])
-fi
-AC_SUBST(HAVE_SSE)
 
 # Setup CUDA paths
 # ------------------------------------------------------------------------------

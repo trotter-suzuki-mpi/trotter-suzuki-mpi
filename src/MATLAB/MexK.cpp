@@ -1,5 +1,5 @@
 #include "mex.h"
-#include "trotter.h"
+#include "trottersuzuki.h"
 
 void mexFunction(int nlhs, mxArray *plhs[],
                  int nrhs, const mxArray *prhs[]) {
