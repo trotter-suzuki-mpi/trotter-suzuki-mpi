@@ -2,7 +2,7 @@
 %include <std_string.i>
 %{
 #define SWIG_FILE_WITH_INIT
-#include "src/trotter.h"
+#include "src/trottersuzuki.h"
 %}
 
 %include "numpy.i"

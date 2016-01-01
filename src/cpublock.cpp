@@ -17,14 +17,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-#include <iostream>
 #include "common.h"
-#include "cpublock.h"
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
-#include <math.h>
+#include "kernel.h"
 
 // Helpers
 void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag) {
@@ -461,8 +455,14 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     coords[0] = coords[1] = 0;
 #endif
 
-    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, grid->global_dim_x - 2 * periods[1]*halo_x, halo_x, periods[1]);
-    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, grid->global_dim_y - 2 * periods[0]*halo_y, halo_y, periods[0]);
+    start_x = grid->start_x;
+    end_x = grid->end_x;
+    inner_start_x = grid->inner_start_x;
+    inner_end_x = grid->inner_end_x;
+    start_y = grid->start_y;
+    end_y = grid->end_y;
+    inner_start_y = grid->inner_start_y;
+    inner_end_y = grid->inner_end_y;
     tile_width = end_x - start_x;
     tile_height = end_y - start_y;
 
@@ -535,8 +535,14 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
     coords[0] = coords[1] = 0;
 #endif
 
-    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, grid->global_dim_x - 2 * periods[1]*halo_x, halo_x, periods[1]);
-    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, grid->global_dim_y - 2 * periods[0]*halo_y, halo_y, periods[0]);
+    start_x = grid->start_x;
+    end_x = grid->end_x;
+    inner_start_x = grid->inner_start_x;
+    inner_end_x = grid->inner_end_x;
+    start_y = grid->start_y;
+    end_y = grid->end_y;
+    inner_start_y = grid->inner_start_y;
+    inner_end_y = grid->inner_end_y;
     tile_width = end_x - start_x;
     tile_height = end_y - start_y;
     p_real[0][0] = state1->p_real;

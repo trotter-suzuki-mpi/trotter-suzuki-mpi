@@ -23,15 +23,18 @@
 #include <vector>
 #include <map>
 #include <stdio.h>
-
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif
-#include "cc2kernel.h"
+#include "kernel.h"
 #include "common.h"
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
+
+#define CUT_CHECK_ERROR(errorMessage) {                                    \
+    cudaError_t err = cudaGetLastError();                                    \
+    if( cudaSuccess != err) {                                                \
+        fprintf(stderr, "Cuda error: %s in file '%s' in line %i : %s.\n",    \
+                errorMessage, __FILE__, __LINE__, cudaGetErrorString( err) );\
+        exit(EXIT_FAILURE);                                                  \
+    }                                                                        \
+    }
+
 
 /** Check and initialize a device attached to a node
  *  @param commRank - the MPI rank of this process

@@ -17,21 +17,13 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
-#include <string>
-#include <sstream>
 #include <fstream>
-#include <iostream>
-#include <complex>
 #include <sys/stat.h>
 #include <sys/time.h>
-
-#include "trotter.h"
-#include "kernel.h"
-#include "common.h"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
+#include "trottersuzuki.h"
 
 #define EDGE_LENGTH 14.14     //Physical length of the grid's edge
 #define DIM 256         //Number of dots of the grid's edge

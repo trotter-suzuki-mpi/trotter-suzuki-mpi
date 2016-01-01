@@ -18,12 +18,11 @@
  *
  */
 
-#include <string.h>
-#include <fstream>
 #include <stdlib.h>
 #include <iostream>
-#include <complex>
-
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 #ifdef WIN32
 #include "unistd.h"
 #include <windows.h>
@@ -31,15 +30,11 @@
 #include <sys/time.h>
 #include <unistd.h>
 #endif
-
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include "common.h"
-#include "trotter.h"
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
+#include "trottersuzuki.h"
+
 #define DIM 640
 #define EDGE_LENGHT 640
 #define SINGLE_TIME_STEP 0.01
@@ -212,8 +207,6 @@ int main(int argc, char** argv) {
     double time_single_it;
     double *external_pot_real = new double[grid->dim_x * grid->dim_y];
     double *external_pot_imag = new double[grid->dim_x * grid->dim_y];
-    double (*hamiltonian_pot)(int x, int y, int matrix_width, int matrix_height, int * periods, int halo_x, int halo_y);
-    hamiltonian_pot = const_potential;
 
     if(imag_time) {
       double constant = 6.;
@@ -230,8 +223,9 @@ int main(int argc, char** argv) {
         h_b = sin(time_single_it / (2. * particle_mass));
       }
     }
-    initialize_exp_potential(external_pot_real, external_pot_imag, pot_name, hamiltonian_pot, grid->dim_x, grid->dim_y, grid->global_dim_x, grid->global_dim_y,
-                 grid->start_x, grid->start_y, periods, grid->mpi_coords, grid->mpi_dims, grid->halo_x, grid->halo_y, time_single_it, particle_mass, imag_time);
+    initialize_exp_potential(grid, external_pot_real, external_pot_imag, 
+                             const_potential, time_single_it, 
+                             particle_mass, imag_time);
     Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
 
     //set initial state

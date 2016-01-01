@@ -20,29 +20,9 @@
 
 #ifndef __COMMON_H
 #define __COMMON_H
-
-#include <string>
-#include <complex>
-
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
-#include "trotter.h"
+#include "trottersuzuki.h"
+void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound);
 void print_complex_matrix(char * filename, double * matrix_real, double * matrix_imag, size_t stride, size_t width, size_t height);
 void print_matrix(const char * filename, double * matrix, size_t stride, size_t width, size_t height);
 void memcpy2D(void * dst, size_t dstride, const void * src, size_t sstride, size_t width, size_t height);
-void get_quadrant_sample(const double * r00, const double * r01, const double * r10, const double * r11,
-                         const double * i00, const double * i01, const double * i10, const double * i11,
-                         size_t src_stride, size_t dest_stride,
-                         size_t x, size_t y, size_t width, size_t height,
-                         double * dest_real, double * dest_imag);
-void get_quadrant_sample_to_buffer(const double * r00, const double * r01, const double * r10, const double * r11,
-                                   const double * i00, const double * i01, const double * i10, const double * i11,
-                                   size_t src_stride, size_t dest_stride,
-                                   size_t x, size_t y, size_t width, size_t height,
-                                   double * dest_real, double * dest_imag);
 #endif

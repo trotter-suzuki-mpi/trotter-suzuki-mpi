@@ -17,17 +17,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
-#include <string>
-#include <sstream>
 #include <fstream>
-#include <iostream>
-#include <complex>
 #include <sys/stat.h>
 
-#include "trotter.h"
-#include "kernel.h"
-#include "common.h"
+#include "trottersuzuki.h"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif

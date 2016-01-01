@@ -24,18 +24,11 @@
  * state is the following:
  * 		exp(i2M_PI / L (x + y))
  */
-
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <complex>
 #include <sys/stat.h>
-
-#include "common.h"
-#include "trotter.h"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
+#include "trottersuzuki.h"
 
 #define LENGTH 50
 #define DIM 640

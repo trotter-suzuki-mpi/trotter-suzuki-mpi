@@ -92,7 +92,7 @@ else:
         openmp = 'gomp'
 sources_files = ['trottersuzuki/src/common.cpp',
                  'trottersuzuki/src/cpublock.cpp',
-                 'trottersuzuki/src/trotter.cpp',
+                 'trottersuzuki/src/model.cpp',
                  'trottersuzuki/src/solver.cpp',
                  'trottersuzuki/trotter_wrap.cxx']
 

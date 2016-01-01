@@ -24,18 +24,11 @@
  * state is the following:
  * 		sin(2M_PI / L * x) * sin(2M_PI / L * y)
  */
-
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <complex>
 #include <sys/stat.h>
-
-#include "common.h"
-#include "trotter.h"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
+#include "trottersuzuki.h"
 
 #define DIM 640
 #define ITERATIONS 100

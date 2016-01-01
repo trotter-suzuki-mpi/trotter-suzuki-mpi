@@ -24,17 +24,12 @@
  * state is the following:
  * 		exp(-( (x - 180)² + (y - 300)² )/ 2s²)* exp(0.4j * (x + y - 480.));
  */
-
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <complex>
 #include <sys/stat.h>
-#include "trotter.h"
-
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
+
+#include "trottersuzuki.h"
 
 #define ITERATIONS 10
 #define DIM 640

@@ -1,5 +1,5 @@
 /**
- * Distributed Trotter-Suzuki solver
+- * Distributed Trotter-Suzuki solver
  * Copyright (C) 2015 Luca Calderaro, 2012-2015 Peter Wittek,
  * 2010-2012 Carlos Bederián
  *
@@ -24,18 +24,11 @@
  * state is the following:
  * 		exp(i2M_PI / L (x + y))
  */
-
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <complex>
 #include <sys/stat.h>
-
-#include "common.h"
-#include "trotter.h"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
+#include "trottersuzuki.h"
 
 #define DIM 640
 #define ITERATIONS 100

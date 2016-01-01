@@ -18,15 +18,8 @@
  */
 
 #include <stdio.h>
-
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include "common.h"
-#include "hybrid.h"
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
+#include "kernel.h"
 
 // Class methods
 HybridKernel::HybridKernel(double *_p_real, double *_p_imag, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, double _coupling_const, double _delta_x, double _delta_y, int matrix_width, int matrix_height, int _halo_x, int _halo_y, int * _periods, double _norm, bool _imag_time

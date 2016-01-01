@@ -33,7 +33,7 @@ TEST_LIBS      = @TEST_LIBS@
 # VPATH-related substitution variables
 srcdir	 = ./../src
 
-LIBOBJS=$(srcdir)/common.o $(srcdir)/cpublock.o $(srcdir)/trotter.o
+LIBOBJS=$(srcdir)/common.o $(srcdir)/cpublock.o $(srcdir)/solver.o $(srcdir)/model.o
 
 ifdef CUDA_LIBS
 	LIBOBJS+=$(srcdir)/cc2kernel.cu.co $(srcdir)/hybrid.cu.co

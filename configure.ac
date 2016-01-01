@@ -5,7 +5,7 @@ AC_PREREQ([2.61])
 AC_INIT([trotter-suzuki], [1.4])
 m4_include([m4/ax_mpi_options.m4])
 m4_include([m4/ax_mpi_tests.m4])
-AC_CONFIG_SRCDIR([src/trotter.cpp])
+AC_CONFIG_SRCDIR([src/trottersuzuki.h])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.

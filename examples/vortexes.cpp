@@ -17,20 +17,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
-#include <string>
-#include <sstream>
 #include <fstream>
-#include <iostream>
-#include <complex>
 #include <sys/stat.h>
-
-#include "trotter.h"
-#include "kernel.h"
-#include "common.h"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
+#include "trottersuzuki.h"
 
 #define LENGHT 50
 #define DIM 640

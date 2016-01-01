@@ -17,14 +17,20 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+#ifndef __TROTTERSUZUKI_H
+#define __TROTTERSUZUKI_H
+
 #include <string>
 #include <cfloat>
+#include <complex>
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
+
 using namespace std;
-#ifndef __TROTTER_H
-#define __TROTTER_H
 
 class Lattice {
 public:
@@ -54,7 +60,7 @@ public:
 
     State(Lattice *_grid, double *_p_real=0, double *_p_imag=0);
     ~State();
-    void init_state(std::complex<double> (*ini_state)(int x, int y, Lattice *grid));
+    void init_state(complex<double> (*ini_state)(int x, int y, Lattice *grid));
     void read_state(char *file_name, int read_offset);
 
     double calculate_squared_norm(bool global=true);
@@ -87,7 +93,7 @@ public:
                 double *_external_pot=0);
     ~Hamiltonian();
     void initialize_potential(double (*hamiltonian_pot)(int x, int y, Lattice *grid));
-    
+    void read_potential(char *pot_name);    
 };
 
 class Hamiltonian2Component: public Hamiltonian {
@@ -137,6 +143,29 @@ public:
 
 */
 
+class Solver {
+public:
+    Lattice *grid;
+    State *state;
+    State *state_b;
+    Hamiltonian *hamiltonian;
+    Solver(Lattice *grid, State *state, Hamiltonian *hamiltonian, double delta_t, 
+           string kernel_type="cpu");
+    ~Solver();
+    void evolve(int iterations, bool imag_time=false);
+private:
+    bool imag_time;
+    double h_a[2];
+    double h_b[2];
+    double **external_pot_real;
+    double **external_pot_imag;
+    double delta_t;
+    double norm2[2];
+    bool single_component;
+    bool first_run;
+    string kernel_type;
+};
+
 void trotter(Lattice *grid, State *state, Hamiltonian *hamiltonian,
              double h_a, double h_b, 
              double * external_pot_real, double * external_pot_imag,
@@ -151,9 +180,6 @@ void trotter(Lattice *grid, State *state1, State *state2,
              double delta_t,
              const int iterations, 
              string kernel_type, double *norm, bool imag_time);
-
-void solver(Lattice *grid, State *state, Hamiltonian *hamiltonian,
-            double delta_t, const int iterations, string kernel_type, bool imag_time);
             
 /**
  * \brief Structure defining expected values calculated by expect_values().
@@ -194,4 +220,5 @@ void initialize_exp_potential(Lattice *grid, double * external_pot_real, double 
 double const_potential(int x, int y, Lattice *grid);
 void stamp(Lattice *grid, State *state, int tag_particle, int iterations, int count_snap, const char * output_folder);
 void stamp_real(Lattice *grid, double *matrix, int iterations, const char * output_folder, const char * file_tag);
-#endif
+
+#endif // __TROTTERSUZUKI_H

@@ -41,7 +41,7 @@
     <ClInclude Include="..\..\kernel.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\trotter.h">
+    <ClInclude Include="..\..\trottersuzuki.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\unistd.h">
