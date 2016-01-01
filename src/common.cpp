@@ -19,12 +19,20 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include "trottersuzuki.h"
+
+void my_abort(string err) {
+#ifdef HAVE_MPI
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank == 0) {
+        cerr << "Error: " << err << endl;
+    }
+    MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+    throw std::runtime_error(err);
+#endif
+}
 
 void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound) {
     int inner = (int)ceil((double)length / (double)dim);
@@ -247,11 +255,11 @@ void stamp(Lattice *grid, State *state, int tag_particle, int iterations,
     delete [] data_as_txt;
 #else
     sprintf(output_filename, "%s/%i-%i-iter-real.dat", output_folder, tag_particle + 1, iterations * count_snap);
-    print_matrix(output_filename, &(state->p_real[grid->global_dim_x * (inner_start_y - start_y) + inner_start_x - start_x]), grid->global_dim_x,
+    print_matrix(output_filename, &(state->p_real[grid->global_dim_x * (grid->inner_start_y - grid->start_y) + grid->inner_start_x - grid->start_x]), grid->global_dim_x,
                  grid->global_dim_x - 2 * grid->periods[1]*grid->halo_x, grid->global_dim_y - 2 * grid->periods[0]*grid->halo_y);
 
     sprintf(output_filename, "%s/%i-%i-iter-comp.dat", output_folder, tag_particle + 1, iterations * count_snap);
-    print_complex_matrix(output_filename, &(state->p_real[grid->global_dim_x * (inner_start_y - start_y) + inner_start_x - start_x]), &(state->p_imag[grid->global_dim_x * (inner_start_y - start_y) + inner_start_x - start_x]), grid->global_dim_x,
+    print_complex_matrix(output_filename, &(state->p_real[grid->global_dim_x * (grid->inner_start_y - grid->start_y) + grid->inner_start_x - grid->start_x]), &(state->p_imag[grid->global_dim_x * (grid->inner_start_y - grid->start_y) + grid->inner_start_x - grid->start_x]), grid->global_dim_x,
                          grid->global_dim_x - 2 * grid->periods[1]*grid->halo_x, grid->global_dim_y - 2 * grid->periods[0]*grid->halo_y);
 #endif
     return;

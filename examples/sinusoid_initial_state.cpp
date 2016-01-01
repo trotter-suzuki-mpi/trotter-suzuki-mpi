@@ -22,6 +22,7 @@
  * state is the following:
  * 		sin(2M_PI / L * x) * sin(2M_PI / L * y)
  */
+#include <iostream>
 #include <sys/stat.h>
 #ifdef HAVE_MPI
 #include <mpi.h>

@@ -24,7 +24,6 @@
 #include <omp.h>
 #endif
 #ifdef CUDA
-#include <cuda.h>
 #include <cuda_runtime.h>
 #endif
 
@@ -34,8 +33,8 @@
 #define LEFT  2
 #define RIGHT 3
 
-#define BLOCK_WIDTH 128u
-#define BLOCK_HEIGHT 128u
+#define BLOCK_WIDTH_CACHE 128u
+#define BLOCK_HEIGHT_CACHE 128u
 
 void process_band(bool two_wavefunctions, int offset_tile_x, int offset_tile_y, double alpha_x, double alpha_y, size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height, 
                   double a, double b, double coupling_a, double coupling_b, const double *external_pot_real, const double *external_pot_imag, const double * p_real, const double * p_imag, 
@@ -128,8 +127,8 @@ private:
     size_t tile_width;        ///< Width of the tile (number of lattice's dots).
     size_t tile_height;       ///< Height of the tile (number of lattice's dots).
     bool imag_time;         ///< True: imaginary time evolution; False: real time evolution.
-    static const size_t block_width = BLOCK_WIDTH;      ///< Width of the lattice block which is cached (number of lattice's dots).
-    static const size_t block_height = BLOCK_HEIGHT;    ///< Height of the lattice block which is cached (number of lattice's dots).
+    static const size_t block_width = BLOCK_WIDTH_CACHE;      ///< Width of the lattice block which is cached (number of lattice's dots).
+    static const size_t block_height = BLOCK_HEIGHT_CACHE;    ///< Height of the lattice block which is cached (number of lattice's dots).
     bool two_wavefunctions;
     
     double alpha_x;         ///< Real coupling constant associated to the X*P_y operator, part of the angular momentum.
@@ -168,11 +167,11 @@ private:
 #define STRIDE_Y 16
 
 #define CUDA_SAFE_CALL(call) \
-  if((call) != cudaSuccess) { \
-    cudaError_t err = cudaGetLastError(); \
-    fprintf (stderr, "CUDA error: %d\n", err ); \
-    exit(-1);                                    \
-  }
+  if ((call) != cudaSuccess) { \
+      cudaError_t err = cudaGetLastError(); \
+      stringstream sstm; \
+      sstm << "CUDA error calling \""#call"\", code is " << err; \
+      my_abort(sstm.str()); }
 
 void setDevice(int commRank
 #ifdef HAVE_MPI
@@ -193,21 +192,18 @@ void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, s
  
 class CC2Kernel: public ITrotterKernel {
 public:
-    CC2Kernel(Lattice *grid, State *state, double *_external_pot_real, double *_external_pot_imag, double a, double b, int halo_x, int halo_y, 
-              double _norm, bool _imag_time
-#ifdef HAVE_MPI
-              , MPI_Comm cartcomm
-#endif
-             );
+    CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian, 
+              double *_external_pot_real, double *_external_pot_imag, 
+              double a, double b, double delta_t, 
+              double _norm, bool _imag_time);
     ~CC2Kernel();
     void run_kernel_on_halo();				    ///< Evolve blocks of wave function at the edge of the tile. This comprises the halos.
     void run_kernel();							///< Evolve the remaining blocks in the inner part of the tile.
     void wait_for_completion();					///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
     void copy_results();						///< Copy wave function from buffer pointed by pdev_real and pdev_imag to buffers pointed by p_real and p_imag.
-    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const;  ///< Copy the wave function from the two buffers pointed by pdev_real and pdev_imag, without halos, to dest_real and dest_imag.
-	void get_sample2(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double ** dest_real, double ** dest_imag) const {};
-	void normalization() {};
-	void rabi_coupling(double var, double delta_t) {};
+    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2=0, double * dest_imag2=0) const;  ///< Copy the wave function from the two buffers pointed by pdev_real and pdev_imag, without halos, to dest_real and dest_imag.
+    void normalization() {};
+    void rabi_coupling(double var, double delta_t) {};
 	
     bool runs_in_place() const {
         return false;
@@ -224,7 +220,7 @@ private:
     dim3 numBlocks;						///< Number of blocks exploited in the lattice.
     dim3 threadsPerBlock;				///< Number of lattice dots in a block.
     cudaStream_t stream1;				///< Stream of sequential instructions performing evolution and communication on the halos blocks.
-	cudaStream_t stream2;				///< Stream of sequential instructions performing evolution on the inner blocks.
+    cudaStream_t stream2;				///< Stream of sequential instructions performing evolution on the inner blocks.
 	
     bool imag_time;						///< True: imaginary time evolution; False: real time evolution.
     double *p_real;						///< Point to  the real part of the wave function (stored in Host).
@@ -287,18 +283,15 @@ private:
  
 class HybridKernel: public ITrotterKernel {
 public:
-    HybridKernel(double *p_real, double *p_imag, double *_external_pot_real, double *_external_pot_imag, double a, double b, double _coupling_const, double _delta_x, double _delta_y,
-                 int matrix_width, int matrix_height, int halo_x, int halo_y, int * _periods, double _norm, bool _imag_time
-#ifdef HAVE_MPI
-                 , MPI_Comm cartcomm
-#endif
-                );
+    HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian, 
+                 double *_external_pot_real, double *_external_pot_imag, 
+                 double a, double b, double delta_t, 
+                 double _norm, bool _imag_time);
     ~HybridKernel();
     void run_kernel_on_halo();					///< Evolve blocks of wave function at the edge of the tile. This comprises the halos.
     void run_kernel();							///< Evolve the remaining blocks in the inner part of the tile.
     void wait_for_completion();					///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
-    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const;		///< Copy the wave function from the buffers pointed by p_real, p_imag, pdev_real and pdev_imag, without halos, to dest_real and dest_imag.
-    void get_sample2(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double ** dest_real, double ** dest_imag) const {};
+    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2=0, double * dest_imag2=0) const;  ///< Copy the wave function from the two buffers pointed by pdev_real and pdev_imag, without halos, to dest_real and dest_imag.
     void normalization() {};
     void rabi_coupling(double var, double delta_t) {};
     
@@ -343,8 +336,8 @@ private:
     size_t halo_y;							///< Thickness of the horizontal halos (number of lattice's dots).
     size_t tile_width;						///< Width of the tile (number of lattice's dots).
     size_t tile_height;						///< Height of the tile (number of lattice's dots).
-    static const size_t block_width = BLOCK_WIDTH;		///< Width of the lattice block which is cached (number of lattice's dots).
-    static const size_t block_height = BLOCK_HEIGHT;	///< Height of the lattice block which is cached (number of lattice's dots).
+    static const size_t block_width = BLOCK_WIDTH_CACHE;		///< Width of the lattice block which is cached (number of lattice's dots).
+    static const size_t block_height = BLOCK_HEIGHT_CACHE;	///< Height of the lattice block which is cached (number of lattice's dots).
     size_t gpu_tile_width;					///< Tile width processes by Device.
     size_t gpu_tile_height;					///< Tile height processes by Device.
     size_t gpu_start_x;						///< X axis coordinate of the first dot of the processed tile in Device.

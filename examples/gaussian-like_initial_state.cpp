@@ -22,6 +22,7 @@
  * state is the following:
  * 		exp(-( (x - 180)² + (y - 300)² )/ 2s²)* exp(0.4j * (x + y - 480.));
  */
+#include <iostream>
 #include <sys/stat.h>
 #ifdef HAVE_MPI
 #include <mpi.h>

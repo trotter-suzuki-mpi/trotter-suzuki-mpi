@@ -22,6 +22,7 @@
  * state is the following:
  * 		exp(i2M_PI / L (x + y))
  */
+#include <iostream>
 #include <sys/stat.h>
 #ifdef HAVE_MPI
 #include <mpi.h>

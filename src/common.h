@@ -19,6 +19,7 @@
 #ifndef __COMMON_H
 #define __COMMON_H
 #include "trottersuzuki.h"
+void my_abort(string err);
 void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound);
 void print_complex_matrix(char * filename, double * matrix_real, double * matrix_imag, size_t stride, size_t width, size_t height);
 void print_matrix(const char * filename, double * matrix, size_t stride, size_t width, size_t height);

@@ -16,8 +16,11 @@
  *
  */
 
-#include <stdlib.h>
 #include <iostream>
+#include <sstream>
+#include <cstring>
+#include <cstdlib>
+#include "trottersuzuki.h"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
@@ -28,10 +31,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #endif
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif
-#include "trottersuzuki.h"
+#include "common.h"
 
 #define DIM 640
 #define EDGE_LENGHT 640
@@ -85,33 +85,32 @@ void process_command_line(int argc, char** argv, int *dim, double *delta_x, doub
         case 'd':
             *dim = atoi(optarg);
             if (*dim <= 0) {
-                fprintf (stderr, "The argument of option -d should be a positive integer.\n");
-                abort ();
+                my_abort("The argument of option -d should be a positive integer.\n");
             }
             break;
         case 'i':
             *iterations = atoi(optarg);
             if (*iterations <= 0) {
-                fprintf (stderr, "The argument of option -i should be a positive integer.\n");
-                abort ();
+                my_abort("The argument of option -i should be a positive integer.\n");
             }
             break;
         case 'h':
             print_usage();
-            abort ();
+#ifdef HAVE_MPI
+            MPI_Finalize();
+#endif
+            my_abort("");
             break;
         case 'k':
             *kernel_type = optarg;
             if (*kernel_type != "cpu" && *kernel_type != "gpu" && *kernel_type != "hybrid") {
-                fprintf (stderr, "The argument of option -t should be cpu, gpu, or hybrid.");
-                abort();
+                my_abort("The argument of option -t should be cpu, gpu, or hybrid.");
             }
             break;
         case 's':
             *snapshots = atoi(optarg);
             if (*snapshots <= 0) {
-                fprintf (stderr, "The argument of option -s should be a positive integer.\n");
-                abort ();
+                my_abort("The argument of option -s should be a positive integer.\n");
             }
             break;
         case 'n':
@@ -125,15 +124,13 @@ void process_command_line(int argc, char** argv, int *dim, double *delta_x, doub
         case 'm':
             *particle_mass = atoi(optarg);
             if (delta_t <= 0) {
-                fprintf (stderr, "The argument of option -m should be a positive real number.\n");
-                abort ();
+                my_abort("The argument of option -m should be a positive real number.\n");
             }
             break;
         case 't':
             *delta_t = atoi(optarg);
             if (delta_t <= 0) {
-                fprintf (stderr, "The argument of option -t should be a positive real number.\n");
-                abort ();
+                my_abort("The argument of option -t should be a positive real number.\n");
             }
             break;
         case 'p':
@@ -143,34 +140,33 @@ void process_command_line(int argc, char** argv, int *dim, double *delta_x, doub
         case 'l':
             lenght = atoi(optarg);
             if (lenght <= 0) {
-                fprintf (stderr, "The argument of option -l should be a positive real number.\n");
-                abort ();
+                my_abort("The argument of option -l should be a positive real number.\n");
             }
             break;
         case '?':
             if (optopt == 'd' || optopt == 'i' || optopt == 'k' || optopt == 's') {
-                fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-                print_usage();
-                abort ();
+                stringstream sstm;
+                sstm << "Option -" <<  optopt << " requires an argument.";
+                my_abort(sstm.str());
             }
             else if (isprint (optopt)) {
-                fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-                print_usage();
-                abort ();
+                stringstream sstm;
+                sstm << "Unknown option -" << optopt;
+                my_abort(sstm.str());
             }
             else {
-                fprintf (stderr, "Unknown option character `\\x%x'.\n",  optopt);
-                print_usage();
-                abort ();
+                stringstream sstm;
+                sstm << "Unknown option -" << optopt;
+                my_abort(sstm.str());
             }
         default:
-            abort ();
+                stringstream sstm;
+                sstm << "Unknown option -" << optopt;
+                my_abort(sstm.str());
         }
     }
     if(!file_supplied) {
-        fprintf (stderr, "Initial state file has not been supplied\n");
-        print_usage();
-        abort();
+        my_abort("Initial state file has not been supplied\n");
     }
     *delta_x = lenght / double(*dim);
     *delta_y = lenght / double(*dim);
@@ -195,7 +191,11 @@ int main(int argc, char** argv) {
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    process_command_line(argc, argv, &dim, &delta_x, &delta_y, &iterations, &snapshots, &kernel_type, filename, &delta_t, &coupling_const, &particle_mass, pot_name, &imag_time);
+    try {
+        process_command_line(argc, argv, &dim, &delta_x, &delta_y, &iterations, &snapshots, &kernel_type, filename, &delta_t, &coupling_const, &particle_mass, pot_name, &imag_time);
+    } catch (const std::runtime_error& e) {
+        return 1; // exit is okay here because an MPI runtime would have aborted in my_abort
+    }
 	
     Lattice *grid = new Lattice(dim, delta_x, delta_y, periods, omega);
     

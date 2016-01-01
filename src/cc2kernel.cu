@@ -20,18 +20,16 @@
 #include <cassert>
 #include <vector>
 #include <map>
-#include <stdio.h>
+#include "trottersuzuki.h"
 #include "kernel.h"
 #include "common.h"
 
-#define CUT_CHECK_ERROR(errorMessage) {                                    \
+#define CUT_CHECK_ERROR(errorMessage) {                                      \
     cudaError_t err = cudaGetLastError();                                    \
     if( cudaSuccess != err) {                                                \
-        fprintf(stderr, "Cuda error: %s in file '%s' in line %i : %s.\n",    \
-                errorMessage, __FILE__, __LINE__, cudaGetErrorString( err) );\
-        exit(EXIT_FAILURE);                                                  \
-    }                                                                        \
-    }
+      stringstream sstm;                                                     \
+      sstm << errorMessage <<"\n The error is " << cudaGetErrorString( err); \
+      my_abort(sstm.str());  }
 
 
 /** Check and initialize a device attached to a node
@@ -560,21 +558,20 @@ void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, s
     CUT_CHECK_ERROR("Kernel error in cc2kernel_wrapper");
 }
 
-CC2Kernel::CC2Kernel(Lattice *grid, State *state, double *_external_pot_real, double *_external_pot_imag, double _a, double _b, int _halo_x, int _halo_y, double _norm, bool _imag_time
-#ifdef HAVE_MPI
-                     , MPI_Comm _cartcomm
-#endif
-                    ):
+CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian, 
+                     double *_external_pot_real, double *_external_pot_imag, 
+                     double a, double b, double delta_t, 
+                     double _norm, bool _imag_time):
     external_pot_real(_external_pot_real),
     external_pot_imag(_external_pot_imag),
     threadsPerBlock(BLOCK_X, STRIDE_Y),
     sense(0),
     a(_a),
     b(_b),
-    halo_x(_halo_x),
-    halo_y(_halo_y),
     norm(_norm),
     imag_time(_imag_time) {
+    halo_x = grid->halo_x;
+    halo_y = grid->halo_y;
     p_real = state->p_real;
     p_imag = state->_p_imag;
     delta_x = grid->delta_x;
@@ -582,7 +579,7 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, double *_external_pot_real, do
     periods = grid->periods;
     int rank, coords[2], dims[2] = {0, 0};
 #ifdef HAVE_MPI
-    cartcomm = _cartcomm;
+    cartcomm = grid->cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
     MPI_Comm_rank(cartcomm, &rank);
@@ -593,8 +590,14 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, double *_external_pot_real, do
     rank = 0;
     coords[0] = coords[1] = 0;
 #endif
-    calculate_borders(coords[1], dims[1], &start_x, &end_x, &inner_start_x, &inner_end_x, grid->global_dim_x - 2 * periods[1]*halo_x, halo_x, periods[1]);
-    calculate_borders(coords[0], dims[0], &start_y, &end_y, &inner_start_y, &inner_end_y, grid->global_dim_y - 2 * periods[0]*halo_y, halo_y, periods[0]);
+    start_x = grid->start_x;
+    end_x = grid->end_x;
+    inner_start_x = grid->inner_start_x;
+    inner_end_x = grid->inner_end_x;
+    start_y = grid->start_y;
+    end_y = grid->end_y;
+    inner_start_y = grid->inner_start_y;
+    inner_end_y = grid->inner_end_y;
     tile_width = end_x - start_x;
     tile_height = end_y - start_y;
 
@@ -755,7 +758,10 @@ void CC2Kernel::copy_results() {
     CUDA_SAFE_CALL(cudaMemcpy(p_imag, pdev_imag[sense], tile_width * tile_height * sizeof(double), cudaMemcpyDeviceToHost));
 }
 
-void CC2Kernel::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag) const {
+void CC2Kernel::get_sample(size_t dest_stride, size_t x, size_t y, 
+                           size_t width, size_t height, 
+                           double *dest_real, double *dest_imag, 
+                           double *dest_real2=0, double *dest_imag2=0) const {
     assert(x < tile_width);
     assert(y < tile_height);
     assert(x + width <= tile_width);
