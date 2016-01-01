@@ -33,11 +33,6 @@ MPI_LIBS       = @MPI_LIBS@
 srcdir	 = ./../src
 
 LIBOBJS=$(srcdir)/common.o $(srcdir)/cpublock.o $(srcdir)/trotter.o
-
-ifeq ($(HAVE_SSE),1)
-	LIBOBJS+=$(srcdir)/cpublocksse.o
-endif
-
 ifdef CUDA_LIBS
 	LIBOBJS+=$(srcdir)/cc2kernel.cu.co $(srcdir)/hybrid.cu.co
 endif

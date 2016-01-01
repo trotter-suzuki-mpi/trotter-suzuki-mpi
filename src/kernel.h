@@ -33,7 +33,7 @@
 #define RIGHT 3
 
 /**
- * \brief This class define the prototipe of the kernel classes: CPU, SSE, GPU, Hybrid.
+ * \brief This class define the prototipe of the kernel classes: CPU, GPU, Hybrid.
  */
 
 class ITrotterKernel {

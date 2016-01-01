@@ -84,7 +84,6 @@
     <ClInclude Include="..\..\cc2kernel.h" />
     <ClInclude Include="..\..\common.h" />
     <ClInclude Include="..\..\cpublock.h" />
-    <ClInclude Include="..\..\cpublocksse.h" />
     <ClInclude Include="..\..\getopt.h" />
     <ClInclude Include="..\..\hybrid.h" />
     <ClInclude Include="..\..\kernel.h" />
@@ -94,7 +93,6 @@
   <ItemGroup>
     <ClCompile Include="..\..\common.cpp" />
     <ClCompile Include="..\..\cpublock.cpp" />
-    <ClCompile Include="..\..\cpublocksse.cpp" />
     <ClCompile Include="..\..\getopt.c" />
     <ClCompile Include="..\..\main.cpp" />
     <ClCompile Include="..\..\trotter.cpp" />

@@ -12,7 +12,7 @@ Key features:
   - Stationary external potential.
   - Command-line interface (CLI) and application programming interface (API) for flexible use.
   - [Python](http://trotter-suzuki-mpi.readthedocs.org) and [MATLAB](https://www.mathworks.com/matlabcentral/fileexchange/51975-mextrotter) wrappers are provided.
-  - Cache optimized multi-core, SSE, GPU, and hybrid kernels.
+  - Cache optimized multi-core, GPU, and hybrid kernels.
   - Near-linear scaling across multiple nodes with computations overlapping communication.
 
 Download the latest stable release [here](https://github.com/trotter_suzuki-mpi/trotter-suzuki-mpi/releases/latest). The development version is [available on GitHub](https://github.com/trotter-suzuki-mpi/trotter-suzuki-mpi).
@@ -37,7 +37,6 @@ Arguments:
     -g            Imaginary time evolution to evolve towards the ground state
     -k NUMBER     Kernel type (default: 0): 
                     0: CPU, cache-optimized
-                    1: CPU, SSE and cache-optimized
                     2: GPU
                     3: Hybrid CPU-GPU (experimental)                    
     -s NUMBER     Snapshots are taken at every NUMBER of iterations.
@@ -57,8 +56,6 @@ For using eight cores with the CPU kernel, type:
     mpirun -np 4 trotter -i 100 -d 640 -s 10 -n psi0.dat
     
 Naturally, if the system is distributed, MPI must be told of a host file. 
-
-In case of the SSE kernel, the chunk of the matrix assigned to a node, that is, a tile, must have a width that is divisible by two. This puts a constraint on the possible matrix sizes. For instance, running twelve MPI threads in a 4x3 configuration, the dimensions must be divisible by six and eight.
 
 The hybrid kernel is experimental. It splits the work between the GPU and the CPU. It uses one MPI thread per GPU, and uses OpenMP to use parallelism on the CPU. It can be faster than the GPU kernel alone, especially if the GPU is consumer-grade. The kernel is especially efficient if the matrix does not fit the GPU memory. For instance, given twelve physical cores in a single node with two Tesla C2050 GPUs, a 14,000x14,000 would not fit the GPU memory. The following command would calculate the part that does not fit the device memory on the CPU:
 
@@ -91,7 +88,6 @@ where the parameters are as follows:
     iterations        Number of iterations to be calculated
     kernel_type       The kernel type:
                               0: CPU block kernel
-                              1: CPU SSE block kernel
                               2: GPU kernel
                               3: Hybrid kernel
     periods           Whether the grid is periodic in any of the directions
@@ -109,7 +105,7 @@ MPI must be initialized before the function is called. Examples of using the API
 
 **Python and MATLAB Interfaces**
 
-The CPU and SSE kernels are accessible from Python and MATLAB. The Python version is available on the [Python Package Index](https://pypi.python.org/pypi/trottersuzuki) with documentation on [Read the Docs](http://trotter-suzuki-mpi.readthedocs.org), whereas the MATLAB version is available on the [MATLAB File Exchange](http://www.mathworks.com/matlabcentral/fileexchange/51975-mextrotter). Please refer to the documentation of these packages for further information.
+The computational core is accessible from Python and MATLAB. The Python version is available on the [Python Package Index](https://pypi.python.org/pypi/trottersuzuki) with documentation on [Read the Docs](http://trotter-suzuki-mpi.readthedocs.org), whereas the MATLAB version is available on the [MATLAB File Exchange](http://www.mathworks.com/matlabcentral/fileexchange/51975-mextrotter). Please refer to the documentation of these packages for further information.
 
 Compilation & Installation
 --------------------------

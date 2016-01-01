@@ -1,4 +1,4 @@
-# @configure_input@
+--# @configure_input@
 
 # Package-related substitution variables
 package	= @PACKAGE_NAME@
@@ -22,7 +22,6 @@ INSTALL	       = @INSTALL@
 INSTALL_DATA   = @INSTALL_DATA@
 INSTALL_PROGRAM= @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
-HAVE_SSE       = @HAVE_SSE@
 CUDA_CFLAGS    = @CUDA_CFLAGS@
 CUDA_LIBS      = @CUDA_LIBS@
 CUDA_LDFLAGS   = @CUDA_LDFLAGS@
@@ -42,12 +41,6 @@ LIBOBJS=common.o cpublock.o trotter.o
 MEX_FLAGS=-I./
 MEX_LIBS=-lgomp
 MEX_OBJS=common.o cpublock.o trotter.o
-
-platform=$(shell uname -s)
-
-ifeq ($(HAVE_SSE),1)
-	LIBOBJS+=cpublocksse.o 
-endif
 
 ifdef CUDA_LIBS
 	LIBOBJS+=cc2kernel.cu.co hybrid.cu.co
