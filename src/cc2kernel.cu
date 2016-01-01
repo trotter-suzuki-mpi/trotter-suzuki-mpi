@@ -60,13 +60,13 @@ void setDevice(int commRank
     char buf[1024];
     if (fgets(buf, 1023, fp) == NULL) strcpy(buf, "localhost");
     pclose(fp);
-    std::string host = buf;
+    string host = buf;
     host = host.substr(0, host.size() - 1);
     strcpy(buf, host.c_str());
 
     if (commRank == 0) {
-        std::map<std::string, std::vector<int> > hosts;
-        std::map<std::string, int> devCounts;
+        map<string, vector<int> > hosts;
+        map<string, int> devCounts;
         MPI_Status stat;
         MPI_Request req;
 
@@ -87,7 +87,7 @@ void setDevice(int commRank
             else devCounts[buf] = devCount;
         }
         // check to make sure that we don't have more jobs on a node than we have GPUs.
-        for (std::map<std::string, std::vector<int> >::iterator it = hosts.begin(); it != hosts.end(); ++it) {
+        for (map<string, vector<int> >::iterator it = hosts.begin(); it != hosts.end(); ++it) {
             if (it->second.size() > static_cast<unsigned int>(devCounts[it->first])) {
                 printf("Error, more jobs running on '%s' than devices - %d jobs > %d devices.\n",
                        it->first.c_str(), static_cast<int>(it->second.size()), devCounts[it->first]);
@@ -98,7 +98,7 @@ void setDevice(int commRank
 
         // send out the device number for each process to use.
         MPI_Irecv(&deviceNum, 1, MPI_INT, 0, 0, cartcomm, &req);
-        for (std::map<std::string, std::vector<int> >::iterator it = hosts.begin(); it != hosts.end(); ++it) {
+        for (map<string, vector<int> >::iterator it = hosts.begin(); it != hosts.end(); ++it) {
             for (unsigned int i = 0; i < it->second.size(); ++i) {
                 int devID = i;
                 MPI_Send(&devID, 1, MPI_INT, it->second[i], 0, cartcomm);

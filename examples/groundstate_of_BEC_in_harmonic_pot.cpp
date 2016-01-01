@@ -36,11 +36,11 @@
 #define SNAPSHOTS 10
 #define SCATTER_LENGTH_2D 5.662739242e-5
 
-std::complex<double> gauss_ini_state(int m, int n, Lattice *grid) {
+complex<double> gauss_ini_state(int m, int n, Lattice *grid) {
     double x = (m - grid->global_dim_x / 2.) * grid->delta_x;
     double y = (n - grid->global_dim_y / 2.) * grid->delta_x;
     double w = 0.01;
-    return std::complex<double>(sqrt(w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w), 0.0);
+    return complex<double>(sqrt(w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w), 0.0);
 }
 
 double parabolic_potential(int m, int n, Lattice *grid) {
@@ -84,16 +84,16 @@ int main(int argc, char** argv) {
     Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
 
     if(grid->mpi_rank == 0) {
-        std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
-        std::cout << "* It calculates the time-evolution of a particle in a box\n";
-        std::cout << "* with periodic boundary conditions, where the initial\n";
-        std::cout << "* state is the following:\n";
-        std::cout << "* \texp(i2M_PI / L (x + y))\n\n";
+        cout << "\n* This source provides an example of the trotter-suzuki program.\n";
+        cout << "* It calculates the time-evolution of a particle in a box\n";
+        cout << "* with periodic boundary conditions, where the initial\n";
+        cout << "* state is the following:\n";
+        cout << "* \texp(i2M_PI / L (x + y))\n\n";
     }
 
     //set file output directory
-    std::stringstream dirname;
-    std::string dirnames;
+    stringstream dirname;
+    string dirnames;
     if (SNAPSHOTS) {
         int status;
         dirname.str("");
@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
         stamp(grid, state, 0, ITERATIONS, count_snap, dirnames.c_str());
     }
     if (grid->mpi_rank == 0 && verbose == true) {
-        std::cout << "TROTTER " << DIM << "x" << DIM << " kernel:" << KERNEL_TYPE << " np:" << grid->mpi_procs << std::endl;
+        cout << "TROTTER " << DIM << "x" << DIM << " kernel:" << KERNEL_TYPE << " np:" << grid->mpi_procs << endl;
     }
     delete hamiltonian;
     delete state;

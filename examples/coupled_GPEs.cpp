@@ -34,11 +34,11 @@
 int rot_coord_x = 320, rot_coord_y = 320;
 double omega = 0.;
 
-std::complex<double> gauss_ini_state(int m, int n, Lattice *grid) {
+complex<double> gauss_ini_state(int m, int n, Lattice *grid) {
   double delta_x = double(LENGHT)/double(DIM);
     double x = (m - grid->global_dim_x / 2.) * delta_x, y = (n - grid->global_dim_y / 2.) * delta_x;
     double w = 1.;
-    return std::complex<double>(sqrt(w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w), 0.);
+    return complex<double>(sqrt(w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w), 0.);
 }
 
 
@@ -110,8 +110,8 @@ int main(int argc, char** argv) {
     Hamiltonian2Component *hamiltonian = new Hamiltonian2Component(grid, particle_mass_a, particle_mass_b, coupling_const[0], coupling_const[2], coupling_const[1], rot_coord_x, rot_coord_y, omega, coupling_const[3], coupling_const[4]);
 
     //set file output directory
-    std::stringstream dirname, file_info;
-    std::string dirnames, file_infos;
+    stringstream dirname, file_info;
+    string dirnames, file_infos;
     if (SNAPSHOTS) {
         int status = 0;
         dirname.str("");
@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
     file_info.str("");
     file_info << dirnames << "/file_info.txt";
     file_infos = file_info.str();
-    std::ofstream out(file_infos.c_str());
+    ofstream out(file_infos.c_str());
 
     double *_matrix = new double[grid->dim_x*grid->dim_y];
     double _norm2;
@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
 
     if(grid->mpi_rank == 0){
         out << "iterations \t total energy \t norm2\n";
-        out << "0\t" << "\t" << _tot_energy << "\t" << norm2[0] + norm2[1] << std::endl;
+        out << "0\t" << "\t" << _tot_energy << "\t" << norm2[0] + norm2[1] << endl;
     }
 
     for (int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
         _tot_energy = calculate_total_energy(grid, state1, state2, hamiltonian, parabolic_potential, parabolic_potential, NULL, _norm2);
 
         if (grid->mpi_rank == 0){
-            out << (count_snap + 1) * ITERATIONS << "\t" << _tot_energy << "\t" << _norm2 << std::endl;
+            out << (count_snap + 1) * ITERATIONS << "\t" << _tot_energy << "\t" << _norm2 << endl;
         }
 
         //stamp phase and particles density

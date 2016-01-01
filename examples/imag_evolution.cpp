@@ -33,11 +33,11 @@
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 10
 
-std::complex<double> super_position_two_exp_state(int x, int y, Lattice *grid) {
+complex<double> super_position_two_exp_state(int x, int y, Lattice *grid) {
     double L_x = grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x;
 
-    return exp(std::complex<double>(0. , 2.*3.14159/L_x*(x-grid->periods[1]*grid->halo_x))) +
-           exp(std::complex<double>(0. , 10.*2.*3.14159/L_x*(x-grid->periods[1]*grid->halo_x)));
+    return exp(complex<double>(0. , 2.*3.14159/L_x*(x-grid->periods[1]*grid->halo_x))) +
+           exp(complex<double>(0. , 10.*2.*3.14159/L_x*(x-grid->periods[1]*grid->halo_x)));
 }
 
 int main(int argc, char** argv) {
@@ -73,18 +73,18 @@ int main(int argc, char** argv) {
     Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
 
     if(grid->mpi_rank == 0) {
-        std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
-        std::cout << "* It calculates the imaginary time-evolution of a free particle in a box\n";
-        std::cout << "* with periodic boundary conditions, where the initial\n";
-        std::cout << "* state is the following:\n";
-        std::cout << "* \texp(i2M_PI / L * x) + exp(i20M_PI / L * x)\n\n";
-        std::cout << "* The state will reach the eigenfunction of the Hamiltonian with the lowest\n";
-        std::cout << "* eigenvalue:   exp(i2M_PI / L * x)\n\n";
+        cout << "\n* This source provides an example of the trotter-suzuki program.\n";
+        cout << "* It calculates the imaginary time-evolution of a free particle in a box\n";
+        cout << "* with periodic boundary conditions, where the initial\n";
+        cout << "* state is the following:\n";
+        cout << "* \texp(i2M_PI / L * x) + exp(i20M_PI / L * x)\n\n";
+        cout << "* The state will reach the eigenfunction of the Hamiltonian with the lowest\n";
+        cout << "* eigenvalue:   exp(i2M_PI / L * x)\n\n";
     }
 
     //set file output directory
-    std::stringstream dirname;
-    std::string dirnames;
+    stringstream dirname;
+    string dirnames;
     if (SNAPSHOTS) {
         int status;
         dirname.str("");
@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
         stamp(grid, state, 0, ITERATIONS, count_snap, dirnames.c_str());
     }
     if (grid->mpi_rank == 0 && verbose == true) {
-        std::cout << "TROTTER " << DIM << "x" << DIM << " kernel:" << KERNEL_TYPE << " np:" << grid->mpi_procs << std::endl;
+        cout << "TROTTER " << DIM << "x" << DIM << " kernel:" << KERNEL_TYPE << " np:" << grid->mpi_procs << endl;
     }
     delete hamiltonian;
     delete state;

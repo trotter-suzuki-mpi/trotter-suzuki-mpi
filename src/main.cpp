@@ -47,7 +47,7 @@ int rot_coord_x = 320, rot_coord_y = 320;
 double omega = 0;
 
 void print_usage() {
-    std::cout << "Usage:\n" \
+    cout << "Usage:\n" \
               "     trotter [OPTION] -n filename\n" \
               "Arguments:\n" \
               "     -m NUMBER     Particle mass (default: " << PARTICLE_MASS << ")\n"\
@@ -255,7 +255,7 @@ int main(int argc, char** argv) {
     }
 
     if (grid->mpi_coords[0] == 0 && grid->mpi_coords[1] == 0 && verbose == true) {
-        std::cout << "TROTTER " << dim << "x" << dim << " kernel:" << kernel_type << " np:" << grid->mpi_procs << " " << tot_time << std::endl;
+        cout << "TROTTER " << dim << "x" << dim << " kernel:" << kernel_type << " np:" << grid->mpi_procs << " " << tot_time << endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize();

@@ -33,9 +33,9 @@
 #define COUPLING_CONST_2D 0   // 0 for linear Schrodinger equation
 #define PARTICLES_NUM 1     //Particle numbers (nonlinear Schrodinger equation)
 
-std::complex<double> sinus_state(int m, int n, Lattice *grid) {
+complex<double> sinus_state(int m, int n, Lattice *grid) {
   double x = m * grid->delta_x, y = n * grid->delta_x;
-  return std::complex<double>(2. / double(EDGE_LENGTH) * sin(M_PI * x / double(EDGE_LENGTH)) * sin(M_PI * y / double(EDGE_LENGTH)), 0.0);
+  return complex<double>(2. / double(EDGE_LENGTH) * sin(M_PI * x / double(EDGE_LENGTH)) * sin(M_PI * y / double(EDGE_LENGTH)), 0.0);
 }
 
 double parabolic_potential(int m, int n, Lattice *grid) {
@@ -90,8 +90,8 @@ int main(int argc, char** argv) {
     Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
 
     //set file output directory
-    std::stringstream dirname, file_info;
-    std::string dirnames, file_infos;
+    stringstream dirname, file_info;
+    string dirnames, file_infos;
     if (SNAPSHOTS) {
         int status = 0;
         dirname.str("");
@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
     file_info.str("");
     file_info << dirnames << "/file_info.txt";
     file_infos = file_info.str();
-    std::ofstream out(file_infos.c_str());
+    ofstream out(file_infos.c_str());
     
     double *_matrix = new double[grid->dim_x * grid->dim_y];
     double _mean_positions[4], _mean_momenta[4], _norm2, sum, results[4];
@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
     
     if (grid->mpi_rank == 0){
       out << "iterations\tsquared norm\ttotal_energy\tkinetic_energy\t<X>\t<(X-<X>)^2>\t<Y>\t<(Y-<Y>)^2>\t<Px>\t<(Px-<Px>)^2>\t<Py>\t<(Py-<Py>)^2>\n";
-      out << "0\t\t" << norm2 << "\t\t"<< _tot_energy << "\t" << _kin_energy << "\t" << _mean_positions[0] << "\t" << _mean_positions[1] << "\t" << _mean_positions[2] << "\t" << _mean_positions[3] << "\t" << _mean_momenta[0] << "\t" << _mean_momenta[1] << "\t" << _mean_momenta[2] << "\t" << _mean_momenta[3] << std::endl;
+      out << "0\t\t" << norm2 << "\t\t"<< _tot_energy << "\t" << _kin_energy << "\t" << _mean_positions[0] << "\t" << _mean_positions[1] << "\t" << _mean_positions[2] << "\t" << _mean_positions[3] << "\t" << _mean_momenta[0] << "\t" << _mean_momenta[1] << "\t" << _mean_momenta[2] << "\t" << _mean_momenta[3] << endl;
     }
   
     struct timeval start, end;
@@ -156,7 +156,7 @@ int main(int argc, char** argv) {
         calculate_mean_momentum(grid, state,_mean_momenta, norm2);
 
         if(grid->mpi_rank == 0){
-            out << (count_snap + 1) * ITERATIONS << "\t\t" << norm2 << "\t\t"<< _tot_energy << "\t" << _kin_energy << "\t" << _mean_positions[0] << "\t" << _mean_positions[1] << "\t" << _mean_positions[2] << "\t" << _mean_positions[3] << "\t" << _mean_momenta[0] << "\t" << _mean_momenta[1] << "\t" << _mean_momenta[2] << "\t" << _mean_momenta[3] << std::endl;
+            out << (count_snap + 1) * ITERATIONS << "\t\t" << norm2 << "\t\t"<< _tot_energy << "\t" << _kin_energy << "\t" << _mean_positions[0] << "\t" << _mean_positions[1] << "\t" << _mean_positions[2] << "\t" << _mean_positions[3] << "\t" << _mean_momenta[0] << "\t" << _mean_momenta[1] << "\t" << _mean_momenta[2] << "\t" << _mean_momenta[3] << endl;
         }
     
         //stamp phase and particles density
@@ -173,7 +173,7 @@ int main(int argc, char** argv) {
     out.close();
     
     if (grid->mpi_rank == 0) {
-        std::cout << "TROTTER " << DIM << "x" << DIM << " kernel:" << KERNEL_TYPE << " np:" << grid->mpi_procs << " time:" << tot_time << " usec" << std::endl;
+        cout << "TROTTER " << DIM << "x" << DIM << " kernel:" << KERNEL_TYPE << " np:" << grid->mpi_procs << " time:" << tot_time << " usec" << endl;
     }
     delete hamiltonian;
     delete state;

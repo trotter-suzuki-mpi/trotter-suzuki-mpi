@@ -31,11 +31,11 @@
 #define SNAP_PER_STAMP 20
 #define COUPLING_CONST_2D 7.116007999594e-4
 
-std::complex<double> gauss_ini_state(int m, int n, Lattice *grid) {
+complex<double> gauss_ini_state(int m, int n, Lattice *grid) {
     double x = (m - grid->global_dim_x / 2.) * grid->delta_x;
     double y = (n - grid->global_dim_y / 2.) * grid->delta_x;
     double w = 0.002/(grid->delta_x * grid->delta_x);
-    return std::complex<double>(sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w), sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w));
+    return complex<double>(sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w), sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w));
 }
 
 double parabolic_potential(int m, int n, Lattice *grid) {
@@ -85,8 +85,8 @@ int main(int argc, char** argv) {
                                                coupling_const, 0, 0, 
                                                rot_coord_x, rot_coord_y, omega);
     //set file output directory
-    std::stringstream dirname, file_info;
-    std::string dirnames, file_infos;
+    stringstream dirname, file_info;
+    string dirnames, file_infos;
     if (SNAPSHOTS) {
         int status = 0;
         dirname.str("");
@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
     file_info.str("");
     file_info << dirnames << "/file_info.txt";
     file_infos = file_info.str();
-    std::ofstream out(file_infos.c_str());
+    ofstream out(file_infos.c_str());
     
     double *_matrix = new double[grid->dim_x*grid->dim_y];
     double _norm2, sum;
@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
 
     if(grid->mpi_rank == 0){
       out << "iterations \t rotation energy \t kin energy \t total energy \t norm2\n";
-      out << "0\t" << _rot_energy << "\t" << _kin_energy << "\t" << _tot_energy << "\t" << norm2 << std::endl;
+      out << "0\t" << _rot_energy << "\t" << _kin_energy << "\t" << _tot_energy << "\t" << norm2 << endl;
     }
     
     for(int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
         _tot_energy = calculate_total_energy(grid, state, hamiltonian, parabolic_potential, NULL, _norm2);
         _kin_energy = calculate_kinetic_energy(grid, state, hamiltonian, _norm2);
         if(grid->mpi_rank == 0){
-            out << (count_snap + 1) * ITERATIONS << "\t" << _rot_energy << "\t" << _kin_energy << "\t" << _tot_energy << "\t" << _norm2 << std::endl;
+            out << (count_snap + 1) * ITERATIONS << "\t" << _rot_energy << "\t" << _kin_energy << "\t" << _tot_energy << "\t" << _norm2 << endl;
         }
     
         //stamp phase and particles density

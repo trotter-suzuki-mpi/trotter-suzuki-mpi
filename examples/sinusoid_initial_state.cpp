@@ -33,11 +33,11 @@
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 10
 
-std::complex<double> sinus_state(int x, int y, Lattice *grid) {
+complex<double> sinus_state(int x, int y, Lattice *grid) {
     double L_x = grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x;
     double L_y = grid->global_dim_y - grid->periods[0] * 2 * grid->halo_y;
 
-    return std::complex<double> (sin(2*3.14159 / L_x*(x-grid->periods[1]*grid->halo_x)) * 
+    return complex<double> (sin(2*3.14159 / L_x*(x-grid->periods[1]*grid->halo_x)) * 
                                  sin(2*3.14159 / L_y*(y-grid->periods[0]*grid->halo_y)), 0.0);
 }
 
@@ -77,16 +77,16 @@ int main(int argc, char** argv) {
                                                rot_coord_x, rot_coord_y, omega);
 
     if(grid->mpi_rank == 0) {
-        std::cout << "\n* This source provides an example of the trotter-suzuki program.\n";
-        std::cout << "* It calculates the time-evolution of a particle in a box\n";
-        std::cout << "* with periodic boundary conditions, where the initial\n";
-        std::cout << "* state is the following:\n";
-        std::cout << "* \tsin(2M_PI / L * x) * sin(2M_PI / L * y)\n\n";
+        cout << "\n* This source provides an example of the trotter-suzuki program.\n";
+        cout << "* It calculates the time-evolution of a particle in a box\n";
+        cout << "* with periodic boundary conditions, where the initial\n";
+        cout << "* state is the following:\n";
+        cout << "* \tsin(2M_PI / L * x) * sin(2M_PI / L * y)\n\n";
     }
 
     //set file output directory
-    std::stringstream dirname;
-    std::string dirnames;
+    stringstream dirname;
+    string dirnames;
     if (SNAPSHOTS) {
         int status;
         dirname.str("");
@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
         stamp(grid, state, 0, ITERATIONS, count_snap, dirnames.c_str());
     }
     if (grid->mpi_rank == 0 && verbose == true) {
-        std::cout << "TROTTER " << DIM << "x" << DIM << " kernel:" << KERNEL_TYPE << " np:" << grid->mpi_procs << std::endl;
+        cout << "TROTTER " << DIM << "x" << DIM << " kernel:" << KERNEL_TYPE << " np:" << grid->mpi_procs << endl;
     }
     delete hamiltonian;
     delete state;

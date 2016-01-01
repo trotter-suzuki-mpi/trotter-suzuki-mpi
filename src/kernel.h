@@ -57,7 +57,7 @@ public:
     virtual void rabi_coupling(double var, double delta_t) = 0;
     
     virtual bool runs_in_place() const = 0;
-    virtual std::string get_name() const = 0;				///< Get kernel name.
+    virtual string get_name() const = 0;				///< Get kernel name.
 
     virtual void start_halo_exchange() = 0;					///< Exchange halos between processes.
     virtual void finish_halo_exchange() = 0;				///< Exchange halos between processes.
@@ -100,7 +100,7 @@ public:
         return false;
     }
     /// Get kernel name.
-    std::string get_name() const {
+    string get_name() const {
         return "CPU";
     };
 
@@ -213,7 +213,7 @@ public:
         return false;
     }
     /// Get kernel name.
-    std::string get_name() const {
+    string get_name() const {
         return "CUDA";
     }
 
@@ -306,8 +306,8 @@ public:
         return false;
     }
     /// Get kernel name.
-    std::string get_name() const {
-        std::stringstream name;
+    string get_name() const {
+        stringstream name;
         name << "Hybrid";
 #ifdef _OPENMP
         name << "-OpenMP-" << omp_get_max_threads();
