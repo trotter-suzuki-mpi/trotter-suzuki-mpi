@@ -20,6 +20,32 @@
 #include "trottersuzuki.h"
 #include "common.h"
 
+void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound) {
+    int inner = (int)ceil((double)length / (double)dim);
+    *inner_start = coord * inner;
+    if(periodic_bound != 0)
+        *start = *inner_start - halo;
+    else
+        *start = ( coord == 0 ? 0 : *inner_start - halo );
+    *end = *inner_start + (inner + halo);
+
+    if (*end > length) {
+        if(periodic_bound != 0)
+            *end = length + halo;
+        else
+            *end = length;
+    }
+    if(periodic_bound != 0)
+        *inner_end = *end - halo;
+    else
+        *inner_end = ( *end == length ? *end : *end - halo );
+}
+
+double const_potential(int x, int y, Lattice *grid) {
+    return 0.;
+}
+
+
 Lattice::Lattice(int dim, double _delta_x, double _delta_y, int _periods[2],
                  double omega): delta_x(_delta_x), delta_y(_delta_y) {
     if (_periods == 0) {
@@ -252,12 +278,12 @@ Hamiltonian::~Hamiltonian() {
     }
 
 void Hamiltonian::initialize_potential(double (*hamiltonian_pot)(int x, int y, Lattice *grid)) {
-        for(int y = 0; y < grid->dim_y; y++) {
-            for(int x = 0; x < grid->dim_x; x++) {
-                external_pot[y * grid->dim_y + x] = hamiltonian_pot(x, y, grid);
-            }
+    for(int y = 0; y < grid->dim_y; y++) {
+        for(int x = 0; x < grid->dim_x; x++) {
+            external_pot[y * grid->dim_y + x] = hamiltonian_pot(x, y, grid);
         }
     }
+}
 
 void Hamiltonian::read_potential(char *pot_name) {
     ifstream input(pot_name);
@@ -296,10 +322,16 @@ Hamiltonian2Component::~Hamiltonian2Component() {
     }
 }
 
-void Hamiltonian2Component::initialize_potential_b(double (*hamiltonian_pot)(int x, int y, Lattice *grid)) {
+void Hamiltonian2Component::initialize_potential(double (*hamiltonian_pot)(int x, int y, Lattice *grid), int which) {
+    double *tmp;
+    if (which == 0) {
+      tmp = external_pot;
+    } else {
+      tmp = external_pot_b;
+    }
     for(int y = 0; y < grid->dim_y; y++) {
         for(int x = 0; x < grid->dim_x; x++) {
-            external_pot_b[y * grid->dim_y + x] = hamiltonian_pot(x, y, grid);
+            tmp[y * grid->dim_y + x] = hamiltonian_pot(x, y, grid);
         }
     }
 }

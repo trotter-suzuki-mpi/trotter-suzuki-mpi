@@ -113,10 +113,9 @@ public:
                           double *_external_pot=0, 
                           double *_external_pot_b=0);
     ~Hamiltonian2Component();
-    void initialize_potential_b(double (*hamiltonian_pot)(int x, int y, Lattice *grid));
+    void initialize_potential(double (*hamiltonian_pot)(int x, int y, Lattice *grid), int which);
     
 };
-
 
 /**
     API call to calculate the evolution through the Trotter-Suzuki decomposition.
@@ -149,6 +148,9 @@ public:
     Hamiltonian *hamiltonian;
     Solver(Lattice *grid, State *state, Hamiltonian *hamiltonian, double delta_t, 
            string kernel_type="cpu");
+    Solver(Lattice *_grid, State *state1, State *state2, 
+           Hamiltonian2Component *_hamiltonian,
+           double _delta_t, string _kernel_type="cpu");
     ~Solver();
     void evolve(int iterations, bool imag_time=false);
 private:
@@ -162,23 +164,9 @@ private:
     bool single_component;
     bool first_run;
     string kernel_type;
+    void initialize_exp_potential(double time_single_it, int which);
 };
 
-void trotter(Lattice *grid, State *state, Hamiltonian *hamiltonian,
-             double h_a, double h_b, 
-             double * external_pot_real, double * external_pot_imag,
-             double delta_t,
-             const int iterations,
-             string kernel_type = "cpu", double norm = 1., bool imag_time = false);             
-
-void trotter(Lattice *grid, State *state1, State *state2, 
-             Hamiltonian2Component *hamiltonian,
-             double *h_a, double *h_b, 
-             double **external_pot_real, double **external_pot_imag,
-             double delta_t,
-             const int iterations, 
-             string kernel_type, double *norm, bool imag_time);
-            
 /**
  * \brief Structure defining expected values calculated by expect_values().
  */

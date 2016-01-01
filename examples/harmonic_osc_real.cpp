@@ -57,47 +57,20 @@ int main(int argc, char** argv) {
     char pot_name[1] = "";
     const double particle_mass = 1.;
     bool imag_time = false;
-    double h_a = 0.;
-    double h_b = 0.;
     int time, tot_time = 0;
     double delta_t = double(DELTA_T);
     double delta_x = double(EDGE_LENGTH)/double(DIM), delta_y = double(EDGE_LENGTH)/double(DIM);
-
+    double coupling_const = double(COUPLING_CONST_2D);
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
     Lattice *grid = new Lattice(DIM, delta_x, delta_y, periods, omega);
-
-    //set and calculate evolution operator variables from hamiltonian
-    double *external_pot_real = new double[grid->dim_x * grid->dim_y];
-    double *external_pot_imag = new double[grid->dim_x * grid->dim_y];
-    
-    //set and calculate evolution operator variables from hamiltonian
-    double time_single_it;
-    double coupling_const = double(COUPLING_CONST_2D);
-
-    if(imag_time) {
-        time_single_it = delta_t / 2.;  //second approx trotter-suzuki: time/2
-        if(h_a == 0. && h_b == 0.) {
-            h_a = cosh(time_single_it / (2. * particle_mass * delta_x * delta_y));
-            h_b = sinh(time_single_it / (2. * particle_mass * delta_x * delta_y));
-        }
-    }
-    else {
-        time_single_it = delta_t / 2.;  //second approx trotter-suzuki: time/2
-        if(h_a == 0. && h_b == 0.) {
-            h_a = cos(time_single_it / (2. * particle_mass * delta_x * delta_y));
-            h_b = sin(time_single_it / (2. * particle_mass * delta_x * delta_y));
-        }
-    }
-    initialize_exp_potential(grid, external_pot_real, external_pot_imag, 
-                             parabolic_potential, time_single_it, 
-                             particle_mass, imag_time);
-
     //set initial state
     State *state = new State(grid);
     state->init_state(gauss_ini_state);
     Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
+    hamiltonian->initialize_potential(parabolic_potential);
+    Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
     //set file output directory
     stringstream dirname, file_info;
     string dirnames, file_infos;
@@ -148,7 +121,7 @@ int main(int argc, char** argv) {
     for (int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         
         gettimeofday(&start, NULL);
-        trotter(grid, state, hamiltonian, h_a, h_b, external_pot_real, external_pot_imag, delta_t, ITERATIONS, KERNEL_TYPE, norm2, imag_time);
+        solver->evolve(ITERATIONS, imag_time);
         gettimeofday(&end, NULL);
         time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
         tot_time += time;
@@ -184,6 +157,7 @@ int main(int argc, char** argv) {
     if (grid->mpi_rank == 0) {
         cout << "TROTTER " << DIM << "x" << DIM << " kernel:" << KERNEL_TYPE << " np:" << grid->mpi_procs << " time:" << tot_time << " usec" << endl;
     }
+    delete solver;
     delete hamiltonian;
     delete state;
     delete grid;

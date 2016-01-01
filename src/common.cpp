@@ -34,31 +34,6 @@ void my_abort(string err) {
 #endif
 }
 
-void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound) {
-    int inner = (int)ceil((double)length / (double)dim);
-    *inner_start = coord * inner;
-    if(periodic_bound != 0)
-        *start = *inner_start - halo;
-    else
-        *start = ( coord == 0 ? 0 : *inner_start - halo );
-    *end = *inner_start + (inner + halo);
-
-    if (*end > length) {
-        if(periodic_bound != 0)
-            *end = length + halo;
-        else
-            *end = length;
-    }
-    if(periodic_bound != 0)
-        *inner_end = *end - halo;
-    else
-        *inner_end = ( *end == length ? *end : *end - halo );
-}
-
-double const_potential(int x, int y, Lattice *grid) {
-    return 0.;
-}
-
 void add_padding(double *padded_matrix, double *matrix, 
                  int padded_dim_x, int padded_dim_y, 
                  int halo_x, int halo_y, 
@@ -101,26 +76,6 @@ void add_padding(double *padded_matrix, double *matrix,
             }
         }
     }
-}
-
-void initialize_exp_potential(Lattice *grid, double * external_pot_real, double * external_pot_imag, double (*hamilt_pot)(int x, int y, Lattice *grid),
-                              double time_single_it, double particle_mass, bool imag_time) {
-      double order_approx = 2.;
-      double CONST_1 = -1. * time_single_it * order_approx;
-      double CONST_2 = 2. * time_single_it / particle_mass * order_approx;    //CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
-
-      complex<double> tmp;
-      for (int y = 0, idy = grid->start_y; y < grid->dim_y; y++, idy++) {
-          for (int x = 0, idx = grid->start_x; x < grid->dim_x; x++, idx++) {
-              if(imag_time)
-                  tmp = exp(complex<double> (CONST_1 * hamilt_pot(idx, idy, grid) , CONST_2));
-              else
-                  tmp = exp(complex<double> (0., CONST_1 * hamilt_pot(idx, idy, grid) + CONST_2));
-
-              external_pot_real[y * grid->dim_x + x] = real(tmp);
-              external_pot_imag[y * grid->dim_x + x] = imag(tmp);
-          }
-      }
 }
 
 void print_complex_matrix(char * filename, double * matrix_real, double * matrix_imag, size_t stride, size_t width, size_t height) {

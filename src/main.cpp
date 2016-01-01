@@ -201,37 +201,16 @@ int main(int argc, char** argv) {
     
     int read_offset = 0;
 
-    //set and calculate evolution operator variables from hamiltonian
-    double time_single_it;
-    double *external_pot_real = new double[grid->dim_x * grid->dim_y];
-    double *external_pot_imag = new double[grid->dim_x * grid->dim_y];
-
-    if(imag_time) {
-      double constant = 6.;
-      time_single_it = delta_t / 2.;	//second approx trotter-suzuki: time/2
-      if(h_a == 0. && h_b == 0.) {
-        h_a = cosh(time_single_it / (2. * particle_mass)) / constant;
-        h_b = sinh(time_single_it / (2. * particle_mass)) / constant;
-      }
-    }
-    else {
-      time_single_it = delta_t / 2.;	//second approx trotter-suzuki: time/2
-      if(h_a == 0. && h_b == 0.) {
-        h_a = cos(time_single_it / (2. * particle_mass));
-        h_b = sin(time_single_it / (2. * particle_mass));
-      }
-    }
-    initialize_exp_potential(grid, external_pot_real, external_pot_imag, 
-                             const_potential, time_single_it, 
-                             particle_mass, imag_time);
     Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
+    hamiltonian->initialize_potential(const_potential);
 
     //set initial state
     State *state = new State(grid);
     state->read_state(filename, read_offset);
+    
+    Solver *solver = new Solver(grid, state, hamiltonian, delta_t, kernel_type);
 
     for(int count_snap = 0; count_snap <= snapshots; count_snap++) {
-      stamp(grid, state, 0, iterations, count_snap, output_folder);
 
       if(count_snap != snapshots) {
 #ifdef WIN32
@@ -241,7 +220,7 @@ int main(int argc, char** argv) {
         struct timeval start, end;
         gettimeofday(&start, NULL);
 #endif
-        trotter(grid, state, hamiltonian, h_a, h_b, external_pot_real, external_pot_imag, delta_t, iterations, kernel_type, norm, imag_time);
+        solver->evolve(iterations, imag_time);
 #ifdef WIN32
         SYSTEMTIME end;
         GetSystemTime(&end);
@@ -257,6 +236,10 @@ int main(int argc, char** argv) {
     if (grid->mpi_coords[0] == 0 && grid->mpi_coords[1] == 0 && verbose == true) {
         cout << "TROTTER " << dim << "x" << dim << " kernel:" << kernel_type << " np:" << grid->mpi_procs << " " << tot_time << endl;
     }
+    delete solver;
+    delete hamiltonian;
+    delete state;
+    delete grid;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif

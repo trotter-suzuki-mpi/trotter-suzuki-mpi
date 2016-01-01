@@ -58,20 +58,15 @@ int main(int argc, char** argv) {
 #endif
     Lattice *grid = new Lattice(DIM, delta_x, delta_y, periods, omega);
 
-    //set and calculate evolution operator variables from hamiltonian
-    double *external_pot_real = new double[grid->dim_x * grid->dim_y];
-    double *external_pot_imag = new double[grid->dim_x * grid->dim_y];
-    double time_single_it = delta_t * particle_mass / 2.;	//second approx trotter-suzuki: time/2
-    double h_a = cos(time_single_it / (2. * particle_mass));
-    double h_b = sin(time_single_it / (2. * particle_mass));
-    initialize_exp_potential(grid, external_pot_real, external_pot_imag, 
-                             const_potential, time_single_it, 
-                             particle_mass, imag_time);
-
     //set initial state
     State *state = new State(grid);
     state->init_state(gauss_state);
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, 
+                                               coupling_const, 0, 0, 
+                                               rot_coord_x, rot_coord_y, omega);
+    hamiltonian->initialize_potential(const_potential);
+    Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
+
     if(grid->mpi_rank == 0) {
         cout << "\n* This source provides an example of the trotter-suzuki program.\n";
         cout << "* It calculates the time-evolution of a particle in a box, where the initial\n";
@@ -94,12 +89,13 @@ int main(int argc, char** argv) {
         dirnames = ".";
     }
     for(int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
-        trotter(grid, state, hamiltonian, h_a, h_b, external_pot_real, external_pot_imag, delta_t, ITERATIONS, KERNEL_TYPE, norm, imag_time);
+        solver->evolve(ITERATIONS, imag_time);
         stamp(grid, state, 0, ITERATIONS, count_snap, dirnames.c_str());
     }
     if (grid->mpi_coords[0] == 0 && grid->mpi_coords[1] == 0 && verbose == true) {
         cout << "TROTTER " << DIM << "x" << DIM << " kernel:" << KERNEL_TYPE << " np:" << grid->mpi_procs << endl;
     }
+    delete solver;
     delete hamiltonian;
     delete state;
     delete grid;

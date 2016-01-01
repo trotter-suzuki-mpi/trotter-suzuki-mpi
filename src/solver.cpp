@@ -462,14 +462,31 @@ Solver::Solver(Lattice *_grid, State *_state, Hamiltonian *_hamiltonian,
     kernel_type(_kernel_type) {
     external_pot_real = new double* [2];
     external_pot_imag = new double* [2];
-    external_pot_real[0] = NULL;
-    external_pot_imag[0] = NULL;
+    external_pot_real[0] = new double[grid->dim_x * grid->dim_y];
+    external_pot_imag[0] = new double[grid->dim_x * grid->dim_y];
     external_pot_real[1] = NULL;
     external_pot_imag[1] = NULL;
     norm2[0] = 0.;
     state_b = NULL;
     first_run = true;
     single_component = true;
+}
+
+Solver::Solver(Lattice *_grid, State *state1, State *state2, 
+               Hamiltonian2Component *_hamiltonian,
+               double _delta_t, string _kernel_type):
+    grid(_grid), state(state1), state_b(state2), hamiltonian(_hamiltonian), delta_t(_delta_t),
+    kernel_type(_kernel_type) {
+    external_pot_real = new double* [2];
+    external_pot_imag = new double* [2];
+    external_pot_real[0] = new double[grid->dim_x * grid->dim_y];
+    external_pot_imag[0] = new double[grid->dim_x * grid->dim_y];
+    external_pot_real[1] = new double[grid->dim_x * grid->dim_y];
+    external_pot_imag[1] = new double[grid->dim_x * grid->dim_y];
+    norm2[0] = 0.;
+    norm2[1] = 0.;
+    first_run = true;
+    single_component = false;
 }
 
 Solver::~Solver() {
@@ -479,6 +496,29 @@ Solver::~Solver() {
     delete [] external_pot_imag[1];
     delete [] external_pot_real;
     delete [] external_pot_imag;
+}
+
+void Solver::initialize_exp_potential(double time_single_it, int which) {
+      double order_approx = 2.;
+      double particle_mass;
+      if (single_component) {
+          particle_mass = hamiltonian->mass;
+      } else {
+          particle_mass = static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b;
+      }
+      double CONST_1 = -1. * time_single_it * order_approx;
+      double CONST_2 = 2. * time_single_it / particle_mass * order_approx;    //CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
+      complex<double> tmp;
+      for (int y = 0, idy = grid->start_y; y < grid->dim_y; y++, idy++) {
+          for (int x = 0, idx = grid->start_x; x < grid->dim_x; x++, idx++) {
+              if(imag_time)
+                  tmp = exp(complex<double> (CONST_1 * hamiltonian->external_pot[y * grid->dim_x + x], CONST_2));
+              else
+                  tmp = exp(complex<double> (0., CONST_1 * hamiltonian->external_pot[y * grid->dim_x + x] + CONST_2));
+              external_pot_real[which][y * grid->dim_x + x] = real(tmp);
+              external_pot_imag[which][y * grid->dim_x + x] = imag(tmp);
+          }
+      }
 }
 
 void Solver::evolve(int iterations, bool _imag_time) {
@@ -492,17 +532,21 @@ void Solver::evolve(int iterations, bool _imag_time) {
         if(imag_time) {
             h_a[0] = cosh(time_single_it / (2. * hamiltonian->mass * grid->delta_x * grid->delta_y));
             h_b[0] = sinh(time_single_it / (2. * hamiltonian->mass * grid->delta_x * grid->delta_y));
+            initialize_exp_potential(time_single_it, 0);
             if (!single_component) {
                 h_a[1] = cosh(time_single_it / (2. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
                 h_b[1] = sinh(time_single_it / (2. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
+                initialize_exp_potential(time_single_it, 1);
             }
         }
         else {
             h_a[0] = cos(time_single_it / (2. * hamiltonian->mass * grid->delta_x * grid->delta_y));
             h_b[0] = sin(time_single_it / (2. * hamiltonian->mass * grid->delta_x * grid->delta_y));
+            initialize_exp_potential(time_single_it, 0);
             if (!single_component) {
                 h_a[1] = cos(time_single_it / (2. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
                 h_b[1] = sin(time_single_it / (2. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
+                initialize_exp_potential(time_single_it, 1);
             }
         }
     }
