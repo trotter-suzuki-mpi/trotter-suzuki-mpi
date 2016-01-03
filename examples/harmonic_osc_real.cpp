@@ -59,18 +59,25 @@ int main(int argc, char** argv) {
     bool imag_time = false;
     int time, tot_time = 0;
     double delta_t = double(DELTA_T);
-    double delta_x = double(EDGE_LENGTH)/double(DIM), delta_y = double(EDGE_LENGTH)/double(DIM);
+    double length_x = double(EDGE_LENGTH)/double(DIM), length_y = double(EDGE_LENGTH)/double(DIM);
     double coupling_const = double(COUPLING_CONST_2D);
+    
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    Lattice *grid = new Lattice(DIM, delta_x, delta_y, periods, omega);
+
+    Lattice *grid = new Lattice(DIM, length_x, length_y, periods, omega);
+    
     //set initial state
     State *state = new State(grid);
     state->init_state(gauss_ini_state);
+    
+    //set Hamiltonian
     Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
     hamiltonian->initialize_potential(parabolic_potential);
+    
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
+    
     //set file output directory
     stringstream dirname, file_info;
     string dirnames, file_infos;

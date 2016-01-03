@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     int periods[2] = {1, 1};
     bool verbose = true;
     double coupling_const = 1;
-    double delta_x = 1, delta_y = 1;
+    double length_x = double(DIM), length_y = double(DIM);
     const double particle_mass = 1.;
     double delta_t = 0.08;
     int rot_coord_x = 320, rot_coord_y = 320;
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    Lattice *grid = new Lattice(DIM, delta_x, delta_y, periods, omega);
+    Lattice *grid = new Lattice(DIM, length_x, length_y, periods, omega);
 
     //set initial state
     State *state = new State(grid);

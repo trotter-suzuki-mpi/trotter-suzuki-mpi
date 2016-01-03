@@ -32,8 +32,9 @@ using namespace std;
 
 class Lattice {
 public:
-    Lattice(int _dim=100, double _delta_x=1., double _delta_y=1., 
+    Lattice(int _dim=100, double _length_x=20., double _length_y=20., 
             int _periods[2]=0, double omega=0.);
+    double length_x, length_y;
     double delta_x, delta_y;
     int dim_x, dim_y;
     int global_dim_x, global_dim_y;

@@ -56,12 +56,12 @@ int main(int argc, char** argv) {
     int rot_coord_x = 320, rot_coord_y = 320;
     double omega = 0.;
     double delta_t = 5.e-5;
-    double delta_x = double(LENGHT)/double(DIM), delta_y = double(LENGHT)/double(DIM);
+    double length_x = double(LENGHT)/double(DIM), length_y = double(LENGHT)/double(DIM);
     double coupling_const[5] = {7.116007999594e-4, 7.116007999594e-4, 0., 0., 0.};
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    Lattice *grid = new Lattice(DIM, delta_x, delta_y, periods, omega);
+    Lattice *grid = new Lattice(DIM, length_x, length_y, periods, omega);
     
     //set initial state
     State *state1 = new State(grid);

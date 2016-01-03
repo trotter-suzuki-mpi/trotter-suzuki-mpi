@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    Lattice *grid = new Lattice(DIM, (double)LENGTH/DIM, (double)LENGTH/DIM, periods, omega);
+    Lattice *grid = new Lattice(DIM, (double)LENGTH, (double)LENGTH, periods, omega);
 
     //set initial state
 

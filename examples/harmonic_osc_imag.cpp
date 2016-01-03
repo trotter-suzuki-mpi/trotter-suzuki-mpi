@@ -53,12 +53,12 @@ int main(int argc, char** argv) {
     bool imag_time = true;
     int time, tot_time = 0;
     double delta_t = double(DELTA_T);
-    double delta_x = double(EDGE_LENGTH)/double(DIM), delta_y = double(EDGE_LENGTH)/double(DIM);
+    double length_x = double(EDGE_LENGTH)/double(DIM), length_y = double(EDGE_LENGTH)/double(DIM);
     double coupling_const = double(COUPLING_CONST_2D);
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    Lattice *grid = new Lattice(DIM, delta_x, delta_y, periods, omega);
+    Lattice *grid = new Lattice(DIM, length_x, length_y, periods, omega);
 
     //set initial state
     State *state = new State(grid);

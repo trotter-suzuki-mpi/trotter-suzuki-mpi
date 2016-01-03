@@ -46,8 +46,10 @@ double const_potential(int x, int y, Lattice *grid) {
 }
 
 
-Lattice::Lattice(int dim, double _delta_x, double _delta_y, int _periods[2],
-                 double omega): delta_x(_delta_x), delta_y(_delta_y) {
+Lattice::Lattice(int dim, double _length_x, double _length_y, int _periods[2],
+                 double omega): length_x(_length_x), length_y(_length_y) {
+    delta_x = length_x / double(dim);
+    delta_y = length_y / double(dim);
     if (_periods == 0) {
           periods[0] = 0;
           periods[1] = 0;
@@ -74,10 +76,10 @@ Lattice::Lattice(int dim, double _delta_x, double _delta_y, int _periods[2],
     //set dimension of tiles and offsets
     calculate_borders(mpi_coords[1], mpi_dims[1], &start_x, &end_x,
                       &inner_start_x, &inner_end_x,
-                      global_dim_x - 2 * periods[1]*halo_x, halo_x, periods[1]);
+                      dim, halo_x, periods[1]);
     calculate_borders(mpi_coords[0], mpi_dims[0], &start_y, &end_y,
                       &inner_start_y, &inner_end_y,
-                      global_dim_y - 2 * periods[0]*halo_y, halo_y, periods[0]);
+                      dim, halo_y, periods[0]);
     dim_x = end_x - start_x;
     dim_y = end_y - start_y;
 }
@@ -105,11 +107,11 @@ State::~State() {
         }
     }
 
-void State::init_state(complex<double> (*ini_state)(int x, int y, Lattice *grid)) {
+void State::init_state(complex<double> (*ini_state)(int x, int y, Lattice *grid)) {               // change to complex<double> (*ini_state)(int x, int y)
     complex<double> tmp;
     for (int y = 0, idy = grid->start_y; y < grid->dim_y; y++, idy++) {
         for (int x = 0, idx = grid->start_x; x < grid->dim_x; x++, idx++) {
-            tmp = ini_state(idx, idy, grid);
+            tmp = ini_state(idx, idy, grid);                                                      //to be changed to  tmp = ini_state(idx * delta_x, idy * delta_y)
             p_real[y * grid->dim_x + x] = real(tmp);
             p_imag[y * grid->dim_x + x] = imag(tmp);
         }
@@ -207,7 +209,7 @@ double State::calculate_squared_norm(bool global) {
         delete [] sums;
     }
 #endif
-    return norm2;
+    return norm2;                                                                                                           // multiply by delta_x * delta_y
     }
 
 double *State::get_particle_density(double *_density) {
@@ -248,7 +250,7 @@ double *State::get_phase(double *_phase) {
 Hamiltonian::Hamiltonian(Lattice *_grid, double _mass, double _coupling_a,
                          double _coupling_ab, double _angular_velocity,
                          double _rot_coord_x, double _rot_coord_y,
-                         double _omega,
+                         double _omega,                                                             // is _omega needed?
                          double *_external_pot): grid(_grid), mass(_mass),
                          coupling_a(_coupling_a), coupling_ab(_coupling_ab),
                          angular_velocity(_angular_velocity), omega(_omega) {
@@ -280,7 +282,7 @@ Hamiltonian::~Hamiltonian() {
 void Hamiltonian::initialize_potential(double (*hamiltonian_pot)(int x, int y, Lattice *grid)) {
     for(int y = 0; y < grid->dim_y; y++) {
         for(int x = 0; x < grid->dim_x; x++) {
-            external_pot[y * grid->dim_y + x] = hamiltonian_pot(x, y, grid);
+            external_pot[y * grid->dim_y + x] = hamiltonian_pot(x, y, grid);                            //to be changed to  hamiltonian_pot(idx * delta_x, idy * delta_y, grid)
         }
     }
 }
