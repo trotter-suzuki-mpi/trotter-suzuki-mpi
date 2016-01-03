@@ -23,7 +23,7 @@
 #endif
 #include "trottersuzuki.h"
 
-#define LENGHT 50
+#define LENGTH 50
 #define DIM 640
 #define ITERATIONS 2
 #define PARTICLES_NUM 8.e+6
@@ -32,18 +32,16 @@
 #define SNAP_PER_STAMP 20
 #define COUPLING_CONST_2D 7.116007999594e-4
 
-complex<double> gauss_ini_state(int m, int n, Lattice *grid) {
-    double x = (m - grid->global_dim_x / 2.) * grid->delta_x;
-    double y = (n - grid->global_dim_y / 2.) * grid->delta_x;
-    double w = 0.002/(grid->delta_x * grid->delta_x);
-    return complex<double>(sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w), sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x * x + y * y) * 0.5 * w));
+complex<double> gauss_ini_state(double x, double y) {
+    double x_c = x - double(LENGTH)*0.5, y_c = y - double(LENGTH)*0.5;
+    double w = 0.002;
+    return complex<double>(sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x_c * x_c + y_c * y_c) * 0.5 * w), sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x_c * x_c + y_c * y_c) * 0.5 * w));
 }
 
-double parabolic_potential(int m, int n, Lattice *grid) {
-    double x = (m - grid->global_dim_x / 2.) * grid->delta_x;
-    double y = (n - grid->global_dim_x / 2.) * grid->delta_x;
+double parabolic_potential(double x, double y) {
+	double x_c = x - double(LENGTH)*0.5, y_c = y - double(LENGTH)*0.5;
     double w_x = 1., w_y = 1.; 
-    return 0.5 * (w_x * w_x * x * x + w_y * w_y * y * y);
+    return 0.5 * (w_x * w_x * x_c * x_c + w_y * w_y * y_c * y_c);
 }
 
 int main(int argc, char** argv) {
@@ -53,7 +51,7 @@ int main(int argc, char** argv) {
     const double particle_mass = 1.;
     bool imag_time = true;
     double delta_t = 2.e-4;
-    double length_x = double(LENGHT), length_y = double(LENGHT);
+    double length_x = double(LENGTH), length_y = double(LENGTH);
     double coupling_const = double(COUPLING_CONST_2D);
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);

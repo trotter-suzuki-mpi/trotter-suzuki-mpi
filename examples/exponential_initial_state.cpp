@@ -34,12 +34,8 @@
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 10
 
-complex<double> exp_state(int x, int y, Lattice *grid) {
-    double L_x = grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x;
-    double L_y = grid->global_dim_y - grid->periods[0] * 2 * grid->halo_y;
-
-    return exp(complex<double>(0., 2*3.14159/L_x*(x-grid->periods[1]*grid->halo_x) + 
-                                        2*3.14159/L_y*(y-grid->periods[0]*grid->halo_y)));
+complex<double> exp_state(double x, double y) {
+    return exp(complex<double>(0., 2*M_PI/double(DIM) * x + 2*M_PI/double(DIM) * y));
 }
 
 int main(int argc, char** argv) {

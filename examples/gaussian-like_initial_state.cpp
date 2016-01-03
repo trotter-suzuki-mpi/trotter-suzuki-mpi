@@ -35,7 +35,7 @@
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 10
 
-complex<double> gauss_state(int x, int y, Lattice *grid) {
+complex<double> gauss_state(double x, double y) {
     double s = 64.0;
     return complex<double>(exp(-(pow(x - 180.0, 2.0) + pow(y - 300.0, 2.0)) / (2.0 * pow(s, 2.0))), 0.0)
            * exp(complex<double>(0.0, 0.4 * (x + y - 480.0)));

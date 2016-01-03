@@ -34,15 +34,14 @@
 #define COUPLING_CONST_2D 0   // 0 for linear Schrodinger equation
 #define PARTICLES_NUM 1     //Particle numbers (nonlinear Schrodinger equation)
 
-complex<double> sinus_state(int m, int n, Lattice *grid) {
-  double x = m * grid->delta_x, y = n * grid->delta_x;
+complex<double> sinus_state(double x, double y) {
   return complex<double>(2. / double(EDGE_LENGTH) * sin(M_PI * x / double(EDGE_LENGTH)) * sin(M_PI * y / double(EDGE_LENGTH)), 0.0);
 }
 
-double parabolic_potential(int m, int n, Lattice *grid) {
-    double x = (m - grid->global_dim_x / 2.) * grid->delta_x, y = (n - grid->global_dim_x / 2.) * grid->delta_x;
+double parabolic_potential(double x, double y) {
+	double x_c = x - double(EDGE_LENGTH)*0.5, y_c = y - double(EDGE_LENGTH)*0.5;
     double w_x = 1., w_y = 1.; 
-    return 0.5 * (w_x * w_x * x * x + w_y * w_y * y * y);
+    return 0.5 * (w_x * w_x * x_c * x_c + w_y * w_y * y_c * y_c);
 }
 
 int main(int argc, char** argv) {

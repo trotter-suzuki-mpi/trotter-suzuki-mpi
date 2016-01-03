@@ -34,12 +34,11 @@
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 10
 
-complex<double> sinus_state(int x, int y, Lattice *grid) {
-    double L_x = grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x;
-    double L_y = grid->global_dim_y - grid->periods[0] * 2 * grid->halo_y;
+complex<double> sinus_state(double x, double y) {
+    double L_x = double(DIM);
+    double L_y = double(DIM);
 
-    return complex<double> (sin(2*3.14159 / L_x*(x-grid->periods[1]*grid->halo_x)) * 
-                                 sin(2*3.14159 / L_y*(y-grid->periods[0]*grid->halo_y)), 0.0);
+    return complex<double> (sin(2*M_PI / L_x*x) * sin(2*M_PI / L_y*y), 0.0);
 }
 
 int main(int argc, char** argv) {

@@ -34,11 +34,11 @@
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 10
 
-complex<double> super_position_two_exp_state(int x, int y, Lattice *grid) {
-    double L_x = grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x;
+complex<double> super_position_two_exp_state(double x, double y) {
+    double L_x = double(DIM);
 
-    return exp(complex<double>(0. , 2.*3.14159/L_x*(x-grid->periods[1]*grid->halo_x))) +
-           exp(complex<double>(0. , 10.*2.*3.14159/L_x*(x-grid->periods[1]*grid->halo_x)));
+    return exp(complex<double>(0. , 2.*M_PI/L_x*x)) +
+           exp(complex<double>(0. , 10.*2.*M_PI/L_x*x));
 }
 
 int main(int argc, char** argv) {

@@ -21,7 +21,7 @@
 
 double calculate_total_energy(Lattice *grid, State *state,
                               Hamiltonian *hamiltonian,
-                              double (*hamilt_pot)(int x, int y, Lattice *grid),
+                              double (*hamilt_pot)(double x, double y),
                               double * external_pot, double norm2, bool global) {
 
     int ini_halo_x = grid->inner_start_x - grid->start_x;
@@ -39,7 +39,8 @@ double calculate_total_energy(Lattice *grid, State *state,
     complex<double> rot_y, rot_x;
     double cost_rot_x = 0.5 * hamiltonian->omega * grid->delta_y / grid->delta_x;
     double cost_rot_y = 0.5 * hamiltonian->omega * grid->delta_x / grid->delta_y;
-
+    
+    double delta_x = grid->delta_x, delta_y = grid->delta_y;
     for (int i = grid->inner_start_y - grid->start_y + (ini_halo_y == 0),
          y = grid->inner_start_y + (ini_halo_y == 0);
          i < grid->inner_end_y - grid->start_y - (end_halo_y == 0); i++, y++) {
@@ -48,7 +49,7 @@ double calculate_total_energy(Lattice *grid, State *state,
              j < grid->inner_end_x - grid->start_x - (end_halo_x == 0); j++, x++) {
             complex<double> potential_term;
             if(external_pot == NULL) {
-                potential_term = complex<double> (hamilt_pot(x, y, grid), 0.);
+                potential_term = complex<double> (hamilt_pot(x * delta_x, y * delta_y), 0.);
             } else {
                 potential_term = complex<double> (external_pot[y * grid->global_dim_x + x], 0.);
             }
@@ -338,8 +339,8 @@ double calculate_ab_energy(Lattice *grid, State *state1, State *state2,
 
 double calculate_total_energy(Lattice *grid, State *state1, State *state2,
                               Hamiltonian2Component *hamiltonian,
-                              double (*hamilt_pot_a)(int x, int y, Lattice *grid),
-                              double (*hamilt_pot_b)(int x, int y, Lattice *grid),
+                              double (*hamilt_pot_a)(double x, double y),
+                              double (*hamilt_pot_b)(double x, double y),
                               double **external_pot, double norm2, bool global) {
 
   if(external_pot == NULL) {
@@ -424,7 +425,7 @@ void trotter(Lattice *grid, State *state1, State *state2,
     var = 1.;
     // Main loop
     for (int i = 0; i < iterations; i++) {
-    //first wave function
+        //first wave function
         kernel->run_kernel_on_halo();
         if (i != iterations - 1) {
             kernel->start_halo_exchange();
@@ -501,7 +502,7 @@ Solver::~Solver() {
 void Solver::initialize_exp_potential(double time_single_it, int which) {
       double order_approx = 2.;
       double particle_mass;
-      if (single_component) {
+      if (single_component) {                                                    // maybe which instead single_component 
           particle_mass = hamiltonian->mass;
       } else {
           particle_mass = static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b;

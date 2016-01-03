@@ -37,19 +37,17 @@
 int rot_coord_x = 320, rot_coord_y = 320;
 double omega = 0.;
 
-complex<double> gauss_ini_state(int m, int n, Lattice *grid) {
-    double x = (m - grid->global_dim_x / 2.) * grid->delta_x;
-    double y = (n - grid->global_dim_y / 2.) * grid->delta_x;
+complex<double> gauss_ini_state(double x, double y) {
+	double x_c = x - double(EDGE_LENGTH)*0.5, y_c = y - double(EDGE_LENGTH)*0.5;
     double w = 1.;
-    return complex<double>(sqrt(0.5 * w / M_PI) * exp(-(x * x + y * y) * 0.5 * w) * (1. + sqrt(2. * w) * x), 0.);
+    return complex<double>(sqrt(0.5 * w / M_PI) * exp(-(x_c * x_c + y_c * y_c) * 0.5 * w) * (1. + sqrt(2. * w) * x_c), 0.);
 }
 
-double parabolic_potential(int m, int n, Lattice *grid) {
-    double x = (m - grid->global_dim_x / 2.) * grid->delta_x, y = (n - grid->global_dim_x / 2.) * grid->delta_x;
+double parabolic_potential(double x, double y) {
+	double x_c = x - double(EDGE_LENGTH)*0.5, y_c = y - double(EDGE_LENGTH)*0.5;
     double w_x = 1., w_y = 1.; 
-    return 0.5 * (w_x * w_x * x * x + w_y * w_y * y * y);
+    return 0.5 * (w_x * w_x * x_c * x_c + w_y * w_y * y_c * y_c);
 }
-
 
 int main(int argc, char** argv) {
     int periods[2] = {0, 0};

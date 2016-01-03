@@ -41,7 +41,7 @@ void calculate_borders(int coord, int dim, int * start, int *end, int *inner_sta
         *inner_end = ( *end == length ? *end : *end - halo );
 }
 
-double const_potential(int x, int y, Lattice *grid) {
+double const_potential(double x, double y) {
     return 0.;
 }
 
@@ -86,32 +86,35 @@ Lattice::Lattice(int dim, double _length_x, double _length_y, int _periods[2],
 
 
 State::State(Lattice *_grid, double *_p_real, double *_p_imag): grid(_grid){
-        if (_p_real == 0) {
-            self_init = true;
-            p_real = new double[grid->dim_x * grid->dim_y];
-        } else {
-            self_init = false;
-            p_real = _p_real;
-        }
-        if (_p_imag == 0) {
-            p_imag = new double[grid->dim_x * grid->dim_y];
-        } else {
-            p_imag = _p_imag;
-        }
+    if (_p_real == 0) {
+        self_init = true;
+        p_real = new double[grid->dim_x * grid->dim_y];
+    } else {
+        self_init = false;
+        p_real = _p_real;
     }
+    if (_p_imag == 0) {
+        p_imag = new double[grid->dim_x * grid->dim_y];
+    } else {
+        p_imag = _p_imag;
+    }
+}
 
 State::~State() {
-        if (self_init) {
-            delete p_real;
-            delete p_imag;
-        }
+    if (self_init) {
+        delete p_real;
+        delete p_imag;
     }
+}
 
-void State::init_state(complex<double> (*ini_state)(int x, int y, Lattice *grid)) {               // change to complex<double> (*ini_state)(int x, int y)
+void State::init_state(complex<double> (*ini_state)(double x, double y)) {
     complex<double> tmp;
-    for (int y = 0, idy = grid->start_y; y < grid->dim_y; y++, idy++) {
-        for (int x = 0, idx = grid->start_x; x < grid->dim_x; x++, idx++) {
-            tmp = ini_state(idx, idy, grid);                                                      //to be changed to  tmp = ini_state(idx * delta_x, idy * delta_y)
+    double delta_x = grid->delta_x, delta_y = grid->delta_y;
+    double idy = grid->start_y * delta_y, idx;
+    for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
+        idx = grid->start_x * delta_x;
+        for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
+            tmp = ini_state(idx, idy);
             p_real[y * grid->dim_x + x] = real(tmp);
             p_imag[y * grid->dim_x + x] = imag(tmp);
         }
@@ -210,42 +213,42 @@ double State::calculate_squared_norm(bool global) {
     }
 #endif
     return norm2;                                                                                                           // multiply by delta_x * delta_y
-    }
+}
 
 double *State::get_particle_density(double *_density) {
-        double *density;
-        if (_density == 0) {
-          density = new double[grid->dim_x * grid->dim_y];
-        } else {
-          density = _density;
-        }
-        for(int j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; j++) {
-            for(int i = grid->inner_start_x - grid->start_x; i < grid->inner_end_x - grid->start_x; i++) {
-                density[j * grid->dim_x + i] = p_real[j * grid->dim_x + i] * p_real[j * grid->dim_x + i] + p_imag[j * grid->dim_x + i] * p_imag[j * grid->dim_x + i];
-          }
-        }
-        return density;
+    double *density;
+    if (_density == 0) {
+      density = new double[grid->dim_x * grid->dim_y];
+    } else {
+      density = _density;
     }
+    for(int j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; j++) {
+        for(int i = grid->inner_start_x - grid->start_x; i < grid->inner_end_x - grid->start_x; i++) {
+            density[j * grid->dim_x + i] = p_real[j * grid->dim_x + i] * p_real[j * grid->dim_x + i] + p_imag[j * grid->dim_x + i] * p_imag[j * grid->dim_x + i];
+      }
+    }
+    return density;
+}
 
 double *State::get_phase(double *_phase) {
-        double *phase;
-        if (_phase == 0) {
-          phase = new double[grid->dim_x * grid->dim_y];
-        } else {
-          phase = _phase;
-        }
-        double norm;
-        for(int j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; j++) {
-            for(int i = grid->inner_start_x - grid->start_x; i < grid->inner_end_x - grid->start_x; i++) {
-                norm = sqrt(p_real[j * grid->dim_x + i] * p_real[j * grid->dim_x + i] + p_imag[j * grid->dim_x + i] * p_imag[j * grid->dim_x + i]);
-                if(norm == 0)
-                    phase[j * grid->dim_x + i] = 0;
-                else
-                    phase[j * grid->dim_x + i] = acos(p_real[j * grid->dim_x + i] / norm) * ((p_imag[j * grid->dim_x + i] > 0) - (p_imag[j * grid->dim_x + i] < 0));
-            }
-        }
-        return phase;
+    double *phase;
+    if (_phase == 0) {
+      phase = new double[grid->dim_x * grid->dim_y];
+    } else {
+      phase = _phase;
     }
+    double norm;
+    for(int j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; j++) {
+        for(int i = grid->inner_start_x - grid->start_x; i < grid->inner_end_x - grid->start_x; i++) {
+            norm = sqrt(p_real[j * grid->dim_x + i] * p_real[j * grid->dim_x + i] + p_imag[j * grid->dim_x + i] * p_imag[j * grid->dim_x + i]);
+            if(norm == 0)
+                phase[j * grid->dim_x + i] = 0;
+            else
+                phase[j * grid->dim_x + i] = acos(p_real[j * grid->dim_x + i] / norm) * ((p_imag[j * grid->dim_x + i] > 0) - (p_imag[j * grid->dim_x + i] < 0));
+        }
+    }
+    return phase;
+}
 
 Hamiltonian::Hamiltonian(Lattice *_grid, double _mass, double _coupling_a,
                          double _coupling_ab, double _angular_velocity,
@@ -254,35 +257,38 @@ Hamiltonian::Hamiltonian(Lattice *_grid, double _mass, double _coupling_a,
                          double *_external_pot): grid(_grid), mass(_mass),
                          coupling_a(_coupling_a), coupling_ab(_coupling_ab),
                          angular_velocity(_angular_velocity), omega(_omega) {
-        if (_rot_coord_x == DBL_MAX) {
-            rot_coord_x = grid->dim_x * 0.5;
-        } else {
-            rot_coord_y = _rot_coord_y;
-        }
-        if (_rot_coord_y == DBL_MAX) {
-            rot_coord_y = grid->dim_y * 0.5;
-        } else {
-            rot_coord_y = _rot_coord_y;
-        }
-        if (_external_pot == 0) {
-            external_pot = new double[grid->dim_y * grid->dim_x];
-            self_init = true;
-        } else {
-            external_pot = _external_pot;
-            self_init = false;
-        }
+    if (_rot_coord_x == DBL_MAX) {
+        rot_coord_x = grid->dim_x * 0.5;
+    } else {
+        rot_coord_y = _rot_coord_y;
     }
+    if (_rot_coord_y == DBL_MAX) {
+        rot_coord_y = grid->dim_y * 0.5;
+    } else {
+        rot_coord_y = _rot_coord_y;
+    }
+    if (_external_pot == 0) {
+        external_pot = new double[grid->dim_y * grid->dim_x];
+        self_init = true;
+    } else {
+        external_pot = _external_pot;
+        self_init = false;
+    }
+}
 
 Hamiltonian::~Hamiltonian() {
-        if (self_init) {
-            delete [] external_pot;
-        }
+    if (self_init) {
+        delete [] external_pot;
     }
+}
 
-void Hamiltonian::initialize_potential(double (*hamiltonian_pot)(int x, int y, Lattice *grid)) {
-    for(int y = 0; y < grid->dim_y; y++) {
-        for(int x = 0; x < grid->dim_x; x++) {
-            external_pot[y * grid->dim_y + x] = hamiltonian_pot(x, y, grid);                            //to be changed to  hamiltonian_pot(idx * delta_x, idy * delta_y, grid)
+void Hamiltonian::initialize_potential(double (*hamiltonian_pot)(double x, double y)) {
+    double delta_x = grid->delta_x, delta_y = grid->delta_y;
+    double idy = grid->start_y * delta_y, idx;
+    for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
+        idx = grid->start_x * delta_x;
+        for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
+            external_pot[y * grid->dim_y + x] = hamiltonian_pot(idx, idy);
         }
     }
 }
@@ -324,16 +330,19 @@ Hamiltonian2Component::~Hamiltonian2Component() {
     }
 }
 
-void Hamiltonian2Component::initialize_potential(double (*hamiltonian_pot)(int x, int y, Lattice *grid), int which) {
+void Hamiltonian2Component::initialize_potential(double (*hamiltonian_pot)(double x, double y), int which) {
     double *tmp;
     if (which == 0) {
       tmp = external_pot;
     } else {
       tmp = external_pot_b;
     }
-    for(int y = 0; y < grid->dim_y; y++) {
-        for(int x = 0; x < grid->dim_x; x++) {
-            tmp[y * grid->dim_y + x] = hamiltonian_pot(x, y, grid);
+    double delta_x = grid->delta_x, delta_y = grid->delta_y;
+    double idy = grid->start_y * delta_y, idx;
+    for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
+        idx = grid->start_x * delta_x;
+        for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
+            tmp[y * grid->dim_y + x] = hamiltonian_pot(idx, idy);
         }
     }
 }
