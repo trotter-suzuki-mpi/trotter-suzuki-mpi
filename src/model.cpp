@@ -206,7 +206,6 @@ double State::calculate_squared_norm(bool global) {
     if (global) {
         double *sums = new double[grid->mpi_procs];
         MPI_Allgather(&norm2, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, grid->cartcomm);
-        sums[0] = norm2;
         norm2 = 0.;
         for(int i = 0; i < grid->mpi_procs; i++)
             norm2 += sums[i];
@@ -252,19 +251,17 @@ double *State::get_phase(double *_phase) {
 }
 
 Hamiltonian::Hamiltonian(Lattice *_grid, double _mass, double _coupling_a,
-                         double _coupling_ab, double _angular_velocity,
+                         double _angular_velocity,
                          double _rot_coord_x, double _rot_coord_y,
-                         double _omega,                                                             // is _omega needed?
                          double *_external_pot): grid(_grid), mass(_mass),
-                         coupling_a(_coupling_a), coupling_ab(_coupling_ab),
-                         angular_velocity(_angular_velocity), omega(_omega) {
+                         coupling_a(_coupling_a), angular_velocity(_angular_velocity) {
     if (_rot_coord_x == DBL_MAX) {
-        rot_coord_x = grid->dim_x * 0.5;
+        rot_coord_x = (grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x) * 0.5;
     } else {
         rot_coord_x = _rot_coord_x;
     }
     if (_rot_coord_y == DBL_MAX) {
-        rot_coord_y = grid->dim_y * 0.5;
+        rot_coord_y = (grid->global_dim_y - grid->periods[1] * 2 * grid->halo_y) * 0.5;
     } else {
         rot_coord_y = _rot_coord_y;
     }
@@ -289,7 +286,7 @@ void Hamiltonian::initialize_potential(double (*hamiltonian_pot)(double x, doubl
     for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
         idx = grid->start_x * delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
-            external_pot[y * grid->dim_y + x] = hamiltonian_pot(idx, idy);
+            external_pot[y * grid->dim_x + x] = hamiltonian_pot(idx, idy);
         }
     }
 }
@@ -309,12 +306,12 @@ void Hamiltonian::read_potential(char *pot_name) {
 Hamiltonian2Component::Hamiltonian2Component(Lattice *_grid, double _mass,
                          double _mass_b, double _coupling_a,
                          double _coupling_ab, double _coupling_b,
-                         double _angular_velocity,
-                         double _rot_coord_x, double _rot_coord_y, double _omega,
                          double _omega_r, double _omega_i,
+                         double _angular_velocity,
+                         double _rot_coord_x, double _rot_coord_y,
                          double *_external_pot, double *_external_pot_b):
-                         Hamiltonian(_grid, _mass, _coupling_a, _coupling_ab, _angular_velocity, _rot_coord_x, rot_coord_y, _omega, _external_pot),
-                         coupling_b(_coupling_b), omega_r(_omega_r), omega_i(_omega_i) {
+                         Hamiltonian(_grid, _mass, _coupling_a, _angular_velocity, _rot_coord_x, rot_coord_y, _external_pot),
+                         coupling_ab( _coupling_ab), coupling_b(_coupling_b), omega_r(_omega_r), omega_i(_omega_i) {
     if (_external_pot_b == 0) {
         external_pot_b = new double[grid->dim_y * grid->dim_x];
         self_init = true;
@@ -343,7 +340,7 @@ void Hamiltonian2Component::initialize_potential(double (*hamiltonian_pot)(doubl
     for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
         idx = grid->start_x * delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
-            tmp[y * grid->dim_y + x] = hamiltonian_pot(idx, idy);
+            tmp[y * grid->dim_x + x] = hamiltonian_pot(idx, idy);
         }
     }
 }

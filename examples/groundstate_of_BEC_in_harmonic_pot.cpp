@@ -35,7 +35,7 @@
 #define PARTICLES_NUM 1700000
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 10
-#define SCATTER_LENGTH_2D 5.662739242e-5
+#define SCATTER_LENGTH_2D 0 //5.662739242e-5
 
 complex<double> gauss_ini_state(double x, double y) {
 	double x_c = x - double(LENGTH)*0.5, y_c = y - double(LENGTH)*0.5;
@@ -50,35 +50,30 @@ double parabolic_potential(double x, double y) {
 }
 
 int main(int argc, char** argv) {
-    int periods[2] = {0, 0};
     bool verbose = true;
-    int rot_coord_x = 320, rot_coord_y = 320;
-    double omega = 0;
-    double norm = 1;
     bool imag_time = true;
     double delta_t = 1.e-4;
     const double particle_mass = 1.;
-    double coupling_const = 4. * M_PI * double(SCATTER_LENGTH_2D);    
+    double coupling_a = 4. * M_PI * double(SCATTER_LENGTH_2D);    
     
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    Lattice *grid = new Lattice(DIM, (double)LENGTH, (double)LENGTH, periods, omega);
-
+    
+    //set lattice
+    Lattice *grid = new Lattice(DIM, (double)LENGTH, (double)LENGTH);
     //set initial state
-
     State *state = new State(grid);
     state->init_state(gauss_ini_state);
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
+    //set hamiltonian
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_a);
     hamiltonian->initialize_potential(parabolic_potential);
+    //set solver
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
 
     if(grid->mpi_rank == 0) {
         cout << "\n* This source provides an example of the trotter-suzuki program.\n";
-        cout << "* It calculates the time-evolution of a particle in a box\n";
-        cout << "* with periodic boundary conditions, where the initial\n";
-        cout << "* state is the following:\n";
-        cout << "* \texp(i2M_PI / L (x + y))\n\n";
+        cout << "* It calculates the ground state of a BEC trapped in a harmonic potential.\n";
     }
 
     //set file output directory
@@ -96,8 +91,8 @@ int main(int argc, char** argv) {
         dirnames = ".";
     }
     for(int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
-        solver->evolve(ITERATIONS, imag_time);
         stamp(grid, state, 0, ITERATIONS, count_snap, dirnames.c_str());
+        solver->evolve(ITERATIONS, imag_time);
     }
     if (grid->mpi_rank == 0 && verbose == true) {
         cout << "TROTTER " << DIM << "x" << DIM << " kernel:" << KERNEL_TYPE << " np:" << grid->mpi_procs << endl;

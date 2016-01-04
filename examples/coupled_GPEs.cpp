@@ -50,24 +50,27 @@ int main(int argc, char** argv) {
     char pot_name[1] = "";
     const double particle_mass_a = 1., particle_mass_b = 1.;
     bool imag_time = true;
-    int rot_coord_x = 320, rot_coord_y = 320;
-    double omega = 0.;
     double delta_t = 5.e-5;
-    double length_x = double(LENGTH)/double(DIM), length_y = double(LENGTH)/double(DIM);
-    double coupling_const[5] = {7.116007999594e-4, 7.116007999594e-4, 0., 0., 0.};
+    double length_x = double(LENGTH), length_y = double(LENGTH);
+    double coupling_a = 7.116007999594e-4;
+    double coupling_b = 7.116007999594e-4;
+    double coupling_ab = 0;
+    double omega = 0;
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    Lattice *grid = new Lattice(DIM, length_x, length_y, periods, omega);
-    
+    //set lattice
+    Lattice *grid = new Lattice(DIM, length_x, length_y, periods);
     //set initial state
     State *state1 = new State(grid);
     state1->init_state(gauss_ini_state);
     State *state2 = new State(grid);
     state2->init_state(gauss_ini_state);
-    Hamiltonian2Component *hamiltonian = new Hamiltonian2Component(grid, particle_mass_a, particle_mass_b, coupling_const[0], coupling_const[2], coupling_const[1], rot_coord_x, rot_coord_y, omega, coupling_const[3], coupling_const[4]);
+    //set hamiltonian
+    Hamiltonian2Component *hamiltonian = new Hamiltonian2Component(grid, particle_mass_a, particle_mass_b, coupling_a, coupling_ab, coupling_b, omega);
     hamiltonian->initialize_potential(parabolic_potential, 0);
     hamiltonian->initialize_potential(parabolic_potential, 1);
+    //set evolution
     Solver *solver = new Solver(grid, state1, state2, hamiltonian, delta_t, KERNEL_TYPE);
     
     //set file output directory

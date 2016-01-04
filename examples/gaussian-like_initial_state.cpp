@@ -30,10 +30,10 @@
 
 #include "trottersuzuki.h"
 
-#define ITERATIONS 10
+#define ITERATIONS 1000
 #define DIM 640
 #define KERNEL_TYPE "cpu"
-#define SNAPSHOTS 10
+#define SNAPSHOTS 20
 
 complex<double> gauss_state(double x, double y) {
     double s = 64.0;
@@ -42,29 +42,24 @@ complex<double> gauss_state(double x, double y) {
 }
 
 int main(int argc, char** argv) {
-    int periods[2] = {0, 0};
-    double coupling_const = 0;
     double length_x = double(DIM), length_y = double(DIM);
-    double delta_t = 0.08;
-    int rot_coord_x = 320, rot_coord_y = 320;
-    double omega = 0;
+    double delta_t = 0.1;
     bool verbose = true;
-    double norm;
     bool imag_time = false;
-    const double particle_mass = 1.;
+    double particle_mass = 1.;
 
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    Lattice *grid = new Lattice(DIM, length_x, length_y, periods, omega);
-
+    //set lattice
+    Lattice *grid = new Lattice(DIM, length_x, length_y);
     //set initial state
     State *state = new State(grid);
     state->init_state(gauss_state);
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, 
-                                               coupling_const, 0, 0, 
-                                               rot_coord_x, rot_coord_y, omega);
+    //set hamiltonian
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass);
     hamiltonian->initialize_potential(const_potential);
+    //set evolution
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
 
     if(grid->mpi_rank == 0) {

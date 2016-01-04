@@ -77,18 +77,15 @@ public:
     Lattice *grid;
     double mass;
     double coupling_a;
-    double coupling_ab;
     double angular_velocity;
     double rot_coord_x;
     double rot_coord_y;
-    double omega;
     double *external_pot;
     bool self_init;
     
     Hamiltonian(Lattice *_grid, double _mass=1., double _coupling_a=0., 
-                double coupling_ab=0., double _angular_velocity=0., 
+                double _angular_velocity=0., 
                 double _rot_coord_x=DBL_MAX, double _rot_coord_y=DBL_MAX, 
-                double _omega=0.,
                 double *_external_pot=0);
     ~Hamiltonian();
     void initialize_potential(double (*hamiltonian_pot)(double x, double y));
@@ -98,6 +95,7 @@ public:
 class Hamiltonian2Component: public Hamiltonian {
 public:
     double mass_b;
+    double coupling_ab;
     double coupling_b;
     double *external_pot_b;
     double omega_r;
@@ -106,11 +104,10 @@ public:
     Hamiltonian2Component(Lattice *_grid, double _mass=1., double _mass_b=1., 
                           double _coupling_a=0., double coupling_ab=0., 
                           double _coupling_b=0.,
+                          double _omega_r=0, double _omega_i=0,
                           double _angular_velocity=0., 
                           double _rot_coord_x=DBL_MAX, 
                           double _rot_coord_y=DBL_MAX, 
-                          double _omega=0, double _omega_r=0,
-                          double _omega_i=0,
                           double *_external_pot=0, 
                           double *_external_pot_b=0);
     ~Hamiltonian2Component();

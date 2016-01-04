@@ -30,7 +30,7 @@ void my_abort(string err) {
     }
     MPI_Abort(MPI_COMM_WORLD, 1);
 #else
-    throw std::runtime_error(err);
+    //throw std::runtime_error(err);
 #endif
 }
 

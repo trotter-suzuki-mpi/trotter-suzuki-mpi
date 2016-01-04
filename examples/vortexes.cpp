@@ -56,15 +56,17 @@ int main(int argc, char** argv) {
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    Lattice *grid = new Lattice(DIM, length_x, length_y, periods, angular_velocity);
 
+    //set lattice
+    Lattice *grid = new Lattice(DIM, length_x, length_y, periods, angular_velocity);
     //set initial state
     State *state = new State(grid);
     state->init_state(gauss_ini_state);
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, 
-                                               coupling_const, 0, angular_velocity, 
-                                               rot_coord_x, rot_coord_y, 0);
+    //set hamiltonian
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 
+                                               angular_velocity, rot_coord_x, rot_coord_y);
     hamiltonian->initialize_potential(parabolic_potential);
+    //set evolution
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
     
     //set file output directory

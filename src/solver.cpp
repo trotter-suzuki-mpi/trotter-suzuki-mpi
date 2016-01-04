@@ -82,7 +82,6 @@ double calculate_total_energy(Lattice *grid, State *state,
     if (global) {
         double *sums = new double[grid->mpi_procs];
         MPI_Allgather(&total_energy, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, grid->cartcomm);
-        sums[0] = total_energy;
         total_energy = 0.;
         for(int i = 0; i < grid->mpi_procs; i++)
             total_energy += sums[i];
@@ -132,7 +131,6 @@ double calculate_kinetic_energy(Lattice *grid, State *state, Hamiltonian *hamilt
     if (global) {
         double *sums = new double[grid->mpi_procs];
         MPI_Allgather(&kinetic_energy, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, grid->cartcomm);
-        sums[0] = kinetic_energy;
         kinetic_energy = 0.;
         for(int i = 0; i < grid->mpi_procs; i++)
             kinetic_energy += sums[i];
@@ -185,7 +183,6 @@ double calculate_rotational_energy(Lattice *grid, State *state, Hamiltonian *ham
     if (global) {
         double *sums = new double[grid->mpi_procs];
         MPI_Allgather(&energy_rot, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, grid->cartcomm);
-        sums[0] = energy_rot;
         energy_rot = 0.;
         for(int i = 0; i < grid->mpi_procs; i++)
             energy_rot += sums[i];
@@ -354,9 +351,8 @@ double calculate_total_energy(Lattice *grid, State *state1, State *state2,
     norm2 = state1->calculate_squared_norm() + state2->calculate_squared_norm();
 
     Hamiltonian *hamiltonian_b = new Hamiltonian(grid, hamiltonian->mass_b, hamiltonian->coupling_b,
-                hamiltonian->coupling_ab, hamiltonian->angular_velocity,
-                hamiltonian->rot_coord_x, hamiltonian->rot_coord_y,
-                hamiltonian->omega, hamiltonian->external_pot);
+                hamiltonian->angular_velocity, hamiltonian->rot_coord_x, hamiltonian->rot_coord_y,
+                hamiltonian->external_pot);
     sum += calculate_total_energy(grid, state1, hamiltonian, hamilt_pot_a, external_pot[0], norm2);
     sum += calculate_total_energy(grid, state2, hamiltonian_b, hamilt_pot_b, external_pot[1], norm2);
     sum += calculate_ab_energy(grid, state1, state2, hamiltonian->coupling_ab, norm2);
@@ -500,23 +496,21 @@ Solver::~Solver() {
     delete [] external_pot_imag;
 }
 
-void Solver::initialize_exp_potential(double time_single_it, int which) {
-      double order_approx = 2.;
+void Solver::initialize_exp_potential(double delta_t, int which) {
       double particle_mass;
       if (single_component) {                                                    // maybe which instead single_component 
           particle_mass = hamiltonian->mass;
       } else {
           particle_mass = static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b;
       }
-      double CONST_1 = -1. * time_single_it * order_approx;
-      double CONST_2 = 2. * time_single_it / particle_mass * order_approx;    //CONST_2: discretization of momentum operator and the only effect is to produce a scalar operator, so it could be omitted
+      double CONST_1 = -1. * delta_t;
       complex<double> tmp;
       for (int y = 0, idy = grid->start_y; y < grid->dim_y; y++, idy++) {
           for (int x = 0, idx = grid->start_x; x < grid->dim_x; x++, idx++) {
               if(imag_time)
-                  tmp = exp(complex<double> (CONST_1 * hamiltonian->external_pot[y * grid->dim_x + x], CONST_2));
+                  tmp = exp(complex<double> (CONST_1 * hamiltonian->external_pot[y * grid->dim_x + x], 0.));
               else
-                  tmp = exp(complex<double> (0., CONST_1 * hamiltonian->external_pot[y * grid->dim_x + x] + CONST_2));
+                  tmp = exp(complex<double> (0., CONST_1 * hamiltonian->external_pot[y * grid->dim_x + x]));
               external_pot_real[which][y * grid->dim_x + x] = real(tmp);
               external_pot_imag[which][y * grid->dim_x + x] = imag(tmp);
           }
@@ -532,25 +526,25 @@ void Solver::evolve(int iterations, bool _imag_time) {
         imag_time = _imag_time;
         double time_single_it = delta_t / 2.;  //second approx trotter-suzuki: time/2
         if(imag_time) {
-            h_a[0] = cosh(time_single_it / (2. * hamiltonian->mass * grid->delta_x * grid->delta_y));
-            h_b[0] = sinh(time_single_it / (2. * hamiltonian->mass * grid->delta_x * grid->delta_y));
-            initialize_exp_potential(time_single_it, 0);
+            h_a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
+            h_b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
+            initialize_exp_potential(delta_t, 0);
             norm2[0] = state->calculate_squared_norm();
             if (!single_component) {
-                h_a[1] = cosh(time_single_it / (2. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
-                h_b[1] = sinh(time_single_it / (2. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
-                initialize_exp_potential(time_single_it, 1);
+                h_a[1] = cosh(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
+                h_b[1] = sinh(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
+                initialize_exp_potential(delta_t, 1);
                 norm2[1] = state_b->calculate_squared_norm();
             }
         }
         else {
-            h_a[0] = cos(time_single_it / (2. * hamiltonian->mass * grid->delta_x * grid->delta_y));
-            h_b[0] = sin(time_single_it / (2. * hamiltonian->mass * grid->delta_x * grid->delta_y));
-            initialize_exp_potential(time_single_it, 0);
+            h_a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
+            h_b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
+            initialize_exp_potential(delta_t, 0);
             if (!single_component) {
-                h_a[1] = cos(time_single_it / (2. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
-                h_b[1] = sin(time_single_it / (2. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
-                initialize_exp_potential(time_single_it, 1);
+                h_a[1] = cos(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
+                h_b[1] = sin(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
+                initialize_exp_potential(delta_t, 1);
             }
         }
     }

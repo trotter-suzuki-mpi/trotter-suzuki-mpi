@@ -29,13 +29,9 @@
 #define DELTA_T 1.e-4     //Time step evolution
 #define ITERATIONS 1000     //Number of iterations before calculating expected values
 #define KERNEL_TYPE "cpu"
-#define SNAPSHOTS 20      //Number of times the expected values are calculated
+#define SNAPSHOTS 40      //Number of times the expected values are calculated
 #define SNAP_PER_STAMP 5    //The particles density and phase of the wave function are stamped every "SNAP_PER_STAMP" expected values calculations
-#define COUPLING_CONST_2D 0   // 0 for linear Schrodinger equation
 #define PARTICLES_NUM 1     //Particle numbers (nonlinear Schrodinger equation)
-
-int rot_coord_x = 138, rot_coord_y = 138;
-double omega = 0.;
 
 complex<double> gauss_ini_state(double x, double y) {
 	double x_c = x - double(EDGE_LENGTH)*0.5, y_c = y - double(EDGE_LENGTH)*0.5;
@@ -50,7 +46,6 @@ double parabolic_potential(double x, double y) {
 }
 
 int main(int argc, char** argv) {
-    int periods[2] = {0, 0};
     char file_name[] = "";
     char pot_name[1] = "";
     const double particle_mass = 1.;
@@ -58,22 +53,20 @@ int main(int argc, char** argv) {
     int time, tot_time = 0;
     double delta_t = double(DELTA_T);
     double length_x = double(EDGE_LENGTH), length_y = double(EDGE_LENGTH);
-    double coupling_const = double(COUPLING_CONST_2D);
     
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
 
-    Lattice *grid = new Lattice(DIM, length_x, length_y, periods, omega);
-    
+    //set lattice
+    Lattice *grid = new Lattice(DIM, length_x, length_y);
     //set initial state
     State *state = new State(grid);
     state->init_state(gauss_ini_state);
-    
     //set Hamiltonian
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass);
     hamiltonian->initialize_potential(parabolic_potential);
-    
+    //set evolution
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
  
     //set file output directory

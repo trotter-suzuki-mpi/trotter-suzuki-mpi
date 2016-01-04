@@ -46,8 +46,6 @@ double parabolic_potential(double x, double y) {
 
 int main(int argc, char** argv) {
     int periods[2] = {0, 0};
-    int rot_coord_x = 320, rot_coord_y = 320;
-    double omega = 0.;
     const double particle_mass = 1.;
     bool imag_time = true;
     int time, tot_time = 0;
@@ -58,13 +56,15 @@ int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
 #endif
 
-    Lattice *grid = new Lattice(DIM, length_x, length_y, periods, omega);
-
+    //set lattice
+    Lattice *grid = new Lattice(DIM, length_x, length_y, periods);
     //set initial state
     State *state = new State(grid);
     state->init_state(sinus_state);
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
+    //set hamiltonian
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const);
     hamiltonian->initialize_potential(parabolic_potential);
+    //set evolution
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
 
     //set file output directory

@@ -17,6 +17,7 @@
  */
 #include "common.h"
 #include "kernel.h"
+#include <iostream> //
 
 // Helpers
 void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag) {
@@ -426,12 +427,12 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     periods = grid->periods;
     rot_coord_x = hamiltonian->rot_coord_x;
     rot_coord_y = hamiltonian->rot_coord_y;
-    alpha_x = hamiltonian->omega*delta_t*grid->delta_x / (2*grid->delta_y); 
-    alpha_y = hamiltonian->omega*delta_t*grid->delta_y / (2*grid->delta_x);
-	  a = new double [1];
-	  b = new double [1];
-	  coupling_const = new double [3];
-	  norm = new double [1];
+    alpha_x = hamiltonian->angular_velocity*delta_t*grid->delta_x / (2*grid->delta_y); 
+    alpha_y = hamiltonian->angular_velocity*delta_t*grid->delta_y / (2*grid->delta_x);
+	a = new double [1];
+	b = new double [1];
+	coupling_const = new double [3];
+	norm = new double [1];
 	
   	a[0] = _a;
     b[0] = _b;
@@ -506,12 +507,12 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
     delta_y = grid->delta_y;
     halo_x = grid->halo_x;
     halo_y = grid->halo_y;
-    alpha_x = hamiltonian->omega * delta_t * grid->delta_x / (2 * grid->delta_y), 
-    alpha_y = hamiltonian->omega * delta_t * grid->delta_y / (2 * grid->delta_x),
+    alpha_x = hamiltonian->angular_velocity * delta_t * grid->delta_x / (2 * grid->delta_y), 
+    alpha_y = hamiltonian->angular_velocity * delta_t * grid->delta_y / (2 * grid->delta_x),
     rot_coord_x = hamiltonian->rot_coord_x;
     rot_coord_y = hamiltonian->rot_coord_y;
     
-    a = _a;
+    a = _a;																				//coupling 3, 4???
     b = _b;
     norm = _norm;
     tot_norm = norm[0] + norm[1];

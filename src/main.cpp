@@ -175,41 +175,40 @@ void process_command_line(int argc, char** argv, int *dim, double *delta_x, doub
 int main(int argc, char** argv) {
     int dim = 0, iterations = 0, snapshots = 0;
     string kernel_type = KERNEL_TYPE;
-    int periods[2] = {0, 0};
     double particle_mass = 1.;
     char filename[FILENAME_LENGTH] = "";
     char pot_name[FILENAME_LENGTH] = "";
     bool verbose = true, imag_time = false;
-    double h_a = .0, h_b = .0;
-    double norm = 1;
     int time, tot_time = 0;
-    char output_folder[2] = {'.', '\0'};
     double delta_t = 0;
-    double coupling_const = 0;
-    double delta_x = 1, delta_y = 1;
-
+    double coupling_a = 0;
+    double length_x = 10, length_y = 10;
+    
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    try {
-        process_command_line(argc, argv, &dim, &delta_x, &delta_y, &iterations, &snapshots, &kernel_type, filename, &delta_t, &coupling_const, &particle_mass, pot_name, &imag_time);
+    /*try {
+        process_command_line(argc, argv, &dim, &delta_x, &delta_y, &iterations, &snapshots, &kernel_type, filename, &delta_t, &coupling_a, &particle_mass, pot_name, &imag_time);
     } catch (const std::runtime_error& e) {
         return 1; // exit is okay here because an MPI runtime would have aborted in my_abort
     }
-	
-    Lattice *grid = new Lattice(dim, delta_x, delta_y, periods, omega);
-    
-    int read_offset = 0;
+	*/
+    //set lattice
+    Lattice *grid = new Lattice(dim, length_x, length_y);
 
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
+	//set hamiltonian
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_a);
     hamiltonian->initialize_potential(const_potential);
 
     //set initial state
     State *state = new State(grid);
+    int read_offset = 0;
     state->read_state(filename, read_offset);
     
+    //set evolution
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, kernel_type);
 
+    //evolve the state
     for(int count_snap = 0; count_snap <= snapshots; count_snap++) {
 
       if(count_snap != snapshots) {

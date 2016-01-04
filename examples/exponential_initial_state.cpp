@@ -41,26 +41,23 @@ complex<double> exp_state(double x, double y) {
 int main(int argc, char** argv) {
     int periods[2] = {1, 1};
     bool verbose = true;
-    double coupling_const = 1;
     double length_x = double(DIM), length_y = double(DIM);
     const double particle_mass = 1.;
-    double delta_t = 0.08;
-    int rot_coord_x = 320, rot_coord_y = 320;
-    double omega = 0;
-    double norm;
     bool imag_time = false;
+    double delta_t = 5.e-2;
 
-    //set and calculate evolution operator variables from hamiltonian
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    Lattice *grid = new Lattice(DIM, length_x, length_y, periods, omega);
-
+    //set lattice
+    Lattice *grid = new Lattice(DIM, length_x, length_y, periods);
     //set initial state
     State *state = new State(grid);
     state->init_state(exp_state);
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
+    //set hamiltonian
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass);
     hamiltonian->initialize_potential(const_potential);
+    //set evolution
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
     
     if(grid->mpi_rank == 0) {
@@ -85,6 +82,8 @@ int main(int argc, char** argv) {
     } else {
         dirnames = ".";
     }
+    
+    //evolve and stamp the state
     for(int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);
         stamp(grid, state, 0, ITERATIONS, count_snap, dirnames.c_str());

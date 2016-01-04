@@ -44,27 +44,25 @@ complex<double> super_position_two_exp_state(double x, double y) {
 int main(int argc, char** argv) {
     int periods[2] = {1, 1};
     bool verbose = true;
-    double coupling_const = 0;
     double length_x = double(DIM), length_y = double(DIM);
     double delta_t = 0.08;
     const double particle_mass = 1.;
-    int rot_coord_x = 320, rot_coord_y = 320;
-    double omega = 0;
-    double norm = 1;
     bool imag_time = true;
 
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    Lattice *grid = new Lattice(DIM, length_x, length_y, periods, omega);
 
+    //set lattice
+    Lattice *grid = new Lattice(DIM, length_x, length_y, periods);
     //set initial state
     State *state = new State(grid);
     state->init_state(super_position_two_exp_state);
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 0, 0, rot_coord_x, rot_coord_y, omega);
+    //set hamiltonian
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass);
     hamiltonian->initialize_potential(const_potential);
+    //set evolution
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
-
 
     if(grid->mpi_rank == 0) {
         cout << "\n* This source provides an example of the trotter-suzuki program.\n";
@@ -90,6 +88,8 @@ int main(int argc, char** argv) {
     } else {
         dirnames = ".";
     }
+    stamp_real(grid, hamiltonian->external_pot, 2, "./", "imagpot");
+    //evolve and stamp the state
     for(int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);
         stamp(grid, state, 0, ITERATIONS, count_snap, dirnames.c_str());
