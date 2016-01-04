@@ -30,7 +30,7 @@
 #include "trottersuzuki.h"
 
 #define DIM 640
-#define ITERATIONS 100
+#define ITERATIONS 1000
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 10
 
@@ -101,5 +101,8 @@ int main(int argc, char** argv) {
     delete hamiltonian;
     delete state;
     delete grid;
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
     return 0;
 }

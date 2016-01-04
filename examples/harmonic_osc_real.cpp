@@ -28,13 +28,13 @@
 #define DIM 256         //Number of dots of the grid's edge
 #define DELTA_T 1.e-4     //Time step evolution
 #define ITERATIONS 1000     //Number of iterations before calculating expected values
-#define KERNEL_TYPE "gpu"
+#define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 20      //Number of times the expected values are calculated
 #define SNAP_PER_STAMP 5    //The particles density and phase of the wave function are stamped every "SNAP_PER_STAMP" expected values calculations
 #define COUPLING_CONST_2D 0   // 0 for linear Schrodinger equation
 #define PARTICLES_NUM 1     //Particle numbers (nonlinear Schrodinger equation)
 
-int rot_coord_x = 320, rot_coord_y = 320;
+int rot_coord_x = 138, rot_coord_y = 138;
 double omega = 0.;
 
 complex<double> gauss_ini_state(double x, double y) {
@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
     bool imag_time = false;
     int time, tot_time = 0;
     double delta_t = double(DELTA_T);
-    double length_x = double(EDGE_LENGTH)/double(DIM), length_y = double(EDGE_LENGTH)/double(DIM);
+    double length_x = double(EDGE_LENGTH), length_y = double(EDGE_LENGTH);
     double coupling_const = double(COUPLING_CONST_2D);
     
 #ifdef HAVE_MPI
@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
     hamiltonian->initialize_potential(parabolic_potential);
     
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
-    
+ 
     //set file output directory
     stringstream dirname, file_info;
     string dirnames, file_infos;
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
     file_info << dirnames << "/file_info.txt";
     file_infos = file_info.str();
     ofstream out(file_infos.c_str());
-    
+   
     double *_matrix = new double[grid->dim_x * grid->dim_y];
     double _mean_positions[4], _mean_momenta[4], _norm2, sum, results[4];
     
@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
 
     //Momenta expected values
     calculate_mean_momentum(grid, state,_mean_momenta, norm2);
-                   
+
     //get and stamp phase
     state->get_phase(_matrix);
     stamp_real(grid, _matrix, 0, dirnames.c_str(), "phase");
@@ -121,16 +121,17 @@ int main(int argc, char** argv) {
       out << "iterations\tsquared norm\ttotal_energy\tkinetic_energy\t<X>\t<(X-<X>)^2>\t<Y>\t<(Y-<Y>)^2>\t<Px>\t<(Px-<Px>)^2>\t<Py>\t<(Py-<Py>)^2>\n";
       out << "0\t\t" << norm2 << "\t\t"<< _tot_energy << "\t" << _kin_energy << "\t" << _mean_positions[0] << "\t" << _mean_positions[1] << "\t" << _mean_positions[2] << "\t" << _mean_positions[3] << "\t" << _mean_momenta[0] << "\t" << _mean_momenta[1] << "\t" << _mean_momenta[2] << "\t" << _mean_momenta[3] << endl;
     }
-  
+
     struct timeval start, end;
     for (int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
-        
+
         gettimeofday(&start, NULL);
         solver->evolve(ITERATIONS, imag_time);
+
         gettimeofday(&end, NULL);
         time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
         tot_time += time;
-        
+       
         //norm calculation
         _norm2 = state->calculate_squared_norm();
         _tot_energy = calculate_total_energy(grid, state, hamiltonian, parabolic_potential, NULL, _norm2);
@@ -166,5 +167,8 @@ int main(int argc, char** argv) {
     delete hamiltonian;
     delete state;
     delete grid;
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
     return 0;
 }

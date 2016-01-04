@@ -106,5 +106,8 @@ int main(int argc, char** argv) {
     delete hamiltonian;
     delete state;
     delete grid;
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
     return 0;
 }

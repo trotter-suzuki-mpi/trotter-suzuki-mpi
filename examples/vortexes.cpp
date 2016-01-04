@@ -23,18 +23,18 @@
 #endif
 #include "trottersuzuki.h"
 
-#define LENGTH 50
+#define LENGTH 25
 #define DIM 640
-#define ITERATIONS 2
-#define PARTICLES_NUM 8.e+6
+#define ITERATIONS 3000
+#define PARTICLES_NUM 1.e+6
 #define KERNEL_TYPE "cpu"
-#define SNAPSHOTS 2
-#define SNAP_PER_STAMP 20
+#define SNAPSHOTS 20
+#define SNAP_PER_STAMP 1
 #define COUPLING_CONST_2D 7.116007999594e-4
 
 complex<double> gauss_ini_state(double x, double y) {
     double x_c = x - double(LENGTH)*0.5, y_c = y - double(LENGTH)*0.5;
-    double w = 0.002;
+    double w = 0.2;
     return complex<double>(sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x_c * x_c + y_c * y_c) * 0.5 * w), sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x_c * x_c + y_c * y_c) * 0.5 * w));
 }
 
@@ -47,7 +47,7 @@ double parabolic_potential(double x, double y) {
 int main(int argc, char** argv) {
     int periods[2] = {0, 0};
     int rot_coord_x = 320, rot_coord_y = 320;
-    double omega = 0.9;
+    double angular_velocity = 0.9;
     const double particle_mass = 1.;
     bool imag_time = true;
     double delta_t = 2.e-4;
@@ -56,14 +56,14 @@ int main(int argc, char** argv) {
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    Lattice *grid = new Lattice(DIM, length_x, length_y, periods, omega);
+    Lattice *grid = new Lattice(DIM, length_x, length_y, periods, angular_velocity);
 
     //set initial state
     State *state = new State(grid);
     state->init_state(gauss_ini_state);
     Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, 
-                                               coupling_const, 0, 0, 
-                                               rot_coord_x, rot_coord_y, omega);
+                                               coupling_const, 0, angular_velocity, 
+                                               rot_coord_x, rot_coord_y, 0);
     hamiltonian->initialize_potential(parabolic_potential);
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
     
@@ -126,5 +126,8 @@ int main(int argc, char** argv) {
     delete hamiltonian;
     delete state;
     delete grid;
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
     return 0;
 }

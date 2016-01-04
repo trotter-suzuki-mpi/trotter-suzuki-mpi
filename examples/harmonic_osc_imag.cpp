@@ -27,7 +27,7 @@
 #define EDGE_LENGTH 14.14     //Physical length of the grid's edge
 #define DIM 256         //Number of dots of the grid's edge
 #define DELTA_T 1.e-4     //Time step evolution
-#define ITERATIONS 10   //Number of iterations before calculating expected values
+#define ITERATIONS 1000   //Number of iterations before calculating expected values
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 20      //Number of times the expected values are calculated
 #define SNAP_PER_STAMP 5    //The particles density and phase of the wave function are stamped every "SNAP_PER_STAMP" expected values calculations
@@ -52,11 +52,12 @@ int main(int argc, char** argv) {
     bool imag_time = true;
     int time, tot_time = 0;
     double delta_t = double(DELTA_T);
-    double length_x = double(EDGE_LENGTH)/double(DIM), length_y = double(EDGE_LENGTH)/double(DIM);
+    double length_x = double(EDGE_LENGTH), length_y = double(EDGE_LENGTH);
     double coupling_const = double(COUPLING_CONST_2D);
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
+
     Lattice *grid = new Lattice(DIM, length_x, length_y, periods, omega);
 
     //set initial state
@@ -156,5 +157,8 @@ int main(int argc, char** argv) {
     delete hamiltonian;
     delete state;
     delete grid;
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
     return 0;
 }

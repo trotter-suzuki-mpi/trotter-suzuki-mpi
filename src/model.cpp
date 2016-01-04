@@ -57,6 +57,7 @@ Lattice::Lattice(int dim, double _length_x, double _length_y, int _periods[2],
           periods[0] = _periods[0];
           periods[1] = _periods[1];
     }
+    mpi_dims[0] = mpi_dims[1] = 0;
 #ifdef HAVE_MPI
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_procs);
     MPI_Dims_create(mpi_procs, 2, mpi_dims);  //partition all the processes (the size of MPI_COMM_WORLD's group) into an 2-dimensional topology
@@ -212,7 +213,7 @@ double State::calculate_squared_norm(bool global) {
         delete [] sums;
     }
 #endif
-    return norm2;                                                                                                           // multiply by delta_x * delta_y
+    return norm2 * grid->delta_x * grid->delta_y;
 }
 
 double *State::get_particle_density(double *_density) {
@@ -260,7 +261,7 @@ Hamiltonian::Hamiltonian(Lattice *_grid, double _mass, double _coupling_a,
     if (_rot_coord_x == DBL_MAX) {
         rot_coord_x = grid->dim_x * 0.5;
     } else {
-        rot_coord_y = _rot_coord_y;
+        rot_coord_x = _rot_coord_x;
     }
     if (_rot_coord_y == DBL_MAX) {
         rot_coord_y = grid->dim_y * 0.5;
