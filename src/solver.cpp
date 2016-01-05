@@ -361,99 +361,6 @@ double calculate_total_energy(Lattice *grid, State *state1, State *state2,
     return sum;
 }
 
-void trotter(Lattice *grid, State *state, Hamiltonian *hamiltonian,
-             double h_a, double h_b,
-             double *external_pot_real, double *external_pot_imag,
-             double delta_t,
-             const int iterations,
-             string kernel_type, double norm, bool imag_time) {
-    // Initialize kernel
-    ITrotterKernel * kernel;
-    if (kernel_type == "cpu") {
-        kernel = new CPUBlock(grid, state, hamiltonian, external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm, imag_time);
-    } else if (kernel_type == "gpu") {
-#ifdef CUDA
-        kernel = new CC2Kernel(grid, state, hamiltonian, external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm, imag_time);
-#else
-        my_abort("Compiled without CUDA\n");
-#endif
-    } else if (kernel_type == "hybrid") {
-#ifdef CUDA
-        kernel = new HybridKernel(grid, state, hamiltonian, external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm, imag_time);
-#else
-        my_abort("Compiled without CUDA\n");
-#endif
-    }
-
-    // Main loop
-    for (int i = 0; i < iterations; i++) {
-        kernel->run_kernel_on_halo();
-        if (i != iterations - 1) {
-            kernel->start_halo_exchange();
-        }
-        kernel->run_kernel();
-        if (i != iterations - 1) {
-            kernel->finish_halo_exchange();
-        }
-        kernel->wait_for_completion();
-    }
-
-    kernel->get_sample(grid->dim_x, 0, 0, grid->dim_x, grid->dim_y, state->p_real, state->p_imag);
-
-    delete kernel;
-}
-
-void trotter(Lattice *grid, State *state1, State *state2,
-             Hamiltonian2Component *hamiltonian,
-             double *h_a, double *h_b,
-             double **external_pot_real, double **external_pot_imag,
-             double delta_t,
-             const int iterations,
-             string kernel_type, double *norm, bool imag_time) {
-    // Initialize kernel
-    ITrotterKernel * kernel;
-    if (kernel_type == "cpu") {
-        kernel = new CPUBlock(grid, state1, state2, hamiltonian, external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm, imag_time);
-    } else {
-        my_abort("Two-component Hamiltonians only work with the CPU kernel!");
-    }
-    double var = 0.5;
-    kernel->rabi_coupling(var, delta_t);
-    var = 1.;
-    // Main loop
-    for (int i = 0; i < iterations; i++) {
-        //first wave function
-        kernel->run_kernel_on_halo();
-        if (i != iterations - 1) {
-            kernel->start_halo_exchange();
-        }
-        kernel->run_kernel();
-        if (i != iterations - 1) {
-            kernel->finish_halo_exchange();
-        }
-        kernel->wait_for_completion();
-
-        //second wave function
-        kernel->run_kernel_on_halo();
-        if (i != iterations - 1) {
-          kernel->start_halo_exchange();
-        }
-        kernel->run_kernel();
-        if (i != iterations - 1) {
-          kernel->finish_halo_exchange();
-        }
-        kernel->wait_for_completion();
-
-        if (i == iterations - 1) {
-            var = 0.5;
-        }
-        kernel->rabi_coupling(var, delta_t);
-        kernel->normalization();
-    }
-    kernel->get_sample(grid->dim_x, 0, 0, grid->dim_x, grid->dim_y, state1->p_real, state1->p_imag, state2->p_real, state2->p_imag);
-    delete kernel;
-}
-
 Solver::Solver(Lattice *_grid, State *_state, Hamiltonian *_hamiltonian,
                double _delta_t, string _kernel_type):
     grid(_grid), state(_state), hamiltonian(_hamiltonian), delta_t(_delta_t),
@@ -483,6 +390,7 @@ Solver::Solver(Lattice *_grid, State *state1, State *state2,
     external_pot_imag[1] = new double[grid->dim_x * grid->dim_y];
     norm2[0] = 0.;
     norm2[1] = 0.;
+    kernel = NULL;
     first_run = true;
     single_component = false;
 }
@@ -494,6 +402,9 @@ Solver::~Solver() {
     delete [] external_pot_imag[1];
     delete [] external_pot_real;
     delete [] external_pot_imag;
+    if (kernel != NULL) {
+        delete kernel;
+    }
 }
 
 void Solver::initialize_exp_potential(double delta_t, int which) {
@@ -517,10 +428,50 @@ void Solver::initialize_exp_potential(double delta_t, int which) {
       }
 }
 
+void Solver::init_kernel() {
+    if (kernel != NULL) {
+        delete kernel;
+    }
+    if (kernel_type == "cpu") {
+      if (single_component) {
+          kernel = new CPUBlock(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_t, norm2[0], imag_time);
+      } else {
+          kernel = new CPUBlock(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm2, imag_time);
+      }
+    } else if (!single_component) {
+        my_abort("Two-component Hamiltonians only work with the CPU kernel!");      
+    } else if (kernel_type == "gpu") {
+#ifdef CUDA
+        kernel = new CC2Kernel(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_t, norm2[0], imag_time);
+#else
+        my_abort("Compiled without CUDA\n");
+#endif
+    } else if (kernel_type == "hybrid") {
+#ifdef CUDA
+        kernel = new HybridKernel(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_t, norm2[0], imag_time);
+#else
+        my_abort("Compiled without CUDA\n");
+#endif
+    } else {
+        my_abort("Unknown kernel\n");
+    }
+
+}
+
+double Solver::calculate_squared_norm(bool global) {
+    double norm2 = 0;
+    if (kernel == NULL) {
+         norm2 = state->calculate_squared_norm(global);
+    } else {
+        norm2 = kernel->calculate_squared_norm(global);
+    }
+    return norm2;
+}
+
 void Solver::evolve(int iterations, bool _imag_time) {
     if (first_run) {
-        first_run = false;
         imag_time = !_imag_time;
+        first_run = false;
     }
     if (_imag_time != imag_time) {
         imag_time = _imag_time;
@@ -547,15 +498,47 @@ void Solver::evolve(int iterations, bool _imag_time) {
                 initialize_exp_potential(delta_t, 1);
             }
         }
+        init_kernel();
     }
-    if (single_component) {      
-        trotter(grid, state, hamiltonian, h_a[0], h_b[0],
-                external_pot_real[0], external_pot_imag[0],
-                delta_t, iterations, kernel_type, norm2[0], imag_time);
-    } else {       
-        trotter(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), h_a, h_b,
-                external_pot_real, external_pot_imag,
-                delta_t, iterations, kernel_type, norm2, imag_time);
+    // Main loop
+    double var = 0.5;
+    if (!single_component) {
+        kernel->rabi_coupling(var, delta_t);
     }
-
+    var = 1.;
+    // Main loop
+    for (int i = 0; i < iterations; i++) {
+        //first wave function
+        kernel->run_kernel_on_halo();
+        if (i != iterations - 1) {
+            kernel->start_halo_exchange();
+        }
+        kernel->run_kernel();
+        if (i != iterations - 1) {
+            kernel->finish_halo_exchange();
+        }
+        kernel->wait_for_completion();
+        if (!single_component) {
+            //second wave function
+            kernel->run_kernel_on_halo();
+            if (i != iterations - 1) {
+              kernel->start_halo_exchange();
+            }
+            kernel->run_kernel();
+            if (i != iterations - 1) {
+              kernel->finish_halo_exchange();
+            }
+            kernel->wait_for_completion();
+            if (i == iterations - 1) {
+                var = 0.5;
+            }
+            kernel->rabi_coupling(var, delta_t);
+            kernel->normalization();
+        }
+    }
+    if (single_component) {
+        kernel->get_sample(grid->dim_x, 0, 0, grid->dim_x, grid->dim_y, state->p_real, state->p_imag);      
+    } else {
+        kernel->get_sample(grid->dim_x, 0, 0, grid->dim_x, grid->dim_y, state->p_real, state->p_imag, state_b->p_real, state_b->p_imag);
+    }
 }
