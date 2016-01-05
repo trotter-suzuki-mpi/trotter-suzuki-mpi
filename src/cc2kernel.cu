@@ -17,19 +17,19 @@
  */
 
 #undef _GLIBCXX_ATOMIC_BUILTINS
+#include <sstream>
 #include <cassert>
 #include <vector>
 #include <map>
-#include "trottersuzuki.h"
-#include "kernel.h"
 #include "common.h"
+#include "kernel.h"
 
 #define CUT_CHECK_ERROR(errorMessage) {                                      \
     cudaError_t err = cudaGetLastError();                                    \
     if( cudaSuccess != err) {                                                \
       stringstream sstm;                                                     \
       sstm << errorMessage <<"\n The error is " << cudaGetErrorString( err); \
-      my_abort(sstm.str());  }
+      my_abort(sstm.str());  }}
 
 
 /** Check and initialize a device attached to a node
@@ -43,12 +43,12 @@ void setDevice(int commRank
                , MPI_Comm cartcomm
 #endif
               ) {
-    int commSize = 1;
     int devCount;
     int deviceNum = 0; //-1;
     CUDA_SAFE_CALL(cudaGetDeviceCount(&devCount));
 
 #ifdef HAVE_MPI
+    int commSize = 1;
     MPI_Comm_size(cartcomm, &commSize);
 #ifdef _WIN32
     FILE * fp = popen("hostname.exe", "r");
@@ -560,11 +560,11 @@ void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, s
 
 CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian, 
                      double *_external_pot_real, double *_external_pot_imag, 
-                     double a, double b, double delta_t, 
+                     double _a, double _b, double delta_t, 
                      double _norm, bool _imag_time):
+    threadsPerBlock(BLOCK_X, STRIDE_Y),
     external_pot_real(_external_pot_real),
     external_pot_imag(_external_pot_imag),
-    threadsPerBlock(BLOCK_X, STRIDE_Y),
     sense(0),
     a(_a),
     b(_b),
@@ -573,22 +573,19 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     halo_x = grid->halo_x;
     halo_y = grid->halo_y;
     p_real = state->p_real;
-    p_imag = state->_p_imag;
+    p_imag = state->p_imag;
     delta_x = grid->delta_x;
     delta_y = grid->delta_y;
     periods = grid->periods;
-    int rank, coords[2], dims[2] = {0, 0};
+    int rank;
 #ifdef HAVE_MPI
     cartcomm = grid->cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
     MPI_Comm_rank(cartcomm, &rank);
-    MPI_Cart_get(cartcomm, 2, dims, periods, coords);
 #else
     neighbors[UP] = neighbors[DOWN] = neighbors[LEFT] = neighbors[RIGHT] = 0;
-    dims[0] = dims[1] = 1;
     rank = 0;
-    coords[0] = coords[1] = 0;
 #endif
     start_x = grid->start_x;
     end_x = grid->end_x;
@@ -761,7 +758,7 @@ void CC2Kernel::copy_results() {
 void CC2Kernel::get_sample(size_t dest_stride, size_t x, size_t y, 
                            size_t width, size_t height, 
                            double *dest_real, double *dest_imag, 
-                           double *dest_real2=0, double *dest_imag2=0) const {
+                           double *dest_real2, double *dest_imag2) const {
     assert(x < tile_width);
     assert(y < tile_height);
     assert(x + width <= tile_width);

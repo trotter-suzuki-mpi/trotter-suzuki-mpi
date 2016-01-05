@@ -194,7 +194,7 @@ class CC2Kernel: public ITrotterKernel {
 public:
     CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian, 
               double *_external_pot_real, double *_external_pot_imag, 
-              double a, double b, double delta_t, 
+              double a, double _b, double delta_t, 
               double _norm, bool _imag_time);
     ~CC2Kernel();
     void run_kernel_on_halo();				    ///< Evolve blocks of wave function at the edge of the tile. This comprises the halos.
