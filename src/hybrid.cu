@@ -23,7 +23,7 @@
 // Class methods
 HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian, 
                            double *_external_pot_real, double *_external_pot_imag, 
-                           double a, double b, double delta_t, 
+                           double _a, double _b, double delta_t, 
                            double _norm, bool _imag_time):
     threadsPerBlock(BLOCK_X, STRIDE_Y),
     a(_a),
@@ -39,17 +39,15 @@ HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian
     halo_y = grid->halo_y;
     coupling_const = hamiltonian->coupling_a * delta_t;
     periods = grid->periods;
-    int rank, coords[2], dims[2] = {0, 0};
+    int rank;
 #ifdef HAVE_MPI
     cartcomm = grid->cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
     MPI_Comm_rank(cartcomm, &rank);
-    MPI_Cart_get(cartcomm, 2, dims, periods, coords);
 #else
-    dims[0] = dims[1] = 1;
+    neighbors[UP] = neighbors[DOWN] = neighbors[LEFT] = neighbors[RIGHT] = 0;
     rank = 0;
-    coords[0] = coords[1] = 0;
 #endif
     start_x = grid->start_x;
     end_x = grid->end_x;
@@ -106,8 +104,8 @@ HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian
     printf("%d %d %d %d\n", gpu_start_x, gpu_tile_width, gpu_start_y, gpu_tile_height);
 #endif
 
-    p_real[0] = _p_real;
-    p_imag[0] = _p_imag;
+    p_real[0] = state->p_real;
+    p_imag[0] = state->p_imag;
     p_real[1] = new double[tile_width * tile_height];
     p_imag[1] = new double[tile_width * tile_height];
 
@@ -294,7 +292,7 @@ void HybridKernel::wait_for_completion() {
 void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y, 
                               size_t width, size_t height, 
                               double *dest_real, double *dest_imag, 
-                              double *dest_real2=0, double *dest_imag2=0) const {
+                              double *dest_real2, double *dest_imag2) const {
     if ( (x != 0) || (y != 0) || (width != tile_width) || (height != tile_height)) {
         my_abort("Only full tile samples are implemented!\n");
     }
