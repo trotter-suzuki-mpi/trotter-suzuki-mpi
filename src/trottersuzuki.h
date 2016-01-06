@@ -66,9 +66,36 @@ public:
     double *get_particle_density(double *density=0);
     double *get_phase(double *phase=0);
 
-private:
+protected:
     Lattice *grid;
     bool self_init;
+};
+
+
+class ExponentialState: public State {
+public:
+    ExponentialState(Lattice *_grid, double *_p_real=0, double *_p_imag=0);
+   
+private:
+    complex<double> exp_state(double x, double y);
+};
+
+class GaussianState: public State {
+public:
+    GaussianState(Lattice *_grid, double _mean_x, double _mean_y, double _sigma, 
+                  double *_p_real=0, double *_p_imag=0);
+   
+private:
+    double mean_x, mean_y, sigma;
+    complex<double> gauss_state(double x, double y);
+};
+
+class SinusoidState: public State {
+public:
+    SinusoidState(Lattice *_grid, double *_p_real=0, double *_p_imag=0);
+   
+private:
+    complex<double> sinusoid_state(double x, double y);
 };
 
 

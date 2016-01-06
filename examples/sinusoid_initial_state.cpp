@@ -34,13 +34,6 @@
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 10
 
-complex<double> sinus_state(double x, double y) {
-    double L_x = double(DIM);
-    double L_y = double(DIM);
-
-    return complex<double> (sin(2*M_PI / L_x*x) * sin(2*M_PI / L_y*y), 0.0);
-}
-
 int main(int argc, char** argv) {
     int periods[2] = {1, 1};
     bool verbose = true;
@@ -56,8 +49,7 @@ int main(int argc, char** argv) {
     //set lattice
     Lattice *grid = new Lattice(DIM, length_x, length_y, periods);
     //set initial state
-    State *state = new State(grid);
-    state->init_state(sinus_state);
+    State *state = new SinusoidState(grid);
     //set hamiltonian
     Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass);
     hamiltonian->initialize_potential(const_potential);
