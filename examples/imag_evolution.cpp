@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
     } else {
         dirnames = ".";
     }
-    stamp_real(grid, hamiltonian->get_potential(), 2, "./", "imagpot");
+    stamp_real(grid, hamiltonian->external_pot, 2, "./", "imagpot");
     //evolve and stamp the state
     for(int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);

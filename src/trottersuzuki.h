@@ -80,8 +80,8 @@ public:
     double angular_velocity;
     double rot_coord_x;
     double rot_coord_y;
-    bool has_changed;
-    
+    double *external_pot;
+        
     Hamiltonian(Lattice *_grid, double _mass=1., double _coupling_a=0.,
                 double _angular_velocity=0.,
                 double _rot_coord_x=DBL_MAX, double _rot_coord_y=DBL_MAX,
@@ -89,14 +89,11 @@ public:
     ~Hamiltonian();
     void initialize_potential(double (*hamiltonian_pot)(double x, double y));
     void read_potential(char *pot_name);
-    void set_potential(double *_external_pot);
-    double *get_potential();
-    double get_potential_value(int x, int y);
-    void acknowledge_change();
+    void update_potential(double delta_t, int iteration);
+    double (*evolve_potential)(double x, double y, double delta_t, int t);
 
 protected:
     bool self_init;
-    double *external_pot;
 };
 
 class Hamiltonian2Component: public Hamiltonian {
@@ -106,7 +103,8 @@ public:
     double coupling_b;
     double omega_r;
     double omega_i;
-
+    double *external_pot_b;
+    
     Hamiltonian2Component(Lattice *_grid, double _mass=1., double _mass_b=1.,
                           double _coupling_a=0., double coupling_ab=0.,
                           double _coupling_b=0.,
@@ -118,11 +116,6 @@ public:
                           double *_external_pot_b=0);
     ~Hamiltonian2Component();
     void initialize_potential(double (*hamiltonian_pot)(double x, double y), int which);
-    void set_potential(double *_external_pot, int which);
-    double *get_potential(int which);
-    double get_potential_value(int x, int y, int which);
-protected:
-    double *external_pot_b;
 };
 
 
@@ -142,7 +135,8 @@ public:
     virtual double calculate_squared_norm(bool global=true) = 0;
     virtual bool runs_in_place() const = 0;
     virtual string get_name() const = 0;				///< Get kernel name.
-
+    virtual void update_potential(double *_external_pot_real, double *_external_pot_imag) = 0;
+    
     virtual void start_halo_exchange() = 0;					///< Exchange halos between processes.
     virtual void finish_halo_exchange() = 0;				///< Exchange halos between processes.
 

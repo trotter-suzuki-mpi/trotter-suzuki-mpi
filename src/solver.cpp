@@ -352,7 +352,7 @@ double calculate_total_energy(Lattice *grid, State *state1, State *state2,
 
     Hamiltonian *hamiltonian_b = new Hamiltonian(grid, hamiltonian->mass_b, hamiltonian->coupling_b,
                 hamiltonian->angular_velocity, hamiltonian->rot_coord_x, hamiltonian->rot_coord_y,
-                hamiltonian->get_potential(0));
+                hamiltonian->external_pot);
     sum += calculate_total_energy(grid, state1, hamiltonian, hamilt_pot_a, external_pot[0], norm2);
     sum += calculate_total_energy(grid, state2, hamiltonian_b, hamilt_pot_b, external_pot[1], norm2);
     sum += calculate_ab_energy(grid, state1, state2, hamiltonian->coupling_ab, norm2);
@@ -418,9 +418,9 @@ void Solver::initialize_exp_potential(double delta_t, int which) {
       for (int y = 0, idy = grid->start_y; y < grid->dim_y; y++, idy++) {
           for (int x = 0, idx = grid->start_x; x < grid->dim_x; x++, idx++) {
               if(imag_time)
-                  tmp = exp(complex<double> (-delta_t*hamiltonian->get_potential_value(x, y), 0.));
+                  tmp = exp(complex<double> (-delta_t*hamiltonian->external_pot[y * grid->dim_x + x], 0.));
               else
-                  tmp = exp(complex<double> (0., -delta_t*hamiltonian->get_potential_value(x, y)));
+                  tmp = exp(complex<double> (0., -delta_t*hamiltonian->external_pot[y * grid->dim_x + x]));
               external_pot_real[which][y * grid->dim_x + x] = real(tmp);
               external_pot_imag[which][y * grid->dim_x + x] = imag(tmp);
           }
@@ -472,12 +472,15 @@ void Solver::evolve(int iterations, bool _imag_time) {
         imag_time = !_imag_time;
         first_run = false;
     }
-    if (_imag_time != imag_time||hamiltonian->has_changed) {
+    if (_imag_time != imag_time) {
         imag_time = _imag_time;
         double time_single_it = delta_t / 2.;  //second approx trotter-suzuki: time/2
         if(imag_time) {
             h_a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
             h_b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
+            if (hamiltonian->evolve_potential != 0) {
+                 hamiltonian->update_potential(delta_t, 0);
+            }
             initialize_exp_potential(delta_t, 0);
             norm2[0] = state->calculate_squared_norm();
             if (!single_component) {
@@ -490,6 +493,9 @@ void Solver::evolve(int iterations, bool _imag_time) {
         else {
             h_a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
             h_b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
+            if (hamiltonian->evolve_potential != 0) {
+                 hamiltonian->update_potential(delta_t, 0);
+            }
             initialize_exp_potential(delta_t, 0);
             if (!single_component) {
                 h_a[1] = cos(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
@@ -498,7 +504,6 @@ void Solver::evolve(int iterations, bool _imag_time) {
             }
         }
         init_kernel();
-        hamiltonian->has_changed = false;
     }
     // Main loop
     double var = 0.5;
@@ -508,6 +513,11 @@ void Solver::evolve(int iterations, bool _imag_time) {
     var = 1.;
     // Main loop
     for (int i = 0; i < iterations; i++) {
+        if (hamiltonian->evolve_potential != NULL && i > 0) {
+             hamiltonian->update_potential(delta_t, i);
+             initialize_exp_potential(delta_t, 0);
+             kernel->update_potential(external_pot_real[0], external_pot_imag[0]);
+        }
         //first wave function
         kernel->run_kernel_on_halo();
         if (i != iterations - 1) {
