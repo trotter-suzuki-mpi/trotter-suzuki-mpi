@@ -66,9 +66,36 @@ public:
     double *get_particle_density(double *density=0);
     double *get_phase(double *phase=0);
 
-private:
+protected:
     Lattice *grid;
     bool self_init;
+};
+
+
+class ExponentialState: public State {
+public:
+    ExponentialState(Lattice *_grid, double *_p_real=0, double *_p_imag=0);
+   
+private:
+    complex<double> exp_state(double x, double y);
+};
+
+class GaussianState: public State {
+public:
+    GaussianState(Lattice *_grid, double _mean_x, double _mean_y, double _sigma, 
+                  double *_p_real=0, double *_p_imag=0);
+   
+private:
+    double mean_x, mean_y, sigma;
+    complex<double> gauss_state(double x, double y);
+};
+
+class SinusoidState: public State {
+public:
+    SinusoidState(Lattice *_grid, double *_p_real=0, double *_p_imag=0);
+   
+private:
+    complex<double> sinusoid_state(double x, double y);
 };
 
 
@@ -194,19 +221,6 @@ private:
     void init_kernel();
 };
 
-/**
- * \brief Structure defining expected values calculated by expect_values().
- */
-struct energy_momentum_statistics {
-    double mean_E;	///< Expected total energy.
-    double mean_Px; ///< Expected momentum along x axis.
-    double mean_Py; ///< Expected momentum along y axis.
-    double var_E;	///< Expected total energy variation.
-    double var_Px;	///< Expected momentum along x axis variation.
-    double var_Py;	///< Expected momentum along y axis variation.
-    energy_momentum_statistics() : mean_E(0.), mean_Px(0.), mean_Py(0.),
-        var_E(0.), var_Px(0.), var_Py(0.) {}
-};
 double calculate_rotational_energy(Lattice *grid, State *state,
                                    Hamiltonian *hamiltonian, double norm2,
                                    bool global=true);
@@ -226,8 +240,6 @@ void calculate_mean_position(Lattice *grid, State *state, int grid_origin_x, int
                              double *results, double norm2=0);
 void calculate_mean_momentum(Lattice *grid, State *state, double *results,
                              double norm2=0);
-void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, double particle_mass,
-                   const char *dirname, int *periods, int halo_x, int halo_y, energy_momentum_statistics *sample);
 void initialize_exp_potential(Lattice *grid, double * external_pot_real, double * external_pot_imag, double (*hamilt_pot)(int x, int y, Lattice *grid),
                               double time_single_it, double particle_mass, bool imag_time);
 double const_potential(double x, double y);

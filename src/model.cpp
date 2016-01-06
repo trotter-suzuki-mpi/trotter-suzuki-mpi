@@ -15,7 +15,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 #include <fstream>
 #include "trottersuzuki.h"
 #include "common.h"
@@ -252,6 +251,68 @@ double *State::get_phase(double *_phase) {
     }
     return phase;
 }
+
+ExponentialState::ExponentialState(Lattice *_grid, double *_p_real, double *_p_imag): State(_grid, _p_real, _p_imag) {
+    complex<double> tmp;
+    double delta_x = grid->delta_x, delta_y = grid->delta_y;
+    double idy = grid->start_y * delta_y, idx;
+    for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
+        idx = grid->start_x * delta_x;
+        for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
+            tmp = exp_state(idx, idy);
+            p_real[y * grid->dim_x + x] = real(tmp);
+            p_imag[y * grid->dim_x + x] = imag(tmp);
+        }
+    }
+}
+
+complex<double> ExponentialState::exp_state(double x, double y) {
+    return exp(complex<double>(0., 2*M_PI/double(grid->global_dim_x) * x + 2*M_PI/double(grid->global_dim_y) * y));
+}
+
+GaussianState::GaussianState(Lattice *_grid, double _mean_x, double _mean_y, 
+                             double _sigma, double *_p_real, double *_p_imag): 
+                             State(_grid, _p_real, _p_imag), mean_x(_mean_x),
+                             mean_y(_mean_y), sigma(_sigma) {
+    complex<double> tmp;
+    double delta_x = grid->delta_x, delta_y = grid->delta_y;
+    double idy = grid->start_y * delta_y, idx;
+    for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
+        idx = grid->start_x * delta_x;
+        for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
+            tmp = gauss_state(idx, idy);
+            p_real[y * grid->dim_x + x] = real(tmp);
+            p_imag[y * grid->dim_x + x] = imag(tmp);
+        }
+    }
+}   
+
+complex<double> GaussianState::gauss_state(double x, double y) {
+    return complex<double>(exp(-(pow(x - mean_x, 2.0) + pow(y - mean_y, 2.0)) / (2.0 * pow(sigma, 2.0))), 0.0)
+           * exp(complex<double>(0.0, 0.4 * (x + y - 480.0)));  
+}
+
+SinusoidState::SinusoidState(Lattice *_grid, double *_p_real, double *_p_imag): State(_grid, _p_real, _p_imag) {
+    complex<double> tmp;
+    double delta_x = grid->delta_x, delta_y = grid->delta_y;
+    double idy = grid->start_y * delta_y, idx;
+    for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
+        idx = grid->start_x * delta_x;
+        for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
+            tmp = sinusoid_state(idx, idy);
+            p_real[y * grid->dim_x + x] = real(tmp);
+            p_imag[y * grid->dim_x + x] = imag(tmp);
+        }
+    }
+}
+
+complex<double> SinusoidState::sinusoid_state(double x, double y) {
+    double L_x = grid->global_dim_x;
+    double L_y = grid->global_dim_y;
+    return complex<double> (sin(2*M_PI / L_x*x) * sin(2*M_PI / L_y*y), 0.0);
+}
+
+
 
 Hamiltonian::Hamiltonian(Lattice *_grid, double _mass, double _coupling_a,
                          double _angular_velocity,

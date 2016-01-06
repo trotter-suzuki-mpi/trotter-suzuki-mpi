@@ -34,10 +34,6 @@
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 10
 
-complex<double> exp_state(double x, double y) {
-    return exp(complex<double>(0., 2*M_PI/double(DIM) * x + 2*M_PI/double(DIM) * y));
-}
-
 int main(int argc, char** argv) {
     int periods[2] = {1, 1};
     bool verbose = true;
@@ -52,8 +48,7 @@ int main(int argc, char** argv) {
     //set lattice
     Lattice *grid = new Lattice(DIM, length_x, length_y, periods);
     //set initial state
-    State *state = new State(grid);
-    state->init_state(exp_state);
+    State *state = new ExponentialState(grid);
     //set hamiltonian
     Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass);
     hamiltonian->initialize_potential(const_potential);

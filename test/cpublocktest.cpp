@@ -18,8 +18,9 @@
 
 #include <iostream>
 #include "cpublocktest.h"
-#include "cpublock.h"
+#include "kernel.h"
 #include "common.h"
+#include "cpublock.cpp"
 
 CPPUNIT_TEST_SUITE_REGISTRATION( CPUBlockTest );
 
