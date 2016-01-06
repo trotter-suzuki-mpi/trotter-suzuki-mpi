@@ -221,19 +221,6 @@ private:
     void init_kernel();
 };
 
-/**
- * \brief Structure defining expected values calculated by expect_values().
- */
-struct energy_momentum_statistics {
-    double mean_E;	///< Expected total energy.
-    double mean_Px; ///< Expected momentum along x axis.
-    double mean_Py; ///< Expected momentum along y axis.
-    double var_E;	///< Expected total energy variation.
-    double var_Px;	///< Expected momentum along x axis variation.
-    double var_Py;	///< Expected momentum along y axis variation.
-    energy_momentum_statistics() : mean_E(0.), mean_Px(0.), mean_Py(0.),
-        var_E(0.), var_Px(0.), var_Py(0.) {}
-};
 double calculate_rotational_energy(Lattice *grid, State *state,
                                    Hamiltonian *hamiltonian, double norm2,
                                    bool global=true);
@@ -253,8 +240,6 @@ void calculate_mean_position(Lattice *grid, State *state, int grid_origin_x, int
                              double *results, double norm2=0);
 void calculate_mean_momentum(Lattice *grid, State *state, double *results,
                              double norm2=0);
-void expect_values(int dim, int iterations, int snapshots, double * hamilt_pot, double particle_mass,
-                   const char *dirname, int *periods, int halo_x, int halo_y, energy_momentum_statistics *sample);
 void initialize_exp_potential(Lattice *grid, double * external_pot_real, double * external_pot_imag, double (*hamilt_pot)(int x, int y, Lattice *grid),
                               double time_single_it, double particle_mass, bool imag_time);
 double const_potential(double x, double y);

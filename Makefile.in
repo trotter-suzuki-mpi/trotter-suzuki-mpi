@@ -24,13 +24,13 @@ clean:
 	$(MAKE) -C examples $@
 	$(MAKE) -C test $@
 
-trotter install uninstall lib python python_clean python_install matlab matlab_clean:
+trottersuzuki install uninstall lib python python_clean python_install matlab matlab_clean:
 	$(MAKE) -C src $@
 
 example:
 	$(MAKE) -C examples $@
 
-check test: trotter
+check test: trottersuzuki
 	$(MAKE) -C test $@
 
 dist: $(distdir).tar.gz
