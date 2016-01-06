@@ -272,6 +272,7 @@ Hamiltonian::Hamiltonian(Lattice *_grid, double _mass, double _coupling_a,
         external_pot = _external_pot;
         self_init = false;
     }
+    has_changed = true;
 }
 
 Hamiltonian::~Hamiltonian() {
@@ -281,6 +282,7 @@ Hamiltonian::~Hamiltonian() {
 }
 
 void Hamiltonian::initialize_potential(double (*hamiltonian_pot)(double x, double y)) {
+    has_changed = true;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
     double idy = grid->start_y * delta_y, idx;
     for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
@@ -292,6 +294,7 @@ void Hamiltonian::initialize_potential(double (*hamiltonian_pot)(double x, doubl
 }
 
 void Hamiltonian::read_potential(char *pot_name) {
+    has_changed = true;
     ifstream input(pot_name);
     double tmp;
     for(int y = 0; y < grid->dim_y; y++) {
@@ -301,6 +304,19 @@ void Hamiltonian::read_potential(char *pot_name) {
         }
     }
     input.close();
+}
+
+void Hamiltonian::set_potential(double *_external_pot) {
+    external_pot = _external_pot;
+    has_changed = true;
+}
+
+double *Hamiltonian::get_potential() {
+    return external_pot;
+}
+
+double Hamiltonian::get_potential_value(int x, int y) {
+    return external_pot[y * grid->dim_x + x];
 }
 
 Hamiltonian2Component::Hamiltonian2Component(Lattice *_grid, double _mass,
@@ -342,5 +358,30 @@ void Hamiltonian2Component::initialize_potential(double (*hamiltonian_pot)(doubl
         for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
             tmp[y * grid->dim_x + x] = hamiltonian_pot(idx, idy);
         }
+    }
+}
+
+void Hamiltonian2Component::set_potential(double *_external_pot, int which) {
+    if (which == 0) {
+      external_pot = _external_pot;
+    } else {
+      external_pot_b = _external_pot;
+    }
+    has_changed = true;
+}
+
+double Hamiltonian2Component::get_potential_value(int x, int y, int which) {
+    if (which == 0) {
+        return external_pot[y * grid->dim_x + x];
+    } else {
+        return external_pot_b[y * grid->dim_x + x];
+    }
+}
+
+double *Hamiltonian2Component::get_potential(int which) {
+    if (which == 0) {
+        return external_pot;
+    } else {
+        return external_pot_b;
     }
 }

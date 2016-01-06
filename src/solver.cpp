@@ -342,9 +342,9 @@ double calculate_total_energy(Lattice *grid, State *state1, State *state2,
                               double **external_pot, double norm2, bool global) {
 
     if(external_pot == NULL) {
-    external_pot = new double* [2];
-    external_pot[0] = NULL;
-    external_pot[1] = NULL;
+        external_pot = new double* [2];
+        external_pot[0] = NULL;
+        external_pot[1] = NULL;
     }
     double sum = 0;
     if(norm2 == 0)
@@ -352,7 +352,7 @@ double calculate_total_energy(Lattice *grid, State *state1, State *state2,
 
     Hamiltonian *hamiltonian_b = new Hamiltonian(grid, hamiltonian->mass_b, hamiltonian->coupling_b,
                 hamiltonian->angular_velocity, hamiltonian->rot_coord_x, hamiltonian->rot_coord_y,
-                hamiltonian->external_pot);
+                hamiltonian->get_potential(0));
     sum += calculate_total_energy(grid, state1, hamiltonian, hamilt_pot_a, external_pot[0], norm2);
     sum += calculate_total_energy(grid, state2, hamiltonian_b, hamilt_pot_b, external_pot[1], norm2);
     sum += calculate_ab_energy(grid, state1, state2, hamiltonian->coupling_ab, norm2);
@@ -414,14 +414,13 @@ void Solver::initialize_exp_potential(double delta_t, int which) {
       } else {
           particle_mass = static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b;
       }
-      double CONST_1 = -1. * delta_t;
       complex<double> tmp;
       for (int y = 0, idy = grid->start_y; y < grid->dim_y; y++, idy++) {
           for (int x = 0, idx = grid->start_x; x < grid->dim_x; x++, idx++) {
               if(imag_time)
-                  tmp = exp(complex<double> (CONST_1 * hamiltonian->external_pot[y * grid->dim_x + x], 0.));
+                  tmp = exp(complex<double> (-delta_t*hamiltonian->get_potential_value(x, y), 0.));
               else
-                  tmp = exp(complex<double> (0., CONST_1 * hamiltonian->external_pot[y * grid->dim_x + x]));
+                  tmp = exp(complex<double> (0., -delta_t*hamiltonian->get_potential_value(x, y)));
               external_pot_real[which][y * grid->dim_x + x] = real(tmp);
               external_pot_imag[which][y * grid->dim_x + x] = imag(tmp);
           }
@@ -473,7 +472,7 @@ void Solver::evolve(int iterations, bool _imag_time) {
         imag_time = !_imag_time;
         first_run = false;
     }
-    if (_imag_time != imag_time) {
+    if (_imag_time != imag_time||hamiltonian->has_changed) {
         imag_time = _imag_time;
         double time_single_it = delta_t / 2.;  //second approx trotter-suzuki: time/2
         if(imag_time) {
@@ -499,6 +498,7 @@ void Solver::evolve(int iterations, bool _imag_time) {
             }
         }
         init_kernel();
+        hamiltonian->has_changed = false;
     }
     // Main loop
     double var = 0.5;
