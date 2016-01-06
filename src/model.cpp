@@ -324,7 +324,7 @@ Hamiltonian2Component::Hamiltonian2Component(Lattice *_grid, double _mass,
                          double _angular_velocity,
                          double _rot_coord_x, double _rot_coord_y,
                          double *_external_pot, double *_external_pot_b):
-                         Hamiltonian(_grid, _mass, _coupling_a, _angular_velocity, _rot_coord_x, rot_coord_y, _external_pot),
+                         Hamiltonian(_grid, _mass, _coupling_a, _angular_velocity, _rot_coord_x, rot_coord_y, _external_pot), mass_b(_mass_b),
                          coupling_ab( _coupling_ab), coupling_b(_coupling_b), omega_r(_omega_r), omega_i(_omega_i) {
     if (_external_pot_b == 0) {
         external_pot_b = new double[grid->dim_y * grid->dim_x];

@@ -274,7 +274,7 @@ void calculate_mean_momentum(Lattice *grid, State *state, double *results,
     results[3] = real(sum_pypy_mean / norm2) * grid->delta_x * grid->delta_y - results[2] * results[2];
 }
 
-double calculate_rabi_coupling_energy(Lattice *grid, State *state1, State *state2, double omega_r, double omega_i, double norm2) {
+double calculate_rabi_coupling_energy(Lattice *grid, State *state1, State *state2, double omega_r, double omega_i, double norm2, bool global=true) {
     int ini_halo_x = grid->inner_start_x - grid->start_x;
     int ini_halo_y = grid->inner_start_y - grid->start_y;
     int end_halo_x = grid->end_x - grid->inner_end_x;
@@ -303,11 +303,22 @@ double calculate_rabi_coupling_energy(Lattice *grid, State *state1, State *state
         }
     }
 
-    return real(sum / norm2) * grid->delta_x * grid->delta_y;
+    double energy_rabi = real(sum / norm2) * grid->delta_x * grid->delta_y;
+#ifdef HAVE_MPI
+    if (global) {
+        double *sums = new double[grid->mpi_procs];
+        MPI_Allgather(&energy_rabi, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, grid->cartcomm);
+        energy_rabi = 0.;
+        for(int i = 0; i < grid->mpi_procs; i++)
+            energy_rabi += sums[i];
+        delete [] sums;
+    }
+#endif
+    return energy_rabi;
 }
 
 double calculate_ab_energy(Lattice *grid, State *state1, State *state2,
-                 double coupling_const_ab, double norm2) {
+                 double coupling_const_ab, double norm2, bool global=true) {
     int ini_halo_x = grid->inner_start_x - grid->start_x;
     int ini_halo_y = grid->inner_start_y - grid->start_y;
     int end_halo_x = grid->end_x - grid->inner_end_x;
@@ -332,7 +343,18 @@ double calculate_ab_energy(Lattice *grid, State *state1, State *state2,
             sum += conj(psi_center_a) * psi_center_a * conj(psi_center_b) * psi_center_b * complex<double> (coupling_const_ab);
         }
     }
-    return real(sum / norm2) * grid->delta_x * grid->delta_y;
+    double energy_ab = real(sum / norm2) * grid->delta_x * grid->delta_y;
+#ifdef HAVE_MPI
+    if (global) {
+        double *sums = new double[grid->mpi_procs];
+        MPI_Allgather(&energy_ab, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, grid->cartcomm);
+        energy_ab = 0.;
+        for(int i = 0; i < grid->mpi_procs; i++)
+            energy_ab += sums[i];
+        delete [] sums;
+    }
+#endif
+    return energy_ab;
 }
 
 double calculate_total_energy(Lattice *grid, State *state1, State *state2,
@@ -409,7 +431,7 @@ Solver::~Solver() {
 
 void Solver::initialize_exp_potential(double delta_t, int which) {
       double particle_mass;
-      if (single_component) {                                                    // maybe which instead single_component 
+      if (which == 0) {
           particle_mass = hamiltonian->mass;
       } else {
           particle_mass = static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b;
@@ -474,7 +496,6 @@ void Solver::evolve(int iterations, bool _imag_time) {
     }
     if (_imag_time != imag_time) {
         imag_time = _imag_time;
-        double time_single_it = delta_t / 2.;  //second approx trotter-suzuki: time/2
         if(imag_time) {
             h_a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
             h_b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
