@@ -24,18 +24,22 @@
 #include <mpi.h>
 #endif
 
-#define LENGTH 20
-#define DIM 400
-#define ITERATIONS 4
+#define LENGTH 10
+#define DIM 100
+#define ITERATIONS 1000
 #define PARTICLES_NUM 1700000
 #define KERNEL_TYPE "cpu"
-#define SNAPSHOTS 2
-#define SNAP_PER_STAMP 1
+#define SNAPSHOTS 20
+#define SNAP_PER_STAMP 5
 
 complex<double> gauss_ini_state(double x, double y) {
 	double x_c = x - double(LENGTH)*0.5, y_c = y - double(LENGTH)*0.5;
     double w = 1.;
     return complex<double>(sqrt(w * double(PARTICLES_NUM) / M_PI) * exp(-(x_c * x_c + y_c * y_c) * 0.5 * w), 0.);
+}
+
+complex<double> const_state(double x, double y) {
+    return 0;
 }
 
 double parabolic_potential(double x, double y) {
@@ -45,31 +49,32 @@ double parabolic_potential(double x, double y) {
 }
 
 int main(int argc, char** argv) {
-    int periods[2] = {0, 0};
     char file_name[] = "";
     char pot_name[1] = "";
     const double particle_mass_a = 1., particle_mass_b = 1.;
-    bool imag_time = true;
-    double delta_t = 5.e-5;
+    bool imag_time = false;
+    double delta_t = 1.e-3;
     double length_x = double(LENGTH), length_y = double(LENGTH);
     double coupling_a = 7.116007999594e-4;
     double coupling_b = 7.116007999594e-4;
-    double coupling_ab = 0;
-    double omega = 0;
+    double coupling_ab = coupling_a;
+    double omega_i = 2.*M_PI/20.;
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
     //set lattice
-    Lattice *grid = new Lattice(DIM, length_x, length_y, periods);
+    Lattice *grid = new Lattice(DIM, length_x, length_y);
     //set initial state
     State *state1 = new State(grid);
     state1->init_state(gauss_ini_state);
     State *state2 = new State(grid);
     state2->init_state(gauss_ini_state);
+    
     //set hamiltonian
-    Hamiltonian2Component *hamiltonian = new Hamiltonian2Component(grid, particle_mass_a, particle_mass_b, coupling_a, coupling_ab, coupling_b, omega);
+    Hamiltonian2Component *hamiltonian = new Hamiltonian2Component(grid, particle_mass_a, particle_mass_b, coupling_a, coupling_ab, coupling_b, 0., omega_i);
     hamiltonian->initialize_potential(parabolic_potential, 0);
     hamiltonian->initialize_potential(parabolic_potential, 1);
+    
     //set evolution
     Solver *solver = new Solver(grid, state1, state2, hamiltonian, delta_t, KERNEL_TYPE);
     
@@ -101,18 +106,30 @@ int main(int argc, char** argv) {
     double _tot_energy = calculate_total_energy(grid, state1, state2, hamiltonian, parabolic_potential, parabolic_potential, NULL, norm2[0]+norm2[1]);
 
     if(grid->mpi_rank == 0){
-        out << "iterations \t total energy \t norm2\n";
-        out << "0\t" << "\t" << _tot_energy << "\t" << norm2[0] + norm2[1] << endl;
+        out << "time \t total energy \ttot norm2\tnorm2_a\tnorm2_b\n";
+        out << "0\t" << "\t" << _tot_energy << "\t" << norm2[0] + norm2[1] << "\t" << norm2[0] << "\t" << norm2[1] << endl;
     }
-
+    
+    //get and stamp phase
+    state1->get_phase(_matrix);
+    stamp_real(grid, _matrix, 0, dirnames.c_str(), "phase_a");
+    state2->get_phase(_matrix);
+    stamp_real(grid, _matrix, 0, dirnames.c_str(), "phase_b");
+    //get and stamp particles density
+    state1->get_particle_density(_matrix);
+    stamp_real(grid, _matrix, 0, dirnames.c_str(), "density_a");
+    state2->get_particle_density(_matrix);
+    stamp_real(grid, _matrix, 0, dirnames.c_str(), "density_b");
     for (int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);
         //norm calculation
-        _norm2 = state1->calculate_squared_norm() + state2->calculate_squared_norm();
+        norm2[0] = state1->calculate_squared_norm();
+        norm2[1] = state2->calculate_squared_norm();
+        _norm2 = norm2[0] + norm2[1];
         _tot_energy = calculate_total_energy(grid, state1, state2, hamiltonian, parabolic_potential, parabolic_potential, NULL, _norm2);
 
         if (grid->mpi_rank == 0){
-            out << (count_snap + 1) * ITERATIONS << "\t" << _tot_energy << "\t" << _norm2 << endl;
+            out << (count_snap + 1) * ITERATIONS * delta_t << "\t" << _tot_energy << "\t" << _norm2 << "\t" << norm2[0] << "\t" << norm2[1] << endl;
         }
 
         //stamp phase and particles density
@@ -132,8 +149,8 @@ int main(int argc, char** argv) {
 
     out.close();
     stamp(grid, state1, 0, ITERATIONS, SNAPSHOTS, dirnames.c_str());
-    delete solver;
-    delete hamiltonian;
+    //delete solver;
+    //delete hamiltonian;
     delete state1;
     delete state2;
     delete grid;

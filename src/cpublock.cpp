@@ -512,14 +512,16 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
     rot_coord_x = hamiltonian->rot_coord_x;
     rot_coord_y = hamiltonian->rot_coord_y;
     
-    a = _a;																				//coupling 3, 4???
+    a = _a;
     b = _b;
     norm = _norm;
     tot_norm = norm[0] + norm[1];
-    coupling_const = new double[3];
+    coupling_const = new double[5];
     coupling_const[0] = delta_t*hamiltonian->coupling_a;
     coupling_const[1] = delta_t*hamiltonian->coupling_b;
     coupling_const[2] = delta_t*hamiltonian->coupling_ab;
+    coupling_const[3] = hamiltonian->omega_r;
+    coupling_const[4] = hamiltonian->omega_i;
     periods = grid->periods;
     int rank, coords[2], dims[2] = {0, 0};
 #ifdef HAVE_MPI
@@ -642,7 +644,7 @@ void CPUBlock::run_kernel_on_halo() {
 }
 
 void CPUBlock::wait_for_completion() {
-    if(imag_time && norm[state_index] != 0) {
+    if(!two_wavefunctions && imag_time && norm[state_index] != 0) {
         //normalization
         int nProcs = 1;
 #ifdef HAVE_MPI
@@ -745,9 +747,8 @@ void CPUBlock::normalization() {
                 }
             }
         }
-        //sum = sum_a + sum_b;
 #ifdef HAVE_MPI
-        //MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
+
         MPI_Allgather(&sum_a, 1, MPI_DOUBLE, sums_a, 1, MPI_DOUBLE, cartcomm);
         MPI_Allgather(&sum_b, 1, MPI_DOUBLE, sums_b, 1, MPI_DOUBLE, cartcomm);
 #else
@@ -756,17 +757,11 @@ void CPUBlock::normalization() {
 #endif
         double tot_sum = 0., tot_sum_a = 0., tot_sum_b = 0.;
         for(int i = 0; i < nProcs; i++) {
-            //tot_sum += sums[i];
+			
             tot_sum_a += sums_a[i];
             tot_sum_b += sums_b[i];
         }
         double _norm = sqrt((tot_sum_a + tot_sum_b) * delta_x * delta_y / tot_norm);
-        
-       /* if(1. - tot_sum_a * delta_x * delta_y / norm[0] > 1.e-10)
-            norm[0] = tot_sum_a * delta_x * delta_y;
-        if(1. - tot_sum_a * delta_x * delta_y / norm[1] > 1.e-10)
-            norm[1] = tot_sum_b * delta_x * delta_y;
-*/
 
         for(size_t i = 0; i < tile_height; i++) {
             for(size_t j = 0; j < tile_width; j++) {
@@ -774,7 +769,7 @@ void CPUBlock::normalization() {
                 p_imag[0][sense][j + i * tile_width] /= _norm;
             }
         }
-        norm[0] *= tot_norm / (tot_sum_a * delta_x * delta_y);
+        //norm[0] *= tot_norm / ((tot_sum_a + tot_sum_b) * delta_x * delta_y);
         if(p_real[1] != NULL) {
             for(size_t i = 0; i < tile_height; i++) {
                 for(size_t j = 0; j < tile_width; j++) {
@@ -782,7 +777,7 @@ void CPUBlock::normalization() {
                     p_imag[1][sense][j + i * tile_width] /= _norm;
                 }
             }
-            norm[1] *= tot_norm / (tot_sum_b * delta_x * delta_y);
+            //norm[1] *= tot_norm / ((tot_sum_a + tot_sum_b) * delta_x * delta_y);
         }
         delete[] sums;
     }
