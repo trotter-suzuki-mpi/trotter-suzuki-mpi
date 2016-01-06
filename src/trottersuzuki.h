@@ -198,6 +198,7 @@ public:
     State *state;
     State *state_b;
     Hamiltonian *hamiltonian;
+    double current_evolution_time;
     Solver(Lattice *grid, State *state, Hamiltonian *hamiltonian, double delta_t,
            string kernel_type="cpu");
     Solver(Lattice *_grid, State *state1, State *state2,
