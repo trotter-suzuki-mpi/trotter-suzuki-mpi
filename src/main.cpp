@@ -20,6 +20,7 @@
 #include <sstream>
 #include <cstring>
 #include <cstdlib>
+#include <stdexcept>
 #include "trottersuzuki.h"
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -34,7 +35,7 @@
 #include "common.h"
 
 #define DIM 640
-#define EDGE_LENGHT 640
+#define EDGE_LENGTH 640
 #define SINGLE_TIME_STEP 0.01
 #define ITERATIONS 1000
 #define KERNEL_TYPE "cpu"
@@ -53,7 +54,7 @@ void print_usage() {
               "     -m NUMBER     Particle mass (default: " << PARTICLE_MASS << ")\n"\
               "     -c NUMBER     Coupling constant of the self-interacting term (default: " << COUPLING_CONST << ")\n"\
               "     -d NUMBER     Matrix dimension (default: " << DIM << ")\n" \
-              "     -l NUMBER     Physical dimension of the square lattice's edge (default: " << EDGE_LENGHT << ")\n" \
+              "     -l NUMBER     Physical dimension of the square lattice's edge (default: " << EDGE_LENGTH << ")\n" \
               "     -t NUMBER     Single time step (default: " << SINGLE_TIME_STEP << ")\n" \
               "     -i NUMBER     Number of iterations before a snapshot (default: " << ITERATIONS << ")\n" \
               "     -g            Imaginary time evolution to evolve towards the ground state\n" \
@@ -64,7 +65,7 @@ void print_usage() {
               "     -p STRING     Name of file that stores the potential operator (in coordinate representation)\n";
 }
 
-void process_command_line(int argc, char** argv, int *dim, double *delta_x, double *delta_y, int *iterations, int *snapshots, string *kernel_type, char *filename, double *delta_t, double *coupling_const, double *particle_mass, char *pot_name, bool *imag_time) {
+void process_command_line(int argc, char** argv, int *dim, double *length_x, double *length_y, int *iterations, int *snapshots, string *kernel_type, char *filename, double *delta_t, double *coupling_const, double *particle_mass, char *pot_name, bool *imag_time) {
     // Setting default values
     *dim = DIM;
     *iterations = ITERATIONS;
@@ -74,7 +75,7 @@ void process_command_line(int argc, char** argv, int *dim, double *delta_x, doub
     *coupling_const = double(COUPLING_CONST);
     *particle_mass = double(PARTICLE_MASS);
 
-	double lenght = double(EDGE_LENGHT);
+	double length = double(EDGE_LENGTH);
     int c;
     bool file_supplied = false;
     while ((c = getopt (argc, argv, "gd:hi:k:s:n:t:l:p:c:m:")) != -1) {
@@ -138,8 +139,8 @@ void process_command_line(int argc, char** argv, int *dim, double *delta_x, doub
                 pot_name[i] = optarg[i];
             break;
         case 'l':
-            lenght = atoi(optarg);
-            if (lenght <= 0) {
+            length = atoi(optarg);
+            if (length <= 0) {
                 my_abort("The argument of option -l should be a positive real number.\n");
             }
             break;
@@ -168,8 +169,8 @@ void process_command_line(int argc, char** argv, int *dim, double *delta_x, doub
     if(!file_supplied) {
         my_abort("Initial state file has not been supplied\n");
     }
-    *delta_x = lenght / double(*dim);
-    *delta_y = lenght / double(*dim);
+    *length_x = length;
+    *length_y = length;
 }
 
 int main(int argc, char** argv) {
@@ -187,12 +188,12 @@ int main(int argc, char** argv) {
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    /*try {
-        process_command_line(argc, argv, &dim, &delta_x, &delta_y, &iterations, &snapshots, &kernel_type, filename, &delta_t, &coupling_a, &particle_mass, pot_name, &imag_time);
-    } catch (const std::runtime_error& e) {
+    try {
+        process_command_line(argc, argv, &dim, &length_x, &length_y, &iterations, &snapshots, &kernel_type, filename, &delta_t, &coupling_a, &particle_mass, pot_name, &imag_time);
+    } catch (runtime_error& e) {
+        cerr << e.what() << endl;
         return 1; // exit is okay here because an MPI runtime would have aborted in my_abort
     }
-	*/
     //set lattice
     Lattice *grid = new Lattice(dim, length_x, length_y);
 

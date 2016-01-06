@@ -23,7 +23,7 @@
 // Class methods
 HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian, 
                            double *_external_pot_real, double *_external_pot_imag, 
-                           double a, double b, double delta_t, 
+                           double _a, double _b, double delta_t, 
                            double _norm, bool _imag_time):
     threadsPerBlock(BLOCK_X, STRIDE_Y),
     a(_a),
@@ -39,17 +39,15 @@ HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian
     halo_y = grid->halo_y;
     coupling_const = hamiltonian->coupling_a * delta_t;
     periods = grid->periods;
-    int rank, coords[2], dims[2] = {0, 0};
+    int rank;
 #ifdef HAVE_MPI
     cartcomm = grid->cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
     MPI_Comm_rank(cartcomm, &rank);
-    MPI_Cart_get(cartcomm, 2, dims, periods, coords);
 #else
-    dims[0] = dims[1] = 1;
+    neighbors[UP] = neighbors[DOWN] = neighbors[LEFT] = neighbors[RIGHT] = 0;
     rank = 0;
-    coords[0] = coords[1] = 0;
 #endif
     start_x = grid->start_x;
     end_x = grid->end_x;
@@ -106,8 +104,8 @@ HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian
     printf("%d %d %d %d\n", gpu_start_x, gpu_tile_width, gpu_start_y, gpu_tile_height);
 #endif
 
-    p_real[0] = _p_real;
-    p_imag[0] = _p_imag;
+    p_real[0] = state->p_real;
+    p_imag[0] = state->p_imag;
     p_real[1] = new double[tile_width * tile_height];
     p_imag[1] = new double[tile_width * tile_height];
 
@@ -253,32 +251,37 @@ void HybridKernel::run_kernel_on_halo() {
     }
 }
 
+double HybridKernel::calculate_squared_norm(bool global) {
+    CUDA_SAFE_CALL(cudaMemcpy2D(&(p_real[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), pdev_real[sense], gpu_tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyDeviceToHost));
+    CUDA_SAFE_CALL(cudaMemcpy2D(&(p_imag[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), pdev_imag[sense], gpu_tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyDeviceToHost));
+    double norm2 = 0.;
+    for(int i = inner_start_y - start_y; i < inner_end_y - start_y; i++) {
+        for(int j = inner_start_x - start_x; j < inner_end_x - start_x; j++) {
+            norm2 += p_real[sense][j + i * tile_width] * p_real[sense][j + i * tile_width] + p_imag[sense][j + i * tile_width] * p_imag[sense][j + i * tile_width];
+        }
+    }
+
+#ifdef HAVE_MPI
+    if (global) {
+        int nProcs = 1;
+        MPI_Comm_size(cartcomm, &nProcs);
+        double *sums = new double[nProcs];
+        MPI_Allgather(&norm2, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
+        norm2 = 0.;
+        for(int i = 0; i < nProcs; i++)
+            norm2 += sums[i];
+        delete [] sums;
+    }
+#endif
+    return norm2 * delta_x * delta_y;
+}
+
 void HybridKernel::wait_for_completion() {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
     //normalization for imaginary time evolution
     if(imag_time) {
-        CUDA_SAFE_CALL(cudaMemcpy2D(&(p_real[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), pdev_real[sense], gpu_tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyDeviceToHost));
-        CUDA_SAFE_CALL(cudaMemcpy2D(&(p_imag[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), pdev_imag[sense], gpu_tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyDeviceToHost));
-
-        int nProcs = 1;
-#ifdef HAVE_MPI
-        MPI_Comm_size(cartcomm, &nProcs);
-#endif
-        double sum = 0., sums[nProcs];
-        for(int i = inner_start_y - start_y; i < inner_end_y - start_y; i++) {
-            for(int j = inner_start_x - start_x; j < inner_end_x - start_x; j++) {
-                sum += p_real[sense][j + i * tile_width] * p_real[sense][j + i * tile_width] + p_imag[sense][j + i * tile_width] * p_imag[sense][j + i * tile_width];
-            }
-        }
-#ifdef HAVE_MPI
-        MPI_Allgather(&sum, 1, MPI_DOUBLE, sums, 1, MPI_DOUBLE, cartcomm);
-#else
-        sums[1] = sum;
-#endif
-        double tot_sum = 0.;
-        for(int i = 0; i < nProcs; i++)
-            tot_sum += sums[i];
-        double _norm = sqrt(tot_sum * delta_x * delta_y / norm);
+        double tot_sum = calculate_squared_norm(true);
+        double _norm = sqrt(tot_sum / norm);
 
         for(int i = 0; i < tile_height; i++) {
             for(int j = 0; j < tile_width; j++) {
@@ -294,7 +297,7 @@ void HybridKernel::wait_for_completion() {
 void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y, 
                               size_t width, size_t height, 
                               double *dest_real, double *dest_imag, 
-                              double *dest_real2=0, double *dest_imag2=0) const {
+                              double *dest_real2, double *dest_imag2) const {
     if ( (x != 0) || (y != 0) || (width != tile_width) || (height != tile_height)) {
         my_abort("Only full tile samples are implemented!\n");
     }

@@ -55,9 +55,9 @@ int main(int argc, char** argv) {
     bool imag_time = false;
     double delta_t = 1.e-3;
     double length_x = double(LENGTH), length_y = double(LENGTH);
-    double coupling_a = 7.116007999594e-4;
-    double coupling_b = 7.116007999594e-4;
-    double coupling_ab = coupling_a;
+    double coupling_a = 0;//7.116007999594e-4;
+    double coupling_b = 0;//7.116007999594e-4;
+    double coupling_ab = 0;
     double omega_i = 2.*M_PI/20.;
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);

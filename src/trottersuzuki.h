@@ -115,6 +115,29 @@ public:
     
 };
 
+
+/**
+ * \brief This class define the prototipe of the kernel classes: CPU, GPU, Hybrid.
+ */
+
+class ITrotterKernel {
+public:
+    virtual ~ITrotterKernel() {};
+    virtual void run_kernel() = 0;							///< Evolve the remaining blocks in the inner part of the tile.
+    virtual void run_kernel_on_halo() = 0;					///< Evolve blocks of wave function at the edge of the tile. This comprises the halos.
+    virtual void wait_for_completion() = 0;	                ///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
+    virtual void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2=0, double * dest_imag2=0) const = 0;					///< Get the evolved wave function.
+    virtual void normalization() = 0;
+    virtual void rabi_coupling(double var, double delta_t) = 0;
+    virtual double calculate_squared_norm(bool global=true) = 0;
+    virtual bool runs_in_place() const = 0;
+    virtual string get_name() const = 0;				///< Get kernel name.
+
+    virtual void start_halo_exchange() = 0;					///< Exchange halos between processes.
+    virtual void finish_halo_exchange() = 0;				///< Exchange halos between processes.
+
+};
+
 /**
     API call to calculate the evolution through the Trotter-Suzuki decomposition.
 
@@ -151,6 +174,7 @@ public:
            double _delta_t, string _kernel_type="cpu");
     ~Solver();
     void evolve(int iterations, bool imag_time=false);
+    double calculate_squared_norm(bool global=true);
 private:
     bool imag_time;
     double h_a[2];
@@ -162,7 +186,9 @@ private:
     bool single_component;
     bool first_run;
     string kernel_type;
+    ITrotterKernel * kernel;
     void initialize_exp_potential(double time_single_it, int which);
+    void init_kernel();
 };
 
 /**
