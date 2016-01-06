@@ -1,4 +1,4 @@
--/**
+/**
  * Massively Parallel Trotter-Suzuki Solver
  *
  * This program is free software: you can redistribute it and/or modify
@@ -649,6 +649,9 @@ void CPUBlock::run_kernel_on_halo() {
 
 double CPUBlock::calculate_squared_norm(bool global) {
     double norm2 = 0.;
+#ifndef HAVE_MPI
+    #pragma omp parallel for reduction(+:norm2)
+#endif    
     for(int i = inner_start_y - start_y; i < inner_end_y - start_y; i++) {
         for(int j = inner_start_x - start_x; j < inner_end_x - start_x; j++) {
             norm2 += p_real[state_index][sense][j + i * tile_width] * p_real[state_index][sense][j + i * tile_width] + p_imag[state_index][sense][j + i * tile_width] * p_imag[state_index][sense][j + i * tile_width];
