@@ -272,6 +272,7 @@ Hamiltonian::Hamiltonian(Lattice *_grid, double _mass, double _coupling_a,
         external_pot = _external_pot;
         self_init = false;
     }
+    evolve_potential = NULL;
 }
 
 Hamiltonian::~Hamiltonian() {
@@ -287,6 +288,19 @@ void Hamiltonian::initialize_potential(double (*hamiltonian_pot)(double x, doubl
         idx = grid->start_x * delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
             external_pot[y * grid->dim_x + x] = hamiltonian_pot(idx, idy);
+        }
+    }
+}
+
+void Hamiltonian::update_potential(double delta_t, int iteration) {
+    if (evolve_potential != NULL) {
+        double delta_x = grid->delta_x, delta_y = grid->delta_y;
+        double idy = grid->start_y * delta_y, idx;
+        for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
+            idx = grid->start_x * delta_x;
+            for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
+                external_pot[y * grid->dim_x + x] = evolve_potential(idx, idy, delta_t, iteration);
+            }
         }
     }
 }

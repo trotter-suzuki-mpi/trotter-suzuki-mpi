@@ -643,6 +643,13 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
 
 }
 
+void CC2Kernel::update_potential(double *_external_pot_real, double *_external_pot_imag) {
+    external_pot_real = _external_pot_real;
+    external_pot_imag = _external_pot_imag;
+    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_real, external_pot_real, tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_imag, external_pot_imag, tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+}
+
 
 CC2Kernel::~CC2Kernel() {
     CUDA_SAFE_CALL(cudaFreeHost(left_real_receive));

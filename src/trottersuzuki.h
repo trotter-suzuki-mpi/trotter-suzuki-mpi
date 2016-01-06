@@ -32,14 +32,14 @@ using namespace std;
 
 class Lattice {
 public:
-    Lattice(int _dim=100, double _length_x=20., double _length_y=20., 
+    Lattice(int _dim=100, double _length_x=20., double _length_y=20.,
             int _periods[2]=0, double omega=0.);
     double length_x, length_y;
     double delta_x, delta_y;
     int dim_x, dim_y;
     int global_dim_x, global_dim_y;
     int periods[2];
-    
+
     // Computational topology
     int halo_x, halo_y;
     int start_x, end_x, inner_start_x, inner_end_x,
@@ -49,7 +49,7 @@ public:
     int mpi_procs;
 #ifdef HAVE_MPI
     MPI_Comm cartcomm;
-#endif  
+#endif
 };
 
 class State{
@@ -81,15 +81,19 @@ public:
     double rot_coord_x;
     double rot_coord_y;
     double *external_pot;
-    bool self_init;
-    
-    Hamiltonian(Lattice *_grid, double _mass=1., double _coupling_a=0., 
-                double _angular_velocity=0., 
-                double _rot_coord_x=DBL_MAX, double _rot_coord_y=DBL_MAX, 
+        
+    Hamiltonian(Lattice *_grid, double _mass=1., double _coupling_a=0.,
+                double _angular_velocity=0.,
+                double _rot_coord_x=DBL_MAX, double _rot_coord_y=DBL_MAX,
                 double *_external_pot=0);
     ~Hamiltonian();
     void initialize_potential(double (*hamiltonian_pot)(double x, double y));
-    void read_potential(char *pot_name);    
+    void read_potential(char *pot_name);
+    void update_potential(double delta_t, int iteration);
+    double (*evolve_potential)(double x, double y, double delta_t, int t);
+
+protected:
+    bool self_init;
 };
 
 class Hamiltonian2Component: public Hamiltonian {
@@ -97,22 +101,21 @@ public:
     double mass_b;
     double coupling_ab;
     double coupling_b;
-    double *external_pot_b;
     double omega_r;
     double omega_i;
+    double *external_pot_b;
     
-    Hamiltonian2Component(Lattice *_grid, double _mass=1., double _mass_b=1., 
-                          double _coupling_a=0., double coupling_ab=0., 
+    Hamiltonian2Component(Lattice *_grid, double _mass=1., double _mass_b=1.,
+                          double _coupling_a=0., double coupling_ab=0.,
                           double _coupling_b=0.,
                           double _omega_r=0, double _omega_i=0,
-                          double _angular_velocity=0., 
-                          double _rot_coord_x=DBL_MAX, 
-                          double _rot_coord_y=DBL_MAX, 
-                          double *_external_pot=0, 
+                          double _angular_velocity=0.,
+                          double _rot_coord_x=DBL_MAX,
+                          double _rot_coord_y=DBL_MAX,
+                          double *_external_pot=0,
                           double *_external_pot_b=0);
     ~Hamiltonian2Component();
     void initialize_potential(double (*hamiltonian_pot)(double x, double y), int which);
-    
 };
 
 
@@ -132,7 +135,8 @@ public:
     virtual double calculate_squared_norm(bool global=true) = 0;
     virtual bool runs_in_place() const = 0;
     virtual string get_name() const = 0;				///< Get kernel name.
-
+    virtual void update_potential(double *_external_pot_real, double *_external_pot_imag) = 0;
+    
     virtual void start_halo_exchange() = 0;					///< Exchange halos between processes.
     virtual void finish_halo_exchange() = 0;				///< Exchange halos between processes.
 
@@ -167,9 +171,9 @@ public:
     State *state;
     State *state_b;
     Hamiltonian *hamiltonian;
-    Solver(Lattice *grid, State *state, Hamiltonian *hamiltonian, double delta_t, 
+    Solver(Lattice *grid, State *state, Hamiltonian *hamiltonian, double delta_t,
            string kernel_type="cpu");
-    Solver(Lattice *_grid, State *state1, State *state2, 
+    Solver(Lattice *_grid, State *state1, State *state2,
            Hamiltonian2Component *_hamiltonian,
            double _delta_t, string _kernel_type="cpu");
     ~Solver();
@@ -204,22 +208,22 @@ struct energy_momentum_statistics {
     energy_momentum_statistics() : mean_E(0.), mean_Px(0.), mean_Py(0.),
         var_E(0.), var_Px(0.), var_Py(0.) {}
 };
-double calculate_rotational_energy(Lattice *grid, State *state, 
-                                   Hamiltonian *hamiltonian, double norm2, 
+double calculate_rotational_energy(Lattice *grid, State *state,
+                                   Hamiltonian *hamiltonian, double norm2,
                                    bool global=true);
-double calculate_kinetic_energy(Lattice *grid, State *state, 
-                                Hamiltonian *hamiltonian, double norm2, 
+double calculate_kinetic_energy(Lattice *grid, State *state,
+                                Hamiltonian *hamiltonian, double norm2,
                                 bool global=true);
-double calculate_total_energy(Lattice *grid, State *state, 
-                              Hamiltonian *hamiltonian, 
-                              double (*hamilt_pot)(double x, double y)=0, 
+double calculate_total_energy(Lattice *grid, State *state,
+                              Hamiltonian *hamiltonian,
+                              double (*hamilt_pot)(double x, double y)=0,
                               double * external_pot=0, double norm2=0, bool global=true);
-double calculate_total_energy(Lattice *grid, State *state1, State *state2, 
+double calculate_total_energy(Lattice *grid, State *state1, State *state2,
                               Hamiltonian2Component *hamiltonian,
                               double (*hamilt_pot_a)(double x, double y)=0,
-                              double (*hamilt_pot_b)(double x, double y)=0, 
+                              double (*hamilt_pot_b)(double x, double y)=0,
                               double **external_pot=0, double norm2=0, bool global=true);
-void calculate_mean_position(Lattice *grid, State *state, int grid_origin_x, int grid_origin_y, 
+void calculate_mean_position(Lattice *grid, State *state, int grid_origin_x, int grid_origin_y,
                              double *results, double norm2=0);
 void calculate_mean_momentum(Lattice *grid, State *state, double *results,
                              double norm2=0);

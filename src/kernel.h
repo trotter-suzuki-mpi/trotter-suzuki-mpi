@@ -73,6 +73,8 @@ public:
     void normalization();
     void rabi_coupling(double var, double delta_t);
     double calculate_squared_norm(bool global=true);
+    void update_potential(double *_external_pot_real, double *_external_pot_imag);
+    
     bool runs_in_place() const {
         return false;
     }
@@ -183,6 +185,8 @@ public:
     void normalization() {};
     void rabi_coupling(double var, double delta_t) {};
 	  double calculate_squared_norm(bool global=true);
+    void update_potential(double *_external_pot_real, double *_external_pot_imag);
+    
     bool runs_in_place() const {
         return false;
     }
@@ -273,6 +277,8 @@ public:
     void normalization() {};
     void rabi_coupling(double var, double delta_t) {};
     double calculate_squared_norm(bool global=true);
+    void update_potential(double *_external_pot_real, double *_external_pot_imag);
+    
     bool runs_in_place() const {
         return false;
     }
