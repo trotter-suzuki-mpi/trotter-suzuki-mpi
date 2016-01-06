@@ -413,6 +413,7 @@ Solver::Solver(Lattice *_grid, State *state1, State *state2,
     norm2[0] = 0.;
     norm2[1] = 0.;
     kernel = NULL;
+    current_evolution_time = 0;
     first_run = true;
     single_component = false;
 }
@@ -556,6 +557,7 @@ void Solver::evolve(int iterations, bool _imag_time) {
             kernel->rabi_coupling(var, delta_t);
             kernel->normalization();
         }
+        current_evolution_time += delta_t;
     }
     if (single_component) {
         kernel->get_sample(grid->dim_x, 0, 0, grid->dim_x, grid->dim_y, state->p_real, state->p_imag);      
