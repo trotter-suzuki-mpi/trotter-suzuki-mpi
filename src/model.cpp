@@ -197,10 +197,13 @@ void State::read_state(char *file_name, int read_offset) {
 double State::calculate_squared_norm(bool global) {
     double norm2 = 0;
     int tile_width = grid->end_x - grid->start_x;
+#ifndef HAVE_MPI
+        #pragma omp parallel for reduction(+:norm2)
+#endif    
     for(int i = grid->inner_start_y - grid->start_y; i < grid->inner_end_y - grid->start_y; i++) {
-      for(int j = grid->inner_start_x - grid->start_x; j < grid->inner_end_x - grid->start_x; j++) {
-        norm2 += p_real[j + i * tile_width] * p_real[j + i * tile_width] + p_imag[j + i * tile_width] * p_imag[j + i * tile_width];
-      }
+        for(int j = grid->inner_start_x - grid->start_x; j < grid->inner_end_x - grid->start_x; j++) {
+          norm2 += p_real[j + i * tile_width] * p_real[j + i * tile_width] + p_imag[j + i * tile_width] * p_imag[j + i * tile_width];
+        }
     }
 #ifdef HAVE_MPI
     if (global) {

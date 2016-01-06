@@ -602,7 +602,6 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
               , cartcomm
 #endif
              );
-
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_real), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_imag), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_real, external_pot_real, tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
@@ -616,6 +615,10 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     CUDA_SAFE_CALL(cudaMemcpy(pdev_imag[0], p_imag, tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
     cudaStreamCreate(&stream1);
     cudaStreamCreate(&stream2);
+    cublasStatus_t status = cublasCreate(&handle);
+    if (status != CUBLAS_STATUS_SUCCESS) {
+        my_abort("CuBLAS initialization error");
+    }
 
     // Halo exchange uses wave pattern to communicate
     int height = inner_end_y - inner_start_y;	// The vertical halo in rows
@@ -676,6 +679,11 @@ CC2Kernel::~CC2Kernel() {
 
     cudaStreamDestroy(stream1);
     cudaStreamDestroy(stream2);
+
+    cublasStatus_t status = cublasDestroy(handle);
+    if (status != CUBLAS_STATUS_SUCCESS) {
+        my_abort("CuBLAS shutdown error");
+    }
 }
 
 void CC2Kernel::run_kernel_on_halo() {
@@ -719,15 +727,13 @@ void CC2Kernel::run_kernel() {
 
 
 double CC2Kernel::calculate_squared_norm(bool global) {
-    CUDA_SAFE_CALL(cudaMemcpy(p_real, pdev_real[sense], tile_width * tile_height * sizeof(double), cudaMemcpyDeviceToHost));
-    CUDA_SAFE_CALL(cudaMemcpy(p_imag, pdev_imag[sense], tile_width * tile_height * sizeof(double), cudaMemcpyDeviceToHost));
-
-    double norm2 = 0.;
-    for(int i = inner_start_y - start_y; i < inner_end_y - start_y; i++) {
-        for(int j = inner_start_x - start_x; j < inner_end_x - start_x; j++) {
-            norm2 += p_real[j + i * tile_width] * p_real[j + i * tile_width] + p_imag[j + i * tile_width] * p_imag[j + i * tile_width];
-        }
+    double norm2 = 0., result_imag = 0.;
+    cublasStatus_t status = cublasDnrm2(handle, tile_width * tile_height, pdev_real[sense], 1, &norm2);
+    status = cublasDnrm2(handle, tile_width * tile_height, pdev_imag[sense], 1, &result_imag);
+    if (status != CUBLAS_STATUS_SUCCESS) {
+        my_abort("CuBLAS error");
     }
+    norm2 = norm2*norm2 + result_imag*result_imag;
 #ifdef HAVE_MPI
     if (global) {
         int nProcs = 1;
@@ -747,18 +753,13 @@ void CC2Kernel::wait_for_completion() {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
     //normalization
     if(imag_time) {
-
         double tot_sum = calculate_squared_norm(true);
-        double _norm = sqrt(tot_sum / norm);
-
-        for(int i = 0; i < tile_height; i++) {
-            for(int j = 0; j < tile_width; j++) {
-                p_real[j + i * tile_width] /= _norm;
-                p_imag[j + i * tile_width] /= _norm;
-            }
+        double inverse_norm = 1./sqrt(tot_sum / norm);
+        cublasStatus_t status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_real[sense], 1);
+        status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_imag[sense], 1);
+        if (status != CUBLAS_STATUS_SUCCESS) {
+            my_abort("CuBLAS error");
         }
-        CUDA_SAFE_CALL(cudaMemcpy(pdev_real[sense], p_real, tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
-        CUDA_SAFE_CALL(cudaMemcpy(pdev_imag[sense], p_imag, tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
     }
 }
 

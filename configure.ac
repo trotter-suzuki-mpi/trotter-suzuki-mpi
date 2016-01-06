@@ -48,7 +48,12 @@ fi
 
 # Setup CUDA paths
 # ------------------------------------------------------------------------------
-CUDA_PATH=/usr/local/cuda
+if test -z "$CUDAHOME" ; then
+    CUDA_PATH=/usr/local/cuda 
+else 
+    CUDA_PATH="$CUDAHOME"
+fi
+
 AC_ARG_WITH([cuda],
    [  --with-cuda=PATH    prefix where cuda is installed [default=/usr/local/cuda]])
 
@@ -64,7 +69,7 @@ if test x"$with_cuda" != x"no" ; then
      cuda_enabled=yes
      CUDA_CFLAGS="-I$CUDA_PATH/include -use_fast_math -Xptxas "-v" -Xcompiler \"${CXXFLAGS}\""
      CXXFLAGS="${CXXFLAGS} -I$CUDA_PATH/include"
-     CUDA_LIBS="-lcudart"
+     CUDA_LIBS="-lcudart -lcublas"
      CUDA_LDFLAGS="-L$CUDA_PATH/lib$SUFFIX"
      NVCC="$CUDA_PATH/bin/nvcc"
      AC_SUBST(CUDA_CFLAGS)

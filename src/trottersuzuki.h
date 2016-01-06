@@ -178,7 +178,6 @@ public:
            double _delta_t, string _kernel_type="cpu");
     ~Solver();
     void evolve(int iterations, bool imag_time=false);
-    double calculate_squared_norm(bool global=true);
 private:
     bool imag_time;
     double h_a[2];

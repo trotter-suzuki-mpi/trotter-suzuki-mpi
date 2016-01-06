@@ -25,6 +25,7 @@
 #endif
 #ifdef CUDA
 #include <cuda_runtime.h>
+#include <cublas_v2.h>
 #endif
 
 //These are for the MPI NEIGHBOURS
@@ -203,7 +204,8 @@ private:
     dim3 threadsPerBlock;				///< Number of lattice dots in a block.
     cudaStream_t stream1;				///< Stream of sequential instructions performing evolution and communication on the halos blocks.
     cudaStream_t stream2;				///< Stream of sequential instructions performing evolution on the inner blocks.
-	
+    cublasHandle_t handle;
+    	
     bool imag_time;						///< True: imaginary time evolution; False: real time evolution.
     double *p_real;						///< Point to  the real part of the wave function (stored in Host).
     double *p_imag;						///< Point to  the imaginary part of the wave function (stored in Host).

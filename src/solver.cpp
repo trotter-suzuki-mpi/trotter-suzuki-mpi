@@ -479,16 +479,6 @@ void Solver::init_kernel() {
 
 }
 
-double Solver::calculate_squared_norm(bool global) {
-    double norm2 = 0;
-    if (kernel == NULL) {
-         norm2 = state->calculate_squared_norm(global);
-    } else {
-        norm2 = kernel->calculate_squared_norm(global);
-    }
-    return norm2;
-}
-
 void Solver::evolve(int iterations, bool _imag_time) {
     if (first_run) {
         imag_time = !_imag_time;
