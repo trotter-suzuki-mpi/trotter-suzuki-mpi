@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
     //set lattice
     Lattice *grid = new Lattice(DIM, length_x, length_y, periods);
     //set initial state
-    State *state = new SinusoidState(grid);
+    State *state = new SinusoidState(grid, 1, 1);
     //set hamiltonian
     Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass);
     hamiltonian->initialize_potential(const_potential);

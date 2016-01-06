@@ -32,16 +32,6 @@
 #define SNAPSHOTS 20
 #define SNAP_PER_STAMP 5
 
-complex<double> gauss_ini_state(double x, double y) {
-	double x_c = x - double(LENGTH)*0.5, y_c = y - double(LENGTH)*0.5;
-    double w = 1.;
-    return complex<double>(sqrt(w * double(PARTICLES_NUM) / M_PI) * exp(-(x_c * x_c + y_c * y_c) * 0.5 * w), 0.);
-}
-
-complex<double> const_state(double x, double y) {
-    return 0;
-}
-
 double parabolic_potential(double x, double y) {
 	double x_c = x - double(LENGTH)*0.5, y_c = y - double(LENGTH)*0.5;
     double w_x = 1., w_y = 1.;
@@ -65,10 +55,8 @@ int main(int argc, char** argv) {
     //set lattice
     Lattice *grid = new Lattice(DIM, length_x, length_y);
     //set initial state
-    State *state1 = new State(grid);
-    state1->init_state(gauss_ini_state);
-    State *state2 = new State(grid);
-    state2->init_state(gauss_ini_state);
+    State *state1 = new GaussianState(grid, 1, 0., 0., PARTICLES_NUM);
+    State *state2 = new GaussianState(grid, 1, 0., 0., PARTICLES_NUM);
     
     //set hamiltonian
     Hamiltonian2Component *hamiltonian = new Hamiltonian2Component(grid, particle_mass_a, particle_mass_b, coupling_a, coupling_ab, coupling_b, 0., omega_i);

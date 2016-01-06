@@ -35,6 +35,11 @@
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 20
 
+complex<double> gauss_state(double x, double y) {
+    return complex<double>(exp(-(pow(x - 180, 2.0) + pow(y - 300, 2.0)) / (2.0 * 64 * 64.)), 0.0)
+           * exp(complex<double>(0.0, 0.4 * (x + y - 480.0)));  
+}
+
 int main(int argc, char** argv) {
     double length_x = double(DIM), length_y = double(DIM);
     double delta_t = 0.1;
@@ -48,8 +53,8 @@ int main(int argc, char** argv) {
     //set lattice
     Lattice *grid = new Lattice(DIM, length_x, length_y);
     //set initial state
-
-    State *state = new GaussianState(grid, 180.0, 300.0, 64.0);
+    State *state = new State(grid);
+    state->init_state(gauss_state);
     //set hamiltonian
     Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass);
     hamiltonian->initialize_potential(const_potential);

@@ -252,7 +252,8 @@ double *State::get_phase(double *_phase) {
     return phase;
 }
 
-ExponentialState::ExponentialState(Lattice *_grid, double *_p_real, double *_p_imag): State(_grid, _p_real, _p_imag) {
+ExponentialState::ExponentialState(Lattice *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag): 
+                  State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase) {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
     double idy = grid->start_y * delta_y, idx;
@@ -267,13 +268,15 @@ ExponentialState::ExponentialState(Lattice *_grid, double *_p_real, double *_p_i
 }
 
 complex<double> ExponentialState::exp_state(double x, double y) {
-    return exp(complex<double>(0., 2*M_PI/double(grid->global_dim_x) * x + 2*M_PI/double(grid->global_dim_y) * y));
+	double L_x = grid->global_dim_x - 2.*grid->halo_x * grid->periods[1];
+    double L_y = grid->global_dim_y - 2.*grid->halo_x * grid->periods[0];
+    return sqrt(norm/(L_x*L_y)) * exp(complex<double>(0., phase)) * exp(complex<double>(0., 2*M_PI*double(n_x)/L_x * x + 2*M_PI* double(n_y)/L_y * y));
 }
 
 GaussianState::GaussianState(Lattice *_grid, double _mean_x, double _mean_y, 
-                             double _sigma, double *_p_real, double *_p_imag): 
+                             double _omega, double _norm, double _phase, double *_p_real, double *_p_imag): 
                              State(_grid, _p_real, _p_imag), mean_x(_mean_x),
-                             mean_y(_mean_y), sigma(_sigma) {
+                             mean_y(_mean_y), omega(_omega), norm(_norm), phase(_phase) {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
     double idy = grid->start_y * delta_y, idx;
@@ -288,11 +291,11 @@ GaussianState::GaussianState(Lattice *_grid, double _mean_x, double _mean_y,
 }   
 
 complex<double> GaussianState::gauss_state(double x, double y) {
-    return complex<double>(exp(-(pow(x - mean_x, 2.0) + pow(y - mean_y, 2.0)) / (2.0 * pow(sigma, 2.0))), 0.0)
-           * exp(complex<double>(0.0, 0.4 * (x + y - 480.0)));  
+    return complex<double>(sqrt(0.5 * norm * omega / M_PI) * exp(-(pow(x - mean_x, 2.0) + pow(y - mean_y, 2.0)) * 0.5 * omega), 0.) * exp(complex<double>(0., phase));  
 }
 
-SinusoidState::SinusoidState(Lattice *_grid, double *_p_real, double *_p_imag): State(_grid, _p_real, _p_imag) {
+SinusoidState::SinusoidState(Lattice *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag): 
+                             State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase)  {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
     double idy = grid->start_y * delta_y, idx;
@@ -307,9 +310,9 @@ SinusoidState::SinusoidState(Lattice *_grid, double *_p_real, double *_p_imag): 
 }
 
 complex<double> SinusoidState::sinusoid_state(double x, double y) {
-    double L_x = grid->global_dim_x;
-    double L_y = grid->global_dim_y;
-    return complex<double> (sin(2*M_PI / L_x*x) * sin(2*M_PI / L_y*y), 0.0);
+    double L_x = grid->global_dim_x - 2.*grid->halo_x * grid->periods[1];
+    double L_y = grid->global_dim_y - 2.*grid->halo_x * grid->periods[0];
+    return sqrt(norm/(L_x*L_y)) * 2.* exp(complex<double>(0., phase)) * complex<double> (sin(2*M_PI*double(n_x) / L_x*x) * sin(2*M_PI*double(n_y) / L_y*y), 0.0);
 }
 
 

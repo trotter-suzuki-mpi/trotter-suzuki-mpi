@@ -34,10 +34,6 @@
 #define COUPLING_CONST_2D 0   // 0 for linear Schrodinger equation
 #define PARTICLES_NUM 1     //Particle numbers (nonlinear Schrodinger equation)
 
-complex<double> sinus_state(double x, double y) {
-  return complex<double>(2. / double(EDGE_LENGTH) * sin(M_PI * x / double(EDGE_LENGTH)) * sin(M_PI * y / double(EDGE_LENGTH)), 0.0);
-}
-
 double parabolic_potential(double x, double y) {
 	double x_c = x - double(EDGE_LENGTH)*0.5, y_c = y - double(EDGE_LENGTH)*0.5;
     double w_x = 1., w_y = 1.; 
@@ -59,8 +55,7 @@ int main(int argc, char** argv) {
     //set lattice
     Lattice *grid = new Lattice(DIM, length_x, length_y, periods);
     //set initial state
-    State *state = new State(grid);
-    state->init_state(sinus_state);
+    State *state = new SinusoidState(grid, 1, 1);
     //set hamiltonian
     Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const);
     hamiltonian->initialize_potential(parabolic_potential);

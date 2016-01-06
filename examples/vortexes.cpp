@@ -32,12 +32,6 @@
 #define SNAP_PER_STAMP 1
 #define COUPLING_CONST_2D 7.116007999594e-4
 
-complex<double> gauss_ini_state(double x, double y) {
-    double x_c = x - double(LENGTH)*0.5, y_c = y - double(LENGTH)*0.5;
-    double w = 0.2;
-    return complex<double>(sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x_c * x_c + y_c * y_c) * 0.5 * w), sqrt(0.5 * w * double(PARTICLES_NUM) / M_PI) * exp(-(x_c * x_c + y_c * y_c) * 0.5 * w));
-}
-
 double parabolic_potential(double x, double y) {
 	double x_c = x - double(LENGTH)*0.5, y_c = y - double(LENGTH)*0.5;
     double w_x = 1., w_y = 1.; 
@@ -60,8 +54,7 @@ int main(int argc, char** argv) {
     //set lattice
     Lattice *grid = new Lattice(DIM, length_x, length_y, periods, angular_velocity);
     //set initial state
-    State *state = new State(grid);
-    state->init_state(gauss_ini_state);
+    State *state = new GaussianState(grid, 0.2, 0., 0., PARTICLES_NUM);
     //set hamiltonian
     Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const, 
                                                angular_velocity, rot_coord_x, rot_coord_y);

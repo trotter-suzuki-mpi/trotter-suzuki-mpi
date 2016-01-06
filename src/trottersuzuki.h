@@ -74,27 +74,31 @@ protected:
 
 class ExponentialState: public State {
 public:
-    ExponentialState(Lattice *_grid, double *_p_real=0, double *_p_imag=0);
+    ExponentialState(Lattice *_grid, int _n_x, int _n_y, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
    
 private:
+    int n_x, n_y;
+    double norm, phase;
     complex<double> exp_state(double x, double y);
 };
 
 class GaussianState: public State {
 public:
-    GaussianState(Lattice *_grid, double _mean_x, double _mean_y, double _sigma, 
+    GaussianState(Lattice *_grid, double _omega, double _mean_x=0, double _mean_y=0, double _norm=1, double _phase=0, 
                   double *_p_real=0, double *_p_imag=0);
    
 private:
-    double mean_x, mean_y, sigma;
+    double mean_x, mean_y, omega, norm, phase;
     complex<double> gauss_state(double x, double y);
 };
 
 class SinusoidState: public State {
 public:
-    SinusoidState(Lattice *_grid, double *_p_real=0, double *_p_imag=0);
+    SinusoidState(Lattice *_grid, int _n_x, int _n_y, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
    
 private:
+    int n_x, n_y;
+    double norm, phase;
     complex<double> sinusoid_state(double x, double y);
 };
 
