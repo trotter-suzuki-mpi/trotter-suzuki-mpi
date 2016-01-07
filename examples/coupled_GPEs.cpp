@@ -67,23 +67,12 @@ int main(int argc, char** argv) {
     Solver *solver = new Solver(grid, state1, state2, hamiltonian, delta_t, KERNEL_TYPE);
     
     //set file output directory
-    stringstream dirname, file_info;
-    string dirnames, file_infos;
-    if (SNAPSHOTS) {
-        int status = 0;
-        dirname.str("");
-        dirname << "coupledGPE";
-        dirnames = dirname.str();
-        status = mkdir(dirnames.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-        if(status != 0 && status != -1)
-            dirnames = ".";
-    } else {
-        dirnames = ".";
-    }
-    file_info.str("");
-    file_info << dirnames << "/file_info.txt";
-    file_infos = file_info.str();
-    ofstream out(file_infos.c_str());
+    stringstream fileprefix;
+    string dirname = "coupledGPE";
+    mkdir(dirname.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    
+    fileprefix << dirname << "/file_info.txt";
+    ofstream out(fileprefix.str().c_str());
 
     double *matrix = new double[grid->dim_x*grid->dim_y];
 
@@ -99,14 +88,14 @@ int main(int argc, char** argv) {
     
     //get and stamp phase
     state1->get_phase(matrix);
-    stamp_real(grid, matrix, 0, dirnames.c_str(), "phase_a");
+    stamp_real(grid, matrix, 0, dirname.c_str(), "phase_a");
     state2->get_phase(matrix);
-    stamp_real(grid, matrix, 0, dirnames.c_str(), "phase_b");
+    stamp_real(grid, matrix, 0, dirname.c_str(), "phase_b");
     //get and stamp particles density
     state1->get_particle_density(matrix);
-    stamp_real(grid, matrix, 0, dirnames.c_str(), "density_a");
+    stamp_real(grid, matrix, 0, dirname.c_str(), "density_a");
     state2->get_particle_density(matrix);
-    stamp_real(grid, matrix, 0, dirnames.c_str(), "density_b");
+    stamp_real(grid, matrix, 0, dirname.c_str(), "density_b");
     for (int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);
         //norm calculation
@@ -122,19 +111,21 @@ int main(int argc, char** argv) {
         if(count_snap % SNAP_PER_STAMP == 0.) {
             //get and stamp phase
             state1->get_phase(matrix);
-            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "phase_a");
+            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirname.c_str(), "phase_a");
             state2->get_phase(matrix);
-            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "phase_b");
+            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirname.c_str(), "phase_b");
             //get and stamp particles density
             state1->get_particle_density(matrix);
-            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "density_a");
+            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirname.c_str(), "density_a");
             state2->get_particle_density(matrix);
-            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "density_b");
+            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirname.c_str(), "density_b");
         }
     }
 
     out.close();
-    stamp(grid, state1, 0, ITERATIONS, SNAPSHOTS, dirnames.c_str());
+    fileprefix.str("");
+    fileprefix << dirname << "/" << 1 << "-" << ITERATIONS * SNAPSHOTS;
+    state1->write_to_file(fileprefix.str());
     //delete solver;
     //delete hamiltonian;
     delete state1;

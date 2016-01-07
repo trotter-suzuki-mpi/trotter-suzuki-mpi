@@ -110,11 +110,7 @@ void memcpy2D(void * dst, size_t dstride, const void * src, size_t sstride, size
     }
 }
 
-void stamp(Lattice *grid, State *state, int tag_particle, int iterations,
-           int count_snap, const char * output_folder) {
-
-    char * output_filename;
-    output_filename = new char[51];
+void stamp(Lattice *grid, State *state, string fileprefix) {
 #ifdef HAVE_MPI
     // Set variables for mpi output
     char *data_as_txt;
@@ -167,8 +163,9 @@ void stamp(Lattice *grid, State *state, int tag_particle, int iterations,
     }
 
     // open the file, and set the view
-    sprintf(output_filename, "%s/%i-%i-iter-comp.dat", output_folder, tag_particle + 1, iterations * count_snap);
-    MPI_File_open(grid->cartcomm, output_filename,
+    stringstream output_filename;
+    output_filename << fileprefix << "-iter-comp.dat";
+    MPI_File_open(grid->cartcomm, output_filename.str().c_str(),
                   MPI_MODE_CREATE | MPI_MODE_WRONLY,
                   MPI_INFO_NULL, &file);
 
@@ -198,8 +195,9 @@ void stamp(Lattice *grid, State *state, int tag_particle, int iterations,
     }
 
     // open the file, and set the view
-    sprintf(output_filename, "%s/%i-%i-iter-real.dat", output_folder, tag_particle + 1, iterations * count_snap);
-    MPI_File_open(grid->cartcomm, output_filename,
+    output_filename.str("");
+    output_filename << fileprefix << "-iter-real.dat";
+    MPI_File_open(grid->cartcomm, output_filename.str().c_str(),
                   MPI_MODE_CREATE | MPI_MODE_WRONLY,
                   MPI_INFO_NULL, &file);
 
@@ -209,12 +207,14 @@ void stamp(Lattice *grid, State *state, int tag_particle, int iterations,
     MPI_File_close(&file);
     delete [] data_as_txt;
 #else
-    sprintf(output_filename, "%s/%i-%i-iter-real.dat", output_folder, tag_particle + 1, iterations * count_snap);
-    print_matrix(output_filename, &(state->p_real[grid->global_dim_x * (grid->inner_start_y - grid->start_y) + grid->inner_start_x - grid->start_x]), grid->global_dim_x,
+    stringstream output_filename
+    output_filename << fileprefix << "-iter-real.dat";
+    print_matrix(output_filename.str().c_str(), &(state->p_real[grid->global_dim_x * (grid->inner_start_y - grid->start_y) + grid->inner_start_x - grid->start_x]), grid->global_dim_x,
                  grid->global_dim_x - 2 * grid->periods[1]*grid->halo_x, grid->global_dim_y - 2 * grid->periods[0]*grid->halo_y);
 
-    sprintf(output_filename, "%s/%i-%i-iter-comp.dat", output_folder, tag_particle + 1, iterations * count_snap);
-    print_complex_matrix(output_filename, &(state->p_real[grid->global_dim_x * (grid->inner_start_y - grid->start_y) + grid->inner_start_x - grid->start_x]), &(state->p_imag[grid->global_dim_x * (grid->inner_start_y - grid->start_y) + grid->inner_start_x - grid->start_x]), grid->global_dim_x,
+    output_filename.str("");
+    output_filename << fileprefix << "-iter-comp.dat";
+    print_complex_matrix(output_filename.str().c_str(), &(state->p_real[grid->global_dim_x * (grid->inner_start_y - grid->start_y) + grid->inner_start_x - grid->start_x]), &(state->p_imag[grid->global_dim_x * (grid->inner_start_y - grid->start_y) + grid->inner_start_x - grid->start_x]), grid->global_dim_x,
                          grid->global_dim_x - 2 * grid->periods[1]*grid->halo_x, grid->global_dim_y - 2 * grid->periods[0]*grid->halo_y);
 #endif
     return;

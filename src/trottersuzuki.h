@@ -68,7 +68,8 @@ public:
     void calculate_mean_momentum(double *results, double norm2=0);
     double *get_particle_density(double *density=0);
     double *get_phase(double *phase=0);
-
+    void write_to_file(string fileprefix);
+    
 protected:
     Lattice *grid;
     bool self_init;
@@ -239,7 +240,6 @@ private:
 
 
 double const_potential(double x, double y);
-void stamp(Lattice *grid, State *state, int tag_particle, int iterations, int count_snap, const char * output_folder);
 void stamp_real(Lattice *grid, double *matrix, int iterations, const char * output_folder, const char * file_tag);
 
 #endif // __TROTTERSUZUKI_H

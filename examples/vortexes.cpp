@@ -63,25 +63,14 @@ int main(int argc, char** argv) {
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
     
     //set file output directory
-    stringstream dirname, file_info;
-    string dirnames, file_infos;
-    if (SNAPSHOTS) {
-        int status = 0;
-        dirname.str("");
-        dirname << "vortexesdir";
-        dirnames = dirname.str();
-        status = mkdir(dirnames.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-        if(status != 0 && status != -1)
-            dirnames = ".";
-    } else {
-        dirnames = ".";
-    }
-    file_info.str("");
-    file_info << dirnames << "/file_info.txt";
-    file_infos = file_info.str();
-    ofstream out(file_infos.c_str());
+    stringstream fileprefix;
+    string dirname = "vortexesdir";
+    mkdir(dirname.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     
-    double *_matrix = new double[grid->dim_x*grid->dim_y];
+    fileprefix << dirname << "/file_info.txt";
+    ofstream out(fileprefix.str().c_str());
+    
+    double *matrix = new double[grid->dim_x*grid->dim_y];
     double norm2 = state->calculate_squared_norm();
     double rot_energy = solver->calculate_rotational_energy(norm2);
     double tot_energy = solver->calculate_total_energy(norm2);
@@ -106,20 +95,23 @@ int main(int argc, char** argv) {
         //stamp phase and particles density
         if(count_snap % SNAP_PER_STAMP == 0.) {
             //get and stamp phase
-            state->get_phase(_matrix);
-            stamp_real(grid, _matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "phase");
+            state->get_phase(matrix);
+            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirname.c_str(), "phase");
             //get and stamp particles density
-            state->get_particle_density(_matrix);
-            stamp_real(grid, _matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "density");
+            state->get_particle_density(matrix);
+            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirname.c_str(), "density");
         }
     }
     out.close();
-    stamp(grid, state, 0, ITERATIONS, SNAPSHOTS, dirnames.c_str());
+    fileprefix.str("");
+    fileprefix << dirname << "/" << 1 << "-" << ITERATIONS * SNAPSHOTS;
+    state->write_to_file(fileprefix.str());
     cout << "\n";
     delete solver;
     delete hamiltonian;
     delete state;
     delete grid;
+    delete matrix;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
