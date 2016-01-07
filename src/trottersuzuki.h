@@ -63,6 +63,9 @@ public:
     void read_state(char *file_name, int read_offset);
 
     double calculate_squared_norm(bool global=true);
+    void calculate_mean_position(int grid_origin_x, int grid_origin_y,
+                                 double *results, double norm2=0);
+    void calculate_mean_momentum(double *results, double norm2=0);
     double *get_particle_density(double *density=0);
     double *get_phase(double *phase=0);
 
@@ -210,6 +213,12 @@ public:
            double _delta_t, string _kernel_type="cpu");
     ~Solver();
     void evolve(int iterations, bool imag_time=false);
+    double calculate_total_energy(double _norm2=0,
+                                  double (*hamilt_pot_a)(double x, double y)=0,
+                                  double (*hamilt_pot_b)(double x, double y)=0);
+    double calculate_rotational_energy(int which=0, double _norm2=0);
+    double calculate_kinetic_energy(int which=0, double _norm2=0);
+
 private:
     bool imag_time;
     double h_a[2];
@@ -219,34 +228,16 @@ private:
     double delta_t;
     double norm2[2];
     bool single_component;
-    bool first_run;
     string kernel_type;
     ITrotterKernel * kernel;
     void initialize_exp_potential(double time_single_it, int which);
     void init_kernel();
+    double calculate_ab_energy(double _norm2=0);
+    double calculate_rabi_coupling_energy(double _norm2=0);
+    double calculate_total_energy_single_state(int which, double (*hamilt_pot)(double x, double y), double _norm2);
 };
 
-double calculate_rotational_energy(Lattice *grid, State *state,
-                                   Hamiltonian *hamiltonian, double norm2,
-                                   bool global=true);
-double calculate_kinetic_energy(Lattice *grid, State *state,
-                                Hamiltonian *hamiltonian, double norm2,
-                                bool global=true);
-double calculate_total_energy(Lattice *grid, State *state,
-                              Hamiltonian *hamiltonian,
-                              double (*hamilt_pot)(double x, double y)=0,
-                              double * external_pot=0, double norm2=0, bool global=true);
-double calculate_total_energy(Lattice *grid, State *state1, State *state2,
-                              Hamiltonian2Component *hamiltonian,
-                              double (*hamilt_pot_a)(double x, double y)=0,
-                              double (*hamilt_pot_b)(double x, double y)=0,
-                              double **external_pot=0, double norm2=0, bool global=true);
-void calculate_mean_position(Lattice *grid, State *state, int grid_origin_x, int grid_origin_y,
-                             double *results, double norm2=0);
-void calculate_mean_momentum(Lattice *grid, State *state, double *results,
-                             double norm2=0);
-void initialize_exp_potential(Lattice *grid, double * external_pot_real, double * external_pot_imag, double (*hamilt_pot)(int x, int y, Lattice *grid),
-                              double time_single_it, double particle_mass, bool imag_time);
+
 double const_potential(double x, double y);
 void stamp(Lattice *grid, State *state, int tag_particle, int iterations, int count_snap, const char * output_folder);
 void stamp_real(Lattice *grid, double *matrix, int iterations, const char * output_folder, const char * file_tag);

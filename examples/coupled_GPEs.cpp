@@ -85,53 +85,51 @@ int main(int argc, char** argv) {
     file_infos = file_info.str();
     ofstream out(file_infos.c_str());
 
-    double *_matrix = new double[grid->dim_x*grid->dim_y];
-    double _norm2;
+    double *matrix = new double[grid->dim_x*grid->dim_y];
 
     double norm2[2];
     norm2[0] = state1->calculate_squared_norm();
     norm2[1] = state2->calculate_squared_norm();
-    double _tot_energy = calculate_total_energy(grid, state1, state2, hamiltonian, parabolic_potential, parabolic_potential, NULL, norm2[0]+norm2[1]);
+    double tot_energy = solver->calculate_total_energy(norm2[0]+norm2[1]);
 
     if(grid->mpi_rank == 0){
         out << "time \t total energy \ttot norm2\tnorm2_a\tnorm2_b\n";
-        out << "0\t" << "\t" << _tot_energy << "\t" << norm2[0] + norm2[1] << "\t" << norm2[0] << "\t" << norm2[1] << endl;
+        out << "0\t" << "\t" << tot_energy << "\t" << norm2[0] + norm2[1] << "\t" << norm2[0] << "\t" << norm2[1] << endl;
     }
     
     //get and stamp phase
-    state1->get_phase(_matrix);
-    stamp_real(grid, _matrix, 0, dirnames.c_str(), "phase_a");
-    state2->get_phase(_matrix);
-    stamp_real(grid, _matrix, 0, dirnames.c_str(), "phase_b");
+    state1->get_phase(matrix);
+    stamp_real(grid, matrix, 0, dirnames.c_str(), "phase_a");
+    state2->get_phase(matrix);
+    stamp_real(grid, matrix, 0, dirnames.c_str(), "phase_b");
     //get and stamp particles density
-    state1->get_particle_density(_matrix);
-    stamp_real(grid, _matrix, 0, dirnames.c_str(), "density_a");
-    state2->get_particle_density(_matrix);
-    stamp_real(grid, _matrix, 0, dirnames.c_str(), "density_b");
+    state1->get_particle_density(matrix);
+    stamp_real(grid, matrix, 0, dirnames.c_str(), "density_a");
+    state2->get_particle_density(matrix);
+    stamp_real(grid, matrix, 0, dirnames.c_str(), "density_b");
     for (int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);
         //norm calculation
         norm2[0] = state1->calculate_squared_norm();
         norm2[1] = state2->calculate_squared_norm();
-        _norm2 = norm2[0] + norm2[1];
-        _tot_energy = calculate_total_energy(grid, state1, state2, hamiltonian, parabolic_potential, parabolic_potential, NULL, _norm2);
+        tot_energy = solver->calculate_total_energy(norm2[0]+norm2[1]);
 
         if (grid->mpi_rank == 0){
-            out << (count_snap + 1) * ITERATIONS * delta_t << "\t" << _tot_energy << "\t" << _norm2 << "\t" << norm2[0] << "\t" << norm2[1] << endl;
+            out << (count_snap + 1) * ITERATIONS * delta_t << "\t" << tot_energy << "\t" << norm2[0]+norm2[1] << "\t" << norm2[0] << "\t" << norm2[1] << endl;
         }
 
         //stamp phase and particles density
         if(count_snap % SNAP_PER_STAMP == 0.) {
             //get and stamp phase
-            state1->get_phase(_matrix);
-            stamp_real(grid, _matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "phase_a");
-            state2->get_phase(_matrix);
-            stamp_real(grid, _matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "phase_b");
+            state1->get_phase(matrix);
+            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "phase_a");
+            state2->get_phase(matrix);
+            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "phase_b");
             //get and stamp particles density
-            state1->get_particle_density(_matrix);
-            stamp_real(grid, _matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "density_a");
-            state2->get_particle_density(_matrix);
-            stamp_real(grid, _matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "density_b");
+            state1->get_particle_density(matrix);
+            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "density_a");
+            state2->get_particle_density(matrix);
+            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "density_b");
         }
     }
 
@@ -142,6 +140,7 @@ int main(int argc, char** argv) {
     delete state1;
     delete state2;
     delete grid;
+    delete matrix;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
