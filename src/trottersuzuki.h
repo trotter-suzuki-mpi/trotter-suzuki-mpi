@@ -69,6 +69,8 @@ public:
     double *get_particle_density(double *density=0);
     double *get_phase(double *phase=0);
     void write_to_file(string fileprefix);
+    void write_particle_density(string fileprefix);
+    void write_phase(string fileprefix);
     
 protected:
     Lattice *grid;
@@ -219,7 +221,7 @@ public:
                                   double (*hamilt_pot_b)(double x, double y)=0);
     double calculate_rotational_energy(int which=0, double _norm2=0);
     double calculate_kinetic_energy(int which=0, double _norm2=0);
-
+    double calculate_rabi_coupling_energy(double _norm2=0);
 private:
     bool imag_time;
     double h_a[2];
@@ -234,12 +236,9 @@ private:
     void initialize_exp_potential(double time_single_it, int which);
     void init_kernel();
     double calculate_ab_energy(double _norm2=0);
-    double calculate_rabi_coupling_energy(double _norm2=0);
     double calculate_total_energy_single_state(int which, double (*hamilt_pot)(double x, double y), double _norm2);
 };
 
-
 double const_potential(double x, double y);
-void stamp_real(Lattice *grid, double *matrix, int iterations, const char * output_folder, const char * file_tag);
 
 #endif // __TROTTERSUZUKI_H

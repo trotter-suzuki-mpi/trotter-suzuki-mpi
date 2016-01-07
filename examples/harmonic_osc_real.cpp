@@ -70,25 +70,14 @@ int main(int argc, char** argv) {
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
  
     //set file output directory
-    stringstream dirname, file_info;
+    stringstream dirname, file_info, fileprefix;
     string dirnames, file_infos;
-    if (SNAPSHOTS) {
-        int status = 0;
-        dirname.str("");
-        dirname << "Harmonic_osc_RE";
-        dirnames = dirname.str();
-        status = mkdir(dirnames.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-        if(status != 0 && status != -1)
-            dirnames = ".";
-    } else {
-        dirnames = ".";
-    }
-    file_info.str("");
+    dirname << "Harmonic_osc_RE";
+    mkdir(dirname.str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     file_info << dirnames << "/file_info.txt";
     file_infos = file_info.str();
     ofstream out(file_infos.c_str());
-   
-    double *matrix = new double[grid->dim_x * grid->dim_y];
+    
     double mean_positions[4], mean_momenta[4], results[4];
     
     //norm calculation
@@ -103,13 +92,13 @@ int main(int argc, char** argv) {
     state->calculate_mean_momentum(mean_momenta, norm2);
                    
     //get and stamp phase
-    state->get_phase(matrix);
-    stamp_real(grid, matrix, 0, dirnames.c_str(), "phase");
+    fileprefix.str("");
+    fileprefix << dirname << "/" << 0;
+    state->write_phase(fileprefix.str());
 
     //get and stamp particles density
-    state->get_particle_density(matrix);
-    stamp_real(grid, matrix, 0, dirnames.c_str(), "density");
-    
+    state->write_particle_density(fileprefix.str());    
+
     if (grid->mpi_rank == 0){
       out << "iterations\tsquared norm\ttotal_energy\tkinetic_energy\t<X>\t<(X-<X>)^2>\t<Y>\t<(Y-<Y>)^2>\t<Px>\t<(Px-<Px>)^2>\t<Py>\t<(Py-<Py>)^2>\n";
       out << "0\t\t" << norm2 << "\t\t"<< tot_energy << "\t" << kin_energy << "\t" << mean_positions[0] << "\t" << mean_positions[1] << "\t" << mean_positions[2] << "\t" << mean_positions[3] << "\t" << mean_momenta[0] << "\t" << mean_momenta[1] << "\t" << mean_momenta[2] << "\t" << mean_momenta[3] << endl;
@@ -142,12 +131,12 @@ int main(int argc, char** argv) {
         //stamp phase and particles density
         if((count_snap + 1) % SNAP_PER_STAMP == 0.) {
             //get and stamp phase
-            state->get_phase(matrix);
-            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "phase");
-
+            fileprefix.str("");
+            fileprefix << dirname << "/" << ITERATIONS * (count_snap + 1);
+            state->write_phase(fileprefix.str());
+            
             //get and stamp particles density
-            state->get_particle_density(matrix);
-            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "density");
+            state->write_particle_density(fileprefix.str());
         }
     }
     out.close();
@@ -159,7 +148,6 @@ int main(int argc, char** argv) {
     delete hamiltonian;
     delete state;
     delete grid;
-    delete matrix;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif

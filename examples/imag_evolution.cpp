@@ -78,8 +78,6 @@ int main(int argc, char** argv) {
     stringstream dirname, fileprefix;
     dirname << "D" << DIM << "_I" << ITERATIONS << "_S" << SNAPSHOTS << "";
     mkdir(dirname.str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-
-    stamp_real(grid, hamiltonian->external_pot, 2, "./", "imagpot");
     //evolve and stamp the state
     for(int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);

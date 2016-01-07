@@ -78,7 +78,7 @@ void add_padding(double *padded_matrix, double *matrix,
     }
 }
 
-void print_complex_matrix(char * filename, double * matrix_real, double * matrix_imag, size_t stride, size_t width, size_t height) {
+void print_complex_matrix(const char * filename, double * matrix_real, double * matrix_imag, size_t stride, size_t width, size_t height) {
     ofstream out(filename, ios::out | ios::trunc);
     for (size_t i = 0; i < height; ++i) {
         for (size_t j = 0; j < width; ++j) {
@@ -207,7 +207,7 @@ void stamp(Lattice *grid, State *state, string fileprefix) {
     MPI_File_close(&file);
     delete [] data_as_txt;
 #else
-    stringstream output_filename
+    stringstream output_filename;
     output_filename << fileprefix << "-iter-real.dat";
     print_matrix(output_filename.str().c_str(), &(state->p_real[grid->global_dim_x * (grid->inner_start_y - grid->start_y) + grid->inner_start_x - grid->start_x]), grid->global_dim_x,
                  grid->global_dim_x - 2 * grid->periods[1]*grid->halo_x, grid->global_dim_y - 2 * grid->periods[0]*grid->halo_y);
@@ -220,10 +220,8 @@ void stamp(Lattice *grid, State *state, string fileprefix) {
     return;
 }
 
-void stamp_real(Lattice *grid, double *matrix, int iterations, const char * output_folder, const char * file_tag) {
+void stamp_matrix(Lattice *grid, double *matrix, string filename) {
 
-    char * output_filename;
-    output_filename = new char[51];
 #ifdef HAVE_MPI
     // Set variables for mpi output
     char *data_as_txt;
@@ -268,8 +266,7 @@ void stamp_real(Lattice *grid, double *matrix, int iterations, const char * outp
     }
 
     // open the file, and set the view
-    sprintf(output_filename, "%s/%i-%s", output_folder, iterations, file_tag);
-    MPI_File_open(grid->cartcomm, output_filename,
+    MPI_File_open(grid->cartcomm, filename.c_str(),
                   MPI_MODE_CREATE | MPI_MODE_WRONLY,
                   MPI_INFO_NULL, &file);
 
@@ -279,8 +276,7 @@ void stamp_real(Lattice *grid, double *matrix, int iterations, const char * outp
     MPI_File_close(&file);
     delete [] data_as_txt;
 #else
-    sprintf(output_filename, "%s/%i-%s", output_folder, iterations, file_tag);
-    print_matrix(output_filename, &(matrix[grid->global_dim_x * (grid->inner_start_y - grid->start_y) + grid->inner_start_x - grid->start_x]), grid->global_dim_x,
+    print_matrix(filename.c_str(), &(matrix[grid->global_dim_x * (grid->inner_start_y - grid->start_y) + grid->inner_start_x - grid->start_x]), grid->global_dim_x,
                  grid->global_dim_x - 2 * grid->periods[1]*grid->halo_x, grid->global_dim_y - 2 * grid->periods[0]*grid->halo_y);
 #endif
     return;

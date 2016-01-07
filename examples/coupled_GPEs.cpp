@@ -86,16 +86,16 @@ int main(int argc, char** argv) {
         out << "0\t" << "\t" << tot_energy << "\t" << norm2[0] + norm2[1] << "\t" << norm2[0] << "\t" << norm2[1] << endl;
     }
     
-    //get and stamp phase
-    state1->get_phase(matrix);
-    stamp_real(grid, matrix, 0, dirname.c_str(), "phase_a");
-    state2->get_phase(matrix);
-    stamp_real(grid, matrix, 0, dirname.c_str(), "phase_b");
-    //get and stamp particles density
-    state1->get_particle_density(matrix);
-    stamp_real(grid, matrix, 0, dirname.c_str(), "density_a");
-    state2->get_particle_density(matrix);
-    stamp_real(grid, matrix, 0, dirname.c_str(), "density_b");
+    //write phase and density
+    fileprefix.str("");
+    fileprefix << dirname << "/1-" << 0;
+    state1->write_phase(fileprefix.str());
+    state1->write_particle_density(fileprefix.str());    
+    fileprefix.str("");
+    fileprefix << dirname << "/2-" << 0;
+    state2->write_phase(fileprefix.str());
+    state2->write_particle_density(fileprefix.str());    
+
     for (int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);
         //norm calculation
@@ -109,16 +109,15 @@ int main(int argc, char** argv) {
 
         //stamp phase and particles density
         if(count_snap % SNAP_PER_STAMP == 0.) {
-            //get and stamp phase
-            state1->get_phase(matrix);
-            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirname.c_str(), "phase_a");
-            state2->get_phase(matrix);
-            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirname.c_str(), "phase_b");
-            //get and stamp particles density
-            state1->get_particle_density(matrix);
-            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirname.c_str(), "density_a");
-            state2->get_particle_density(matrix);
-            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirname.c_str(), "density_b");
+            //write phase and density
+            fileprefix.str("");
+            fileprefix << dirname << "/1-" << ITERATIONS * (count_snap + 1);
+            state1->write_phase(fileprefix.str());
+            state1->write_particle_density(fileprefix.str());    
+            fileprefix.str("");
+            fileprefix << dirname << "/2-" << ITERATIONS * (count_snap + 1);
+            state2->write_phase(fileprefix.str());
+            state2->write_particle_density(fileprefix.str());    
         }
     }
 

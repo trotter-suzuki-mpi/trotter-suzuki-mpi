@@ -70,7 +70,6 @@ int main(int argc, char** argv) {
     fileprefix << dirname << "/file_info.txt";
     ofstream out(fileprefix.str().c_str());
     
-    double *matrix = new double[grid->dim_x*grid->dim_y];
     double norm2 = state->calculate_squared_norm();
     double rot_energy = solver->calculate_rotational_energy(norm2);
     double tot_energy = solver->calculate_total_energy(norm2);
@@ -95,11 +94,11 @@ int main(int argc, char** argv) {
         //stamp phase and particles density
         if(count_snap % SNAP_PER_STAMP == 0.) {
             //get and stamp phase
-            state->get_phase(matrix);
-            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirname.c_str(), "phase");
+            fileprefix.str("");
+            fileprefix << dirname << "/" << ITERATIONS * (count_snap + 1);
+            state->write_phase(fileprefix.str());
             //get and stamp particles density
-            state->get_particle_density(matrix);
-            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirname.c_str(), "density");
+            state->write_particle_density(fileprefix.str());
         }
     }
     out.close();
@@ -111,7 +110,6 @@ int main(int argc, char** argv) {
     delete hamiltonian;
     delete state;
     delete grid;
-    delete matrix;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
