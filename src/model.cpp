@@ -252,6 +252,88 @@ double *State::get_phase(double *_phase) {
     return phase;
 }
 
+void State::calculate_mean_position(int grid_origin_x, int grid_origin_y,
+                                    double *results, double norm2) {
+
+    int ini_halo_x = grid->inner_start_x - grid->start_x;
+    int ini_halo_y = grid->inner_start_y - grid->start_y;
+    int end_halo_x = grid->end_x - grid->inner_end_x;
+    int end_halo_y = grid->end_y - grid->inner_end_y;
+    int tile_width = grid->end_x - grid->start_x;
+
+    if(norm2 == 0)
+        norm2 = calculate_squared_norm();
+
+    complex<double> sum_x_mean = 0, sum_xx_mean = 0, sum_y_mean = 0, sum_yy_mean = 0;
+    complex<double> psi_center;
+    for (int i = grid->inner_start_y - grid->start_y + (ini_halo_y == 0);
+         i < grid->inner_end_y - grid->start_y - (end_halo_y == 0); i++) {
+        for (int j = grid->inner_start_x - grid->start_x + (ini_halo_x == 0);
+             j < grid->inner_end_x - grid->start_x - (end_halo_x == 0); j++) {
+            psi_center = complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
+            sum_x_mean += conj(psi_center) * psi_center * complex<double>(grid->delta_x * (j - grid_origin_x), 0.);
+            sum_y_mean += conj(psi_center) * psi_center * complex<double>(grid->delta_y * (i - grid_origin_y), 0.);
+            sum_xx_mean += conj(psi_center) * psi_center * complex<double>(grid->delta_x * (j - grid_origin_x), 0.) * complex<double>(grid->delta_x * (j - grid_origin_x), 0.);
+            sum_yy_mean += conj(psi_center) * psi_center * complex<double>(grid->delta_y * (i - grid_origin_y), 0.) * complex<double>(grid->delta_y * (i - grid_origin_y), 0.);
+        }
+    }
+
+    results[0] = real(sum_x_mean / norm2) * grid->delta_x * grid->delta_y;
+    results[2] = real(sum_y_mean / norm2) * grid->delta_x * grid->delta_y;
+    results[1] = real(sum_xx_mean / norm2) * grid->delta_x * grid->delta_y - results[0] * results[0];
+    results[3] = real(sum_yy_mean / norm2) * grid->delta_x * grid->delta_y - results[2] * results[2];
+}
+
+void State::calculate_mean_momentum(double *results, double norm2) {
+
+    int ini_halo_x = grid->inner_start_x - grid->start_x;
+    int ini_halo_y = grid->inner_start_y - grid->start_y;
+    int end_halo_x = grid->end_x - grid->inner_end_x;
+    int end_halo_y = grid->end_y - grid->inner_end_y;
+    int tile_width = grid->end_x - grid->start_x;
+
+    if(norm2 == 0)
+        norm2 = calculate_squared_norm();
+
+    complex<double> sum_px_mean = 0, sum_pxpx_mean = 0, sum_py_mean = 0,
+                         sum_pypy_mean = 0,
+                         var_px = complex<double>(0., - 0.5 / grid->delta_x),
+                         var_py = complex<double>(0., - 0.5 / grid->delta_y);
+    complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
+    for (int i = grid->inner_start_y - grid->start_y + (ini_halo_y == 0);
+         i < grid->inner_end_y - grid->start_y - (end_halo_y == 0); i++) {
+        for (int j = grid->inner_start_x - grid->start_x + (ini_halo_x == 0);
+             j < grid->inner_end_x - grid->start_x - (end_halo_x == 0); j++) {
+            psi_center = complex<double> (p_real[i * tile_width + j],
+                                               p_imag[i * tile_width + j]);
+            psi_up = complex<double> (p_real[(i - 1) * tile_width + j],
+                                           p_imag[(i - 1) * tile_width + j]);
+            psi_down = complex<double> (p_real[(i + 1) * tile_width + j],
+                                             p_imag[(i + 1) * tile_width + j]);
+            psi_right = complex<double> (p_real[i * tile_width + j + 1],
+                                              p_imag[i * tile_width + j + 1]);
+            psi_left = complex<double> (p_real[i * tile_width + j - 1],
+                                             p_imag[i * tile_width + j - 1]);
+
+            sum_px_mean += conj(psi_center) * (psi_right - psi_left);
+            sum_py_mean += conj(psi_center) * (psi_up - psi_down);
+            sum_pxpx_mean += conj(psi_center) * (psi_right - 2. * psi_center + psi_left);
+            sum_pypy_mean += conj(psi_center) * (psi_up - 2. * psi_center + psi_down);
+        }
+    }
+
+    sum_px_mean = sum_px_mean * var_px;
+    sum_py_mean = sum_py_mean * var_py;
+    sum_pxpx_mean = sum_pxpx_mean * (-1.)/(grid->delta_x * grid->delta_x);
+    sum_pypy_mean = sum_pypy_mean * (-1.)/(grid->delta_y * grid->delta_y);
+
+    results[0] = real(sum_px_mean / norm2) * grid->delta_x * grid->delta_y;
+    results[2] = real(sum_py_mean / norm2) * grid->delta_x * grid->delta_y;
+    results[1] = real(sum_pxpx_mean / norm2) * grid->delta_x * grid->delta_y - results[0] * results[0];
+    results[3] = real(sum_pypy_mean / norm2) * grid->delta_x * grid->delta_y - results[2] * results[2];
+}
+
+
 ExponentialState::ExponentialState(Lattice *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag): 
                   State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase) {
     complex<double> tmp;
@@ -314,8 +396,6 @@ complex<double> SinusoidState::sinusoid_state(double x, double y) {
     double L_y = grid->global_dim_y - 2.*grid->halo_x * grid->periods[0];
     return sqrt(norm/(L_x*L_y)) * 2.* exp(complex<double>(0., phase)) * complex<double> (sin(2*M_PI*double(n_x) / L_x*x) * sin(2*M_PI*double(n_y) / L_y*y), 0.0);
 }
-
-
 
 Hamiltonian::Hamiltonian(Lattice *_grid, double _mass, double _coupling_a,
                          double _angular_velocity,

@@ -81,31 +81,31 @@ int main(int argc, char** argv) {
     file_infos = file_info.str();
     ofstream out(file_infos.c_str());
     
-    double *_matrix = new double[grid->dim_x * grid->dim_y];
-    double _mean_positions[4], _mean_momenta[4], _norm2, sum, results[4];
+    double *matrix = new double[grid->dim_x * grid->dim_y];
+    double mean_positions[4], mean_momenta[4], results[4];
     
     //norm calculation
     double norm2 = state->calculate_squared_norm();
-    double _tot_energy = calculate_total_energy(grid, state, hamiltonian, parabolic_potential, NULL, norm2);
-    double _kin_energy = calculate_kinetic_energy(grid, state, hamiltonian, norm2);
+    double tot_energy = solver->calculate_total_energy(norm2);
+    double kin_energy = solver->calculate_kinetic_energy(norm2);
 
     //Position expected values
-    calculate_mean_position(grid, state, grid->dim_x / 2, grid->dim_y / 2, _mean_positions, norm2);
+    state->calculate_mean_position(grid->dim_x / 2, grid->dim_y / 2, mean_positions, norm2);
 
     //Momenta expected values
-    calculate_mean_momentum(grid, state,_mean_momenta, norm2);
+    state->calculate_mean_momentum(mean_momenta, norm2);
                    
     //get and stamp phase
-    state->get_phase(_matrix);
-    stamp_real(grid, _matrix, 0, dirnames.c_str(), "phase");
+    state->get_phase(matrix);
+    stamp_real(grid, matrix, 0, dirnames.c_str(), "phase");
 
     //get and stamp particles density
-    state->get_particle_density(_matrix);
-    stamp_real(grid, _matrix, 0, dirnames.c_str(), "density");
+    state->get_particle_density(matrix);
+    stamp_real(grid, matrix, 0, dirnames.c_str(), "density");
     
     if (grid->mpi_rank == 0){
       out << "iterations\tsquared norm\ttotal_energy\tkinetic_energy\t<X>\t<(X-<X>)^2>\t<Y>\t<(Y-<Y>)^2>\t<Px>\t<(Px-<Px>)^2>\t<Py>\t<(Py-<Py>)^2>\n";
-      out << "0\t\t" << norm2 << "\t\t"<< _tot_energy << "\t" << _kin_energy << "\t" << _mean_positions[0] << "\t" << _mean_positions[1] << "\t" << _mean_positions[2] << "\t" << _mean_positions[3] << "\t" << _mean_momenta[0] << "\t" << _mean_momenta[1] << "\t" << _mean_momenta[2] << "\t" << _mean_momenta[3] << endl;
+      out << "0\t\t" << norm2 << "\t\t"<< tot_energy << "\t" << kin_energy << "\t" << mean_positions[0] << "\t" << mean_positions[1] << "\t" << mean_positions[2] << "\t" << mean_positions[3] << "\t" << mean_momenta[0] << "\t" << mean_momenta[1] << "\t" << mean_momenta[2] << "\t" << mean_momenta[3] << endl;
     }
   
     struct timeval start, end;
@@ -118,29 +118,29 @@ int main(int argc, char** argv) {
         tot_time += time;
         
         //norm calculation
-        _norm2 = state->calculate_squared_norm();
-        _tot_energy = calculate_total_energy(grid, state, hamiltonian, parabolic_potential, NULL, _norm2);
-        _kin_energy = calculate_kinetic_energy(grid, state, hamiltonian, norm2);
+        norm2 = state->calculate_squared_norm();
+        tot_energy = solver->calculate_total_energy(norm2);
+        kin_energy = solver->calculate_kinetic_energy(norm2);
               
         //Position expected values
-        calculate_mean_position(grid, state, grid->dim_x / 2, grid->dim_y / 2, _mean_positions, norm2);
+        state->calculate_mean_position(grid->dim_x / 2, grid->dim_y / 2, mean_positions, norm2);
 
         //Momenta expected values
-        calculate_mean_momentum(grid, state,_mean_momenta, norm2);
+        state->calculate_mean_momentum(mean_momenta, norm2);
 
         if(grid->mpi_rank == 0){
-            out << (count_snap + 1) * ITERATIONS << "\t\t" << norm2 << "\t\t"<< _tot_energy << "\t" << _kin_energy << "\t" << _mean_positions[0] << "\t" << _mean_positions[1] << "\t" << _mean_positions[2] << "\t" << _mean_positions[3] << "\t" << _mean_momenta[0] << "\t" << _mean_momenta[1] << "\t" << _mean_momenta[2] << "\t" << _mean_momenta[3] << endl;
+            out << (count_snap + 1) * ITERATIONS << "\t\t" << norm2 << "\t\t"<< tot_energy << "\t" << kin_energy << "\t" << mean_positions[0] << "\t" << mean_positions[1] << "\t" << mean_positions[2] << "\t" << mean_positions[3] << "\t" << mean_momenta[0] << "\t" << mean_momenta[1] << "\t" << mean_momenta[2] << "\t" << mean_momenta[3] << endl;
         }
     
         //stamp phase and particles density
         if((count_snap + 1) % SNAP_PER_STAMP == 0.) {
             //get and stamp phase
-            state->get_phase(_matrix);
-            stamp_real(grid, _matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "phase");
+            state->get_phase(matrix);
+            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "phase");
 
             //get and stamp particles density
-            state->get_particle_density(_matrix);
-            stamp_real(grid, _matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "density");
+            state->get_particle_density(matrix);
+            stamp_real(grid, matrix, ITERATIONS * (count_snap + 1), dirnames.c_str(), "density");
         }
     }
     out.close();
@@ -152,6 +152,7 @@ int main(int argc, char** argv) {
     delete hamiltonian;
     delete state;
     delete grid;
+    delete matrix;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif

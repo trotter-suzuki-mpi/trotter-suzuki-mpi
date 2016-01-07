@@ -82,26 +82,25 @@ int main(int argc, char** argv) {
     ofstream out(file_infos.c_str());
     
     double *_matrix = new double[grid->dim_x*grid->dim_y];
-    double _norm2, sum;
     double norm2 = state->calculate_squared_norm();
-    double _rot_energy = calculate_rotational_energy(grid, state, hamiltonian, norm2);
-    double _tot_energy = calculate_total_energy(grid, state, hamiltonian, parabolic_potential, NULL, norm2);
-    double _kin_energy = calculate_kinetic_energy(grid, state, hamiltonian, norm2);
+    double rot_energy = solver->calculate_rotational_energy(norm2);
+    double tot_energy = solver->calculate_total_energy(norm2);
+    double kin_energy = solver->calculate_kinetic_energy(norm2);
 
     if(grid->mpi_rank == 0){
       out << "iterations \t rotation energy \t kin energy \t total energy \t norm2\n";
-      out << "0\t" << _rot_energy << "\t" << _kin_energy << "\t" << _tot_energy << "\t" << norm2 << endl;
+      out << "0\t" << rot_energy << "\t" << kin_energy << "\t" << tot_energy << "\t" << norm2 << endl;
     }
     
     for(int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);
 
-        _norm2 = state->calculate_squared_norm();
-        _rot_energy = calculate_rotational_energy(grid, state, hamiltonian, _norm2);
-        _tot_energy = calculate_total_energy(grid, state, hamiltonian, parabolic_potential, NULL, _norm2);
-        _kin_energy = calculate_kinetic_energy(grid, state, hamiltonian, _norm2);
-        if(grid->mpi_rank == 0){
-            out << (count_snap + 1) * ITERATIONS << "\t" << _rot_energy << "\t" << _kin_energy << "\t" << _tot_energy << "\t" << _norm2 << endl;
+        norm2 = state->calculate_squared_norm();
+        rot_energy = solver->calculate_rotational_energy(norm2);
+        tot_energy = solver->calculate_total_energy(norm2);
+        kin_energy = solver->calculate_kinetic_energy(norm2);
+        if (grid->mpi_rank == 0){
+            out << (count_snap + 1) * ITERATIONS << "\t" << rot_energy << "\t" << kin_energy << "\t" << tot_energy << "\t" << norm2 << endl;
         }
     
         //stamp phase and particles density
