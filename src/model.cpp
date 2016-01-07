@@ -232,6 +232,14 @@ double *State::get_particle_density(double *_density) {
     return density;
 }
 
+void State::write_particle_density(string fileprefix) {
+    double *density = new double[grid->dim_x * grid->dim_y];
+    stringstream filename;
+    filename << fileprefix << "-density";
+    stamp_matrix(grid, get_particle_density(density), filename.str());
+    delete density;
+}
+
 double *State::get_phase(double *_phase) {
     double *phase;
     if (_phase == 0) {
@@ -250,6 +258,14 @@ double *State::get_phase(double *_phase) {
         }
     }
     return phase;
+}
+
+void State::write_phase(string fileprefix) {
+    double *phase = new double[grid->dim_x * grid->dim_y];
+    stringstream filename;
+    filename << fileprefix << "-phase";
+    stamp_matrix(grid, get_phase(phase), filename.str());
+    delete phase;
 }
 
 void State::calculate_mean_position(int grid_origin_x, int grid_origin_y,
@@ -333,6 +349,9 @@ void State::calculate_mean_momentum(double *results, double norm2) {
     results[3] = real(sum_pypy_mean / norm2) * grid->delta_x * grid->delta_y - results[2] * results[2];
 }
 
+void State::write_to_file(string filename) {
+    stamp(grid, this, filename);
+}
 
 ExponentialState::ExponentialState(Lattice *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag): 
                   State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase) {

@@ -19,7 +19,8 @@
 #ifndef __COMMON_H
 #define __COMMON_H
 #include "trottersuzuki.h"
-
+void stamp(Lattice *grid, State *state, string fileprefix);
+void stamp_matrix(Lattice *grid, double *matrix, string filename);
 void my_abort(string err);
 void memcpy2D(void * dst, size_t dstride, const void * src, size_t sstride, size_t width, size_t height);
 #endif

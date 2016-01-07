@@ -69,22 +69,15 @@ int main(int argc, char** argv) {
     }
 
     //set file output directory
-    stringstream dirname;
-    string dirnames;
-    if (SNAPSHOTS) {
-        int status;
-        dirname.str("");
-        dirname << "D" << DIM << "_I" << ITERATIONS << "_S" << SNAPSHOTS << "";
-        dirnames = dirname.str();
-        status = mkdir(dirnames.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-        if(status != 0 && status != -1)
-            dirnames = ".";
-    } else {
-        dirnames = ".";
-    }
+    stringstream dirname, fileprefix;
+    dirname << "D" << DIM << "_I" << ITERATIONS << "_S" << SNAPSHOTS << "";
+    mkdir(dirname.str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    
     for(int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);
-        stamp(grid, state, 0, ITERATIONS, count_snap, dirnames.c_str());
+        fileprefix.str("");
+        fileprefix << dirname << "/" << 1 << "-" << ITERATIONS * count_snap;
+        state->write_to_file(fileprefix.str());
     }
     if (grid->mpi_coords[0] == 0 && grid->mpi_coords[1] == 0 && verbose == true) {
         cout << "TROTTER " << DIM << "x" << DIM << " kernel:" << KERNEL_TYPE << " np:" << grid->mpi_procs << endl;
