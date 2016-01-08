@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
     //set file output directory
     stringstream file_info, fileprefix;
     string dirname = "Harmonic_osc_IE";
-    mkdir(dirname.str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    mkdir(dirname.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     file_info << dirname << "/file_info.txt";
     ofstream out(file_info.str().c_str());
     
