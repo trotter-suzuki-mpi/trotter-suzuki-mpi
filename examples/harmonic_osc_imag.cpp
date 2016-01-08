@@ -57,13 +57,11 @@ int main(int argc, char** argv) {
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
 
     //set file output directory
-    stringstream dirname, file_info, fileprefix;
-    string dirnames, file_infos;
-    dirname << "Harmonic_osc_IE";
+    stringstream file_info, fileprefix;
+    string dirname = "Harmonic_osc_IE";
     mkdir(dirname.str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    file_info << dirnames << "/file_info.txt";
-    file_infos = file_info.str();
-    ofstream out(file_infos.c_str());
+    file_info << dirname << "/file_info.txt";
+    ofstream out(file_info.str().c_str());
     
     double mean_positions[4], mean_momenta[4], results[4];
     
