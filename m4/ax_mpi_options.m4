@@ -172,7 +172,7 @@ AS_HELP_STRING([--with-mpi-libs="LIBS"],[MPI libraries @<:@default "-lmpi"@:>@])
 ]
 )
 
-if test -n "${MPI_LIBDIR}"; then
+if test -n "${MPI_LIBDIR}" -a x"$MPI_CXX" != x"none"; then
   MPI_LIBS="-lmpi"
 fi
 
