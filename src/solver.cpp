@@ -74,8 +74,10 @@ void Solver::initialize_exp_potential(double delta_t, int which) {
           particle_mass = static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b;
       }
       complex<double> tmp;
-      for (int y = 0, idy = grid->start_y; y < grid->dim_y; y++, idy++) {
-          for (int x = 0, idx = grid->start_x; x < grid->dim_x; x++, idx++) {
+      double idy = grid->start_y * grid->delta_y, idx;
+      for (int y = 0; y < grid->dim_y; y++, idy += grid->delta_y) {
+		  idx = grid->start_x * grid->delta_x;
+          for (int x = 0; x < grid->dim_x; x++, idx += grid->delta_x) {
               if(imag_time)
                   tmp = exp(complex<double> (-delta_t*hamiltonian->potential->get_value(x, y), 0.));
               else

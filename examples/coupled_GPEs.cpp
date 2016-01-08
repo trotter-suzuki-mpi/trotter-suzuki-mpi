@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
     State *state2 = new GaussianState(grid, 1, 0., 0., PARTICLES_NUM);
     
     //set hamiltonian
-    Potential *potential = new ParabolicPotential(grid, 1.);
+    Potential *potential = new ParabolicPotential(grid, 1., 1.);
     Hamiltonian2Component *hamiltonian = new Hamiltonian2Component(grid, potential, potential, particle_mass_a, particle_mass_b, coupling_a, coupling_ab, coupling_b, 0., omega_i);
     
     //set evolution

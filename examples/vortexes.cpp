@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
     //set initial state
     State *state = new GaussianState(grid, 0.2, 0., 0., PARTICLES_NUM);
     //set hamiltonian
-    Potential *potential = new ParabolicPotential(grid, 1.);
+    Potential *potential = new ParabolicPotential(grid, 1., 1.);
     Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, particle_mass, coupling_const, 
                                                angular_velocity, rot_coord_x, rot_coord_y);
     //set evolution

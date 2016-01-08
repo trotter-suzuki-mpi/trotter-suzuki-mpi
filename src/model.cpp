@@ -369,8 +369,8 @@ ExponentialState::ExponentialState(Lattice *_grid, int _n_x, int _n_y, double _n
 }
 
 complex<double> ExponentialState::exp_state(double x, double y) {
-	double L_x = grid->global_dim_x - 2.*grid->halo_x * grid->periods[1];
-    double L_y = grid->global_dim_y - 2.*grid->halo_x * grid->periods[0];
+	double L_x = (grid->global_dim_x - 2.*grid->halo_x * grid->periods[1]) * grid->delta_x;
+    double L_y = (grid->global_dim_y - 2.*grid->halo_x * grid->periods[0]) * grid->delta_y;
     return sqrt(norm/(L_x*L_y)) * exp(complex<double>(0., phase)) * exp(complex<double>(0., 2*M_PI*double(n_x)/L_x * x + 2*M_PI* double(n_y)/L_y * y));
 }
 
@@ -411,8 +411,8 @@ SinusoidState::SinusoidState(Lattice *_grid, int _n_x, int _n_y, double _norm, d
 }
 
 complex<double> SinusoidState::sinusoid_state(double x, double y) {
-    double L_x = grid->global_dim_x - 2.*grid->halo_x * grid->periods[1];
-    double L_y = grid->global_dim_y - 2.*grid->halo_x * grid->periods[0];
+    double L_x = (grid->global_dim_x - 2.*grid->halo_x * grid->periods[1]) * grid->delta_x;
+    double L_y = (grid->global_dim_y - 2.*grid->halo_x * grid->periods[0]) * grid->delta_y;
     return sqrt(norm/(L_x*L_y)) * 2.* exp(complex<double>(0., phase)) * complex<double> (sin(2*M_PI*double(n_x) / L_x*x) * sin(2*M_PI*double(n_y) / L_y*y), 0.0);
 }
 
@@ -494,21 +494,22 @@ Potential::~Potential() {
     }
 }
 
-ParabolicPotential::ParabolicPotential(Lattice *_grid, double _param): Potential(_grid, const_potential) {
+ParabolicPotential::ParabolicPotential(Lattice *_grid, double _omegax, double _omegay, double _mass, double _mean_x, double _mean_y): 
+                                       Potential(_grid, const_potential), omegax(_omegax), omegay(_omegay), 
+                                       mass(_mass), mean_x(_mean_x), mean_y(_mean_y) {
     is_static = true;
     self_init = false;
     evolving_potential = NULL;
     static_potential = NULL;
     matrix = NULL;
-    param = _param;
 }
 
 double ParabolicPotential::get_value(int x, int y) {
-     double idy = grid->start_y * grid->delta_y + y*grid->delta_y;
-     double idx = grid->start_x * grid->delta_x + x*grid->delta_x;
-     double x_c = idx - double(grid->dim_x)*0.5, y_c = idy - double(grid->dim_x)*0.5;
-     double w_x = 1, w_y = 1. / param; 
-     return 0.5 * (w_x * w_x * x_c * x_c + w_y * w_y * y_c * y_c);
+     double x_c = (grid->global_dim_x - 2.*grid->halo_x * grid->periods[1]) * grid->delta_x;
+     double y_c = (grid->global_dim_y - 2.*grid->halo_y * grid->periods[1]) * grid->delta_y;
+     double x_r = x - x_c;
+     double y_r = y - y_c;
+     return 0.5 * mass * (omegax * omegax * x_c * x_c + omegay * omegay * y_c * y_c);
 }
 
 ParabolicPotential::~ParabolicPotential() {

@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
     //set initial state
     State *state = new GaussianState(grid, 0.01, 0., 0., PARTICLES_NUM);
     //set hamiltonian
-    Potential *potential = new ParabolicPotential(grid, sqrt(2));
+    Potential *potential = new ParabolicPotential(grid, 1., sqrt(2));
     Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, particle_mass, coupling_a);
     //set solver
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
