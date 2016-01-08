@@ -37,12 +37,6 @@
 #define SNAPSHOTS 10
 #define SCATTER_LENGTH_2D 0 //5.662739242e-5
 
-double parabolic_potential(double x, double y) {
-    double x_c = x - double(LENGTH)*0.5, y_c = y - double(LENGTH)*0.5;
-    double w_x = 1, w_y = 1. / sqrt(2); 
-    return 0.5 * (w_x * w_x * x_c * x_c + w_y * w_y * y_c * y_c);
-}
-
 int main(int argc, char** argv) {
     bool verbose = true;
     bool imag_time = true;
@@ -59,8 +53,8 @@ int main(int argc, char** argv) {
     //set initial state
     State *state = new GaussianState(grid, 0.01, 0., 0., PARTICLES_NUM);
     //set hamiltonian
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_a);
-    hamiltonian->initialize_potential(parabolic_potential);
+    Potential *potential = new ParabolicPotential(grid, sqrt(2));
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, particle_mass, coupling_a);
     //set solver
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
 

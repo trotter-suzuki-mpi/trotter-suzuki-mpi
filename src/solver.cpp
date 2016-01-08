@@ -77,9 +77,9 @@ void Solver::initialize_exp_potential(double delta_t, int which) {
       for (int y = 0, idy = grid->start_y; y < grid->dim_y; y++, idy++) {
           for (int x = 0, idx = grid->start_x; x < grid->dim_x; x++, idx++) {
               if(imag_time)
-                  tmp = exp(complex<double> (-delta_t*hamiltonian->external_pot[y * grid->dim_x + x], 0.));
+                  tmp = exp(complex<double> (-delta_t*hamiltonian->potential->get_value(x, y), 0.));
               else
-                  tmp = exp(complex<double> (0., -delta_t*hamiltonian->external_pot[y * grid->dim_x + x]));
+                  tmp = exp(complex<double> (0., -delta_t*hamiltonian->potential->get_value(x, y)));
               external_pot_real[which][y * grid->dim_x + x] = real(tmp);
               external_pot_imag[which][y * grid->dim_x + x] = imag(tmp);
           }
@@ -122,9 +122,6 @@ void Solver::evolve(int iterations, bool _imag_time) {
         if(imag_time) {
             h_a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
             h_b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
-            if (hamiltonian->evolve_potential != 0) {
-                 hamiltonian->update_potential(delta_t, 0);
-            }
             initialize_exp_potential(delta_t, 0);
             norm2[0] = state->calculate_squared_norm();
             if (!single_component) {
@@ -137,9 +134,6 @@ void Solver::evolve(int iterations, bool _imag_time) {
         else {
             h_a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
             h_b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
-            if (hamiltonian->evolve_potential != 0) {
-                 hamiltonian->update_potential(delta_t, 0);
-            }
             initialize_exp_potential(delta_t, 0);
             if (!single_component) {
                 h_a[1] = cos(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
@@ -157,10 +151,15 @@ void Solver::evolve(int iterations, bool _imag_time) {
     var = 1.;
     // Main loop
     for (int i = 0; i < iterations; i++) {
-        if (hamiltonian->evolve_potential != NULL && i > 0) {
-             hamiltonian->update_potential(delta_t, i);
+        if (i > 0 && hamiltonian->potential->update(current_evolution_time)) {
              initialize_exp_potential(delta_t, 0);
              kernel->update_potential(external_pot_real[0], external_pot_imag[0]);
+        }
+        if (!single_component && i>0) {
+            if (static_cast<Hamiltonian2Component*>(hamiltonian)->potential_b->update(current_evolution_time)) {
+               initialize_exp_potential(delta_t, 1);
+               kernel->update_potential(external_pot_real[1], external_pot_imag[1]);
+            }
         }
         //first wave function
         kernel->run_kernel_on_halo();
@@ -412,7 +411,7 @@ double Solver::calculate_ab_energy(double _norm2) {
     return energy_ab;
 }
 
-double Solver::calculate_total_energy_single_state(int which, double (*hamilt_pot)(double x, double y), double _norm2) {
+double Solver::calculate_total_energy_single_state(int which, double _norm2) {
 
     int ini_halo_x = grid->inner_start_x - grid->start_x;
     int ini_halo_y = grid->inner_start_y - grid->start_y;
@@ -420,17 +419,17 @@ double Solver::calculate_total_energy_single_state(int which, double (*hamilt_po
     int end_halo_y = grid->end_y - grid->inner_end_y;
     int tile_width = grid->end_x - grid->start_x;
     State *current_state;
-    double *external_pot;
+    Potential *potential;
     double coupling;
     double mass;
     if (which == 0) {
         current_state = state;
-        external_pot = hamiltonian->external_pot;
+        potential = hamiltonian->potential;
         coupling = hamiltonian->coupling_a;
         mass = hamiltonian->mass;
     } else {
         current_state = state_b;
-        external_pot = static_cast<Hamiltonian2Component*>(hamiltonian)->external_pot_b;
+        potential = static_cast<Hamiltonian2Component*>(hamiltonian)->potential_b;
         coupling = static_cast<Hamiltonian2Component*>(hamiltonian)->coupling_b;
         mass = static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b;
     }
@@ -454,11 +453,7 @@ double Solver::calculate_total_energy_single_state(int which, double (*hamilt_po
              x = grid->inner_start_x + (ini_halo_x == 0);
              j < grid->inner_end_x - grid->start_x - (end_halo_x == 0); j++, x++) {
             complex<double> potential_term;
-            if(external_pot == NULL) {
-                potential_term = complex<double> (hamilt_pot(x * delta_x, y * delta_y), 0.);
-            } else {
-                potential_term = complex<double> (external_pot[y * grid->global_dim_x + x], 0.);
-            }
+            potential_term = complex<double> (potential->get_value(x, y), 0.);
             psi_center = complex<double> (current_state->p_real[i * tile_width + j],
                                                current_state->p_imag[i * tile_width + j]);
             psi_up = complex<double> (current_state->p_real[(i - 1) * tile_width + j],
@@ -495,9 +490,7 @@ double Solver::calculate_total_energy_single_state(int which, double (*hamilt_po
 }
 
 
-double Solver::calculate_total_energy(double _norm2,
-                                      double (*hamilt_pot_a)(double x, double y),
-                                      double (*hamilt_pot_b)(double x, double y)) {
+double Solver::calculate_total_energy(double _norm2) {
 
     double sum = 0;
     double total_norm2;
@@ -512,9 +505,9 @@ double Solver::calculate_total_energy(double _norm2,
         }
         total_norm2 = norm2[0] + norm2[1];
     }
-    sum += calculate_total_energy_single_state(0, hamilt_pot_a, total_norm2);
+    sum += calculate_total_energy_single_state(0, total_norm2);
     if (!single_component) {
-        sum += calculate_total_energy_single_state(1, hamilt_pot_b, total_norm2);
+        sum += calculate_total_energy_single_state(1, total_norm2);
         sum += calculate_ab_energy(total_norm2);
         sum += calculate_rabi_coupling_energy(total_norm2);
     }

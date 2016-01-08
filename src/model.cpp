@@ -416,10 +416,108 @@ complex<double> SinusoidState::sinusoid_state(double x, double y) {
     return sqrt(norm/(L_x*L_y)) * 2.* exp(complex<double>(0., phase)) * complex<double> (sin(2*M_PI*double(n_x) / L_x*x) * sin(2*M_PI*double(n_y) / L_y*y), 0.0);
 }
 
-Hamiltonian::Hamiltonian(Lattice *_grid, double _mass, double _coupling_a,
+Potential::Potential(Lattice *_grid, char *filename): grid(_grid) {
+    matrix = new double[grid->dim_y * grid->dim_x];
+    self_init = true;
+    is_static = true;
+    ifstream input(filename);
+    double tmp;
+    for(int y = 0; y < grid->dim_y; y++) {
+        for(int x = 0; x < grid->dim_x; x++) {
+            input >> tmp;
+            matrix[y * grid->dim_y + x] = tmp;
+        }
+    }
+    input.close();
+}
+
+Potential::Potential(Lattice *_grid, double *_external_pot): grid(_grid) {
+    matrix = _external_pot;
+    self_init = false;
+    is_static = true;
+    evolving_potential = NULL;
+    static_potential = NULL;
+}
+
+Potential::Potential(Lattice *_grid, double (*potential_fuction)(double x, double y)): grid(_grid) {
+    is_static = true;
+    self_init = false;
+    evolving_potential = NULL;
+    static_potential = potential_fuction;
+    matrix = NULL;
+}
+
+Potential::Potential(Lattice *_grid, double (*potential_function)(double x, double y, double t), int _t): grid(_grid) {
+    is_static = false;
+    self_init = false;    
+    evolving_potential = potential_function;
+    static_potential = NULL;
+    matrix = NULL;
+}
+
+double Potential::get_value(int x, int y) {
+    if (matrix != NULL) {
+        return matrix[y * grid->dim_x + x];
+    } else {
+        double idy = grid->start_y * grid->delta_y + y*grid->delta_y;
+        double idx = grid->start_x * grid->delta_x + x*grid->delta_x;
+        if (is_static) {
+            static_potential(idx, idy);
+        } else {
+            evolving_potential(idx, idy, current_evolution_time);
+        }
+    }
+}
+
+bool Potential::update(double t) {
+    current_evolution_time = t;
+    if (!is_static) {
+        if (matrix != NULL) {
+            double delta_x = grid->delta_x, delta_y = grid->delta_y;
+            double idy = grid->start_y * delta_y, idx;
+            for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
+                idx = grid->start_x * delta_x;
+                for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
+                    matrix[y * grid->dim_x + x] = evolving_potential(idx, idy, t);
+                }
+            }
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+
+Potential::~Potential() {
+    if (self_init) {
+        delete [] matrix;
+    }
+}
+
+ParabolicPotential::ParabolicPotential(Lattice *_grid, double _param): Potential(_grid, const_potential) {
+    is_static = true;
+    self_init = false;
+    evolving_potential = NULL;
+    static_potential = NULL;
+    matrix = NULL;
+    param = _param;
+}
+
+double ParabolicPotential::get_value(int x, int y) {
+     double idy = grid->start_y * grid->delta_y + y*grid->delta_y;
+     double idx = grid->start_x * grid->delta_x + x*grid->delta_x;
+     double x_c = idx - double(grid->dim_x)*0.5, y_c = idy - double(grid->dim_x)*0.5;
+     double w_x = 1, w_y = 1. / param; 
+     return 0.5 * (w_x * w_x * x_c * x_c + w_y * w_y * y_c * y_c);
+}
+
+ParabolicPotential::~ParabolicPotential() {
+}
+
+Hamiltonian::Hamiltonian(Lattice *_grid, Potential *_potential,
+                         double _mass, double _coupling_a,
                          double _angular_velocity,
-                         double _rot_coord_x, double _rot_coord_y,
-                         double *_external_pot): grid(_grid), mass(_mass),
+                         double _rot_coord_x, double _rot_coord_y): grid(_grid), mass(_mass),
                          coupling_a(_coupling_a), angular_velocity(_angular_velocity) {
     if (_rot_coord_x == DBL_MAX) {
         rot_coord_x = (grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x) * 0.5;
@@ -431,96 +529,40 @@ Hamiltonian::Hamiltonian(Lattice *_grid, double _mass, double _coupling_a,
     } else {
         rot_coord_y = _rot_coord_y;
     }
-    if (_external_pot == 0) {
-        external_pot = new double[grid->dim_y * grid->dim_x];
+    if (_potential == NULL) {
         self_init = true;
+        potential = new Potential(grid, const_potential);
     } else {
-        external_pot = _external_pot;
         self_init = false;
+        potential = _potential;
     }
-    evolve_potential = NULL;
 }
 
 Hamiltonian::~Hamiltonian() {
     if (self_init) {
-        delete [] external_pot;
+        delete potential;
     }
 }
 
-void Hamiltonian::initialize_potential(double (*hamiltonian_pot)(double x, double y)) {
-    double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y, idx;
-    for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x;
-        for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
-            external_pot[y * grid->dim_x + x] = hamiltonian_pot(idx, idy);
-        }
-    }
-}
-
-void Hamiltonian::update_potential(double delta_t, int iteration) {
-    if (evolve_potential != NULL) {
-        double delta_x = grid->delta_x, delta_y = grid->delta_y;
-        double idy = grid->start_y * delta_y, idx;
-        for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-            idx = grid->start_x * delta_x;
-            for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
-                external_pot[y * grid->dim_x + x] = evolve_potential(idx, idy, delta_t, iteration);
-            }
-        }
-    }
-}
-
-void Hamiltonian::read_potential(char *pot_name) {
-    ifstream input(pot_name);
-    double tmp;
-    for(int y = 0; y < grid->dim_y; y++) {
-        for(int x = 0; x < grid->dim_x; x++) {
-            input >> tmp;
-            external_pot[y * grid->dim_y + x] = tmp;
-        }
-    }
-    input.close();
-}
-
-Hamiltonian2Component::Hamiltonian2Component(Lattice *_grid, double _mass,
+Hamiltonian2Component::Hamiltonian2Component(Lattice *_grid,
+                         Potential *_potential,
+                         Potential *_potential_b,                         
+                         double _mass,
                          double _mass_b, double _coupling_a,
                          double _coupling_ab, double _coupling_b,
                          double _omega_r, double _omega_i,
                          double _angular_velocity,
-                         double _rot_coord_x, double _rot_coord_y,
-                         double *_external_pot, double *_external_pot_b):
-                         Hamiltonian(_grid, _mass, _coupling_a, _angular_velocity, _rot_coord_x, rot_coord_y, _external_pot), mass_b(_mass_b),
+                         double _rot_coord_x, double _rot_coord_y):
+                         Hamiltonian(_grid, _potential, _mass, _coupling_a, _angular_velocity, _rot_coord_x, rot_coord_y), mass_b(_mass_b),
                          coupling_ab( _coupling_ab), coupling_b(_coupling_b), omega_r(_omega_r), omega_i(_omega_i) {
-    if (_external_pot_b == 0) {
-        external_pot_b = new double[grid->dim_y * grid->dim_x];
-        self_init = true;
+
+    if (_potential_b == NULL) {
+        potential_b = _potential;
     } else {
-        external_pot_b = _external_pot_b;
-        self_init = false;
+        potential_b = _potential_b;
     }
 }
 
 Hamiltonian2Component::~Hamiltonian2Component() {
-    if (self_init) {
-        delete [] external_pot;
-        delete [] external_pot_b;
-    }
-}
 
-void Hamiltonian2Component::initialize_potential(double (*hamiltonian_pot)(double x, double y), int which) {
-    double *tmp;
-    if (which == 0) {
-      tmp = external_pot;
-    } else {
-      tmp = external_pot_b;
-    }
-    double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y, idx;
-    for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x;
-        for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
-            tmp[y * grid->dim_x + x] = hamiltonian_pot(idx, idy);
-        }
-    }
 }

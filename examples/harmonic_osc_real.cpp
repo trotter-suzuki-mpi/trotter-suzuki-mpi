@@ -38,13 +38,6 @@ complex<double> gauss_ini_state(double x, double y) {
     double w = 1.;
     return complex<double>(sqrt(0.5 * w / M_PI) * exp(-(x_c * x_c + y_c * y_c) * 0.5 * w) * (1. + sqrt(2. * w) * x_c), 0.);
 }
-
-double parabolic_potential(double x, double y) {
-	double x_c = x - double(EDGE_LENGTH)*0.5, y_c = y - double(EDGE_LENGTH)*0.5;
-    double w_x = 1., w_y = 1.; 
-    return 0.5 * (w_x * w_x * x_c * x_c + w_y * w_y * y_c * y_c);
-}
-
 int main(int argc, char** argv) {
     char file_name[] = "";
     char pot_name[1] = "";
@@ -64,8 +57,8 @@ int main(int argc, char** argv) {
     State *state = new State(grid);
     state->init_state(gauss_ini_state);
     //set Hamiltonian
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass);
-    hamiltonian->initialize_potential(parabolic_potential);
+    Potential *potential = new ParabolicPotential(grid, 1.);
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, particle_mass);
     //set evolution
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
  

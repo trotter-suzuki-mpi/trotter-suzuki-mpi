@@ -109,28 +109,53 @@ private:
 };
 
 
+class Potential {
+public:  
+    Potential(Lattice *_grid, char *filename);
+    Potential(Lattice *_grid, double *_external_pot);
+    Potential(Lattice *_grid, double (*potential_function)(double x, double y));
+    Potential(Lattice *_grid, double (*potential_function)(double x, double y, double t), int _t=0);
+    ~Potential();
+    virtual double get_value(int x, int y);
+    bool update(double t);
+
+protected:
+    double current_evolution_time;
+    Lattice *grid;
+    double (*static_potential)(double x, double y);
+    double (*evolving_potential)(double x, double y, double t);
+    double *matrix;
+    bool self_init;
+    bool is_static;
+};
+
+class ParabolicPotential: public Potential {
+public:
+    ParabolicPotential(Lattice *_grid, double _param);
+    ~ParabolicPotential();
+    double get_value(int x, int y);
+
+private:
+    double param;
+};
+
 class Hamiltonian {
 public:
-    Lattice *grid;
+    Potential *potential;
     double mass;
     double coupling_a;
     double angular_velocity;
     double rot_coord_x;
     double rot_coord_y;
-    double *external_pot;
         
-    Hamiltonian(Lattice *_grid, double _mass=1., double _coupling_a=0.,
+    Hamiltonian(Lattice *_grid, Potential *_potential=0, double _mass=1., double _coupling_a=0.,
                 double _angular_velocity=0.,
-                double _rot_coord_x=DBL_MAX, double _rot_coord_y=DBL_MAX,
-                double *_external_pot=0);
+                double _rot_coord_x=DBL_MAX, double _rot_coord_y=DBL_MAX);
     ~Hamiltonian();
-    void initialize_potential(double (*hamiltonian_pot)(double x, double y));
-    void read_potential(char *pot_name);
-    void update_potential(double delta_t, int iteration);
-    double (*evolve_potential)(double x, double y, double delta_t, int t);
 
 protected:
     bool self_init;
+    Lattice *grid;
 };
 
 class Hamiltonian2Component: public Hamiltonian {
@@ -140,19 +165,18 @@ public:
     double coupling_b;
     double omega_r;
     double omega_i;
-    double *external_pot_b;
-    
-    Hamiltonian2Component(Lattice *_grid, double _mass=1., double _mass_b=1.,
+    Potential *potential_b;
+
+    Hamiltonian2Component(Lattice *_grid, Potential *_potential=0,
+                          Potential *_potential_b=0,
+                          double _mass=1., double _mass_b=1.,
                           double _coupling_a=0., double coupling_ab=0.,
                           double _coupling_b=0.,
                           double _omega_r=0, double _omega_i=0,
                           double _angular_velocity=0.,
                           double _rot_coord_x=DBL_MAX,
-                          double _rot_coord_y=DBL_MAX,
-                          double *_external_pot=0,
-                          double *_external_pot_b=0);
+                          double _rot_coord_y=DBL_MAX);
     ~Hamiltonian2Component();
-    void initialize_potential(double (*hamiltonian_pot)(double x, double y), int which);
 };
 
 
@@ -216,9 +240,7 @@ public:
            double _delta_t, string _kernel_type="cpu");
     ~Solver();
     void evolve(int iterations, bool imag_time=false);
-    double calculate_total_energy(double _norm2=0,
-                                  double (*hamilt_pot_a)(double x, double y)=0,
-                                  double (*hamilt_pot_b)(double x, double y)=0);
+    double calculate_total_energy(double _norm2=0);
     double calculate_rotational_energy(int which=0, double _norm2=0);
     double calculate_kinetic_energy(int which=0, double _norm2=0);
     double calculate_rabi_coupling_energy(double _norm2=0);
@@ -236,7 +258,7 @@ private:
     void initialize_exp_potential(double time_single_it, int which);
     void init_kernel();
     double calculate_ab_energy(double _norm2=0);
-    double calculate_total_energy_single_state(int which, double (*hamilt_pot)(double x, double y), double _norm2);
+    double calculate_total_energy_single_state(int which, double _norm2);
 };
 
 double const_potential(double x, double y);
