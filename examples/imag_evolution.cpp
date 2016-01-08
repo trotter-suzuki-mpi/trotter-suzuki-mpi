@@ -59,8 +59,7 @@ int main(int argc, char** argv) {
     State *state = new State(grid);
     state->init_state(super_position_two_exp_state);
     //set hamiltonian
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass);
-    hamiltonian->initialize_potential(const_potential);
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
     //set evolution
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
 

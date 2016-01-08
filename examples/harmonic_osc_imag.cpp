@@ -34,12 +34,6 @@
 #define COUPLING_CONST_2D 0   // 0 for linear Schrodinger equation
 #define PARTICLES_NUM 1     //Particle numbers (nonlinear Schrodinger equation)
 
-double parabolic_potential(double x, double y) {
-	double x_c = x - double(EDGE_LENGTH)*0.5, y_c = y - double(EDGE_LENGTH)*0.5;
-    double w_x = 1., w_y = 1.; 
-    return 0.5 * (w_x * w_x * x_c * x_c + w_y * w_y * y_c * y_c);
-}
-
 int main(int argc, char** argv) {
     int periods[2] = {0, 0};
     const double particle_mass = 1.;
@@ -57,8 +51,8 @@ int main(int argc, char** argv) {
     //set initial state
     State *state = new SinusoidState(grid, 1, 1);
     //set hamiltonian
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_const);
-    hamiltonian->initialize_potential(parabolic_potential);
+    Potential *potential = new ParabolicPotential(grid, 1.);
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, particle_mass, coupling_const);
     //set evolution
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
 

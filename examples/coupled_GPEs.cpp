@@ -32,12 +32,6 @@
 #define SNAPSHOTS 20
 #define SNAP_PER_STAMP 5
 
-double parabolic_potential(double x, double y) {
-	double x_c = x - double(LENGTH)*0.5, y_c = y - double(LENGTH)*0.5;
-    double w_x = 1., w_y = 1.;
-    return 0.5 * (w_x * w_x * x_c * x_c + w_y * w_y * y_c * y_c);
-}
-
 int main(int argc, char** argv) {
     char file_name[] = "";
     char pot_name[1] = "";
@@ -59,9 +53,8 @@ int main(int argc, char** argv) {
     State *state2 = new GaussianState(grid, 1, 0., 0., PARTICLES_NUM);
     
     //set hamiltonian
-    Hamiltonian2Component *hamiltonian = new Hamiltonian2Component(grid, particle_mass_a, particle_mass_b, coupling_a, coupling_ab, coupling_b, 0., omega_i);
-    hamiltonian->initialize_potential(parabolic_potential, 0);
-    hamiltonian->initialize_potential(parabolic_potential, 1);
+    Potential *potential = new ParabolicPotential(grid, 1.);
+    Hamiltonian2Component *hamiltonian = new Hamiltonian2Component(grid, potential, potential, particle_mass_a, particle_mass_b, coupling_a, coupling_ab, coupling_b, 0., omega_i);
     
     //set evolution
     Solver *solver = new Solver(grid, state1, state2, hamiltonian, delta_t, KERNEL_TYPE);

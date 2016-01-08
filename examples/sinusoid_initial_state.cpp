@@ -51,8 +51,7 @@ int main(int argc, char** argv) {
     //set initial state
     State *state = new SinusoidState(grid, 1, 1);
     //set hamiltonian
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass);
-    hamiltonian->initialize_potential(const_potential);
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
     //set evolution
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
 

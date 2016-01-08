@@ -198,8 +198,7 @@ int main(int argc, char** argv) {
     Lattice *grid = new Lattice(dim, length_x, length_y);
 
 	//set hamiltonian
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, particle_mass, coupling_a);
-    hamiltonian->initialize_potential(const_potential);
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass, coupling_a);
 
     //set initial state
     State *state = new State(grid);
