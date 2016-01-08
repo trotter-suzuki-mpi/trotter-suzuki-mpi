@@ -70,7 +70,11 @@ if test x"$with_cuda" != x"no" ; then
      CUDA_CFLAGS="-I$CUDA_PATH/include -use_fast_math -Xptxas "-v" -Xcompiler \"${CXXFLAGS}\""
      CXXFLAGS="${CXXFLAGS} -I$CUDA_PATH/include"
      CUDA_LIBS="-lcudart -lcublas"
-     CUDA_LDFLAGS="-L$CUDA_PATH/lib$SUFFIX"
+     if test -e $CUDA_PATH/lib$SUFFIX; then
+         CUDA_LDFLAGS="-L$CUDA_PATH/lib$SUFFIX"
+     else
+         CUDA_LDFLAGS="-L$CUDA_PATH/lib" #OS X retardation
+     fi
      NVCC="$CUDA_PATH/bin/nvcc"
      AC_SUBST(CUDA_CFLAGS)
      AC_SUBST(CUDA_LIBS)
