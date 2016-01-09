@@ -80,7 +80,7 @@ protected:
 
 class ExponentialState: public State {
 public:
-    ExponentialState(Lattice *_grid, int _n_x, int _n_y, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
+    ExponentialState(Lattice *_grid, int _n_x=1, int _n_y=1, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
    
 private:
     int n_x, n_y;
@@ -100,7 +100,7 @@ private:
 
 class SinusoidState: public State {
 public:
-    SinusoidState(Lattice *_grid, int _n_x, int _n_y, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
+    SinusoidState(Lattice *_grid, int _n_x=1, int _n_y=1, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
    
 private:
     int n_x, n_y;
@@ -152,7 +152,7 @@ public:
         
     Hamiltonian(Lattice *_grid, Potential *_potential=0, double _mass=1., double _coupling_a=0.,
                 double _angular_velocity=0.,
-                double _rot_coord_x=DBL_MAX, double _rot_coord_y=DBL_MAX);
+                double _rot_coord_x=0, double _rot_coord_y=0);
     ~Hamiltonian();
 
 protected:
@@ -176,8 +176,8 @@ public:
                           double _coupling_b=0.,
                           double _omega_r=0, double _omega_i=0,
                           double _angular_velocity=0.,
-                          double _rot_coord_x=DBL_MAX,
-                          double _rot_coord_y=DBL_MAX);
+                          double _rot_coord_x=0,
+                          double _rot_coord_y=0);
     ~Hamiltonian2Component();
 };
 

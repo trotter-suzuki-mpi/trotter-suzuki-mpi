@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
     //set lattice
     Lattice *grid = new Lattice(DIM, length_x, length_y, periods);
     //set initial state
-    State *state = new SinusoidState(grid, 1, 1);
+    State *state = new GaussianState(grid, 3);
     //set hamiltonian
     Potential *potential = new ParabolicPotential(grid, 1., 1.);
     Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, particle_mass, coupling_const);
@@ -64,11 +64,11 @@ int main(int argc, char** argv) {
     ofstream out(file_info.str().c_str());
     
     double mean_positions[4], mean_momenta[4], results[4];
-    
+
     //norm calculation
     double norm2 = state->calculate_squared_norm();
     double tot_energy = solver->calculate_total_energy(norm2);
-    double kin_energy = solver->calculate_kinetic_energy(norm2);
+    double kin_energy = solver->calculate_kinetic_energy(0,norm2);
 
     //Position expected values
     state->calculate_mean_position(grid->dim_x / 2, grid->dim_y / 2, mean_positions, norm2);
@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
         //norm calculation
         norm2 = state->calculate_squared_norm();
         tot_energy = solver->calculate_total_energy(norm2);
-        kin_energy = solver->calculate_kinetic_energy(norm2);
+        kin_energy = solver->calculate_kinetic_energy(0,norm2);
               
         //Position expected values
         state->calculate_mean_position(grid->dim_x / 2, grid->dim_y / 2, mean_positions, norm2);

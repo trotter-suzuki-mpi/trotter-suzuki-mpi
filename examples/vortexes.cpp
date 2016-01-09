@@ -34,7 +34,6 @@
 
 int main(int argc, char** argv) {
     int periods[2] = {0, 0};
-    int rot_coord_x = 320, rot_coord_y = 320;
     double angular_velocity = 0.9;
     const double particle_mass = 1.;
     bool imag_time = true;
@@ -51,8 +50,7 @@ int main(int argc, char** argv) {
     State *state = new GaussianState(grid, 0.2, 0., 0., PARTICLES_NUM);
     //set hamiltonian
     Potential *potential = new ParabolicPotential(grid, 1., 1.);
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, particle_mass, coupling_const, 
-                                               angular_velocity, rot_coord_x, rot_coord_y);
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, particle_mass, coupling_const, angular_velocity);
     //set evolution
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
     
@@ -65,22 +63,26 @@ int main(int argc, char** argv) {
     ofstream out(fileprefix.str().c_str());
     
     double norm2 = state->calculate_squared_norm();
-    double rot_energy = solver->calculate_rotational_energy(norm2);
+    double rot_energy = solver->calculate_rotational_energy(0,norm2);
     double tot_energy = solver->calculate_total_energy(norm2);
-    double kin_energy = solver->calculate_kinetic_energy(norm2);
+    double kin_energy = solver->calculate_kinetic_energy(0,norm2);
 
     if(grid->mpi_rank == 0){
       out << "iterations \t rotation energy \t kin energy \t total energy \t norm2\n";
       out << "0\t" << rot_energy << "\t" << kin_energy << "\t" << tot_energy << "\t" << norm2 << endl;
     }
     
+    fileprefix.str("");
+    fileprefix << dirname << "/" << 0;
+    state->write_particle_density(fileprefix.str());
+    
     for(int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);
 
         norm2 = state->calculate_squared_norm();
-        rot_energy = solver->calculate_rotational_energy(norm2);
+        rot_energy = solver->calculate_rotational_energy(0,norm2);
         tot_energy = solver->calculate_total_energy(norm2);
-        kin_energy = solver->calculate_kinetic_energy(norm2);
+        kin_energy = solver->calculate_kinetic_energy(0,norm2);
         if (grid->mpi_rank == 0){
             out << (count_snap + 1) * ITERATIONS << "\t" << rot_energy << "\t" << kin_energy << "\t" << tot_energy << "\t" << norm2 << endl;
         }

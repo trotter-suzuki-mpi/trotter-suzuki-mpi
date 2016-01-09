@@ -130,7 +130,7 @@ void Solver::evolve(int iterations, bool _imag_time) {
                 h_a[1] = cosh(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
                 h_b[1] = sinh(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
                 initialize_exp_potential(delta_t, 1);
-                norm2[1] = state_b->calculate_squared_norm();
+                norm2[1] = state_b->calculate_squared_norm(); 
             }
         }
         else {
@@ -173,7 +173,7 @@ void Solver::evolve(int iterations, bool _imag_time) {
             kernel->finish_halo_exchange();
         }
         kernel->wait_for_completion();
-        norm2[0] = -.1;
+        //norm2[0] = -.1;
         if (!single_component) {
             //second wave function
             kernel->run_kernel_on_halo();
@@ -190,7 +190,7 @@ void Solver::evolve(int iterations, bool _imag_time) {
             }
             kernel->rabi_coupling(var, delta_t);
             kernel->normalization();
-            norm2[1] = -.1;
+            //norm2[1] = -.1;
         }
         current_evolution_time += delta_t;
     }
@@ -455,7 +455,7 @@ double Solver::calculate_total_energy_single_state(int which, double _norm2) {
              x = grid->inner_start_x + (ini_halo_x == 0);
              j < grid->inner_end_x - grid->start_x - (end_halo_x == 0); j++, x++) {
             complex<double> potential_term;
-            potential_term = complex<double> (potential->get_value(x, y), 0.);
+            potential_term = complex<double> (potential->get_value(j, i), 0.);
             psi_center = complex<double> (current_state->p_real[i * tile_width + j],
                                                current_state->p_imag[i * tile_width + j]);
             psi_up = complex<double> (current_state->p_real[(i - 1) * tile_width + j],

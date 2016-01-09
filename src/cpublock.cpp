@@ -673,10 +673,11 @@ double CPUBlock::calculate_squared_norm(bool global) {
 }
 
 void CPUBlock::wait_for_completion() {
-    if (imag_time && norm[state_index] != 0) {
+    if (!two_wavefunctions && imag_time && norm[state_index] != 0) {
+    //if (imag_time && norm[state_index] != 0) {
         //normalization
-        double tot_sum = calculate_squared_norm(true);
-        double _norm = sqrt(tot_sum * delta_x * delta_y / norm[state_index]);
+        double tot_norm = calculate_squared_norm(true);
+        double _norm = sqrt(tot_norm / norm[state_index]);
 
         for (size_t i = 0; i < tile_height; i++) {
             for (size_t j = 0; j < tile_width; j++) {
@@ -767,7 +768,6 @@ void CPUBlock::normalization() {
 #endif
         double tot_sum = 0., tot_sum_a = 0., tot_sum_b = 0.;
         for(int i = 0; i < nProcs; i++) {
-			
             tot_sum_a += sums_a[i];
             tot_sum_b += sums_b[i];
         }
