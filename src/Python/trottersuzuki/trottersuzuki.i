@@ -13,8 +13,8 @@ import_array();
 
 class Lattice {
 public:
-    Lattice(int dim=100, double _length_x=20., double _length_y=20.,
-            int _periods[2]=0, double omega=0.);
+    Lattice(int dim=100, double length_x=20., double length_y=20.,
+            bool periodic_x_axis=false, bool periodic_y_axis=false, double omega=0.);
     double length_x, length_y;
     double delta_x, delta_y;
     int dim_x, dim_y;
@@ -28,7 +28,4 @@ public:
     int mpi_coords[2], mpi_dims[2];
     int mpi_rank;
     int mpi_procs;
-#ifdef HAVE_MPI
-    MPI_Comm cartcomm;
-#endif
 };
