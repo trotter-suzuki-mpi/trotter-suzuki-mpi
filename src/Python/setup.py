@@ -99,7 +99,7 @@ sources_files = ['trottersuzuki/src/common.cpp',
 ts_module = Extension('_trottersuzuki', sources=sources_files,
                       include_dirs=[numpy_include, 'src'],
                       extra_compile_args={'cc': extra_compile_args},
-                      # libraries=[openmp],
+                      libraries=[openmp],
                       )
 if CUDA is not None:
     ts_module.sources.append('trottersuzuki/src/cc2kernel.cu')
