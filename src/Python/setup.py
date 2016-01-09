@@ -94,12 +94,12 @@ sources_files = ['trottersuzuki/src/common.cpp',
                  'trottersuzuki/src/cpublock.cpp',
                  'trottersuzuki/src/model.cpp',
                  'trottersuzuki/src/solver.cpp',
-                 'trottersuzuki/trotter_wrap.cxx']
+                 'trottersuzuki/trottersuzuki_wrap.cxx']
 
 ts_module = Extension('_trottersuzuki', sources=sources_files,
                       include_dirs=[numpy_include, 'src'],
                       extra_compile_args={'cc': extra_compile_args},
-                      libraries=[openmp],
+                      # libraries=[openmp],
                       )
 if CUDA is not None:
     ts_module.sources.append('trottersuzuki/src/cc2kernel.cu')
@@ -108,7 +108,7 @@ if CUDA is not None:
     ts_module.library_dirs = [CUDA['lib']]
     ts_module.libraries += ['cudart', 'cublas']
     ts_module.runtime_library_dirs = [CUDA['lib']]
-    ts_module.extra_compile_args['nvcc']=['-use_fast_math', 
+    ts_module.extra_compile_args['nvcc']=['-use_fast_math',
                                           '--ptxas-options=-v', '-c',
                                           '--compiler-options','-fPIC ' +
                                           extra_compile_args[0]]

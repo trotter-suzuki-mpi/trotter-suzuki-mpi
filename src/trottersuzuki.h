@@ -32,8 +32,8 @@ using namespace std;
 
 class Lattice {
 public:
-    Lattice(int _dim=100, double _length_x=20., double _length_y=20.,
-            int _periods[2]=0, double omega=0.);
+    Lattice(int dim=100, double length_x=20., double length_y=20.,
+            bool periodic_x_axis=false, bool periodic_y_axis=false, double omega=0.);
     double length_x, length_y;
     double delta_x, delta_y;
     int dim_x, dim_y;
@@ -71,7 +71,7 @@ public:
     void write_to_file(string fileprefix);
     void write_particle_density(string fileprefix);
     void write_phase(string fileprefix);
-    
+
 protected:
     Lattice *grid;
     bool self_init;
@@ -81,7 +81,7 @@ protected:
 class ExponentialState: public State {
 public:
     ExponentialState(Lattice *_grid, int _n_x=1, int _n_y=1, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
-   
+
 private:
     int n_x, n_y;
     double norm, phase;
@@ -90,9 +90,9 @@ private:
 
 class GaussianState: public State {
 public:
-    GaussianState(Lattice *_grid, double _omega, double _mean_x=0, double _mean_y=0, double _norm=1, double _phase=0, 
+    GaussianState(Lattice *_grid, double _omega, double _mean_x=0, double _mean_y=0, double _norm=1, double _phase=0,
                   double *_p_real=0, double *_p_imag=0);
-   
+
 private:
     double mean_x, mean_y, omega, norm, phase;
     complex<double> gauss_state(double x, double y);
@@ -101,7 +101,7 @@ private:
 class SinusoidState: public State {
 public:
     SinusoidState(Lattice *_grid, int _n_x=1, int _n_y=1, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
-   
+
 private:
     int n_x, n_y;
     double norm, phase;
@@ -110,7 +110,7 @@ private:
 
 
 class Potential {
-public:  
+public:
     Potential(Lattice *_grid, char *filename);
     Potential(Lattice *_grid, double *_external_pot);
     Potential(Lattice *_grid, double (*potential_function)(double x, double y));
@@ -149,7 +149,7 @@ public:
     double angular_velocity;
     double rot_coord_x;
     double rot_coord_y;
-        
+
     Hamiltonian(Lattice *_grid, Potential *_potential=0, double _mass=1., double _coupling_a=0.,
                 double _angular_velocity=0.,
                 double _rot_coord_x=0, double _rot_coord_y=0);
@@ -199,7 +199,7 @@ public:
     virtual bool runs_in_place() const = 0;
     virtual string get_name() const = 0;				///< Get kernel name.
     virtual void update_potential(double *_external_pot_real, double *_external_pot_imag) = 0;
-    
+
     virtual void start_halo_exchange() = 0;					///< Exchange halos between processes.
     virtual void finish_halo_exchange() = 0;				///< Exchange halos between processes.
 
