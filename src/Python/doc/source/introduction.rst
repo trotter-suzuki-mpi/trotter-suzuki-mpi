@@ -24,3 +24,12 @@ Trotter-Suzuki-MPI is distributed in the hope that it will be useful, but WITHOU
 Acknowledgement
 ---------------
 The `original high-performance kernels <https://bitbucket.org/zzzoom/trottersuzuki>`_ were developed by Carlos Bederián. The distributed extension was carried out while `Peter Wittek <http://peterwittek.com/>`_ was visiting the `Department of Computer Applications in Science \& Engineering <http://www.bsc.es/computer-applications>`_ at the `Barcelona Supercomputing Center <http://www.bsc.es/>`_, funded by the "Access to BSC Facilities" project of the `HPC-Europe2 <http://www.hpc-europa.org/>`_ programme (contract no. 228398). Generalizing the capabilities of kernels was carried out by Luca Calderaro while visiting the `Quantum Information Theory Group <https://www.icfo.eu/research/group_details.php?id=19>`_ at `ICFO-The Institute of Photonic Sciences <https://www.icfo.eu/>`_, sponsored by the `Erasmus+ <http://ec.europa.eu/programmes/erasmus-plus/index_en.htm>`_ programme.
+
+Citations
+---------
+  
+1. Bederián, C. & Dente, A. Boosting quantum evolutions using Trotter-Suzuki algorithms on GPUs. *Proceedings of HPCLatAm-11, 4th High-Performance Computing Symposium*, 2011. `PDF <http://www.famaf.unc.edu.ar/grupos/GPGPU/boosting_trotter-suzuki.pdf>`_
+
+2. Wittek, P. and Cucchietti, F.M. (2013). `A Second-Order Distributed Trotter-Suzuki Solver with a Hybrid CPU-GPU Kernel <http://dx.doi.org/10.1016/j.cpc.2012.12.008>`_. *Computer Physics Communications*, 184, pp. 1165-1171. `PDF <http://arxiv.org/pdf/1208.2407>`_
+
+3. Wittek, P. and Calderaro, L. (2015). `Extended computational kernels in a massively parallel implementation of the Trotter-Suzuki approximation <http://dx.doi.org/10.1016/j.cpc.2015.07.017>`_. *Computer Physics Communications*, 197, pp. 339-340. `PDF <https://www.researchgate.net/profile/Peter_Wittek/publication/280962265_Extended_Computational_Kernels_in_a_Massively_Parallel_Implementation_of_the_TrotterSuzuki_Approximation/links/55cebd1f08aee19936fc5dcf.pdf>`_
