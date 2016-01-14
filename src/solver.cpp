@@ -36,7 +36,7 @@ Solver::Solver(Lattice *_grid, State *_state, Hamiltonian *_hamiltonian,
     single_component = true;
 }
 
-Solver::Solver(Lattice *_grid, State *state1, State *state2, 
+Solver::Solver(Lattice *_grid, State *state1, State *state2,
                Hamiltonian2Component *_hamiltonian,
                double _delta_t, string _kernel_type):
     grid(_grid), state(state1), state_b(state2), hamiltonian(_hamiltonian), delta_t(_delta_t),
@@ -99,7 +99,7 @@ void Solver::init_kernel() {
           kernel = new CPUBlock(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm2, imag_time);
       }
     } else if (!single_component) {
-        my_abort("Two-component Hamiltonians only work with the CPU kernel!");      
+        my_abort("Two-component Hamiltonians only work with the CPU kernel!");
     } else if (kernel_type == "gpu") {
 #ifdef CUDA
         kernel = new CC2Kernel(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_t, norm2[0], imag_time);
@@ -173,7 +173,7 @@ void Solver::evolve(int iterations, bool _imag_time) {
             kernel->finish_halo_exchange();
         }
         kernel->wait_for_completion();
-        norm2[0] = -.1;
+        //norm2[0] = -.1;
         if (!single_component) {
             //second wave function
             kernel->run_kernel_on_halo();
@@ -190,12 +190,12 @@ void Solver::evolve(int iterations, bool _imag_time) {
             }
             kernel->rabi_coupling(var, delta_t);
             kernel->normalization();
-            norm2[1] = -.1;
+            //norm2[1] = -.1;
         }
         current_evolution_time += delta_t;
     }
     if (single_component) {
-        kernel->get_sample(grid->dim_x, 0, 0, grid->dim_x, grid->dim_y, state->p_real, state->p_imag);      
+        kernel->get_sample(grid->dim_x, 0, 0, grid->dim_x, grid->dim_y, state->p_real, state->p_imag);
     } else {
         kernel->get_sample(grid->dim_x, 0, 0, grid->dim_x, grid->dim_y, state->p_real, state->p_imag, state_b->p_real, state_b->p_imag);
     }
@@ -219,7 +219,7 @@ double Solver::calculate_kinetic_energy(int which, double _norm2) {
     } else if (_norm2 != 0) {
         norm2[which] = _norm2;
     }
-    
+
     complex<double> sum = 0;
     complex<double> cost_E = -1. / (2. * hamiltonian->mass);
     complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
@@ -314,7 +314,7 @@ double Solver::calculate_rotational_energy(int which, double _norm2) {
 #endif
     return energy_rot;
 }
-     
+
 double Solver::calculate_rabi_coupling_energy(double _norm2) {
     int ini_halo_x = grid->inner_start_x - grid->start_x;
     int ini_halo_y = grid->inner_start_y - grid->start_y;
@@ -446,7 +446,7 @@ double Solver::calculate_total_energy_single_state(int which, double _norm2) {
     complex<double> rot_y, rot_x;
     double cost_rot_x = 0.5 * hamiltonian->angular_velocity * grid->delta_y / grid->delta_x;
     double cost_rot_y = 0.5 * hamiltonian->angular_velocity * grid->delta_x / grid->delta_y;
-    
+
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
     for (int i = grid->inner_start_y - grid->start_y + (ini_halo_y == 0),
          y = grid->inner_start_y + (ini_halo_y == 0);
@@ -455,7 +455,7 @@ double Solver::calculate_total_energy_single_state(int which, double _norm2) {
              x = grid->inner_start_x + (ini_halo_x == 0);
              j < grid->inner_end_x - grid->start_x - (end_halo_x == 0); j++, x++) {
             complex<double> potential_term;
-            potential_term = complex<double> (potential->get_value(x, y), 0.);
+            potential_term = complex<double> (potential->get_value(j, i), 0.);
             psi_center = complex<double> (current_state->p_real[i * tile_width + j],
                                                current_state->p_imag[i * tile_width + j]);
             psi_up = complex<double> (current_state->p_real[(i - 1) * tile_width + j],

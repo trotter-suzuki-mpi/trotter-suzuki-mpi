@@ -32,8 +32,8 @@ using namespace std;
 
 class Lattice {
 public:
-    Lattice(int _dim=100, double _length_x=20., double _length_y=20.,
-            int _periods[2]=0, double omega=0.);
+    Lattice(int dim=100, double length_x=20., double length_y=20.,
+            bool periodic_x_axis=false, bool periodic_y_axis=false, double omega=0.);
     double length_x, length_y;
     double delta_x, delta_y;
     int dim_x, dim_y;
@@ -57,7 +57,7 @@ public:
     double *p_real;
     double *p_imag;
 
-    State(Lattice *_grid, double *_p_real=0, double *_p_imag=0);
+    State(Lattice *grid, double *p_real=0, double *p_imag=0);
     ~State();
     void init_state(complex<double> (*ini_state)(double x, double y));
     void read_state(char *file_name, int read_offset);
@@ -71,7 +71,7 @@ public:
     void write_to_file(string fileprefix);
     void write_particle_density(string fileprefix);
     void write_phase(string fileprefix);
-    
+
 protected:
     Lattice *grid;
     bool self_init;
@@ -80,8 +80,8 @@ protected:
 
 class ExponentialState: public State {
 public:
-    ExponentialState(Lattice *_grid, int _n_x, int _n_y, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
-   
+    ExponentialState(Lattice *grid, int n_x=1, int n_y=1, double norm=1, double phase=0, double *p_real=0, double *p_imag=0);
+
 private:
     int n_x, n_y;
     double norm, phase;
@@ -90,9 +90,9 @@ private:
 
 class GaussianState: public State {
 public:
-    GaussianState(Lattice *_grid, double _omega, double _mean_x=0, double _mean_y=0, double _norm=1, double _phase=0, 
-                  double *_p_real=0, double *_p_imag=0);
-   
+    GaussianState(Lattice *grid, double omega, double mean_x=0, double mean_y=0, double norm=1, double phase=0,
+                  double *p_real=0, double *p_imag=0);
+
 private:
     double mean_x, mean_y, omega, norm, phase;
     complex<double> gauss_state(double x, double y);
@@ -100,8 +100,8 @@ private:
 
 class SinusoidState: public State {
 public:
-    SinusoidState(Lattice *_grid, int _n_x, int _n_y, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
-   
+    SinusoidState(Lattice *grid, int n_x=1, int n_y=1, double norm=1, double phase=0, double *p_real=0, double *p_imag=0);
+
 private:
     int n_x, n_y;
     double norm, phase;
@@ -110,11 +110,11 @@ private:
 
 
 class Potential {
-public:  
-    Potential(Lattice *_grid, char *filename);
-    Potential(Lattice *_grid, double *_external_pot);
-    Potential(Lattice *_grid, double (*potential_function)(double x, double y));
-    Potential(Lattice *_grid, double (*potential_function)(double x, double y, double t), int _t=0);
+public:
+    Potential(Lattice *grid, char *filename);
+    Potential(Lattice *grid, double *external_pot);
+    Potential(Lattice *grid, double (*potential_function)(double x, double y));
+    Potential(Lattice *grid, double (*potential_function)(double x, double y, double t), int t=0);
     ~Potential();
     virtual double get_value(int x, int y);
     bool update(double t);
@@ -131,7 +131,7 @@ protected:
 
 class ParabolicPotential: public Potential {
 public:
-    ParabolicPotential(Lattice *_grid, double _omegax, double _omegay, double _mass=1., double _mean_x = 0., double _mean_y = 0.);
+    ParabolicPotential(Lattice *grid, double omegax, double omegay, double mass=1., double mean_x = 0., double mean_y = 0.);
     ~ParabolicPotential();
     double get_value(int x, int y);
 
@@ -149,10 +149,10 @@ public:
     double angular_velocity;
     double rot_coord_x;
     double rot_coord_y;
-        
-    Hamiltonian(Lattice *_grid, Potential *_potential=0, double _mass=1., double _coupling_a=0.,
-                double _angular_velocity=0.,
-                double _rot_coord_x=DBL_MAX, double _rot_coord_y=DBL_MAX);
+
+    Hamiltonian(Lattice *grid, Potential *potential=0, double mass=1., double coupling_a=0.,
+                double angular_velocity=0.,
+                double rot_coord_x=0, double rot_coord_y=0);
     ~Hamiltonian();
 
 protected:
@@ -169,15 +169,15 @@ public:
     double omega_i;
     Potential *potential_b;
 
-    Hamiltonian2Component(Lattice *_grid, Potential *_potential=0,
-                          Potential *_potential_b=0,
-                          double _mass=1., double _mass_b=1.,
-                          double _coupling_a=0., double coupling_ab=0.,
-                          double _coupling_b=0.,
-                          double _omega_r=0, double _omega_i=0,
-                          double _angular_velocity=0.,
-                          double _rot_coord_x=DBL_MAX,
-                          double _rot_coord_y=DBL_MAX);
+    Hamiltonian2Component(Lattice *grid, Potential *potential=0,
+                          Potential *potential_b=0,
+                          double mass=1., double mass_b=1.,
+                          double coupling_a=0., double coupling_ab=0.,
+                          double coupling_b=0.,
+                          double omega_r=0, double omega_i=0,
+                          double angular_velocity=0.,
+                          double rot_coord_x=0,
+                          double rot_coord_y=0);
     ~Hamiltonian2Component();
 };
 
@@ -199,7 +199,7 @@ public:
     virtual bool runs_in_place() const = 0;
     virtual string get_name() const = 0;				///< Get kernel name.
     virtual void update_potential(double *_external_pot_real, double *_external_pot_imag) = 0;
-    
+
     virtual void start_halo_exchange() = 0;					///< Exchange halos between processes.
     virtual void finish_halo_exchange() = 0;				///< Exchange halos between processes.
 
@@ -237,9 +237,9 @@ public:
     double current_evolution_time;
     Solver(Lattice *grid, State *state, Hamiltonian *hamiltonian, double delta_t,
            string kernel_type="cpu");
-    Solver(Lattice *_grid, State *state1, State *state2,
-           Hamiltonian2Component *_hamiltonian,
-           double _delta_t, string _kernel_type="cpu");
+    Solver(Lattice *grid, State *state1, State *state2,
+           Hamiltonian2Component *hamiltonian,
+           double delta_t, string kernel_type="cpu");
     ~Solver();
     void evolve(int iterations, bool imag_time=false);
     double calculate_total_energy(double _norm2=0);

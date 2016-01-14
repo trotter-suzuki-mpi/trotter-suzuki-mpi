@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
     for(int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);
         fileprefix.str("");
-        fileprefix << dirname << "/" << 1 << "-" << ITERATIONS * count_snap;
+        fileprefix << dirname.str() << "/" << 1 << "-" << ITERATIONS * count_snap;
         state->write_to_file(fileprefix.str());
     }
     if (grid->mpi_rank == 0 && verbose == true) {

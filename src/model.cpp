@@ -45,17 +45,13 @@ double const_potential(double x, double y) {
 }
 
 
-Lattice::Lattice(int dim, double _length_x, double _length_y, int _periods[2],
+Lattice::Lattice(int dim, double _length_x, double _length_y,
+                 bool periodic_x_axis, bool periodic_y_axis,
                  double omega): length_x(_length_x), length_y(_length_y) {
     delta_x = length_x / double(dim);
     delta_y = length_y / double(dim);
-    if (_periods == 0) {
-          periods[0] = 0;
-          periods[1] = 0;
-    } else {
-          periods[0] = _periods[0];
-          periods[1] = _periods[1];
-    }
+    periods[0] = (int) periodic_y_axis;
+    periods[1] = (int) periodic_x_axis;
     mpi_dims[0] = mpi_dims[1] = 0;
 #ifdef HAVE_MPI
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_procs);
@@ -198,7 +194,7 @@ double State::calculate_squared_norm(bool global) {
     int tile_width = grid->end_x - grid->start_x;
 #ifndef HAVE_MPI
         #pragma omp parallel for reduction(+:norm2)
-#endif    
+#endif
     for(int i = grid->inner_start_y - grid->start_y; i < grid->inner_end_y - grid->start_y; i++) {
         for(int j = grid->inner_start_x - grid->start_x; j < grid->inner_end_x - grid->start_x; j++) {
           norm2 += p_real[j + i * tile_width] * p_real[j + i * tile_width] + p_imag[j + i * tile_width] * p_imag[j + i * tile_width];
@@ -353,7 +349,7 @@ void State::write_to_file(string filename) {
     stamp(grid, this, filename);
 }
 
-ExponentialState::ExponentialState(Lattice *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag): 
+ExponentialState::ExponentialState(Lattice *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
                   State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase) {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
@@ -374,8 +370,8 @@ complex<double> ExponentialState::exp_state(double x, double y) {
     return sqrt(norm/(L_x*L_y)) * exp(complex<double>(0., phase)) * exp(complex<double>(0., 2*M_PI*double(n_x)/L_x * x + 2*M_PI* double(n_y)/L_y * y));
 }
 
-GaussianState::GaussianState(Lattice *_grid, double _mean_x, double _mean_y, 
-                             double _omega, double _norm, double _phase, double *_p_real, double *_p_imag): 
+GaussianState::GaussianState(Lattice *_grid, double _omega, double _mean_x, double _mean_y,
+                             double _norm, double _phase, double *_p_real, double *_p_imag):
                              State(_grid, _p_real, _p_imag), mean_x(_mean_x),
                              mean_y(_mean_y), omega(_omega), norm(_norm), phase(_phase) {
     complex<double> tmp;
@@ -389,13 +385,15 @@ GaussianState::GaussianState(Lattice *_grid, double _mean_x, double _mean_y,
             p_imag[y * grid->dim_x + x] = imag(tmp);
         }
     }
-}   
-
-complex<double> GaussianState::gauss_state(double x, double y) {
-    return complex<double>(sqrt(0.5 * norm * omega / M_PI) * exp(-(pow(x - mean_x, 2.0) + pow(y - mean_y, 2.0)) * 0.5 * omega), 0.) * exp(complex<double>(0., phase));  
 }
 
-SinusoidState::SinusoidState(Lattice *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag): 
+complex<double> GaussianState::gauss_state(double x, double y) {
+    double x_c = (grid->global_dim_x - 2.*grid->halo_x * grid->periods[1]) * grid->delta_x * 0.5;
+    double y_c = (grid->global_dim_y - 2.*grid->halo_y * grid->periods[1]) * grid->delta_y * 0.5;
+    return complex<double>(sqrt(norm * omega / M_PI) * exp(-(pow(x + mean_x - x_c, 2.0) + pow(y + mean_y - y_c, 2.0)) * 0.5 * omega), 0.) * exp(complex<double>(0., phase));
+}
+
+SinusoidState::SinusoidState(Lattice *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
                              State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase)  {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
@@ -449,7 +447,7 @@ Potential::Potential(Lattice *_grid, double (*potential_fuction)(double x, doubl
 
 Potential::Potential(Lattice *_grid, double (*potential_function)(double x, double y, double t), int _t): grid(_grid) {
     is_static = false;
-    self_init = false;    
+    self_init = false;
     evolving_potential = potential_function;
     static_potential = NULL;
     matrix = NULL;
@@ -483,9 +481,8 @@ bool Potential::update(double t) {
             }
         }
         return true;
-    } else {
-        return false;
     }
+    return false;
 }
 
 Potential::~Potential() {
@@ -494,8 +491,8 @@ Potential::~Potential() {
     }
 }
 
-ParabolicPotential::ParabolicPotential(Lattice *_grid, double _omegax, double _omegay, double _mass, double _mean_x, double _mean_y): 
-                                       Potential(_grid, const_potential), omegax(_omegax), omegay(_omegay), 
+ParabolicPotential::ParabolicPotential(Lattice *_grid, double _omegax, double _omegay, double _mass, double _mean_x, double _mean_y):
+                                       Potential(_grid, const_potential), omegax(_omegax), omegay(_omegay),
                                        mass(_mass), mean_x(_mean_x), mean_y(_mean_y) {
     is_static = true;
     self_init = false;
@@ -505,11 +502,13 @@ ParabolicPotential::ParabolicPotential(Lattice *_grid, double _omegax, double _o
 }
 
 double ParabolicPotential::get_value(int x, int y) {
-     double x_c = (grid->global_dim_x - 2.*grid->halo_x * grid->periods[1]) * grid->delta_x;
-     double y_c = (grid->global_dim_y - 2.*grid->halo_y * grid->periods[1]) * grid->delta_y;
-     double x_r = x - x_c;
-     double y_r = y - y_c;
-     return 0.5 * mass * (omegax * omegax * x_c * x_c + omegay * omegay * y_c * y_c);
+    double idy = (grid->start_y + y) * grid->delta_y + mean_x;
+    double idx = (grid->start_x + x) * grid->delta_x + mean_y;
+    double x_c = (grid->global_dim_x - 2.*grid->halo_x * grid->periods[1]) * grid->delta_x * 0.5;
+    double y_c = (grid->global_dim_y - 2.*grid->halo_y * grid->periods[1]) * grid->delta_y * 0.5;
+    double x_r = idx - x_c;
+    double y_r = idy - y_c;
+    return 0.5 * mass * (omegax * omegax * x_r * x_r + omegay * omegay * y_r * y_r);
 }
 
 ParabolicPotential::~ParabolicPotential() {
@@ -520,16 +519,8 @@ Hamiltonian::Hamiltonian(Lattice *_grid, Potential *_potential,
                          double _angular_velocity,
                          double _rot_coord_x, double _rot_coord_y): grid(_grid), mass(_mass),
                          coupling_a(_coupling_a), angular_velocity(_angular_velocity) {
-    if (_rot_coord_x == DBL_MAX) {
-        rot_coord_x = (grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x) * 0.5;
-    } else {
-        rot_coord_x = _rot_coord_x;
-    }
-    if (_rot_coord_y == DBL_MAX) {
-        rot_coord_y = (grid->global_dim_y - grid->periods[1] * 2 * grid->halo_y) * 0.5;
-    } else {
-        rot_coord_y = _rot_coord_y;
-    }
+    rot_coord_x = (grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x) * 0.5 + _rot_coord_x / grid->delta_x;
+    rot_coord_y = (grid->global_dim_y - grid->periods[1] * 2 * grid->halo_y) * 0.5 + _rot_coord_y / grid->delta_y;
     if (_potential == NULL) {
         self_init = true;
         potential = new Potential(grid, const_potential);
@@ -547,7 +538,7 @@ Hamiltonian::~Hamiltonian() {
 
 Hamiltonian2Component::Hamiltonian2Component(Lattice *_grid,
                          Potential *_potential,
-                         Potential *_potential_b,                         
+                         Potential *_potential_b,
                          double _mass,
                          double _mass_b, double _coupling_a,
                          double _coupling_ab, double _coupling_b,

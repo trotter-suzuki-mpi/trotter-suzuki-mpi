@@ -33,9 +33,7 @@
 #define SNAP_PER_STAMP 5
 
 int main(int argc, char** argv) {
-    char file_name[] = "";
-    char pot_name[1] = "";
-    const double particle_mass_a = 1., particle_mass_b = 1.;
+    double particle_mass_a = 1., particle_mass_b = 1.;
     bool imag_time = false;
     double delta_t = 1.e-3;
     double length_x = double(LENGTH), length_y = double(LENGTH);

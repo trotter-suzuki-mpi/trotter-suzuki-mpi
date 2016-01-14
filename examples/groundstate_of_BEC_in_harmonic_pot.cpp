@@ -29,18 +29,18 @@
 #endif
 #include "trottersuzuki.h"
 
-#define LENGTH 50
+#define LENGTH 30
 #define DIM 640
-#define ITERATIONS 2000
+#define ITERATIONS 1000
 #define PARTICLES_NUM 1700000
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 10
-#define SCATTER_LENGTH_2D 0 //5.662739242e-5
+#define SCATTER_LENGTH_2D 5.662739242e-5
 
 int main(int argc, char** argv) {
     bool verbose = true;
     bool imag_time = true;
-    double delta_t = 1.e-4;
+    double delta_t = 1.e-5;
     const double particle_mass = 1.;
     double coupling_a = 4. * M_PI * double(SCATTER_LENGTH_2D);    
     
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
     //set lattice
     Lattice *grid = new Lattice(DIM, (double)LENGTH, (double)LENGTH);
     //set initial state
-    State *state = new GaussianState(grid, 0.01, 0., 0., PARTICLES_NUM);
+    State *state = new GaussianState(grid, 1., 0., 0., PARTICLES_NUM);
     //set hamiltonian
     Potential *potential = new ParabolicPotential(grid, 1., sqrt(2));
     Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, particle_mass, coupling_a);
@@ -67,11 +67,14 @@ int main(int argc, char** argv) {
     stringstream dirname, fileprefix;
     dirname << "D" << DIM << "_I" << ITERATIONS << "_S" << SNAPSHOTS << "";
     mkdir(dirname.str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-
+    
+    fileprefix.str("");
+	fileprefix << dirname.str() << "/" << 0;
+	state->write_to_file(fileprefix.str());
     for(int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);
         fileprefix.str("");
-        fileprefix << dirname << "/" << 1 << "-" << ITERATIONS * count_snap;
+        fileprefix << dirname.str() << "/" << ITERATIONS * (count_snap + 1);
         state->write_to_file(fileprefix.str());
     }
     if (grid->mpi_rank == 0 && verbose == true) {

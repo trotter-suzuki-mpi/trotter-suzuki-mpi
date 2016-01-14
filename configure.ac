@@ -31,7 +31,7 @@ fi
 CXXFLAGS="${CXXFLAGS} ${OPENMP_CFLAGS}"
 
 if [[[ $string == *"ICC"* ]]]
-then  
+then
   CXXFLAGS="${CXXFLAGS}"
 else
   AS_IF([test "x$GXX" = "xyes"],[CXXFLAGS="${CXXFLAGS} -Ofast -march=native"])
@@ -49,8 +49,8 @@ fi
 # Setup CUDA paths
 # ------------------------------------------------------------------------------
 if test -z "$CUDAHOME" ; then
-    CUDA_PATH=/usr/local/cuda 
-else 
+    CUDA_PATH=/usr/local/cuda
+else
     CUDA_PATH="$CUDAHOME"
 fi
 
@@ -70,10 +70,10 @@ if test x"$with_cuda" != x"no" ; then
      CUDA_CFLAGS="-I$CUDA_PATH/include -use_fast_math -Xptxas "-v" -Xcompiler \"${CXXFLAGS}\""
      CXXFLAGS="${CXXFLAGS} -I$CUDA_PATH/include"
      CUDA_LIBS="-lcudart -lcublas"
-     if test -e $CUDA_PATH/lib$SUFFIX; then
+     if test -e "$CUDA_PATH/lib$SUFFIX"; then
          CUDA_LDFLAGS="-L$CUDA_PATH/lib$SUFFIX"
      else
-         CUDA_LDFLAGS="-L$CUDA_PATH/lib" #OS X retardation
+         CUDA_LDFLAGS="-L$CUDA_PATH/lib"
      fi
      NVCC="$CUDA_PATH/bin/nvcc"
      AC_SUBST(CUDA_CFLAGS)
@@ -87,11 +87,11 @@ if test x"$with_cuda" != x"no" ; then
      echo "Building a version without CUDA.    "
      echo "---------------------------------------"
      cuda_enabled=no
-  else 
+  else
      cuda_enabled=no
   fi
 else
-  cuda_enabled=no  
+  cuda_enabled=no
 fi
 
 AM_CONDITIONAL([HAVE_CUDA], [test x"$cuda_enabled" = x"yes"])
@@ -102,7 +102,7 @@ AC_ARG_WITH([mpi],
    [  --with-mpi=PATH    prefix where MPI is installed])
 
 mpi_enabled=no
-if test x"$with_mpi" != x"no" ; then	
+if test x"$with_mpi" != x"no" ; then
     AX_MPI_OPTIONS
     if test x"$MPI_CXX" != x"none"; then
       AX_MPI_TESTS
