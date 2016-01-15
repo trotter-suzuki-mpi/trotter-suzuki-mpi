@@ -54,7 +54,7 @@ OBJS=$(LIBOBJS) main.o
 all: trottersuzuki lib
 
 lib: $(LIBOBJS)
-	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -shared -o trottersuzuki.so $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
+	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -shared -o libtrottersuzuki.so $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
 
 trottersuzuki: $(OBJS)
 	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o $@ $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
