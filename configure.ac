@@ -70,7 +70,7 @@ if test x"$with_cuda" != x"no" ; then
      CUDA_CFLAGS="-I$CUDA_PATH/include -use_fast_math -Xptxas "-v" -Xcompiler \"${CXXFLAGS}\""
      CXXFLAGS="${CXXFLAGS} -I$CUDA_PATH/include"
      CUDA_LIBS="-lcudart -lcublas"
-     if test -e "-L$CUDA_PATH/lib$SUFFIX"; then
+     if test -e "$CUDA_PATH/lib$SUFFIX"; then
          CUDA_LDFLAGS="-L$CUDA_PATH/lib$SUFFIX"
      else
          CUDA_LDFLAGS="-L$CUDA_PATH/lib"
