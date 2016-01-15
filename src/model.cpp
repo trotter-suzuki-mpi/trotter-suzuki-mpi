@@ -288,15 +288,15 @@ void State::calculate_expected_values(void) {
     complex<double> derivate1_1 = 1./6., derivate1_2 = - 1., derivate1_3 = 0.5, derivate1_4 = 1./3.;
 
 #ifndef HAVE_MPI
-        #pragma omp parallel for reduction(+:sum_norm2)
-        #pragma omp parallel for reduction(+:sum_x_mean)
-        #pragma omp parallel for reduction(+:sum_y_mean)
-        #pragma omp parallel for reduction(+:sum_xx_mean)
-        #pragma omp parallel for reduction(+:sum_yy_mean)
-        #pragma omp parallel for reduction(+:sum_px_mean)
-        #pragma omp parallel for reduction(+:sum_py_mean)
-        #pragma omp parallel for reduction(+:sum_pxpx_mean)
-        #pragma omp parallel for reduction(+:sum_pypy_mean)
+        #pragma omp parallel for reduction(+:sum_norm2,
+                                             sum_x_mean,
+                                             sum_y_mean,
+                                             sum_xx_mean,
+                                             sum_yy_mean,
+                                             sum_px_mean,
+                                             sum_py_mean,
+                                             sum_pxpx_mean,
+                                             sum_pypy_mean)
 #endif
     for (int i = grid->inner_start_y - grid->start_y,
          y = grid->inner_start_y; i < grid->inner_end_y - grid->start_y; i++, y++) {

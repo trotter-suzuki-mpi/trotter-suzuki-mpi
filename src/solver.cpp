@@ -267,20 +267,18 @@ void Solver::calculate_energy_expected_values(void) {
     complex<double> const_1 = -1./12., const_2 = 4./3., const_3 = -2.5;
     complex<double> derivate1_1 = 1./6., derivate1_2 = - 1., derivate1_3 = 0.5, derivate1_4 = 1./3.;
 #ifndef HAVE_MPI
-    #pragma omp parallel for reduction(+:sum_norm2[0])
-    #pragma omp parallel for reduction(+:sum_potential_energy[0])
-    #pragma omp parallel for reduction(+:sum_intra_species_energy[0])
-    #pragma omp parallel for reduction(+:sum_kinetic_energy[0])
-    #pragma omp parallel for reduction(+:sum_rotational_energy[0])
-    #pragma omp parallel for reduction(+:sum_inter_species_energy)
-    #pragma omp parallel for reduction(+:sum_rabi_energy)
-    if (!single_component) {
-        #pragma omp parallel for reduction(+:sum_norm2[1])
-        #pragma omp parallel for reduction(+:sum_potential_energy[1])
-        #pragma omp parallel for reduction(+:sum_intra_species_energy[1])
-        #pragma omp parallel for reduction(+:sum_kinetic_energy[1])
-        #pragma omp parallel for reduction(+:sum_rotational_energy[1])
-    }
+    #pragma omp parallel for reduction(+:sum_norm2[0],
+                                         sum_potential_energy[0],
+                                         sum_intra_species_energy[0],
+                                         sum_kinetic_energy[0],
+                                         sum_rotational_energy[0],
+                                         sum_inter_species_energy,
+                                         sum_rabi_energy,
+                                         sum_norm2[1],
+                                         sum_potential_energy[1],
+                                         sum_intra_species_energy[1],
+                                         sum_kinetic_energy[1],
+                                         sum_rotational_energy[1])
 #endif
     for (int i = grid->inner_start_y - grid->start_y, y = grid->inner_start_y;
          i < grid->inner_end_y - grid->start_y; i++, y++) {
