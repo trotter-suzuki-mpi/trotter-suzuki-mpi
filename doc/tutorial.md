@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
 Compile it with
 
 ~~~~~~~~~~~~~~~
-mpic++ -I/PATH/TO/TROTTERSUZUKI/HEADER -L/PATH/TO/TROTTERSUZUKI/LIBRARY simple_example.cpp -o simple_example -ltrottersuzuki
+mpic++ -I/PATH/TO/TROTTERSUZUKI/HEADER -L/PATH/TO/TROTTERSUZUKI/LIBRARY simple_example_mpi.cpp -o simple_example_mpi -ltrottersuzuki
 ~~~~~~~~~~~~~~~
 
 Keep in mind that the library itself has to be compiled with MPI to make it work.
