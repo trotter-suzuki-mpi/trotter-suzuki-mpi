@@ -104,12 +104,28 @@ State::~State() {
     }
 }
 
+void State::imprint(complex<double> (*function)(double x, double y)) {
+    double delta_x = grid->delta_x, delta_y = grid->delta_y;
+    double idy = grid->start_y * delta_y + 0.5*delta_y, idx;
+    for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
+        idx = grid->start_x * delta_x + 0.5*delta_x;
+        for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
+            complex<double> tmp;
+            double tmp_p_real;
+            tmp = function(idx, idy);
+            tmp_p_real = p_real[y * grid->dim_x + x];
+            p_real[y * grid->dim_x + x] = tmp_p_real * real(tmp) - p_imag[y * grid->dim_x + x] * imag(tmp);
+            p_imag[y * grid->dim_x + x] = tmp_p_real * imag(tmp) + p_imag[y * grid->dim_x + x] * real(tmp);
+        }
+    }
+}
+
 void State::init_state(complex<double> (*ini_state)(double x, double y)) {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y + 0.5*grid->delta_y, idx;
+    double idy = grid->start_y * delta_y + 0.5*delta_y, idx;
     for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x + 0.5*grid->delta_x;
+        idx = grid->start_x * delta_x + 0.5*delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
             tmp = ini_state(idx, idy);
             p_real[y * grid->dim_x + x] = real(tmp);
