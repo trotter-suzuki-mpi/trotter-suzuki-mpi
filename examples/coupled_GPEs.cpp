@@ -17,6 +17,7 @@
  */
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 #include <sys/stat.h>
 
 #include "trottersuzuki.h"
@@ -25,7 +26,7 @@
 #endif
 
 #define LENGTH 10
-#define DIM 100
+#define DIM 200
 #define ITERATIONS 1000
 #define PARTICLES_NUM 1700000
 #define KERNEL_TYPE "cpu"
@@ -40,7 +41,8 @@ int main(int argc, char** argv) {
     double coupling_a = 0;//7.116007999594e-4;
     double coupling_b = 0;//7.116007999594e-4;
     double coupling_ab = 0;
-    double omega_i = 2.*M_PI/20.;
+    double omega_i = 0.;
+    double omega_r = 2.*M_PI/20.;
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
@@ -48,11 +50,11 @@ int main(int argc, char** argv) {
     Lattice *grid = new Lattice(DIM, length_x, length_y);
     //set initial state
     State *state1 = new GaussianState(grid, 1, 0., 0., PARTICLES_NUM);
-    State *state2 = new GaussianState(grid, 1, 0., 0., PARTICLES_NUM);
+    State *state2 = new GaussianState(grid, 1, 0., 0., PARTICLES_NUM, M_PI/2.);
     
     //set hamiltonian
     Potential *potential = new ParabolicPotential(grid, 1., 1.);
-    Hamiltonian2Component *hamiltonian = new Hamiltonian2Component(grid, potential, potential, particle_mass_a, particle_mass_b, coupling_a, coupling_ab, coupling_b, 0., omega_i);
+    Hamiltonian2Component *hamiltonian = new Hamiltonian2Component(grid, potential, potential, particle_mass_a, particle_mass_b, coupling_a, coupling_ab, coupling_b, omega_r, omega_i);
     
     //set evolution
     Solver *solver = new Solver(grid, state1, state2, hamiltonian, delta_t, KERNEL_TYPE);
@@ -65,16 +67,23 @@ int main(int argc, char** argv) {
     fileprefix << dirname << "/file_info.txt";
     ofstream out(fileprefix.str().c_str());
 
-    double *matrix = new double[grid->dim_x*grid->dim_y];
-
     double norm2[2];
-    norm2[0] = state1->calculate_squared_norm();
-    norm2[1] = state2->calculate_squared_norm();
-    double tot_energy = solver->calculate_total_energy(norm2[0]+norm2[1]);
+    norm2[0] = state1->get_squared_norm();
+    norm2[1] = state2->get_squared_norm();
+    //get expected values
+    double tot_energy = solver->get_total_energy();
+    double kin_energy = solver->get_kinetic_energy();
+    double rabi_energy = solver->get_rabi_energy();
+    double pot_energy = solver->get_potential_energy();
+    double intra_energy = solver->get_intra_species_energy();
+    double inter_energy = solver->get_inter_species_energy();
 
-    if(grid->mpi_rank == 0){
-        out << "time \t total energy \ttot norm2\tnorm2_a\tnorm2_b\n";
-        out << "0\t" << "\t" << tot_energy << "\t" << norm2[0] + norm2[1] << "\t" << norm2[0] << "\t" << norm2[1] << endl;
+    
+    if (grid->mpi_rank == 0){
+      out << std::setw(11) << "time" << std::setw(14) << "squared norm" << std::setw(14) << "sq norm1" << std::setw(14) << "sq norm2" << std::setw(14) << "tot energy" << std::setw(14) 
+          << "kin energy" << std::setw(14) << "pot energy" << std::setw(14) << "intra energy" << std::setw(14) << "inter energy"  << std::setw(14) << "rabi energy\n";        
+      out << std::setw(11) << "0" << std::setw(14) << norm2[0] + norm2[1] << std::setw(14) << norm2[0] << std::setw(14) << norm2[1] << std::setw(14) << tot_energy << std::setw(14) 
+          << kin_energy << std::setw(14) << pot_energy << std::setw(14) << intra_energy << std::setw(14) << inter_energy << std::setw(14) << rabi_energy << endl;
     }
     
     //write phase and density
@@ -90,12 +99,19 @@ int main(int argc, char** argv) {
     for (int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);
         //norm calculation
-        norm2[0] = state1->calculate_squared_norm();
-        norm2[1] = state2->calculate_squared_norm();
-        tot_energy = solver->calculate_total_energy(norm2[0]+norm2[1]);
-
-        if (grid->mpi_rank == 0){
-            out << (count_snap + 1) * ITERATIONS * delta_t << "\t" << tot_energy << "\t" << norm2[0]+norm2[1] << "\t" << norm2[0] << "\t" << norm2[1] << endl;
+        norm2[0] = state1->get_squared_norm();
+        norm2[1] = state2->get_squared_norm();
+        //get expected values
+        tot_energy = solver->get_total_energy();
+        kin_energy = solver->get_kinetic_energy();
+        rabi_energy = solver->get_rabi_energy();
+        pot_energy = solver->get_potential_energy();
+        intra_energy = solver->get_intra_species_energy();
+        inter_energy = solver->get_inter_species_energy();
+        
+        if(grid->mpi_rank == 0){
+            out << std::setw(11) << (count_snap + 1) * ITERATIONS * delta_t << std::setw(14) << norm2[0] + norm2[1] << std::setw(14) << norm2[0] << std::setw(14) << norm2[1] << std::setw(14) << tot_energy << std::setw(14) 
+                << kin_energy << std::setw(14) << pot_energy << std::setw(14) << intra_energy << std::setw(14) << inter_energy << std::setw(14) << rabi_energy << endl;
         }
 
         //stamp phase and particles density
@@ -121,7 +137,6 @@ int main(int argc, char** argv) {
     delete state1;
     delete state2;
     delete grid;
-    delete matrix;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif

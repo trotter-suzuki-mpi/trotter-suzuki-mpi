@@ -82,6 +82,7 @@ Lattice::Lattice(int dim, double _length_x, double _length_y,
 
 
 State::State(Lattice *_grid, double *_p_real, double *_p_imag): grid(_grid){
+    expected_values_updated = false;
     if (_p_real == 0) {
         self_init = true;
         p_real = new double[grid->dim_x * grid->dim_y];
@@ -106,9 +107,9 @@ State::~State() {
 void State::init_state(complex<double> (*ini_state)(double x, double y)) {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y, idx;
+    double idy = grid->start_y * delta_y + 0.5*grid->delta_y, idx;
     for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x;
+        idx = grid->start_x * delta_x + 0.5*grid->delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
             tmp = ini_state(idx, idy);
             p_real[y * grid->dim_x + x] = real(tmp);
@@ -264,58 +265,43 @@ void State::write_phase(string fileprefix) {
     delete phase;
 }
 
-void State::calculate_mean_position(int grid_origin_x, int grid_origin_y,
-                                    double *results, double norm2) {
-
+void State::calculate_expected_values(void) {
     int ini_halo_x = grid->inner_start_x - grid->start_x;
     int ini_halo_y = grid->inner_start_y - grid->start_y;
     int end_halo_x = grid->end_x - grid->inner_end_x;
     int end_halo_y = grid->end_y - grid->inner_end_y;
     int tile_width = grid->end_x - grid->start_x;
 
-    if(norm2 == 0)
-        norm2 = calculate_squared_norm();
+    norm2 = calculate_squared_norm();
+    double grid_center_x = grid->length_x * 0.5 - grid->delta_x * 0.5;
+    double grid_center_y = grid->length_y * 0.5 - grid->delta_y * 0.5;
 
     complex<double> sum_x_mean = 0, sum_xx_mean = 0, sum_y_mean = 0, sum_yy_mean = 0;
-    complex<double> psi_center;
-    for (int i = grid->inner_start_y - grid->start_y + (ini_halo_y == 0);
-         i < grid->inner_end_y - grid->start_y - (end_halo_y == 0); i++) {
-        for (int j = grid->inner_start_x - grid->start_x + (ini_halo_x == 0);
-             j < grid->inner_end_x - grid->start_x - (end_halo_x == 0); j++) {
-            psi_center = complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
-            sum_x_mean += conj(psi_center) * psi_center * complex<double>(grid->delta_x * (j - grid_origin_x), 0.);
-            sum_y_mean += conj(psi_center) * psi_center * complex<double>(grid->delta_y * (i - grid_origin_y), 0.);
-            sum_xx_mean += conj(psi_center) * psi_center * complex<double>(grid->delta_x * (j - grid_origin_x), 0.) * complex<double>(grid->delta_x * (j - grid_origin_x), 0.);
-            sum_yy_mean += conj(psi_center) * psi_center * complex<double>(grid->delta_y * (i - grid_origin_y), 0.) * complex<double>(grid->delta_y * (i - grid_origin_y), 0.);
-        }
-    }
-
-    results[0] = real(sum_x_mean / norm2) * grid->delta_x * grid->delta_y;
-    results[2] = real(sum_y_mean / norm2) * grid->delta_x * grid->delta_y;
-    results[1] = real(sum_xx_mean / norm2) * grid->delta_x * grid->delta_y - results[0] * results[0];
-    results[3] = real(sum_yy_mean / norm2) * grid->delta_x * grid->delta_y - results[2] * results[2];
-}
-
-void State::calculate_mean_momentum(double *results, double norm2) {
-
-    int ini_halo_x = grid->inner_start_x - grid->start_x;
-    int ini_halo_y = grid->inner_start_y - grid->start_y;
-    int end_halo_x = grid->end_x - grid->inner_end_x;
-    int end_halo_y = grid->end_y - grid->inner_end_y;
-    int tile_width = grid->end_x - grid->start_x;
-
-    if(norm2 == 0)
-        norm2 = calculate_squared_norm();
-
     complex<double> sum_px_mean = 0, sum_pxpx_mean = 0, sum_py_mean = 0,
                          sum_pypy_mean = 0,
-                         var_px = complex<double>(0., - 0.5 / grid->delta_x),
-                         var_py = complex<double>(0., - 0.5 / grid->delta_y);
+                         param_px = complex<double>(0., - 1. / grid->delta_x),
+                         param_py = complex<double>(0., 1. / grid->delta_y);
+
     complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
-    for (int i = grid->inner_start_y - grid->start_y + (ini_halo_y == 0);
-         i < grid->inner_end_y - grid->start_y - (end_halo_y == 0); i++) {
-        for (int j = grid->inner_start_x - grid->start_x + (ini_halo_x == 0);
-             j < grid->inner_end_x - grid->start_x - (end_halo_x == 0); j++) {
+    complex<double> psi_up_up, psi_down_down, psi_left_left, psi_right_right;
+    complex<double> const_1 = -1./12., const_2 = 4./3., const_3 = -2.5;
+    complex<double> derivate1_1 = 1./6., derivate1_2 = - 1., derivate1_3 = 0.5, derivate1_4 = 1./3.;
+    
+    for (int i = grid->inner_start_y - grid->start_y,
+         y = grid->inner_start_y; i < grid->inner_end_y - grid->start_y; i++, y++) {
+        for (int j = grid->inner_start_x - grid->start_x,
+             x = grid->inner_start_x; j < grid->inner_end_x - grid->start_x; j++, x++) {
+            psi_center = complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
+            sum_x_mean += conj(psi_center) * psi_center * complex<double>(grid->delta_x * x - grid_center_x, 0.);
+            sum_y_mean += conj(psi_center) * psi_center * complex<double>(grid->delta_y * y - grid_center_y, 0.);
+            sum_xx_mean += conj(psi_center) * psi_center * complex<double>(grid->delta_x * x - grid_center_x, 0.) * complex<double>(grid->delta_x * x - grid_center_x, 0.);
+            sum_yy_mean += conj(psi_center) * psi_center * complex<double>(grid->delta_y * y - grid_center_y, 0.) * complex<double>(grid->delta_y * y - grid_center_y, 0.);
+        }
+    }
+    for (int i = grid->inner_start_y - grid->start_y + (ini_halo_y == 0)*2;
+         i < grid->inner_end_y - grid->start_y - (end_halo_y == 0)*2; i++) {
+        for (int j = grid->inner_start_x - grid->start_x + (ini_halo_x == 0)*2;
+             j < grid->inner_end_x - grid->start_x - (end_halo_x == 0)*2; j++) {
             psi_center = complex<double> (p_real[i * tile_width + j],
                                                p_imag[i * tile_width + j]);
             psi_up = complex<double> (p_real[(i - 1) * tile_width + j],
@@ -326,23 +312,143 @@ void State::calculate_mean_momentum(double *results, double norm2) {
                                               p_imag[i * tile_width + j + 1]);
             psi_left = complex<double> (p_real[i * tile_width + j - 1],
                                              p_imag[i * tile_width + j - 1]);
-
-            sum_px_mean += conj(psi_center) * (psi_right - psi_left);
-            sum_py_mean += conj(psi_center) * (psi_up - psi_down);
-            sum_pxpx_mean += conj(psi_center) * (psi_right - 2. * psi_center + psi_left);
-            sum_pypy_mean += conj(psi_center) * (psi_up - 2. * psi_center + psi_down);
+            psi_up_up = complex<double> (p_real[(i - 2) * tile_width + j],
+                                           p_imag[(i - 2) * tile_width + j]);
+            psi_down_down = complex<double> (p_real[(i + 2) * tile_width + j],
+                                             p_imag[(i + 2) * tile_width + j]);
+            psi_right_right = complex<double> (p_real[i * tile_width + j + 2],
+                                              p_imag[i * tile_width + j + 2]);
+            psi_left_left = complex<double> (p_real[i * tile_width + j - 2],
+                                             p_imag[i * tile_width + j - 2]);
+            
+            sum_px_mean += conj(psi_center) * (derivate1_4*psi_right + derivate1_3*psi_center + derivate1_2*psi_left + derivate1_1*psi_left_left);
+            sum_py_mean += conj(psi_center) * (derivate1_4*psi_up + derivate1_3*psi_center + derivate1_2*psi_down + derivate1_1*psi_down_down);
+            sum_pxpx_mean += conj(psi_center) * (const_1*psi_right_right + const_2*psi_right + const_2*psi_left + const_1*psi_left_left + const_3*psi_center);
+            sum_pypy_mean += conj(psi_center) * (const_1*psi_down_down + const_2*psi_down + const_2*psi_up + const_1*psi_up_up + const_3*psi_center);
         }
     }
+    
+    mean_X = real(sum_x_mean) * grid->delta_x * grid->delta_y;
+    mean_Y = real(sum_y_mean) * grid->delta_x * grid->delta_y;
+    mean_XX = real(sum_xx_mean) * grid->delta_x * grid->delta_y;
+    mean_YY = real(sum_yy_mean) * grid->delta_x * grid->delta_y;
+    mean_Px = real(sum_px_mean * param_px);
+    mean_Py = real(sum_py_mean * param_py);
+    mean_PxPx = real(sum_pxpx_mean * param_px * param_px);
+    mean_PyPy = real(sum_pypy_mean * param_py * param_py);
 
-    sum_px_mean = sum_px_mean * var_px;
-    sum_py_mean = sum_py_mean * var_py;
-    sum_pxpx_mean = sum_pxpx_mean * (-1.)/(grid->delta_x * grid->delta_x);
-    sum_pypy_mean = sum_pypy_mean * (-1.)/(grid->delta_y * grid->delta_y);
+#ifdef HAVE_MPI
+    double *mean_X_mpi = new double[grid->mpi_procs];
+    double *mean_Y_mpi = new double[grid->mpi_procs];
+    double *mean_XX_mpi = new double[grid->mpi_procs];
+    double *mean_YY_mpi = new double[grid->mpi_procs];
+    double *mean_Px_mpi = new double[grid->mpi_procs];
+    double *mean_Py_mpi = new double[grid->mpi_procs];
+    double *mean_PxPx_mpi = new double[grid->mpi_procs];
+    double *mean_PyPy_mpi = new double[grid->mpi_procs];
+    
+    MPI_Allgather(&mean_X, 1, MPI_DOUBLE, mean_X_mpi, 1, MPI_DOUBLE, grid->cartcomm);
+    MPI_Allgather(&mean_Y, 1, MPI_DOUBLE, mean_Y_mpi, 1, MPI_DOUBLE, grid->cartcomm);
+    MPI_Allgather(&mean_XX, 1, MPI_DOUBLE, mean_XX_mpi, 1, MPI_DOUBLE, grid->cartcomm);
+    MPI_Allgather(&mean_YY, 1, MPI_DOUBLE, mean_YY_mpi, 1, MPI_DOUBLE, grid->cartcomm);
+    MPI_Allgather(&mean_Px, 1, MPI_DOUBLE, mean_Px_mpi, 1, MPI_DOUBLE, grid->cartcomm);
+    MPI_Allgather(&mean_Py, 1, MPI_DOUBLE, mean_Py_mpi, 1, MPI_DOUBLE, grid->cartcomm);
+    MPI_Allgather(&mean_PxPx, 1, MPI_DOUBLE, mean_PxPx_mpi, 1, MPI_DOUBLE, grid->cartcomm);
+    MPI_Allgather(&mean_PyPy, 1, MPI_DOUBLE, mean_PyPy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
+    
+    mean_X = 0.;
+    mean_Y = 0.;
+    mean_XX = 0.;
+    mean_YY = 0.;
+    mean_Px = 0.;
+    mean_Py = 0.;
+    mean_PxPx = 0.;
+    mean_PyPy = 0.;
+    
+    for(int i = 0; i < grid->mpi_procs; i++) {
+        mean_X += mean_X_mpi[i];
+        mean_Y += mean_Y_mpi[i];
+        mean_XX += mean_XX_mpi[i];
+        mean_YY += mean_YY_mpi[i];
+        mean_Px += mean_Px_mpi[i];
+        mean_Py += mean_Py_mpi[i];
+        mean_PxPx += mean_PxPx_mpi[i];
+        mean_PyPy += mean_PyPy_mpi[i];
+    }
 
-    results[0] = real(sum_px_mean / norm2) * grid->delta_x * grid->delta_y;
-    results[2] = real(sum_py_mean / norm2) * grid->delta_x * grid->delta_y;
-    results[1] = real(sum_pxpx_mean / norm2) * grid->delta_x * grid->delta_y - results[0] * results[0];
-    results[3] = real(sum_pypy_mean / norm2) * grid->delta_x * grid->delta_y - results[2] * results[2];
+    delete [] mean_X_mpi;
+    delete [] mean_Y_mpi;
+    delete [] mean_XX_mpi;
+    delete [] mean_YY_mpi;
+    delete [] mean_Px_mpi;
+    delete [] mean_Py_mpi;
+    delete [] mean_PxPx_mpi;
+    delete [] mean_PyPy_mpi;
+#endif
+    mean_X = mean_X / norm2;
+    mean_Y = mean_Y / norm2;
+    mean_XX = mean_XX / norm2;
+    mean_YY = mean_YY / norm2;
+    mean_Px = mean_Px / norm2;
+    mean_Py = mean_Py / norm2;
+    mean_PxPx = mean_PxPx / norm2;
+    mean_PyPy = mean_PyPy / norm2;
+
+    expected_values_updated = true;
+}
+
+double State::get_mean_x(void) {
+    if(!expected_values_updated)
+        calculate_expected_values();
+    return mean_X;
+}
+
+double State::get_mean_xx(void) {
+    if(!expected_values_updated)
+        calculate_expected_values();
+    return mean_XX;
+}
+
+double State::get_mean_y(void) {
+    if(!expected_values_updated)
+        calculate_expected_values();
+    return mean_Y;
+}
+
+double State::get_mean_yy(void) {
+    if(!expected_values_updated)
+        calculate_expected_values();
+    return mean_YY;
+}
+
+double State::get_mean_px(void) {
+    if(!expected_values_updated)
+        calculate_expected_values();
+    return mean_Px;
+}
+
+double State::get_mean_pxpx(void) {
+    if(!expected_values_updated)
+        calculate_expected_values();
+    return mean_PxPx;
+}
+
+double State::get_mean_py(void) {
+    if(!expected_values_updated)
+        calculate_expected_values();
+    return mean_Py;
+}
+
+double State::get_mean_pypy(void) {
+    if(!expected_values_updated)
+        calculate_expected_values();
+    return mean_PyPy;
+}
+
+double State::get_squared_norm(void) {
+    if(!expected_values_updated)
+        calculate_expected_values();
+    return norm2;
 }
 
 void State::write_to_file(string filename) {
@@ -353,9 +459,9 @@ ExponentialState::ExponentialState(Lattice *_grid, int _n_x, int _n_y, double _n
                   State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase) {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y, idx;
+    double idy = grid->start_y * delta_y + 0.5*delta_y, idx;
     for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x;
+        idx = grid->start_x * delta_x + 0.5*delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
             tmp = exp_state(idx, idy);
             p_real[y * grid->dim_x + x] = real(tmp);
@@ -376,9 +482,9 @@ GaussianState::GaussianState(Lattice *_grid, double _omega, double _mean_x, doub
                              mean_y(_mean_y), omega(_omega), norm(_norm), phase(_phase) {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y, idx;
+    double idy = grid->start_y * delta_y + 0.5*delta_y, idx;
     for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x;
+        idx = grid->start_x * delta_x + 0.5*delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
             tmp = gauss_state(idx, idy);
             p_real[y * grid->dim_x + x] = real(tmp);
@@ -397,9 +503,9 @@ SinusoidState::SinusoidState(Lattice *_grid, int _n_x, int _n_y, double _norm, d
                              State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase)  {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y, idx;
+    double idy = grid->start_y * delta_y + 0.5*delta_y, idx;
     for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x;
+        idx = grid->start_x * delta_x + 0.5*delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
             tmp = sinusoid_state(idx, idy);
             p_real[y * grid->dim_x + x] = real(tmp);
@@ -457,12 +563,12 @@ double Potential::get_value(int x, int y) {
     if (matrix != NULL) {
         return matrix[y * grid->dim_x + x];
     } else {
-        double idy = grid->start_y * grid->delta_y + y*grid->delta_y;
-        double idx = grid->start_x * grid->delta_x + x*grid->delta_x;
+        double idy = grid->start_y * grid->delta_y + y*grid->delta_y + 0.5*grid->delta_y;
+        double idx = grid->start_x * grid->delta_x + x*grid->delta_x + 0.5*grid->delta_x;
         if (is_static) {
-            static_potential(idx, idy);
+            return static_potential(idx, idy);
         } else {
-            evolving_potential(idx, idy, current_evolution_time);
+            return evolving_potential(idx, idy, current_evolution_time);
         }
     }
 }
@@ -472,9 +578,9 @@ bool Potential::update(double t) {
     if (!is_static) {
         if (matrix != NULL) {
             double delta_x = grid->delta_x, delta_y = grid->delta_y;
-            double idy = grid->start_y * delta_y, idx;
+            double idy = grid->start_y * delta_y + 0.5*delta_y, idx;
             for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-                idx = grid->start_x * delta_x;
+                idx = grid->start_x * delta_x + 0.5*delta_x;
                 for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
                     matrix[y * grid->dim_x + x] = evolving_potential(idx, idy, t);
                 }
@@ -502,8 +608,8 @@ ParabolicPotential::ParabolicPotential(Lattice *_grid, double _omegax, double _o
 }
 
 double ParabolicPotential::get_value(int x, int y) {
-    double idy = (grid->start_y + y) * grid->delta_y + mean_x;
-    double idx = (grid->start_x + x) * grid->delta_x + mean_y;
+    double idy = (grid->start_y + y) * grid->delta_y + mean_x + 0.5*grid->delta_y;
+    double idx = (grid->start_x + x) * grid->delta_x + mean_y + 0.5*grid->delta_x;
     double x_c = (grid->global_dim_x - 2.*grid->halo_x * grid->periods[1]) * grid->delta_x * 0.5;
     double y_c = (grid->global_dim_y - 2.*grid->halo_y * grid->periods[1]) * grid->delta_y * 0.5;
     double x_r = idx - x_c;

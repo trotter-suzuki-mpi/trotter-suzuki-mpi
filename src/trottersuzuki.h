@@ -63,18 +63,31 @@ public:
     void read_state(char *file_name, int read_offset);
 
     double calculate_squared_norm(bool global=true);
-    void calculate_mean_position(int grid_origin_x, int grid_origin_y,
-                                 double *results, double norm2=0);
-    void calculate_mean_momentum(double *results, double norm2=0);
     double *get_particle_density(double *density=0);
     double *get_phase(double *phase=0);
+    double get_squared_norm(void);
+    double get_mean_x(void);
+    double get_mean_xx(void);
+    double get_mean_y(void);
+    double get_mean_yy(void);
+    double get_mean_px(void);
+    double get_mean_pxpx(void);
+    double get_mean_py(void);
+    double get_mean_pypy(void);
     void write_to_file(string fileprefix);
     void write_particle_density(string fileprefix);
     void write_phase(string fileprefix);
+    bool expected_values_updated;
 
 protected:
     Lattice *grid;
     bool self_init;
+    void calculate_expected_values(void);
+    double mean_X, mean_XX;
+    double mean_Y, mean_YY;
+    double mean_Px, mean_PxPx;
+    double mean_Py, mean_PyPy;
+    double norm2;
 };
 
 
@@ -242,10 +255,14 @@ public:
            double delta_t, string kernel_type="cpu");
     ~Solver();
     void evolve(int iterations, bool imag_time=false);
-    double calculate_total_energy(double _norm2=0);
-    double calculate_rotational_energy(int which=0, double _norm2=0);
-    double calculate_kinetic_energy(int which=0, double _norm2=0);
-    double calculate_rabi_coupling_energy(double _norm2=0);
+    double get_total_energy(void);
+    double get_squared_norm(size_t which=3);
+    double get_kinetic_energy(size_t which=3);
+    double get_potential_energy(size_t which=3);
+    double get_rotational_energy(size_t which=3);
+    double get_intra_species_energy(size_t which=3);
+    double get_inter_species_energy(void);
+    double get_rabi_energy(void);
 private:
     bool imag_time;
     double h_a[2];
@@ -259,8 +276,19 @@ private:
     ITrotterKernel * kernel;
     void initialize_exp_potential(double time_single_it, int which);
     void init_kernel();
-    double calculate_ab_energy(double _norm2=0);
-    double calculate_total_energy_single_state(int which, double _norm2);
+    double total_energy;
+    double kinetic_energy[2];
+    double tot_kinetic_energy;
+    double potential_energy[2];
+    double tot_potential_energy;
+    double rotational_energy[2];
+    double tot_rotational_energy;
+    double intra_species_energy[2];
+    double tot_intra_species_energy;
+    double inter_species_energy;
+    double rabi_energy;
+    bool energy_expected_values_updated;
+    void calculate_energy_expected_values(void);
 };
 
 double const_potential(double x, double y);

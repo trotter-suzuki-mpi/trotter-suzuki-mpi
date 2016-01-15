@@ -16,6 +16,7 @@
  *
  */
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -26,25 +27,23 @@
 
 #define EDGE_LENGTH 14.14     //Physical length of the grid's edge
 #define DIM 256         //Number of dots of the grid's edge
-#define DELTA_T 1.e-4     //Time step evolution
-#define ITERATIONS 1000     //Number of iterations before calculating expected values
+#define DELTA_T 1.e-5     //Time step evolution
+#define ITERATIONS 2000     //Number of iterations before calculating expected values
 #define KERNEL_TYPE "cpu"
-#define SNAPSHOTS 40      //Number of times the expected values are calculated
+#define SNAPSHOTS 105      //Number of times the expected values are calculated
 #define SNAP_PER_STAMP 5    //The particles density and phase of the wave function are stamped every "SNAP_PER_STAMP" expected values calculations
 #define PARTICLES_NUM 1     //Particle numbers (nonlinear Schrodinger equation)
 
 complex<double> gauss_ini_state(double x, double y) {
-	double x_c = x - double(EDGE_LENGTH)*0.5, y_c = y - double(EDGE_LENGTH)*0.5;
+    double x_c = x - double(EDGE_LENGTH)*0.5, y_c = y - double(EDGE_LENGTH)*0.5;
     double w = 1.;
     return complex<double>(sqrt(0.5 * w / M_PI) * exp(-(x_c * x_c + y_c * y_c) * 0.5 * w) * (1. + sqrt(2. * w) * x_c), 0.);
 }
 int main(int argc, char** argv) {
-    char file_name[] = "";
-    char pot_name[1] = "";
-    const double particle_mass = 1.;
+    double particle_mass = 1.;
     bool imag_time = false;
     int time, tot_time = 0;
-    double delta_t = double(DELTA_T);
+    double delta_t = double(DELTA_T) * M_PI;
     double length_x = double(EDGE_LENGTH), length_y = double(EDGE_LENGTH);
     
 #ifdef HAVE_MPI
@@ -69,18 +68,24 @@ int main(int argc, char** argv) {
     file_info  << dirname << "/file_info.txt";
     ofstream out(file_info.str().c_str());
     
-    double mean_positions[4], mean_momenta[4], results[4];
+    double mean_X, var_X;
+    double mean_Y, var_Y;
+    double mean_Px, var_Px;
+    double mean_Py, var_Py;
     
-    //norm calculation
-    double norm2 = state->calculate_squared_norm();
-    double tot_energy = solver->calculate_total_energy(norm2);
-    double kin_energy = solver->calculate_kinetic_energy(norm2);
+    //get expected values
+    double norm2 = solver->get_squared_norm();
+    double tot_energy = solver->get_total_energy();
+    double kin_energy = solver->get_kinetic_energy();
 
-    //Position expected values
-    state->calculate_mean_position(grid->dim_x / 2, grid->dim_y / 2, mean_positions, norm2);
-
-    //Momenta expected values
-    state->calculate_mean_momentum(mean_momenta, norm2);
+    mean_X = state->get_mean_x();
+    var_X = state->get_mean_xx() - state->get_mean_x() * state->get_mean_x();
+    mean_Y = state->get_mean_y();
+    var_Y = state->get_mean_yy() - state->get_mean_y() * state->get_mean_y();
+    mean_Px = state->get_mean_px();
+    var_Px = state->get_mean_pxpx() - state->get_mean_px() * state->get_mean_px();
+    mean_Py = state->get_mean_py();
+    var_Py = state->get_mean_pypy() - state->get_mean_py() * state->get_mean_py();
                    
     //get and stamp phase
     fileprefix.str("");
@@ -91,8 +96,12 @@ int main(int argc, char** argv) {
     state->write_particle_density(fileprefix.str());    
 
     if (grid->mpi_rank == 0){
-      out << "iterations\tsquared norm\ttotal_energy\tkinetic_energy\t<X>\t<(X-<X>)^2>\t<Y>\t<(Y-<Y>)^2>\t<Px>\t<(Px-<Px>)^2>\t<Py>\t<(Py-<Py>)^2>\n";
-      out << "0\t\t" << norm2 << "\t\t"<< tot_energy << "\t" << kin_energy << "\t" << mean_positions[0] << "\t" << mean_positions[1] << "\t" << mean_positions[2] << "\t" << mean_positions[3] << "\t" << mean_momenta[0] << "\t" << mean_momenta[1] << "\t" << mean_momenta[2] << "\t" << mean_momenta[3] << endl;
+      out << std::setw(11) << "time" << std::setw(14) << "squared norm" << std::setw(14) << "tot energy" << std::setw(14) << "kin energy" << std::setw(14) << "kin diff"  << std::setw(14) << "pot diff"
+          << std::setw(14) << "<X>" << std::setw(14) << "<(X-<X>)^2>" << std::setw(14) << "<Y>" << std::setw(14) << "<(Y-<Y>)^2>" 
+          << std::setw(14) << "<Px>" << std::setw(14) << "<(Px-<Px>)^2>" << std::setw(14) << "<Py>" << std::setw(14) << "<(Py-<Py>)^2>\n";
+      out << std::setw(11) << "0" << std::setw(14) << norm2 << std::setw(14) << std::setw(14) << tot_energy << std::setw(14) << kin_energy << std::setw(14) << kin_energy-0.75 << std::setw(14) << solver->get_potential_energy()-0.75 << std::setw(14)
+          << mean_X << std::setw(14) << var_X << std::setw(14) << mean_Y << std::setw(14) << var_Y << std::setw(14)
+          << mean_Px << std::setw(14) << var_Px << std::setw(14) << mean_Py << std::setw(14) << var_Py << endl;
     }
   
     struct timeval start, end;
@@ -104,19 +113,23 @@ int main(int argc, char** argv) {
         time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
         tot_time += time;
         
-        //norm calculation
-        norm2 = state->calculate_squared_norm();
-        tot_energy = solver->calculate_total_energy(norm2);
-        kin_energy = solver->calculate_kinetic_energy(norm2);
-              
-        //Position expected values
-        state->calculate_mean_position(grid->dim_x / 2, grid->dim_y / 2, mean_positions, norm2);
-
-        //Momenta expected values
-        state->calculate_mean_momentum(mean_momenta, norm2);
+        //get expected values
+        norm2 = solver->get_squared_norm();
+        tot_energy = solver->get_total_energy();
+        kin_energy = solver->get_kinetic_energy();
+        mean_X = state->get_mean_x();
+        var_X = state->get_mean_xx() - state->get_mean_x() * state->get_mean_x();
+        mean_Y = state->get_mean_y();
+        var_Y = state->get_mean_yy() - state->get_mean_y() * state->get_mean_y();
+        mean_Px = state->get_mean_px();
+        var_Px = state->get_mean_pxpx() - state->get_mean_px() * state->get_mean_px();
+        mean_Py = state->get_mean_py();
+        var_Py = state->get_mean_pypy() - state->get_mean_py() * state->get_mean_py();
 
         if(grid->mpi_rank == 0){
-            out << (count_snap + 1) * ITERATIONS << "\t\t" << norm2 << "\t\t"<< tot_energy << "\t" << kin_energy << "\t" << mean_positions[0] << "\t" << mean_positions[1] << "\t" << mean_positions[2] << "\t" << mean_positions[3] << "\t" << mean_momenta[0] << "\t" << mean_momenta[1] << "\t" << mean_momenta[2] << "\t" << mean_momenta[3] << endl;
+            out << std::setw(11) << (count_snap + 1) * ITERATIONS * delta_t << std::setw(14) << norm2 << std::setw(14) << tot_energy << std::setw(14) << kin_energy << std::setw(14) << kin_energy-0.75 << std::setw(14) << solver->get_potential_energy()-0.75 << std::setw(14) << 
+            mean_X << std::setw(14) << var_X << std::setw(14) << mean_Y << std::setw(14) << var_Y << std::setw(14) << 
+            mean_Px << std::setw(14) << var_Px << std::setw(14) << mean_Py << std::setw(14) << var_Py << endl;
         }
     
         //stamp phase and particles density
