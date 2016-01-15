@@ -379,7 +379,7 @@ void Solver::calculate_energy_expected_values(void) {
         rotational_energy[1] = real(sum_rotational_energy[1]);
         intra_species_energy[1] = real(sum_intra_species_energy[1]);
         inter_species_energy = real(sum_inter_species_energy);
-        rabi_energy = real(sum_rabi_energy);
+        rabi_energy = 0.5 * real(sum_rabi_energy);
     }
 
 #ifdef HAVE_MPI

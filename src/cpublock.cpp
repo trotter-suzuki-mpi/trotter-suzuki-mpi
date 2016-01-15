@@ -519,8 +519,8 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
     coupling_const[0] = delta_t*hamiltonian->coupling_a;
     coupling_const[1] = delta_t*hamiltonian->coupling_b;
     coupling_const[2] = delta_t*hamiltonian->coupling_ab;
-    coupling_const[3] = hamiltonian->omega_r;
-    coupling_const[4] = hamiltonian->omega_i;
+    coupling_const[3] = 0.5 * hamiltonian->omega_r;
+    coupling_const[4] = 0.5 * hamiltonian->omega_i;
     periods = grid->periods;
     int rank, coords[2], dims[2] = {0, 0};
 #ifdef HAVE_MPI
@@ -674,7 +674,6 @@ double CPUBlock::calculate_squared_norm(bool global) {
 
 void CPUBlock::wait_for_completion() {
     if (!two_wavefunctions && imag_time && norm[state_index] != 0) {
-    //if (imag_time && norm[state_index] != 0) {
         //normalization
         double tot_norm = calculate_squared_norm(true);
         double _norm = sqrt(tot_norm / norm[state_index]);
@@ -705,7 +704,6 @@ void CPUBlock::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, 
 }
 
 void CPUBlock::rabi_coupling(double var, double delta_t) {
-
     double norm_omega = sqrt(coupling_const[3] * coupling_const[3] + coupling_const[4] * coupling_const[4]);
     double cc, cs_r, cs_i;
     if(imag_time) {
