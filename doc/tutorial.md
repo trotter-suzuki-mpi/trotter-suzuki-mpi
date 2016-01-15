@@ -53,35 +53,146 @@ The hybrid kernel is experimental. It splits the work between the GPU and the CP
 
 Application Programming Interface
 ---------------------------------
-If the command-line interface is not flexible enough, the function that performs the evolution is exposed as an API:
+The command-line interface is restricted in what it can do and the full capabalities of the library are unleashed through its C++ API. Here we give an introduction to the features.
 
-    void trotter(double h_a, double h_b, double coupling_const,
-                 double * external_pot_real, double * external_pot_imag,
-                 double * p_real, double * p_imag, double delta_x, double delta_y,
-                 const int matrix_width, const int matrix_height,
-                 const int iterations, const int kernel_type,
-                 int *periods, double norm, bool imag_time);
+**Multicore computations**
 
-where the parameters are as follows:
+This example uses all cores on a single computer to calculate the total energy after evolving a sinusoid initial state. First we set the physical and simulation parameters of the model. We set the mass equal to one, we discretize the space in 500 lattice points in either direction, and we set the physical length to the same value. We would like to have a hundred iterations with 0.01 second between each:
 
-    h_a               Kinetic term of the Hamiltonian (cosine part)
-    h_b               Kinetic term of the Hamiltonian (sine part)
-    coupling_const    Coupling constant of the self-interacting term
-    external_pot_real External potential, real part
-    external_pot_imag External potential, imaginary part
-    p_real            Initial state, real part
-    p_imag            Initial state, imaginary part
-    delta_x           Physical distance between two neighbour points of the lattice along the x axis
-    delta_y           Physical distance between two neighbour points of the lattice along the y axis
-    matrix_width      The width of the initial state
-    matrix_height     The height of the initial state
-    iterations        Number of iterations to be calculated
-    kernel_type       The kernel type:
-                              0: CPU block kernel
-                              2: GPU kernel
-                              3: Hybrid kernel
-    periods           Whether the grid is periodic in any of the directions
-    norm              Norm of the final state (only for imaginary time evolution)
-    imag_time         Optional parameter to calculate imaginary time evolution
-  
-MPI must be initialized before the function is called. 
+~~~~~~~~~~~~~~~{.cpp}
+double particle_mass = 1.;
+int dimension = 500.;
+double length_x = double(dimension), length_y = double(dimension);
+double delta_t = 0.01;
+int iterations  = 100;
+~~~~~~~~~~~~~~~
+
+The next step is the define the lattice, the state, and the Hamiltonian:
+
+~~~~~~~~~~~~~~~{.cpp}
+Lattice *grid = new Lattice(dimension, length_x, length_y);
+State *state = new SinusoidState(grid, 1, 1);
+Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
+~~~~~~~~~~~~~~~
+
+With these objects representing the physics of the problem, we can initialize the solver:
+
+~~~~~~~~~~~~~~~{.cpp}
+Solver *solver = new Solver(grid, state, hamiltonian, delta_t);
+~~~~~~~~~~~~~~~
+
+Then we can evolve the state for the hundred iterations:
+
+~~~~~~~~~~~~~~~{.cpp}
+solver->evolve(iterations);
+~~~~~~~~~~~~~~~
+
+If we would like to have imaginary time evolution to approximate the ground state of the system, a second boolean parameter can be passed to the `evolve` method. Flipping it to true will yield imaginary time evolution.
+
+We can write the evolved state to a file:
+
+~~~~~~~~~~~~~~~{.cpp}
+state->write_to_file("evolved_state");
+~~~~~~~~~~~~~~~
+
+If we need a series of snapshots of the evolution, say, every hundred iterations, we can loop these two steps, adjusting the prefix of the file to be written to reflect the number of evolution steps.
+
+Finally, we can calculate the expectation value of the energies:
+
+~~~~~~~~~~~~~~~{.cpp}
+std::cout << "Squared norm: " << solver->get_squared_norm();
+std::cout << " Kinetic energy: " << solver->get_kinetic_energy();
+std::cout << " Total energy: " << solver->get_total_energy() << std::endl;
+~~~~~~~~~~~~~~~
+
+The following file, `simple_example.cpp`, summarizes the above:
+
+~~~~~~~~~~~~~~~{.cpp}
+#include <iostream>
+#include "trottersuzuki.h"
+
+int main(int argc, char** argv) {
+    double particle_mass = 1.;
+    int dimension = 500.;
+    double length_x = double(dimension), length_y = double(dimension);
+    double delta_t = 0.01;
+    int iterations  = 100;
+
+    Lattice *grid = new Lattice(dimension, length_x, length_y);
+    State *state = new SinusoidState(grid, 1, 1);
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
+    Solver *solver = new Solver(grid, state, hamiltonian, delta_t);
+
+    solver->evolve(iterations);
+    state->write_to_file("evolved_state");
+
+    std::cout << "Squared norm: " << solver->get_squared_norm();
+    std::cout << " Kinetic energy: " << solver->get_kinetic_energy();
+    std::cout << " Total energy: " << solver->get_total_energy() << std::endl;
+    delete solver;
+    delete hamiltonian;
+    delete state;
+    delete grid;
+    return 0;
+}
+~~~~~~~~~~~~~~~
+
+Compile it with
+
+~~~~~~~~~~~~~~~
+g++ -I/PATH/TO/TROTTERSUZUKI/HEADER -L/PATH/TO/TROTTERSUZUKI/LIBRARY simple_example.cpp -o simple_example -ltrottersuzuki
+~~~~~~~~~~~~~~~
+
+**Distributed version**
+
+There is very little modification required in the code to make it work with MPI. It is sufficient to initialize MPI and finalize it before returning from `main`. It is worth noting that the `Lattice` class keeps track of the MPI-related topology, and it also knows the MPI rank of the current process. The code for `simple_example_mpi.cpp` is as follows:
+
+
+~~~~~~~~~~~~~~~{.cpp}
+#include <iostream>
+#include <mpi.h>
+#include "trottersuzuki.h"
+
+int main(int argc, char** argv) {
+#ifdef HAVE_MPI
+    MPI_Init(&argc, &argv);
+#endif  
+    double particle_mass = 1.;
+    int dimension = 500.;
+    double length_x = double(dimension), length_y = double(dimension);
+    double delta_t = 0.01;
+    int iterations  = 100;
+
+    Lattice *grid = new Lattice(dimension, length_x, length_y);
+    State *state = new SinusoidState(grid, 1, 1);
+    Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
+    Solver *solver = new Solver(grid, state, hamiltonian, delta_t);
+
+    solver->evolve(iterations, false);
+
+    if(grid->mpi_rank == 0){
+        state->write_to_file("evolved_state");
+        std::cout << "Squared norm: " << solver->get_squared_norm();
+        std::cout << " Kinetic energy: " << solver->get_kinetic_energy();
+        std::cout << " Total energy: " << solver->get_total_energy() << std::endl;
+    }
+    delete solver;
+    delete hamiltonian;
+    delete state;
+    delete grid;
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return 0;
+}
+~~~~~~~~~~~~~~~
+
+Compile it with
+
+~~~~~~~~~~~~~~~
+mpic++ -I/PATH/TO/TROTTERSUZUKI/HEADER -L/PATH/TO/TROTTERSUZUKI/LIBRARY simple_example.cpp -o simple_example -ltrottersuzuki
+~~~~~~~~~~~~~~~
+
+Keep in mind that the library itself has to be compiled with MPI to make it work.
+
+The same caveats apply for execution as for the command-line interface. The MPI compilation disables OpenMP multicore execution in the CPU kernel, therefore you must launch a process for each CPU core you want use.
