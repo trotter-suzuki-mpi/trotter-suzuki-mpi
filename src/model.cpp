@@ -44,7 +44,6 @@ double const_potential(double x, double y) {
     return 0.;
 }
 
-
 Lattice::Lattice(int dim, double _length_x, double _length_y,
                  bool periodic_x_axis, bool periodic_y_axis,
                  double omega): length_x(_length_x), length_y(_length_y) {
@@ -695,5 +694,5 @@ Hamiltonian2Component::Hamiltonian2Component(Lattice *_grid,
 }
 
 Hamiltonian2Component::~Hamiltonian2Component() {
-
+    
 }

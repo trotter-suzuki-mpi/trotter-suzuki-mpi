@@ -165,7 +165,7 @@ void stamp(Lattice *grid, State *state, string fileprefix) {
     // open the file, and set the view
     stringstream output_filename;
     output_filename << fileprefix << "-iter-comp.dat";
-    MPI_File_open(grid->cartcomm, output_filename.str().c_str(),
+    MPI_File_open(grid->cartcomm, const_cast<char*>(output_filename.str().c_str()),
                   MPI_MODE_CREATE | MPI_MODE_WRONLY,
                   MPI_INFO_NULL, &file);
 
@@ -197,7 +197,7 @@ void stamp(Lattice *grid, State *state, string fileprefix) {
     // open the file, and set the view
     output_filename.str("");
     output_filename << fileprefix << "-iter-real.dat";
-    MPI_File_open(grid->cartcomm, output_filename.str().c_str(),
+    MPI_File_open(grid->cartcomm, const_cast<char*>(output_filename.str().c_str()),
                   MPI_MODE_CREATE | MPI_MODE_WRONLY,
                   MPI_INFO_NULL, &file);
 
@@ -266,7 +266,7 @@ void stamp_matrix(Lattice *grid, double *matrix, string filename) {
     }
 
     // open the file, and set the view
-    MPI_File_open(grid->cartcomm, filename.c_str(),
+    MPI_File_open(grid->cartcomm, const_cast<char*>(filename.c_str()),
                   MPI_MODE_CREATE | MPI_MODE_WRONLY,
                   MPI_INFO_NULL, &file);
 

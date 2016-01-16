@@ -120,24 +120,24 @@ void Solver::evolve(int iterations, bool _imag_time) {
     if (_imag_time != imag_time||kernel == NULL) {
         imag_time = _imag_time;
         if(imag_time) {
-            h_a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
-            h_b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
+            h_a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+            h_b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
             initialize_exp_potential(delta_t, 0);
             norm2[0] = state->calculate_squared_norm();
             if (!single_component) {
-                h_a[1] = cosh(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
-                h_b[1] = sinh(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
+                h_a[1] = cosh(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_x));
+                h_b[1] = sinh(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_x));
                 initialize_exp_potential(delta_t, 1);
                 norm2[1] = state_b->calculate_squared_norm();
             }
         }
         else {
-            h_a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
-            h_b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_y));
+            h_a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+            h_b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
             initialize_exp_potential(delta_t, 0);
             if (!single_component) {
-                h_a[1] = cos(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
-                h_b[1] = sin(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_y));
+                h_a[1] = cos(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_x));
+                h_b[1] = sin(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_x));
                 initialize_exp_potential(delta_t, 1);
             }
         }
