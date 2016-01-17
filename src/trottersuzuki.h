@@ -37,6 +37,7 @@ public:
     double length_x, length_y;
     double delta_x, delta_y;
     int dim_x, dim_y;
+    int global_no_halo_dim_x, global_no_halo_dim_y;
     int global_dim_x, global_dim_y;
     int periods[2];
 
@@ -56,7 +57,7 @@ class State{
 public:
     double *p_real;
     double *p_imag;
-
+    Lattice *grid;
     State(Lattice *grid, double *p_real=0, double *p_imag=0);
     ~State();
     void init_state(complex<double> (*ini_state)(double x, double y));
@@ -81,7 +82,7 @@ public:
     bool expected_values_updated;
 
 protected:
-    Lattice *grid;
+
     bool self_init;
     void calculate_expected_values(void);
     double mean_X, mean_XX;
@@ -125,8 +126,11 @@ private:
 
 class Potential {
 public:
+	Lattice *grid;
+	double *matrix;
+
     Potential(Lattice *grid, char *filename);
-    Potential(Lattice *grid, double *external_pot);
+    Potential(Lattice *grid, double *external_pot=0);
     Potential(Lattice *grid, double (*potential_function)(double x, double y));
     Potential(Lattice *grid, double (*potential_function)(double x, double y, double t), int t=0);
     ~Potential();
@@ -135,10 +139,10 @@ public:
 
 protected:
     double current_evolution_time;
-    Lattice *grid;
+
     double (*static_potential)(double x, double y);
     double (*evolving_potential)(double x, double y, double t);
-    double *matrix;
+
     bool self_init;
     bool is_static;
 };

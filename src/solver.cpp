@@ -31,6 +31,8 @@ Solver::Solver(Lattice *_grid, State *_state, Hamiltonian *_hamiltonian,
     external_pot_real[1] = NULL;
     external_pot_imag[1] = NULL;
     state_b = NULL;
+    kernel = NULL;
+    current_evolution_time = 0;
     single_component = true;
     energy_expected_values_updated = false;
 }
@@ -113,7 +115,6 @@ void Solver::init_kernel() {
     } else {
         my_abort("Unknown kernel\n");
     }
-
 }
 
 void Solver::evolve(int iterations, bool _imag_time) {
@@ -266,7 +267,7 @@ void Solver::calculate_energy_expected_values(void) {
     complex<double> psi_up_up_b, psi_down_down_b, psi_left_left_b, psi_right_right_b;
     complex<double> const_1 = -1./12., const_2 = 4./3., const_3 = -2.5;
     complex<double> derivate1_1 = 1./6., derivate1_2 = - 1., derivate1_3 = 0.5, derivate1_4 = 1./3.;
-#ifndef HAVE_MPI
+    /*#ifndef HAVE_MPI
     #pragma omp parallel for reduction(+:sum_norm2[0],
                                          sum_potential_energy[0],
                                          sum_intra_species_energy[0],
@@ -279,7 +280,7 @@ void Solver::calculate_energy_expected_values(void) {
                                          sum_intra_species_energy[1],
                                          sum_kinetic_energy[1],
                                          sum_rotational_energy[1])
-#endif
+#endif*/
     for (int i = grid->inner_start_y - grid->start_y, y = grid->inner_start_y;
          i < grid->inner_end_y - grid->start_y; i++, y++) {
         for (int j = grid->inner_start_x - grid->start_x, x = grid->inner_start_x;

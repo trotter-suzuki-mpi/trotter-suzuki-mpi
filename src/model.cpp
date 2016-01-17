@@ -16,6 +16,7 @@
  *
  */
 #include <fstream>
+#include <iostream>
 #include "trottersuzuki.h"
 #include "common.h"
 
@@ -68,6 +69,8 @@ Lattice::Lattice(int dim, double _length_x, double _length_y,
     halo_y = (omega == 0. ? 4 : 8);
     global_dim_x = dim + periods[1] * 2 * halo_x;
     global_dim_y = dim + periods[0] * 2 * halo_y;
+    global_no_halo_dim_x = dim;
+    global_no_halo_dim_y = dim;
     //set dimension of tiles and offsets
     calculate_borders(mpi_coords[1], mpi_dims[1], &start_x, &end_x,
                       &inner_start_x, &inner_end_x,
@@ -301,18 +304,10 @@ void State::calculate_expected_values(void) {
     complex<double> psi_up_up, psi_down_down, psi_left_left, psi_right_right;
     complex<double> const_1 = -1./12., const_2 = 4./3., const_3 = -2.5;
     complex<double> derivate1_1 = 1./6., derivate1_2 = - 1., derivate1_3 = 0.5, derivate1_4 = 1./3.;
-
+/*
 #ifndef HAVE_MPI
-        #pragma omp parallel for reduction(+:sum_norm2,
-                                             sum_x_mean,
-                                             sum_y_mean,
-                                             sum_xx_mean,
-                                             sum_yy_mean,
-                                             sum_px_mean,
-                                             sum_py_mean,
-                                             sum_pxpx_mean,
-                                             sum_pypy_mean)
-#endif
+        #pragma omp parallel for reduction(+:sum_norm2,sum_x_mean,sum_y_mean,sum_xx_mean,sum_yy_mean,sum_px_mean,sum_py_mean,sum_pxpx_mean,sum_pypy_mean)
+#endif*/
     for (int i = grid->inner_start_y - grid->start_y,
          y = grid->inner_start_y; i < grid->inner_end_y - grid->start_y; i++, y++) {
         for (int j = grid->inner_start_x - grid->start_x,
@@ -568,7 +563,12 @@ Potential::Potential(Lattice *_grid, char *filename): grid(_grid) {
 }
 
 Potential::Potential(Lattice *_grid, double *_external_pot): grid(_grid) {
-    matrix = _external_pot;
+	if (_external_pot == 0) {
+		self_init = true;
+		matrix = new double[grid->dim_x * grid->dim_y];
+	} else {
+		matrix = _external_pot;
+	}
     self_init = false;
     is_static = true;
     evolving_potential = NULL;
@@ -592,7 +592,7 @@ Potential::Potential(Lattice *_grid, double (*potential_function)(double x, doub
 }
 
 double Potential::get_value(int x, int y) {
-    if (matrix != NULL) {
+	if (matrix != NULL) {
         return matrix[y * grid->dim_x + x];
     } else {
         double idy = grid->start_y * grid->delta_y + y*grid->delta_y + 0.5*grid->delta_y;

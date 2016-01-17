@@ -11,6 +11,14 @@
 import_array();
 %}
 
+%apply (double* IN_ARRAY2, int DIM1, int DIM2) {(double* state_real, int state_real_width, int state_real_height)}
+%apply (double* IN_ARRAY2, int DIM1, int DIM2) {(double* state_imag, int state_imag_width, int state_imag_height)}
+%apply (double* IN_ARRAY2, int DIM1, int DIM2) {(double* _potential, int _potential_width, int _potential_height)}
+%apply (double* INPLACE_ARRAY2, int DIM1, int DIM2) {(double* p_real, int p_r_width, int p_r_height)}
+%apply (double* INPLACE_ARRAY2, int DIM1, int DIM2) {(double* p_imag, int p_i_width, int p_i_height)}
+%apply (double** ARGOUTVIEWM_ARRAY2, int* DIM1, int* DIM2) {(double **density_out, int *de_dim1_out, int *de_dim2_out)}
+%apply (double** ARGOUTVIEWM_ARRAY2, int* DIM1, int* DIM2) {(double **phase_out, int *ph_dim1_out, int *ph_dim2_out)}
+
 %exception Solver::init_kernel {
    try {
       $action
@@ -27,6 +35,7 @@ public:
     double length_x, length_y;
     double delta_x, delta_y;
     int dim_x, dim_y;
+    int global_no_halo_dim_x, global_no_halo_dim_y;
     int global_dim_x, global_dim_y;
     int periods[2];
 
@@ -41,18 +50,61 @@ public:
 
 class State{
 public:
+    Lattice *grid;
     double *p_real;
     double *p_imag;
 
     State(Lattice *grid, double *p_real=0, double *p_imag=0);
     ~State();
-    void init_state(complex<double> (*ini_state)(double x, double y));
+    %extend {
+        void init_state_matrix(double* state_real, int state_real_width, int state_real_height,
+                        double* state_imag, int state_imag_width, int state_imag_height) {
+            //check that p_real and p_imag have been allocated
+            
+            
+            for (int y = 0; y < self->grid->dim_y; y++) {
+                for (int x = 0; x < self->grid->dim_x; x++) {
+                    self->p_real[y * self->grid->dim_x + x] = state_real[y * self->grid->dim_x + x];
+                    self->p_imag[y * self->grid->dim_x + x] = state_imag[y * self->grid->dim_x + x];
+                }
+            }    
+        }
+    }
     void read_state(char *file_name, int read_offset);
-
-    void imprint(complex<double> (*function)(double x, double y));
-    double calculate_squared_norm(bool global=true);
-    double *get_particle_density(double *density=0);
-    double *get_phase(double *phase=0);
+    %extend {
+        void imprint_matrix(double* state_real, int state_real_width, int state_real_height,
+                            double* state_imag, int state_imag_width, int state_imag_height) {
+            for (int y = 0; y < self->grid->dim_y; y++) {
+                for (int x = 0; x < self->grid->dim_x; x++) {
+                    self->p_real[y * self->grid->dim_x + x] = self->p_real[y * self->grid->dim_x + x] * state_real[y * self->grid->dim_x + x] -
+                                                              self->p_imag[y * self->grid->dim_x + x] * state_imag[y * self->grid->dim_x + x];
+                    self->p_imag[y * self->grid->dim_x + x] = self->p_real[y * self->grid->dim_x + x] * state_imag[y * self->grid->dim_x + x] +
+                                                              self->p_imag[y * self->grid->dim_x + x] * state_real[y * self->grid->dim_x + x];
+                }
+            }    
+        }
+    }
+    double calculate_squared_norm(bool _global=true);
+    %extend {
+        void get_particle_density(double **density_out, int *de_dim1_out, int *de_dim2_out) {
+            double *_density;
+            _density = self->get_particle_density();
+        end:
+           *de_dim1_out = self->grid->dim_x;
+           *de_dim2_out = self->grid->dim_y;
+           *density_out = _density;
+	    }
+    }
+    %extend {
+        void get_phase(double **phase_out, int *ph_dim1_out, int *ph_dim2_out) {
+            double *_phase;
+            _phase = self->get_particle_density();
+        end:
+           *ph_dim1_out = self->grid->dim_x;
+           *ph_dim2_out = self->grid->dim_y;
+           *phase_out = _phase;
+        }
+    }
     double get_squared_norm(void);
     double get_mean_x(void);
     double get_mean_xx(void);
@@ -62,13 +114,13 @@ public:
     double get_mean_pxpx(void);
     double get_mean_py(void);
     double get_mean_pypy(void);
-    void write_to_file(string fileprefix);
-    void write_particle_density(string fileprefix);
-    void write_phase(string fileprefix);
+    void write_to_file(std::string fileprefix);
+    void write_particle_density(std::string fileprefix);
+    void write_phase(std::string fileprefix);
     bool expected_values_updated;
 
 protected:
-    Lattice *grid;
+    
     bool self_init;
     void calculate_expected_values(void);
     double mean_X, mean_XX;
@@ -111,20 +163,30 @@ private:
 
 class Potential {
 public:
+    double *matrix;
+    Lattice *grid;
+    
     Potential(Lattice *_grid, char *filename);
-    Potential(Lattice *_grid, double *_external_pot);
+    Potential(Lattice *_grid, double *_external_pot=0);
     Potential(Lattice *_grid, double (*potential_function)(double x, double y));
     Potential(Lattice *_grid, double (*potential_function)(double x, double y, double t), int _t=0);
     ~Potential();
+    %extend {
+        void init_potential_matrix(double* _potential, int _potential_width, int _potential_height) {
+            for (int y = 0; y < self->grid->dim_y; y++) {
+                for (int x = 0; x < self->grid->dim_x; x++) {
+                    self->matrix[y * self->grid->dim_x + x] = _potential[y * self->grid->dim_x + x];
+                }
+            }    
+        }
+    }
     virtual double get_value(int x, int y);
     bool update(double t);
 
 protected:
     double current_evolution_time;
-    Lattice *grid;
     double (*static_potential)(double x, double y);
     double (*evolving_potential)(double x, double y, double t);
-    double *matrix;
     bool self_init;
     bool is_static;
 };
@@ -189,10 +251,10 @@ public:
     Hamiltonian *hamiltonian;
     double current_evolution_time;
     Solver(Lattice *grid, State *state, Hamiltonian *hamiltonian, double delta_t,
-           string kernel_type="cpu");
+           std::string kernel_type="cpu");
     Solver(Lattice *_grid, State *state1, State *state2,
            Hamiltonian2Component *_hamiltonian,
-           double _delta_t, string _kernel_type="cpu");
+           double _delta_t, std::string _kernel_type="cpu");
     ~Solver();
     void evolve(int iterations, bool imag_time=false);
     double get_total_energy(void);
@@ -212,7 +274,7 @@ private:
     double delta_t;
     double norm2[2];
     bool single_component;
-    string kernel_type;
+    std::string kernel_type;
     void initialize_exp_potential(double time_single_it, int which);
     void init_kernel();
     double total_energy;
