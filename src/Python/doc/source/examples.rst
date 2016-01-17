@@ -7,8 +7,7 @@ Expectation values of the Hamiltonian and kinetic operators
 The following code block gives a simple example of initializing a state and calculating the expectation values of the Hamiltonian and kinetic operators and the norm of the state after the evolution.
 
 .. code-block:: python
-		
-    from __future__ import print_function
+			
     import numpy as np
     from trottersuzuki import *
 
@@ -16,7 +15,7 @@ The following code block gives a simple example of initializing a state and calc
     grid = Lattice(256, 15, 15)
 
     # define an symmetric harmonic potential with unit frequecy
-    potential = HarmonicPotential(grid, 1)
+    potential = HarmonicPotential(grid, 1, 1)
 
     # define the Hamiltonian:
     particle_mass = 1.
@@ -31,18 +30,18 @@ The following code block gives a simple example of initializing a state and calc
     solver = Solver(grid, state, hamiltonian, time_of_single_iteration)
 
     # get some expected values from the initial state
-    print "norm: ", state.get_squared_norm()
-    print "Total energy: ", state.get_total_energy()
-    print "Kinetic energy: ", state.get_kinetic_energy()
+    print "norm: ", solver.get_squared_norm()
+    print "Total energy: ", solver.get_total_energy()
+    print "Kinetic energy: ", solver.get_kinetic_energy()
 
     # evolve the state of 1000 iterations
     number_of_iterations = 1000
     solver.evolve(number_of_iterations)
 
     # get some expected values from the evolved state
-    print "norm: ", state.get_squared_norm()
-    print "Total energy: ", state.get_total_energy()
-    print "Kinetic energy: ", state.get_kinetic_energy()
+    print "norm: ", solver.get_squared_norm()
+    print "Total energy: ", solver.get_total_energy()
+    print "Kinetic energy: ", solver.get_kinetic_energy()
 
 
 
@@ -50,7 +49,6 @@ Imaginary time evolution to approximate the ground-state energy
 ---------------------------------------------------------------
 .. code-block:: python
 
-    from __future__ import print_function
     import numpy as np
     from trottersuzuki import *
 
@@ -58,7 +56,7 @@ Imaginary time evolution to approximate the ground-state energy
     grid = Lattice(256, 15, 15)
 
     # define an symmetric harmonic potential with unit frequecy
-    potential = HarmonicPotential(grid, 1)
+    potential = HarmonicPotential(grid, 1, 1)
 
     # define the Hamiltonian:
     particle_mass = 1.
@@ -73,9 +71,9 @@ Imaginary time evolution to approximate the ground-state energy
     solver = Solver(grid, state, hamiltonian, time_of_single_iteration)
 
     # get some expected values from the initial state
-    print "norm: ", state.get_squared_norm()
-    print "Total energy: ", state.get_total_energy()
-    print "Kinetic energy: ", state.get_kinetic_energy()
+    print "norm: ", solver.get_squared_norm()
+    print "Total energy: ", solver.get_total_energy()
+    print "Kinetic energy: ", solver.get_kinetic_energy()
 
     # evolve the state of 40000 iterations
     number_of_iterations = 40000
@@ -83,9 +81,9 @@ Imaginary time evolution to approximate the ground-state energy
     solver.evolve(number_of_iterations, imaginary_evolution)
 
     # get some expected values from the evolved state
-    print "norm: ", state.get_squared_norm()
-    print "Total energy: ", state.get_total_energy()
-    print "Kinetic energy: ", state.get_kinetic_energy()
+    print "norm: ", solver.get_squared_norm()
+    print "Total energy: ", solver.get_total_energy()
+    print "Kinetic energy: ", solver.get_kinetic_energy()
 
 
 Dark Soliton Generation in Bose-Einstein Condensate using Phase Imprinting
