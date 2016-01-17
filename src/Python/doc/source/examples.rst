@@ -10,44 +10,39 @@ The following code block gives a simple example of initializing a state and calc
 		
     from __future__ import print_function
     import numpy as np
-    import trottersuzuki as ts
+    from trottersuzuki import *
 
-    # lattice parameters
-    dim = 200
-    delta_x = 1.
-    delta_y = 1.
-    periods = [1, 1]
+    # create a 2D lattice with 100x100 points and 20x20 area
+    grid = Lattice(256, 15, 15)
 
-    # Hamiltonian parameter
-    particle_mass = 1
-    external_potential = np.zeros((dim, dim))
+    # define an symmetric harmonic potential with unit frequecy
+    potential = HarmonicPotential(grid, 1)
 
-    # initial state
-    p_real = np.ones((dim, dim))
-    p_imag = np.zeros((dim, dim))
-    for y in range(0, dim):
-        for x in range(0, dim):
-            p_real[y, x] = np.sin(2*np.pi*x / dim) * np.sin(2*np.pi*y / dim)
+    # define the Hamiltonian:
+    particle_mass = 1.
+    hamiltonian = Hamiltonian(grid, potential, particle_mass)
 
-    # evolution parameters
-    delta_t = 0.001
-    iterations = 200
+    # define gaussian wave function state: we choose the ground state of the Hamiltonian
+    frequency = 1
+    state = GaussianState(grid, frequency)
 
-    # launch evolution
-    ts.evolve(p_real, p_imag, particle_mass, external_potential, delta_x, delta_y,
-              delta_t, iterations, periods=periods)
+    # define the solver
+    time_of_single_iteration = 1.e-4
+    solver = Solver(grid, state, hamiltonian, time_of_single_iteration)
 
-    # expectation values
-    Energy = ts.calculate_total_energy(p_real, p_imag, particle_mass,
-                                       external_potential, delta_x, delta_y)
-    print(Energy)
+    # get some expected values from the initial state
+    print "norm: ", state.get_squared_norm()
+    print "Total energy: ", state.get_total_energy()
+    print "Kinetic energy: ", state.get_kinetic_energy()
 
-    Kinetic_Energy = ts.calculate_kinetic_energy(p_real, p_imag, particle_mass,
-                                                 delta_x, delta_y)
-    print(Kinetic_Energy)
+    # evolve the state of 1000 iterations
+    number_of_iterations = 1000
+    solver.evolve(number_of_iterations)
 
-    Norm2 = ts.calculate_norm2(p_real, p_imag, delta_x, delta_y)
-    print(Norm2)
+    # get some expected values from the evolved state
+    print "norm: ", state.get_squared_norm()
+    print "Total energy: ", state.get_total_energy()
+    print "Kinetic energy: ", state.get_kinetic_energy()
 
 
 
@@ -57,41 +52,41 @@ Imaginary time evolution to approximate the ground-state energy
 
     from __future__ import print_function
     import numpy as np
-    import trottersuzuki as ts
-    from matplotlib import pyplot as plt
+    from trottersuzuki import *
 
+    # create a 2D lattice with 100x100 points and 20x20 area
+    grid = Lattice(256, 15, 15)
 
-    # lattice parameters
-    dim = 200
-    delta_x = 1.
-    delta_y = 1.
+    # define an symmetric harmonic potential with unit frequecy
+    potential = HarmonicPotential(grid, 1)
 
-    # Hamiltonian parameter
-    particle_mass = 1
-    external_potential = np.zeros((dim, dim))
+    # define the Hamiltonian:
+    particle_mass = 1.
+    hamiltonian = Hamiltonian(grid, potential, particle_mass)
 
-    # initial state
-    p_real = np.ones((dim, dim))
-    p_imag = np.zeros((dim, dim))
+    # define gaussian wave function state: we choose the ground state of the Hamiltonian
+    frequency = 3
+    state = GaussianState(grid, frequency)
 
-    # evolution parameters
-    delta_t = 0.1
-    iterations = 2000
+    # define the solver
+    time_of_single_iteration = 1.e-4
+    solver = Solver(grid, state, hamiltonian, time_of_single_iteration)
 
-    for i in range(0, 15):
-        # launch evolution
-        ts.evolve(p_real, p_imag, particle_mass, external_potential,
-                  delta_x, delta_y, delta_t, iterations, imag_time=True)
-        print(ts.calculate_total_energy(p_real, p_imag, particle_mass,
-                                        external_potential, delta_x, delta_y))
-        print(ts.calculate_norm2(p_real, p_imag, delta_x, delta_y))
+    # get some expected values from the initial state
+    print "norm: ", state.get_squared_norm()
+    print "Total energy: ", state.get_total_energy()
+    print "Kinetic energy: ", state.get_kinetic_energy()
 
-    heatmap = plt.pcolor(p_real)
-    plt.show()
+    # evolve the state of 40000 iterations
+    number_of_iterations = 40000
+    imaginary_evolution = true
+    solver.evolve(number_of_iterations, imaginary_evolution)
 
-The output should be the following image:
+    # get some expected values from the evolved state
+    print "norm: ", state.get_squared_norm()
+    print "Total energy: ", state.get_total_energy()
+    print "Kinetic energy: ", state.get_kinetic_energy()
 
-.. image:: figures/imaginary.png
 
 Dark Soliton Generation in Bose-Einstein Condensate using Phase Imprinting
 --------------------------------------------------------------------------
