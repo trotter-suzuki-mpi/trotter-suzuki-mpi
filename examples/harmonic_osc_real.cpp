@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
     State *state = new State(grid);
     state->init_state(gauss_ini_state);
     //set Hamiltonian
-    Potential *potential = new ParabolicPotential(grid, 1., 1.);
+    Potential *potential = new HarmonicPotential(grid, 1., 1.);
     Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, particle_mass);
     //set evolution
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
