@@ -64,7 +64,6 @@ public:
     void read_state(char *file_name, int read_offset);
 
     void imprint(complex<double> (*function)(double x, double y));
-    double calculate_squared_norm(bool global=true);
     double *get_particle_density(double *density=0);
     double *get_phase(double *phase=0);
     double get_squared_norm(void);

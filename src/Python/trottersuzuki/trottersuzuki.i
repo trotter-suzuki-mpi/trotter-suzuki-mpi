@@ -84,7 +84,6 @@ public:
             }    
         }
     }
-    double calculate_squared_norm(bool _global=true);
     %extend {
         void get_particle_density(double **density_out, int *de_dim1_out, int *de_dim2_out) {
             double *_density;

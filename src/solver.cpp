@@ -124,12 +124,12 @@ void Solver::evolve(int iterations, bool _imag_time) {
             h_a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
             h_b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
             initialize_exp_potential(delta_t, 0);
-            norm2[0] = state->calculate_squared_norm();
+            norm2[0] = state->get_squared_norm();
             if (!single_component) {
                 h_a[1] = cosh(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_x));
                 h_b[1] = sinh(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_x));
                 initialize_exp_potential(delta_t, 1);
-                norm2[1] = state_b->calculate_squared_norm();
+                norm2[1] = state_b->get_squared_norm();
             }
         }
         else {
