@@ -146,10 +146,10 @@ protected:
     bool is_static;
 };
 
-class ParabolicPotential: public Potential {
+class HarmonicPotential: public Potential {
 public:
-    ParabolicPotential(Lattice *grid, double omegax, double omegay, double mass=1., double mean_x = 0., double mean_y = 0.);
-    ~ParabolicPotential();
+    HarmonicPotential(Lattice *grid, double omegax, double omegay, double mass=1., double mean_x = 0., double mean_y = 0.);
+    ~HarmonicPotential();
     double get_value(int x, int y);
 
 private:

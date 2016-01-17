@@ -6,10 +6,10 @@ decomposition for simulation of quantum systems
 """
 
 from .trottersuzuki import Lattice, ExponentialState, GaussianState, \
-                           SinusoidState, ParabolicPotential, \
+                           SinusoidState, HarmonicPotential, \
                            Hamiltonian, Hamiltonian2Component, Solver
 from .classes_extension import State, Potential
 
 __all__ = ['Lattice', 'State', 'ExponentialState', 'GaussianState',
-           'SinusoidState', 'Potential', 'ParabolicPotential', 'Hamiltonian',
+           'SinusoidState', 'Potential', 'HarmonicPotential', 'Hamiltonian',
            'Hamiltonian2Component', 'Solver']
