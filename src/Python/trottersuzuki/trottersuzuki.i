@@ -55,6 +55,7 @@ public:
     double *p_imag;
 
     State(Lattice *grid, double *p_real=0, double *p_imag=0);
+    State(const State &obj);
     ~State();
     %extend {
         void init_state_matrix(double* state_real, int state_real_width, int state_real_height,

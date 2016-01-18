@@ -59,6 +59,7 @@ public:
     double *p_imag;
     Lattice *grid;
     State(Lattice *grid, double *p_real=0, double *p_imag=0);
+    State(const State &obj);
     ~State();
     void init_state(complex<double> (*ini_state)(double x, double y));
     void loadtxt(char *file_name);

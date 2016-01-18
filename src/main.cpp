@@ -202,8 +202,7 @@ int main(int argc, char** argv) {
 
     //set initial state
     State *state = new State(grid);
-    int read_offset = 0;
-    state->read_state(filename, read_offset);
+    state->loadtxt(filename);
     
     //set evolution
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, kernel_type);
