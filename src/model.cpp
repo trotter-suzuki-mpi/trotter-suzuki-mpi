@@ -136,17 +136,15 @@ void State::init_state(complex<double> (*ini_state)(double x, double y)) {
     }
 }
 
-
-void State::read_state(char *file_name, int read_offset) {
+void State::loadtxt(char *file_name) {
     ifstream input(file_name);
-    int in_width = grid->global_dim_x - 2 * grid->periods[1] * grid->halo_x;
-    int in_height = grid->global_dim_y - 2 * grid->periods[0] * grid->halo_y;
+    int in_width = grid->global_no_halo_dim_x;
+    int in_height = grid->global_no_halo_dim_y;
     complex<double> tmp;
-    for(int i = 0; i < read_offset; i++)
-        input >> tmp;
     for(int i = 0; i < in_height; i++) {
         for(int j = 0; j < in_width; j++) {
             input >> tmp;
+
             if((i - grid->start_y) >= 0 && (i - grid->start_y) < grid->dim_y && (j - grid->start_x) >= 0 && (j - grid->start_x) < grid->dim_x) {
                 p_real[(i - grid->start_y) * grid->dim_x + j - grid->start_x] = real(tmp);
                 p_imag[(i - grid->start_y) * grid->dim_x + j - grid->start_x] = imag(tmp);

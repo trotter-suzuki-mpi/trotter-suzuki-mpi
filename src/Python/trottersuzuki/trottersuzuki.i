@@ -70,7 +70,7 @@ public:
             }    
         }
     }
-    void read_state(char *file_name, int read_offset);
+    void loadtxt(char *file_name);
     %extend {
         void imprint_matrix(double* state_real, int state_real_width, int state_real_height,
                             double* state_imag, int state_imag_width, int state_imag_height) {

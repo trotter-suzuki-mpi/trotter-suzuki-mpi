@@ -61,7 +61,7 @@ public:
     State(Lattice *grid, double *p_real=0, double *p_imag=0);
     ~State();
     void init_state(complex<double> (*ini_state)(double x, double y));
-    void read_state(char *file_name, int read_offset);
+    void loadtxt(char *file_name);
 
     void imprint(complex<double> (*function)(double x, double y));
     double *get_particle_density(double *density=0);
