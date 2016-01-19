@@ -146,9 +146,18 @@ setup(name='trottersuzuki',
       author_email='peterwittek@users.noreply.github.com',
       url="http://trotter-suzuki-mpi.github.io/",
       platforms=["unix", "windows"],
-      description="A massively parallel implementation of the Trotter-Suzuki decomposition",
+      description="Massively Parallel Trotter-Suzuki Solver",
       ext_modules=[ts_module],
       packages=["trottersuzuki"],
       install_requires=['numpy'],
+      classifiers=[
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Operating System :: OS Independent',
+        'Development Status :: 5 - Production/Stable',
+        'Topic :: Scientific/Engineering :: Physics',
+        'Intended Audience :: Science/Research',
+        'Programming Language :: Python',
+        'Programming Language :: C++'
+      ],
       cmdclass=cmdclass
       )
