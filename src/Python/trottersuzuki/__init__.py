@@ -5,9 +5,9 @@ Provides a massively parallel implementation of the Trotter-Suzuki
 decomposition for simulation of quantum systems
 """
 
-from .trottersuzuki import Lattice, HarmonicPotential, \
+from .trottersuzuki import HarmonicPotential, \
                            Hamiltonian, Hamiltonian2Component, Solver
-from .classes_extension import State, GaussianState, SinusoidState, \
+from .classes_extension import Lattice, State, GaussianState, SinusoidState, \
                                ExponentialState, Potential
 
 __all__ = ['Lattice', 'State', 'ExponentialState', 'GaussianState',

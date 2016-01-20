@@ -16,6 +16,18 @@
  *
  */
 
+#include <cppunit/CompilerOutputter.h>
+#include <cppunit/extensions/TestFactoryRegistry.h>
+#include <cppunit/ui/text/TestRunner.h>
+
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <iostream>
+#include <iomanip>
+#include <complex>
+#include <sys/stat.h>
+
 #include <iostream>
 #include "trottersuzuki.h"
 #ifdef HAVE_MPI
@@ -23,58 +35,28 @@
 #endif
 
 int main(int argc, char** argv) {
-    int dim = 640, iterations = 10*1000;
-    string kernel_type = "cpu";
-    const double particle_mass = 1., length=50;
-    bool imag_time = false;
-    double norm = 1.5;
-	  double delta_t = 5.e-5;
 
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
 
-    Lattice *grid = new Lattice(dim, length, length);
-    State *state = new SinusoidState(grid, 1, 1);
-    Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
-    Solver *solver = new Solver(grid, state, hamiltonian, delta_t, kernel_type);
-
-    solver->evolve(iterations, imag_time);
-
-    if (grid->mpi_rank == 0) {
-        double threshold_E = 0.1;
-        double threshold_P = 3.;
-        double expected_Px = 0.;
-        double expected_Py = 0.;
-        double expected_E = (2. * M_PI / dim) * (2. * M_PI / dim);
-        //get expected values
-        double tot_energy = solver->get_total_energy();
-
-        double mean_Px = state->get_mean_px();
-        double var_Px = state->get_mean_pxpx() - state->get_mean_px() * state->get_mean_px();
-        double mean_Py = state->get_mean_py();
-        double var_Py = state->get_mean_pypy() - state->get_mean_py() * state->get_mean_py();
-
-        if(std::abs(tot_energy - expected_E) < threshold_E)
-            std::cout << "Energy -> OK\tsigma: " << std::abs(tot_energy - expected_E)  << std::endl;
-        else
-            std::cout << "Energy value is not the one theoretically expected: sigma " << std::abs(tot_energy - expected_E)  << std::endl;
-        if(std::abs(mean_Px - expected_Px) / var_Px < threshold_P)
-            std::cout << "Momentum Px -> OK\tsigma: " << std::abs(mean_Px - expected_Px) / var_Px << std::endl;
-        else
-            std::cout << "Momentum Px value is not the one theoretically expected: sigma " << std::abs(mean_Px - expected_Px) / var_Px << std::endl;
-        if(std::abs(mean_Py - expected_Py) / var_Py < threshold_P)
-            std::cout << "Momentum Py -> OK\tsigma: " << std::abs(mean_Py - expected_Py) / var_Py << std::endl;
-        else
-            std::cout << "Momentum Py value is not the one theoretically expected: sigma " << std::abs(mean_Py - expected_Py) / var_Py << std::endl;
-    }
-    delete solver;
-    delete hamiltonian;
-    delete state;
-    delete grid;
+	// Get the top level suite from the registry
+	CppUnit::Test *suite = CppUnit::TestFactoryRegistry::getRegistry().makeTest();
+	// Adds the test to the list of test to run
+	CppUnit::TextUi::TestRunner runner;
+	runner.addTest( suite );
+	// Change the default outputter to a compiler error format outputter
+	runner.setOutputter( new CppUnit::CompilerOutputter( &runner.result(), std::cerr ) );
+	// Run the tests.
+	bool wasSucessful = runner.run();
+	// Return error code 1 if the one of test failed.
 
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
-    return 0;
+
+	if(!wasSucessful)
+		return 1;
+
+	return 0;
 }
