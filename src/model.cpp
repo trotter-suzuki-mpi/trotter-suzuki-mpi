@@ -88,12 +88,18 @@ State::State(Lattice *_grid, double *_p_real, double *_p_imag): grid(_grid){
     if (_p_real == 0) {
         self_init = true;
         p_real = new double[grid->dim_x * grid->dim_y];
+        for (int i = 0; i < grid->dim_x * grid->dim_y; i++) {
+        	p_real[i] = 0;
+        }
     } else {
         self_init = false;
         p_real = _p_real;
     }
     if (_p_imag == 0) {
         p_imag = new double[grid->dim_x * grid->dim_y];
+        for (int i = 0; i < grid->dim_x * grid->dim_y; i++) {
+			p_imag[i] = 0;
+		}
     } else {
         p_imag = _p_imag;
     }
