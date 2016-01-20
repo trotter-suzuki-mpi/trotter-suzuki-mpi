@@ -39,7 +39,7 @@ ifdef CUDA_LIBS
 	LIBOBJS+=$(srcdir)/cc2kernel.cu.co $(srcdir)/hybrid.cu.co
 endif
 
-TEST_OBJS=$(LIBOBJS) cpublocktest.o unittest.o
+TEST_OBJS=$(LIBOBJS) unittest.o
 
 all: check
 
@@ -47,7 +47,7 @@ test check: $(TEST_OBJS)
 	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -I.. -o unittest $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS} $(TEST_LIBS)
 
 %.o: %.cpp
-	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -I.. -I$(srcdir) -o $@ -c $^ 
+	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -I.. -I$(srcdir) -o $@ -c $^
 
 $(srcdir)/%.o: $(srcdir)/%.cpp
 	$(MAKE) -C $(srcdir) $@
