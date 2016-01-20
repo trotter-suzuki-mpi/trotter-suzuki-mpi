@@ -62,7 +62,6 @@ public:
                         double* state_imag, int state_imag_width, int state_imag_height) {
             //check that p_real and p_imag have been allocated
             
-            
             for (int y = 0; y < self->grid->dim_y; y++) {
                 for (int x = 0; x < self->grid->dim_x; x++) {
                     self->p_real[y * self->grid->dim_x + x] = state_real[y * self->grid->dim_x + x];
@@ -98,7 +97,7 @@ public:
     %extend {
         void get_phase(double **phase_out, int *ph_dim1_out, int *ph_dim2_out) {
             double *_phase;
-            _phase = self->get_particle_density();
+            _phase = self->get_phase();
         end:
            *ph_dim1_out = self->grid->dim_x;
            *ph_dim2_out = self->grid->dim_y;

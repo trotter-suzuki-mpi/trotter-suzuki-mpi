@@ -1,10 +1,27 @@
 import numpy as np
+from .trottersuzuki import Lattice as _Lattice
 from .trottersuzuki import State as _State
 from .trottersuzuki import GaussianState as _GaussianState
 from .trottersuzuki import SinusoidState as _SinusoidState
 from .trottersuzuki import ExponentialState as _ExponentialState
 from .trottersuzuki import Potential as _Potential
 
+class Lattice(_Lattice):
+    
+    def get_x_axis(self):
+        
+        x_axis = np.arange(self.global_no_halo_dim_x) - self.global_no_halo_dim_x * 0.5 + 0.5
+        x_axis *= self.delta_x
+        
+        return x_axis
+    
+    def get_y_axis(self):
+        
+        y_axis = np.arange(self.global_no_halo_dim_y) - self.global_no_halo_dim_y * 0.5 + 0.5
+        y_axis *= self.delta_y
+        
+        return y_axis
+        
 class State(_State):
     
     def init_state(self, state_function):
