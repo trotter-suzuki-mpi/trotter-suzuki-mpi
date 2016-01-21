@@ -248,18 +248,13 @@ void Solver::calculate_energy_expected_values(void) {
     complex<double> cost_E_b;
     if (!single_component)
         cost_E_b = complex<double> (-1. / (2. * mass_b));
-    complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
-    complex<double> psi_up_b, psi_down_b, psi_center_b, psi_left_b, psi_right_b;
-    complex<double> rot_y, rot_x;
+
     double cost_rot_x = hamiltonian->angular_velocity * grid->delta_y / grid->delta_x;
     double cost_rot_y = hamiltonian->angular_velocity * grid->delta_x / grid->delta_y;
 
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
 
-    complex<double> psi_up_up, psi_down_down, psi_left_left, psi_right_right;
-    complex<double> psi_up_up_b, psi_down_down_b, psi_left_left_b, psi_right_right_b;
-    complex<double> const_1 = -1./12., const_2 = 4./3., const_3 = -2.5;
-    complex<double> derivate1_1 = 1./6., derivate1_2 = - 1., derivate1_3 = 0.5, derivate1_4 = 1./3.;
+
     int y = grid->inner_start_y;
 #ifndef HAVE_MPI
     #pragma omp parallel for reduction(+:sum_norm2_0,\
@@ -276,6 +271,14 @@ void Solver::calculate_energy_expected_values(void) {
                                          sum_rotational_energy_1)
 #endif
 	for (int i = grid->inner_start_y - grid->start_y; i < grid->inner_end_y - grid->start_y; i++) {
+		int y=grid->inner_start_y + i - (grid->inner_start_y - grid->start_y);
+		complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
+	    complex<double> psi_up_b, psi_down_b, psi_center_b, psi_left_b, psi_right_b;
+	    complex<double> rot_y, rot_x;
+		complex<double> psi_up_up, psi_down_down, psi_left_left, psi_right_right;
+	    complex<double> psi_up_up_b, psi_down_down_b, psi_left_left_b, psi_right_right_b;
+	    complex<double> const_1 = -1./12., const_2 = 4./3., const_3 = -2.5;
+	    complex<double> derivate1_1 = 1./6., derivate1_2 = - 1., derivate1_3 = 0.5, derivate1_4 = 1./3.;
 		int x = grid->inner_start_x;
 		for (int j = grid->inner_start_x - grid->start_x; j < grid->inner_end_x - grid->start_x; j++) {
 
