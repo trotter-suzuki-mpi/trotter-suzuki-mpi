@@ -287,32 +287,32 @@ void State::calculate_expected_values(void) {
     double grid_center_x = grid->length_x * 0.5 - grid->delta_x * 0.5;
     double grid_center_y = grid->length_y * 0.5 - grid->delta_y * 0.5;
 
-    complex<double> sum_norm2 = 0.; 
-    complex<double> sum_x_mean = 0, sum_xx_mean = 0, sum_y_mean = 0, sum_yy_mean = 0;
-    complex<double> sum_px_mean = 0, sum_pxpx_mean = 0, sum_py_mean = 0,
+    double sum_norm2 = 0.;
+    double sum_x_mean = 0, sum_xx_mean = 0, sum_y_mean = 0, sum_yy_mean = 0;
+    double sum_px_mean = 0, sum_pxpx_mean = 0, sum_py_mean = 0,
                          sum_pypy_mean = 0,
-                         param_px = complex<double>(0., - 1. / grid->delta_x),
-                         param_py = complex<double>(0., 1. / grid->delta_y);
+                         param_px = - 1. / grid->delta_x,
+                         param_py = 1. / grid->delta_y;
 
     complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
     complex<double> psi_up_up, psi_down_down, psi_left_left, psi_right_right;
     complex<double> const_1 = -1./12., const_2 = 4./3., const_3 = -2.5;
     complex<double> derivate1_1 = 1./6., derivate1_2 = - 1., derivate1_3 = 0.5, derivate1_4 = 1./3.;
-/*
+
+    int y = grid->inner_start_y;
 #ifndef HAVE_MPI
-        #pragma omp parallel for reduction(+:sum_norm2,sum_x_mean,sum_y_mean,sum_xx_mean,sum_yy_mean,sum_px_mean,sum_py_mean,sum_pxpx_mean,sum_pypy_mean)
-#endif*/
-    for (int i = grid->inner_start_y - grid->start_y,
-         y = grid->inner_start_y; i < grid->inner_end_y - grid->start_y; i++, y++) {
-        for (int j = grid->inner_start_x - grid->start_x,
-             x = grid->inner_start_x; j < grid->inner_end_x - grid->start_x; j++, x++) {
+#pragma omp parallel for reduction(+:sum_norm2,sum_x_mean,sum_y_mean,sum_xx_mean,sum_yy_mean,sum_px_mean,sum_py_mean,sum_pxpx_mean,sum_pypy_mean)
+#endif
+    for (int i = grid->inner_start_y - grid->start_y; i < grid->inner_end_y - grid->start_y; i++) {
+    	int x = grid->inner_start_x;
+        for (int j = grid->inner_start_x - grid->start_x; j < grid->inner_end_x - grid->start_x; j++) {
             
             psi_center = complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
-            sum_norm2 += conj(psi_center) * psi_center;
-            sum_x_mean += conj(psi_center) * psi_center * complex<double>(grid->delta_x * x - grid_center_x, 0.);
-            sum_y_mean += conj(psi_center) * psi_center * complex<double>(grid->delta_y * y - grid_center_y, 0.);
-            sum_xx_mean += conj(psi_center) * psi_center * complex<double>(grid->delta_x * x - grid_center_x, 0.) * complex<double>(grid->delta_x * x - grid_center_x, 0.);
-            sum_yy_mean += conj(psi_center) * psi_center * complex<double>(grid->delta_y * y - grid_center_y, 0.) * complex<double>(grid->delta_y * y - grid_center_y, 0.);
+            sum_norm2 += real(conj(psi_center) * psi_center);
+            sum_x_mean += real(conj(psi_center) * psi_center * complex<double>(grid->delta_x * x - grid_center_x, 0.));
+            sum_y_mean += real(conj(psi_center) * psi_center * complex<double>(grid->delta_y * y - grid_center_y, 0.));
+            sum_xx_mean += real(conj(psi_center) * psi_center * complex<double>(grid->delta_x * x - grid_center_x, 0.) * complex<double>(grid->delta_x * x - grid_center_x, 0.));
+            sum_yy_mean += real(conj(psi_center) * psi_center * complex<double>(grid->delta_y * y - grid_center_y, 0.) * complex<double>(grid->delta_y * y - grid_center_y, 0.));
             
             if (i - (grid->inner_start_y - grid->start_y) >= (ini_halo_y == 0)*2 &&
                 i < grid->inner_end_y - grid->start_y - (end_halo_y == 0)*2 &&
@@ -336,22 +336,24 @@ void State::calculate_expected_values(void) {
                 psi_left_left = complex<double> (p_real[i * tile_width + j - 2],
                                                  p_imag[i * tile_width + j - 2]);
                 
-                sum_px_mean += conj(psi_center) * (derivate1_4*psi_right + derivate1_3*psi_center + derivate1_2*psi_left + derivate1_1*psi_left_left);
-                sum_py_mean += conj(psi_center) * (derivate1_4*psi_up + derivate1_3*psi_center + derivate1_2*psi_down + derivate1_1*psi_down_down);
-                sum_pxpx_mean += conj(psi_center) * (const_1*psi_right_right + const_2*psi_right + const_2*psi_left + const_1*psi_left_left + const_3*psi_center);
-                sum_pypy_mean += conj(psi_center) * (const_1*psi_down_down + const_2*psi_down + const_2*psi_up + const_1*psi_up_up + const_3*psi_center);
+                sum_px_mean += imag(conj(psi_center) * (derivate1_4*psi_right + derivate1_3*psi_center + derivate1_2*psi_left + derivate1_1*psi_left_left));
+                sum_py_mean += imag(conj(psi_center) * (derivate1_4*psi_up + derivate1_3*psi_center + derivate1_2*psi_down + derivate1_1*psi_down_down));
+                sum_pxpx_mean += real(conj(psi_center) * (const_1*psi_right_right + const_2*psi_right + const_2*psi_left + const_1*psi_left_left + const_3*psi_center));
+                sum_pypy_mean += real(conj(psi_center) * (const_1*psi_down_down + const_2*psi_down + const_2*psi_up + const_1*psi_up_up + const_3*psi_center));
             }
+            x++;
         }
+        y++;
     }
-    norm2 = real(sum_norm2);
-    mean_X = real(sum_x_mean);
-    mean_Y = real(sum_y_mean);
-    mean_XX = real(sum_xx_mean);
-    mean_YY = real(sum_yy_mean);
-    mean_Px = real(sum_px_mean * param_px);
-    mean_Py = real(sum_py_mean * param_py);
-    mean_PxPx = real(sum_pxpx_mean * param_px * param_px);
-    mean_PyPy = real(sum_pypy_mean * param_py * param_py);
+    norm2 = sum_norm2;
+    mean_X = sum_x_mean;
+    mean_Y = sum_y_mean;
+    mean_XX = sum_xx_mean;
+    mean_YY = sum_yy_mean;
+    mean_Px = - sum_px_mean * param_px;
+    mean_Py = - sum_py_mean * param_py;
+    mean_PxPx = - sum_pxpx_mean * param_px * param_px;
+    mean_PyPy = - sum_pypy_mean * param_py * param_py;
 
 #ifdef HAVE_MPI
     double *norm2_mpi = new double[grid->mpi_procs];
