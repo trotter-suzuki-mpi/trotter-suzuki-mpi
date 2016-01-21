@@ -19,16 +19,6 @@
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
-
-#include <string>
-#include <sstream>
-#include <fstream>
-#include <iostream>
-#include <iomanip>
-#include <complex>
-#include <sys/stat.h>
-
-#include <iostream>
 #include "trottersuzuki.h"
 #ifdef HAVE_MPI
 #include <mpi.h>
