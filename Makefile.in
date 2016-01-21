@@ -30,7 +30,7 @@ trottersuzuki install uninstall lib python python_clean python_install matlab ma
 example:
 	$(MAKE) -C examples $@
 
-check test: trottersuzuki
+check test: lib
 	$(MAKE) -C test $@
 
 dist: $(distdir).tar.gz
@@ -52,7 +52,7 @@ $(distdir):
 	cp $(srcdir)/install-sh $(distdir)
 	cp $(srcdir)/Makefile.in $(distdir)
 	cp $(srcdir)/README.md $(distdir)
-	cp $(srcdir)/COPYING $(distdir)  
+	cp $(srcdir)/COPYING $(distdir)
 	cp $(srcdir)/CHANGES $(distdir)
 	cp $(srcdir)/examples/Makefile.in $(srcdir)/examples/*cpp $(distdir)/examples
 	cp $(srcdir)/src/Makefile.in $(distdir)/src

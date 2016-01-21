@@ -1,7 +1,6 @@
 #ifndef __CPUKERNELTEST_H
 #define __CPUKERNELTEST_H
 
-#include <cmath>
 #include <cppunit/extensions/HelperMacros.h>
 
 class CPUkernelTest: public CppUnit::TestFixture {
