@@ -158,17 +158,17 @@ void block_kernel_rotation(size_t stride, size_t width, size_t height, int offse
 
   double tmp_r, tmp_i;
 
-  for (int j = 0, y = offset_y; j < height; ++j, ++y) {
+  for (size_t j = 0, y = offset_y; j < height; ++j, ++y) {
     double alpha_yy = - 0.5 * alpha_y * y;
     double a = cos(alpha_yy), b = sin(alpha_yy);
-    for (int i = 0, idx = j * stride, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
+    for (size_t i = 0, idx = j * stride, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
       tmp_r = p_real[idx], tmp_i = p_imag[idx];
       p_real[idx] = a * p_real[idx] + b * p_real[peer];
       p_imag[idx] = a * p_imag[idx] + b * p_imag[peer];
       p_real[peer] = a * p_real[peer] - b * tmp_r;
       p_imag[peer] = a * p_imag[peer] - b * tmp_i;
     }
-    for (int i = 1, idx = j * stride + 1, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
+    for (size_t i = 1, idx = j * stride + 1, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
       tmp_r = p_real[idx], tmp_i = p_imag[idx];
       p_real[idx] = a * p_real[idx] + b * p_real[peer];
       p_imag[idx] = a * p_imag[idx] + b * p_imag[peer];
@@ -177,17 +177,17 @@ void block_kernel_rotation(size_t stride, size_t width, size_t height, int offse
     }
   }
 
-  for (int i = 0, x = offset_x; i < width; ++i, ++x) {
+  for (size_t i = 0, x = offset_x; i < width; ++i, ++x) {
     double alpha_xx = alpha_x * x;
     double a = cos(alpha_xx), b = sin(alpha_xx);
-    for (int j = 0, idx = i, peer = stride + idx; j < height - 1; j += 2, idx += 2 * stride, peer += 2 * stride) {
+    for (size_t j = 0, idx = i, peer = stride + idx; j < height - 1; j += 2, idx += 2 * stride, peer += 2 * stride) {
       tmp_r = p_real[idx], tmp_i = p_imag[idx];
       p_real[idx] = a * p_real[idx] + b * p_real[peer];
       p_imag[idx] = a * p_imag[idx] + b * p_imag[peer];
       p_real[peer] = a * p_real[peer] - b * tmp_r;
       p_imag[peer] = a * p_imag[peer] - b * tmp_i;
     }
-    for (int j = 1, idx = j * stride + i, peer = stride + idx; j < height - 1; j += 2, idx += 2 * stride, peer += 2 * stride) {
+    for (size_t j = 1, idx = j * stride + i, peer = stride + idx; j < height - 1; j += 2, idx += 2 * stride, peer += 2 * stride) {
       tmp_r = p_real[idx], tmp_i = p_imag[idx];
       p_real[idx] = a * p_real[idx] + b * p_real[peer];
       p_imag[idx] = a * p_imag[idx] + b * p_imag[peer];
@@ -196,17 +196,17 @@ void block_kernel_rotation(size_t stride, size_t width, size_t height, int offse
     }
   }
 
-  for (int j = 0, y = offset_y; j < height; ++j, ++y) {
+  for (size_t j = 0, y = offset_y; j < height; ++j, ++y) {
     double alpha_yy = - 0.5 * alpha_y * y;
     double a = cos(alpha_yy), b = sin(alpha_yy);
-    for (int i = 0, idx = j * stride, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
+    for (size_t i = 0, idx = j * stride, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
       tmp_r = p_real[idx], tmp_i = p_imag[idx];
       p_real[idx] = a * p_real[idx] + b * p_real[peer];
       p_imag[idx] = a * p_imag[idx] + b * p_imag[peer];
       p_real[peer] = a * p_real[peer] - b * tmp_r;
       p_imag[peer] = a * p_imag[peer] - b * tmp_i;
     }
-    for (int i = 1, idx = j * stride + 1, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
+    for (size_t i = 1, idx = j * stride + 1, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
       tmp_r = p_real[idx], tmp_i = p_imag[idx];
       p_real[idx] = a * p_real[idx] + b * p_real[peer];
       p_imag[idx] = a * p_imag[idx] + b * p_imag[peer];
@@ -220,17 +220,17 @@ void block_kernel_rotation_imaginary(size_t stride, size_t width, size_t height,
 
   double tmp_r, tmp_i;
 
-  for (int j = 0, y = offset_y; j < height; ++j, ++y) {
+  for (size_t j = 0, y = offset_y; j < height; ++j, ++y) {
     double alpha_yy = - 0.5 * alpha_y * y;
     double a = cosh(alpha_yy), b = sinh(alpha_yy);
-    for (int i = 0, idx = j * stride, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
+    for (size_t i = 0, idx = j * stride, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
       tmp_r = p_real[idx], tmp_i = p_imag[idx];
       p_real[idx] = a * p_real[idx] + b * p_imag[peer];
       p_imag[idx] = a * p_imag[idx] - b * p_real[peer];
       p_real[peer] = - b * tmp_i + a * p_real[peer];
       p_imag[peer] = b * tmp_r + a * p_imag[peer];
     }
-    for (int i = 1, idx = j * stride + 1, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
+    for (size_t i = 1, idx = j * stride + 1, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
       tmp_r = p_real[idx], tmp_i = p_imag[idx];
       p_real[idx] = a * p_real[idx] + b * p_imag[peer];
       p_imag[idx] = a * p_imag[idx] - b * p_real[peer];
@@ -239,17 +239,17 @@ void block_kernel_rotation_imaginary(size_t stride, size_t width, size_t height,
     }
   }
 
-  for (int i = 0, x = offset_x; i < width; ++i, ++x) {
+  for (size_t i = 0, x = offset_x; i < width; ++i, ++x) {
     double alpha_xx = alpha_x * x;
     double a = cosh(alpha_xx), b = sinh(alpha_xx);
-    for (int j = 0, idx = i, peer = stride + idx; j < height - 1; j += 2, idx += 2 * stride, peer += 2 * stride) {
+    for (size_t j = 0, idx = i, peer = stride + idx; j < height - 1; j += 2, idx += 2 * stride, peer += 2 * stride) {
       tmp_r = p_real[idx], tmp_i = p_imag[idx];
       p_real[idx] = a * p_real[idx] + b * p_imag[peer];
       p_imag[idx] = a * p_imag[idx] - b * p_real[peer];
       p_real[peer] = - b * tmp_i + a * p_real[peer];
       p_imag[peer] = b * tmp_r + a * p_imag[peer];
     }
-    for (int j = 1, idx = j * stride + i, peer = stride + idx; j < height - 1; j += 2, idx += 2 * stride, peer += 2 * stride) {
+    for (size_t j = 1, idx = j * stride + i, peer = stride + idx; j < height - 1; j += 2, idx += 2 * stride, peer += 2 * stride) {
       tmp_r = p_real[idx], tmp_i = p_imag[idx];
       p_real[idx] = a * p_real[idx] + b * p_imag[peer];
       p_imag[idx] = a * p_imag[idx] - b * p_real[peer];
@@ -258,17 +258,17 @@ void block_kernel_rotation_imaginary(size_t stride, size_t width, size_t height,
     }
   }
 
-  for (int j = 0, y = offset_y; j < height; ++j, ++y) {
+  for (size_t j = 0, y = offset_y; j < height; ++j, ++y) {
     double alpha_yy = - 0.5 * alpha_y * y;
     double a = cosh(alpha_yy), b = sinh(alpha_yy);
-    for (int i = 0, idx = j * stride, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
+    for (size_t i = 0, idx = j * stride, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
       tmp_r = p_real[idx], tmp_i = p_imag[idx];
       p_real[idx] = a * p_real[idx] + b * p_imag[peer];
       p_imag[idx] = a * p_imag[idx] - b * p_real[peer];
       p_real[peer] = - b * tmp_i + a * p_real[peer];
       p_imag[peer] = b * tmp_r + a * p_imag[peer];
     }
-    for (int i = 1, idx = j * stride + 1, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
+    for (size_t i = 1, idx = j * stride + 1, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
       tmp_r = p_real[idx], tmp_i = p_imag[idx];
       p_real[idx] = a * p_real[idx] + b * p_imag[peer];
       p_imag[idx] = a * p_imag[idx] - b * p_real[peer];
@@ -443,17 +443,10 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     coupling_const[1] = 0.;
     coupling_const[2] = 0.;
     norm[0] = _norm;
-    int rank, coords[2], dims[2] = {0, 0};
 #ifdef HAVE_MPI
     cartcomm = grid->cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
-    MPI_Comm_rank(cartcomm, &rank);
-    MPI_Cart_get(cartcomm, 2, dims, periods, coords);
-#else
-    dims[0] = dims[1] = 1;
-    rank = 0;
-    coords[0] = coords[1] = 0;
 #endif
 
     start_x = grid->start_x;
@@ -524,17 +517,10 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
     coupling_const[3] = 0.5 * hamiltonian->omega_r;
     coupling_const[4] = 0.5 * hamiltonian->omega_i;
     periods = grid->periods;
-    int rank, coords[2], dims[2] = {0, 0};
 #ifdef HAVE_MPI
     cartcomm = grid->cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
-    MPI_Comm_rank(cartcomm, &rank);
-    MPI_Cart_get(cartcomm, 2, dims, periods, coords);
-#else
-    dims[0] = dims[1] = 1;
-    rank = 0;
-    coords[0] = coords[1] = 0;
 #endif
 
     start_x = grid->start_x;
@@ -745,7 +731,7 @@ void CPUBlock::normalization() {
         MPI_Comm_size(cartcomm, &nProcs);
 #endif
 
-        double sum, sum_a = 0., sum_b = 0., *sums, *sums_a, *sums_b;
+        double sum_a = 0., sum_b = 0., *sums, *sums_a, *sums_b;
         sums = new double[nProcs];
         sums_a = new double[nProcs];
         sums_b = new double[nProcs];
@@ -769,7 +755,7 @@ void CPUBlock::normalization() {
         sums_a[0] = sum_a;
         sums_b[0] = sum_b;
 #endif
-        double tot_sum = 0., tot_sum_a = 0., tot_sum_b = 0.;
+        double tot_sum_a = 0., tot_sum_b = 0.;
         for(int i = 0; i < nProcs; i++) {
             tot_sum_a += sums_a[i];
             tot_sum_b += sums_b[i];

@@ -651,8 +651,8 @@ HarmonicPotential::~HarmonicPotential() {
 Hamiltonian::Hamiltonian(Lattice *_grid, Potential *_potential,
                          double _mass, double _coupling_a,
                          double _angular_velocity,
-                         double _rot_coord_x, double _rot_coord_y): grid(_grid), mass(_mass),
-                         coupling_a(_coupling_a), angular_velocity(_angular_velocity) {
+                         double _rot_coord_x, double _rot_coord_y): mass(_mass),
+                         coupling_a(_coupling_a), angular_velocity(_angular_velocity), grid(_grid) {
     rot_coord_x = (grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x) * 0.5 + _rot_coord_x / grid->delta_x;
     rot_coord_y = (grid->global_dim_y - grid->periods[1] * 2 * grid->halo_y) * 0.5 + _rot_coord_y / grid->delta_y;
     if (_potential == NULL) {

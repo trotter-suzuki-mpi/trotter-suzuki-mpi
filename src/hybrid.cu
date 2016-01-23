@@ -1,4 +1,4 @@
-/**
+ /**
  * Massively Parallel Trotter-Suzuki Solver
  *
  * This program is free software: you can redistribute it and/or modify
@@ -295,8 +295,8 @@ void HybridKernel::wait_for_completion() {
         double tot_sum = calculate_squared_norm(true);
         double _norm = sqrt(tot_sum / norm);
 
-        for(int i = 0; i < tile_height; i++) {
-            for(int j = 0; j < tile_width; j++) {
+        for(size_t i = 0; i < tile_height; i++) {
+            for(size_t j = 0; j < tile_width; j++) {
                 p_real[sense][j + i * tile_width] /= _norm;
                 p_imag[sense][j + i * tile_width] /= _norm;
             }

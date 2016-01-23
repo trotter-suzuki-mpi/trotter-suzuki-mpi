@@ -67,12 +67,6 @@ Solver::~Solver() {
 }
 
 void Solver::initialize_exp_potential(double delta_t, int which) {
-      double particle_mass;
-      if (which == 0) {
-          particle_mass = hamiltonian->mass;
-      } else {
-          particle_mass = static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b;
-      }
       complex<double> tmp;
       double idy = grid->start_y * grid->delta_y, idx;
       for (int y = 0; y < grid->dim_y; y++, idy += grid->delta_y) {
@@ -206,7 +200,6 @@ void Solver::calculate_energy_expected_values(void) {
 
     double sum_norm2_0 = 0;
     double sum_norm2_1 = 0;
-    double sum_total_energy = 0;
     double sum_kinetic_energy_0 = 0;
     double sum_kinetic_energy_1 = 0;
     double sum_potential_energy_0 = 0;
@@ -225,8 +218,8 @@ void Solver::calculate_energy_expected_values(void) {
     int tile_width = grid->end_x - grid->start_x;
 
 
-    Potential *potential, *potential_b;
-    double coupling, coupling_b, coupling_ab;
+    Potential *potential, *potential_b = NULL;
+    double coupling, coupling_b = 0, coupling_ab;
     double mass, mass_b;
     complex<double> omega;
 
@@ -242,8 +235,6 @@ void Solver::calculate_energy_expected_values(void) {
                                  static_cast<Hamiltonian2Component*>(hamiltonian)->omega_i);
     }
 
-    double grid_center_x = grid->length_x * 0.5 - grid->delta_x * 0.5;
-    double grid_center_y = grid->length_y * 0.5 - grid->delta_y * 0.5;
     complex<double> cost_E = -1. / (2. * mass);
     complex<double> cost_E_b;
     if (!single_component)
@@ -252,7 +243,6 @@ void Solver::calculate_energy_expected_values(void) {
     double cost_rot_x = hamiltonian->angular_velocity * grid->delta_y / grid->delta_x;
     double cost_rot_y = hamiltonian->angular_velocity * grid->delta_x / grid->delta_y;
 
-    double delta_x = grid->delta_x, delta_y = grid->delta_y;
     complex<double> const_1 = -1./12., const_2 = 4./3., const_3 = -2.5;
     complex<double> derivate1_1 = 1./6., derivate1_2 = - 1., derivate1_3 = 0.5, derivate1_4 = 1./3.;
 
@@ -359,9 +349,8 @@ void Solver::calculate_energy_expected_values(void) {
                                                                     - rot_x * (derivate1_4*psi_right + derivate1_3*psi_center + derivate1_2*psi_left + derivate1_1*psi_left_left)));
                 }
             }
-            x++;
+            ++x;
         }
-    y++;
     }
     norm2[0] = sum_norm2_0;
     kinetic_energy[0] = sum_kinetic_energy_0;
@@ -502,10 +491,12 @@ double Solver::get_squared_norm(size_t which) {
     else if (which == 1)
         return norm2[0];
     else if (which == 2)
-        if (single_component)
+        if (single_component) {
             cout << "The system has only one component. No input have to be given\n";
-        else
+            return 0;
+        } else {
             return norm2[1];
+        }
     else {
         cout << "Input may be 1, 2 or 3\n";
         return 0;
@@ -520,9 +511,10 @@ double Solver::get_kinetic_energy(size_t which) {
     else if (which == 1)
         return kinetic_energy[0];
     else if (which == 2)
-        if (single_component)
+        if (single_component) {
             cout << "The system has only one component. No input have to be given\n";
-        else
+            return 0;
+        } else
             return kinetic_energy[1];
     else {
         cout << "Input may be 1, 2 or 3\n";
@@ -538,9 +530,10 @@ double Solver::get_potential_energy(size_t which) {
     else if (which == 1)
         return potential_energy[0];
     else if (which == 2)
-        if (single_component)
+        if (single_component) {
             cout << "The system has only one component. No input have to be given\n";
-        else
+            return 0;
+        } else
             return potential_energy[1];
     else {
         cout << "Input may be 1, 2 or 3\n";
@@ -556,9 +549,10 @@ double Solver::get_rotational_energy(size_t which) {
     else if (which == 1)
         return rotational_energy[0];
     else if (which == 2)
-        if (single_component)
+        if (single_component) {
             cout << "The system has only one component. No input have to be given\n";
-        else
+            return 0;
+        } else
             return rotational_energy[1];
     else {
         cout << "Input may be 1, 2 or 3\n";
@@ -574,9 +568,10 @@ double Solver::get_intra_species_energy(size_t which) {
     else if (which == 1)
         return intra_species_energy[0];
     else if (which == 2)
-        if (single_component)
+        if (single_component) {
             cout << "The system has only one component. No input have to be given\n";
-        else
+            return 0;
+        } else
             return intra_species_energy[1];
     else {
         cout << "Input may be 1, 2 or 3\n";
