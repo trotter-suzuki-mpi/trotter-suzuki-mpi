@@ -58,6 +58,7 @@ int main(int argc, char** argv) {
     //set hamiltonian
     Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
     //set evolution
+
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
 
     if(grid->mpi_rank == 0) {
@@ -71,7 +72,7 @@ int main(int argc, char** argv) {
     stringstream dirname, fileprefix;
     dirname << "D" << DIM << "_I" << ITERATIONS << "_S" << SNAPSHOTS << "";
     mkdir(dirname.str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    
+
     for(int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);
         fileprefix.str("");
