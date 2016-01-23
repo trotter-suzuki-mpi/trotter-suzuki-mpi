@@ -210,14 +210,14 @@ private:
 
 class Potential {
 public:
-	Lattice *grid;
-	double *matrix;
+    Lattice *grid;
+    double *matrix;
 
     Potential(Lattice *grid, char *filename);
     Potential(Lattice *grid, double *external_pot=0);
     Potential(Lattice *grid, double (*potential_function)(double x, double y));
     Potential(Lattice *grid, double (*potential_function)(double x, double y, double t), int t=0);
-    ~Potential();
+    virtual ~Potential();
     virtual double get_value(int x, int y);
     bool update(double t);
 
@@ -239,8 +239,8 @@ public:
 
 private:
     double omegax, omegay;
-    double mean_x, mean_y;
     double mass;
+    double mean_x, mean_y;
 };
 
 class Hamiltonian {
