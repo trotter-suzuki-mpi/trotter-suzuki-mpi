@@ -17,6 +17,8 @@
  */
 
 #undef _GLIBCXX_ATOMIC_BUILTINS
+#include <iostream>
+#include <stdexcept>
 #include <sstream>
 #include <cassert>
 #include <vector>
@@ -118,7 +120,7 @@ void setDevice(int commRank
 //REAL TIME functions
 
 template<int BLOCK_WIDTH, int BLOCK_HEIGHT, int BACKWARDS>
-inline __device__ void trotter_vert_pair_flexible_nosync(double a, double b, int tile_height, double &cell_r, double &cell_i, int kx, int ky, int py, double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH]) {
+inline __device__ void gpu_kernel_vertical(double a, double b, int tile_height, double &cell_r, double &cell_i, int kx, int ky, int py, double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH]) {
     double peer_r;
     double peer_i;
 
@@ -144,7 +146,7 @@ inline __device__ void trotter_vert_pair_flexible_nosync(double a, double b, int
 
 
 template<int BLOCK_WIDTH, int BLOCK_HEIGHT, int BACKWARDS>
-static  inline __device__ void trotter_horz_pair_flexible_nosync(double a, double b,  int tile_width, double &cell_r, double &cell_i, int kx, int ky, int px, double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH]) {
+static  inline __device__ void gpu_kernel_horizontal(double a, double b,  int tile_width, double &cell_r, double &cell_i, int kx, int ky, int px, double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH]) {
     double peer_r;
     double peer_i;
 
@@ -169,14 +171,16 @@ static  inline __device__ void trotter_horz_pair_flexible_nosync(double a, doubl
 }
 
 template<int BLOCK_WIDTH, int BLOCK_HEIGHT>
-static  inline __device__ void trotter_external_pot_nosync(int tile_width, int tile_height, double &cell_r, double &cell_i,
+static  inline __device__ void gpu_kernel_potential(int tile_width, int tile_height, double &cell_r, double &cell_i,
         int kx, int ky, int px, int py,
         double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH],
-        double pot_r[BLOCK_HEIGHT][BLOCK_WIDTH], double pot_i[BLOCK_HEIGHT][BLOCK_WIDTH]) {
-    double var;
+        double pot_r[BLOCK_HEIGHT][BLOCK_WIDTH], double pot_i[BLOCK_HEIGHT][BLOCK_WIDTH], double coupling_a) {
+    double tmp;
     double peer_r;
     double peer_i;
     double pot_cell_r, pot_cell_i, pot_peer_r, pot_peer_i;
+    double c_cos;
+    double c_sin;
 
     const int ky_peer = ky + 1 - 2 * (kx % 2);
     if(ky >= 0 && ky < BLOCK_HEIGHT && ky_peer >= 0 && ky_peer < BLOCK_HEIGHT && kx >= 0 && kx < BLOCK_WIDTH) {
@@ -189,28 +193,60 @@ static  inline __device__ void trotter_external_pot_nosync(int tile_width, int t
         peer_i = im[ky_peer][kx];
 
 #ifndef DISABLE_FMA
-        var = cell_r;
-        cell_r = pot_cell_r * var - pot_cell_i * cell_i;
-        cell_i = pot_cell_r * cell_i + pot_cell_i * var;
+        tmp = cell_r*cell_r + cell_i * cell_i;
+        c_cos = cos(coupling_a * tmp);
+        c_sin = sin(coupling_a * tmp);
 
-        rl[ky_peer][kx] = pot_peer_r * peer_r - pot_peer_i * peer_i;
-        im[ky_peer][kx] = pot_peer_r * peer_i + pot_peer_i * peer_r;
+        tmp = cell_r;
+        cell_r = pot_cell_r * tmp - pot_cell_i * cell_i;
+        cell_i = pot_cell_r * cell_i + pot_cell_i * tmp;
+
+        tmp = cell_r;
+        cell_r = c_cos * cell_r + c_sin * cell_i;
+        cell_i = c_cos * cell_i - c_sin * cell_r;
+
+        tmp = peer_r*peer_r + peer_i * peer_i;
+        c_cos = cos(coupling_a * tmp);
+        c_sin = sin(coupling_a * tmp);
+
+        tmp = peer_r;
+        peer_r = pot_peer_r * tmp - pot_peer_i * peer_i;
+        peer_i =pot_peer_r * peer_i + pot_peer_i * tmp;
+
+        rl[ky_peer][kx] = c_cos * peer_r + c_sin * peer_i;
+        im[ky_peer][kx] = c_cos * peer_i - c_sin * peer_r;
 #else
         // NOTE: disabling FMA has worse precision and performance
-        //       use only for exact implementation verification against CPU results
-        var = cell_r;
-        cell_r = __dadd_rn(pot_cell_r * var, - pot_cell_i * cell_i);
-        cell_i = __dadd_rn(pot_cell_r * cell_i, pot_cell_i * var);
+        // use only for exact implementation verification against CPU results
+        tmp = __dadd_rn(cell_r*cell_r, cell_i * cell_i);
+        c_cos = cos(coupling_a * tmp);
+        c_sin = sin(coupling_a * tmp);
 
-        rl[ky_peer][kx] = __dadd_rn(pot_peer_r * peer_r, - pot_peer_i * peer_i);
-        im[ky_peer][kx] = __dadd_rn(pot_peer_r * peer_i, pot_peer_i * peer_r);
+        tmp = cell_r;
+        cell_r = __dadd_rn(pot_cell_r * tmp, - pot_cell_i * cell_i);
+        cell_i = __dadd_rn(pot_cell_r * cell_i, pot_cell_i * tmp);
+
+        tmp = cell_r;
+        cell_r = __dadd_rn(c_cos * cell_r, c_sin * cell_i);
+        cell_i = __dadd_rn(c_cos * cell_i, - c_sin * cell_i);
+
+        tmp = __dadd_rn(peer_r*peer_r, peer_i * peer_i);
+        c_cos = cos(coupling_a * tmp);
+        c_sin = sin(coupling_a * tmp);
+
+        tmp = peer_r;
+        peer_r = __dadd_rn(pot_peer_r * tmp, - pot_peer_i * peer_i);
+        peer_i = __dadd_rn(pot_peer_r * peer_i, pot_peer_i * tmp);
+
+        rl[ky_peer][kx] = __dadd_rn(c_cos * peer_r, c_sin * peer_i);
+        im[ky_peer][kx] = __dadd_rn(c_cos * peer_i, - c_sin * peer_r);
 #endif
     }
 }
 
 __launch_bounds__(BLOCK_X * STRIDE_Y)
 __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y,
-                          double a, double b, const double * __restrict__ external_pot_real, const double * __restrict__ external_pot_imag,
+                          double a, double b, double coupling_a, const double * __restrict__ external_pot_real, const double * __restrict__ external_pot_imag,
                           const double * __restrict__ p_real, const double * __restrict__ p_imag,
                           double * __restrict__ p2_real, double * __restrict__ p2_imag,
                           int inner, int horizontal, int vertical) {
@@ -270,49 +306,49 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x
     // 12344321
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+        gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+        gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+        gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+        gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 //potential
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        trotter_external_pot_nosync<BLOCK_X, BLOCK_Y>(tile_width, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, checkerboard_py + part * 2 * STRIDE_Y, rl, im, pot_r, pot_i);
+        gpu_kernel_potential<BLOCK_X, BLOCK_Y>(tile_width, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, checkerboard_py + part * 2 * STRIDE_Y, rl, im, pot_r, pot_i, coupling_a);
     }
     __syncthreads();
 
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+        gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+        gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+        gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+        gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 
@@ -344,7 +380,7 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x
 //  IMAGINARY TIME functions
 
 template<int BLOCK_WIDTH, int BLOCK_HEIGHT, int BACKWARDS>
-inline __device__ void imag_trotter_vert_pair_flexible_nosync(double a, double b, int tile_height, double &cell_r, double &cell_i, int kx, int ky, int py, double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH]) {
+inline __device__ void imag_gpu_kernel_vertical(double a, double b, int tile_height, double &cell_r, double &cell_i, int kx, int ky, int py, double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH]) {
     double peer_r;
     double peer_i;
 
@@ -370,7 +406,7 @@ inline __device__ void imag_trotter_vert_pair_flexible_nosync(double a, double b
 
 
 template<int BLOCK_WIDTH, int BLOCK_HEIGHT, int BACKWARDS>
-static  inline __device__ void imag_trotter_horz_pair_flexible_nosync(double a, double b,  int tile_width, double &cell_r, double &cell_i, int kx, int ky, int px, double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH]) {
+static  inline __device__ void imag_gpu_kernel_horizontal(double a, double b,  int tile_width, double &cell_r, double &cell_i, int kx, int ky, int px, double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH]) {
     double peer_r;
     double peer_i;
 
@@ -395,7 +431,7 @@ static  inline __device__ void imag_trotter_horz_pair_flexible_nosync(double a, 
 }
 
 template<int BLOCK_WIDTH, int BLOCK_HEIGHT>
-static  inline __device__ void imag_trotter_external_pot_nosync(int tile_width, int tile_height, double &cell_r, double &cell_i,
+static  inline __device__ void imag_gpu_kernel_potential(int tile_width, int tile_height, double &cell_r, double &cell_i,
         int kx, int ky, int px, int py,
         double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH],
         double pot_r[BLOCK_HEIGHT][BLOCK_WIDTH]) {
@@ -477,49 +513,49 @@ __global__ void imag_cc2kernel(size_t tile_width, size_t tile_height, size_t off
     // 12344321
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+        imag_gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+        imag_gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+        imag_gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+        imag_gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 //potential
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_trotter_external_pot_nosync<BLOCK_X, BLOCK_Y>(tile_width, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, checkerboard_py + part * 2 * STRIDE_Y, rl, im, pot_r);
+        imag_gpu_kernel_potential<BLOCK_X, BLOCK_Y>(tile_width, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, checkerboard_py + part * 2 * STRIDE_Y, rl, im, pot_r);
     }
     __syncthreads();
 
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+        imag_gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+        imag_gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_trotter_horz_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+        imag_gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_trotter_vert_pair_flexible_nosync<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+        imag_gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 
@@ -549,11 +585,11 @@ __global__ void imag_cc2kernel(size_t tile_width, size_t tile_height, size_t off
 }
 
 // Wrapper function for the hybrid kernel
-void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, double a, double b, const double * __restrict__ dev_external_pot_real, const double * __restrict__ dev_external_pot_imag, const double * __restrict__ pdev_real, const double * __restrict__ pdev_imag, double * __restrict__ pdev2_real, double * __restrict__ pdev2_imag, int inner, int horizontal, int vertical, bool imag_time) {
+void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, double a, double b, double coupling_a, const double * __restrict__ dev_external_pot_real, const double * __restrict__ dev_external_pot_imag, const double * __restrict__ pdev_real, const double * __restrict__ pdev_imag, double * __restrict__ pdev2_real, double * __restrict__ pdev2_imag, int inner, int horizontal, int vertical, bool imag_time) {
     if(imag_time)
         imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream>>>(tile_width, tile_height, offset_x, offset_y, halo_x, halo_y, a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real, pdev_imag, pdev2_real, pdev2_imag, inner, horizontal, vertical);
     else
-        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream>>>(tile_width, tile_height, offset_x, offset_y, halo_x, halo_y, a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real, pdev_imag, pdev2_real, pdev2_imag, inner, horizontal, vertical);
+        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream>>>(tile_width, tile_height, offset_x, offset_y, halo_x, halo_y, a, b, coupling_a, dev_external_pot_real, dev_external_pot_imag, pdev_real, pdev_imag, pdev2_real, pdev2_imag, inner, horizontal, vertical);
     CUT_CHECK_ERROR("Kernel error in cc2kernel_wrapper");
 }
 
@@ -565,10 +601,12 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     external_pot_real(_external_pot_real),
     external_pot_imag(_external_pot_imag),
     sense(0),
+    state_index(0),
     a(_a),
     b(_b),
     norm(_norm),
     imag_time(_imag_time) {
+
     halo_x = grid->halo_x;
     halo_y = grid->halo_y;
     p_real = state->p_real;
@@ -576,6 +614,12 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     delta_x = grid->delta_x;
     delta_y = grid->delta_y;
     periods = grid->periods;
+
+    coupling_const = new double[3];
+    coupling_const[0] = hamiltonian->coupling_a * delta_t;
+    coupling_const[1] = 0.;
+    coupling_const[2] = 0.;
+
     int rank;
 #ifdef HAVE_MPI
     cartcomm = grid->cartcomm;
@@ -696,7 +740,7 @@ void CC2Kernel::run_kernel_on_halo() {
     if(imag_time)
         imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
     else
-        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
+        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, coupling_const[state_index], dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
 
     inner = 0;
     horizontal = 0;
@@ -706,7 +750,7 @@ void CC2Kernel::run_kernel_on_halo() {
     if(imag_time)
         imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
     else
-        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
+        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, coupling_const[state_index], dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
 }
 
 void CC2Kernel::run_kernel() {
@@ -720,7 +764,7 @@ void CC2Kernel::run_kernel() {
     if(imag_time)
         imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
     else
-        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
+        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, coupling_const[state_index], dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
     sense = 1 - sense;
     CUT_CHECK_ERROR("Kernel error in CC2Kernel::run_kernel");
 }

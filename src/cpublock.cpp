@@ -313,8 +313,9 @@ void full_step(bool two_wavefunctions, size_t stride, size_t width, size_t heigh
     block_kernel_vertical  (1u, stride, width, height, a, b, real, imag);
     block_kernel_horizontal(1u, stride, width, height, a, b, real, imag);
     block_kernel_potential (two_wavefunctions, stride, width, height, a, b, coupling_a, coupling_b, tile_width, external_pot_real, external_pot_imag, pb_real, pb_imag, real, imag);
-    if (alpha_x != 0. && alpha_y != 0.)
-    block_kernel_rotation  (stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
+    if (alpha_x != 0. && alpha_y != 0.) {
+        block_kernel_rotation  (stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
+    }
     block_kernel_horizontal(1u, stride, width, height, a, b, real, imag);
     block_kernel_vertical  (1u, stride, width, height, a, b, real, imag);
     block_kernel_horizontal(0u, stride, width, height, a, b, real, imag);
@@ -328,8 +329,9 @@ void full_step_imaginary(bool two_wavefunctions, size_t stride, size_t width, si
     block_kernel_vertical_imaginary  (1u, stride, width, height, a, b, real, imag);
     block_kernel_horizontal_imaginary(1u, stride, width, height, a, b, real, imag);
     block_kernel_potential_imaginary (two_wavefunctions, stride, width, height, a, b, coupling_a, coupling_b, tile_width, external_pot_real, external_pot_imag, pb_real, pb_imag, real, imag);
-    if (alpha_x != 0. && alpha_y != 0.)
-    block_kernel_rotation_imaginary  (stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
+    if (alpha_x != 0. && alpha_y != 0.) {
+        block_kernel_rotation_imaginary  (stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
+    }
     block_kernel_horizontal_imaginary(1u, stride, width, height, a, b, real, imag);
     block_kernel_vertical_imaginary  (1u, stride, width, height, a, b, real, imag);
     block_kernel_horizontal_imaginary(0u, stride, width, height, a, b, real, imag);
@@ -350,7 +352,7 @@ void process_sides(bool two_wavefunctions, int offset_tile_x, int offset_tile_y,
     else
         full_step(two_wavefunctions, block_width, block_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, a, b, coupling_a, coupling_b, tile_width,
                   &external_pot_real[read_y * tile_width], &external_pot_imag[read_y * tile_width], &pb_real[read_y * tile_width], &pb_imag[read_y * tile_width], block_real, block_imag);
-  memcpy2D(&next_real[(read_y + write_offset) * tile_width], tile_width * sizeof(double), &block_real[write_offset * block_width], block_width * sizeof(double), (block_width - halo_x) * sizeof(double), write_height);
+    memcpy2D(&next_real[(read_y + write_offset) * tile_width], tile_width * sizeof(double), &block_real[write_offset * block_width], block_width * sizeof(double), (block_width - halo_x) * sizeof(double), write_height);
     memcpy2D(&next_imag[(read_y + write_offset) * tile_width], tile_width * sizeof(double), &block_imag[write_offset * block_width], block_width * sizeof(double), (block_width - halo_x) * sizeof(double), write_height);
 
     size_t block_start = ((tile_width - block_width) / (block_width - 2 * halo_x) + 1) * (block_width - 2 * halo_x);
@@ -419,6 +421,7 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
                    double _a, double _b, double delta_t,
                    double _norm, bool _imag_time):
     sense(0),
+    state_index(0),
     imag_time(_imag_time) {
     delta_x = grid->delta_x;
     delta_y = grid->delta_y;
@@ -440,7 +443,6 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     coupling_const[1] = 0.;
     coupling_const[2] = 0.;
     norm[0] = _norm;
-    state_index = 0;
     int rank, coords[2], dims[2] = {0, 0};
 #ifdef HAVE_MPI
     cartcomm = grid->cartcomm;
@@ -654,7 +656,7 @@ double CPUBlock::calculate_squared_norm(bool global) {
     double norm2 = 0.;
 #ifndef HAVE_MPI
     #pragma omp parallel for reduction(+:norm2)
-#endif    
+#endif
     for(int i = inner_start_y - start_y; i < inner_end_y - start_y; i++) {
         for(int j = inner_start_x - start_x; j < inner_end_x - start_x; j++) {
             norm2 += p_real[state_index][sense][j + i * tile_width] * p_real[state_index][sense][j + i * tile_width] + p_imag[state_index][sense][j + i * tile_width] * p_imag[state_index][sense][j + i * tile_width];
