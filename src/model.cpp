@@ -129,13 +129,13 @@ State::~State() {
 void State::imprint(complex<double> (*function)(double x, double y)) {
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
     double idy = grid->start_y * delta_y + 0.5*delta_y, idx;
+    double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
+    double y_c = grid->global_no_halo_dim_y * grid->delta_y * 0.5;
     for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
         idx = grid->start_x * delta_x + 0.5*delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
-            complex<double> tmp;
-            double tmp_p_real;
-            tmp = function(idx, idy);
-            tmp_p_real = p_real[y * grid->dim_x + x];
+            complex<double> tmp = function(idx - x_c, idy - y_c);
+            double tmp_p_real = p_real[y * grid->dim_x + x];
             p_real[y * grid->dim_x + x] = tmp_p_real * real(tmp) - p_imag[y * grid->dim_x + x] * imag(tmp);
             p_imag[y * grid->dim_x + x] = tmp_p_real * imag(tmp) + p_imag[y * grid->dim_x + x] * real(tmp);
         }
@@ -146,10 +146,12 @@ void State::init_state(complex<double> (*ini_state)(double x, double y)) {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
     double idy = grid->start_y * delta_y + 0.5*delta_y, idx;
+    double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
+    double y_c = grid->global_no_halo_dim_y * grid->delta_y * 0.5;
     for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
         idx = grid->start_x * delta_x + 0.5*delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
-            tmp = ini_state(idx, idy);
+            tmp = ini_state(idx - x_c, idy - y_c);
             p_real[y * grid->dim_x + x] = real(tmp);
             p_imag[y * grid->dim_x + x] = imag(tmp);
         }
@@ -263,7 +265,7 @@ double *State::get_phase(double *_phase) {
             if(norm == 0)
                 phase[j * grid->dim_x + i] = 0;
             else
-                phase[j * grid->dim_x + i] = acos(p_real[j * grid->dim_x + i] / norm) * ((p_imag[j * grid->dim_x + i] > 0) - (p_imag[j * grid->dim_x + i] < 0));
+                phase[j * grid->dim_x + i] = acos(p_real[j * grid->dim_x + i] / norm) * ((p_imag[j * grid->dim_x + i] >= 0) - (p_imag[j * grid->dim_x + i] < 0));
         }
     }
     return phase;
@@ -492,8 +494,8 @@ ExponentialState::ExponentialState(Lattice *_grid, int _n_x, int _n_y, double _n
 }
 
 complex<double> ExponentialState::exp_state(double x, double y) {
-	double L_x = (grid->global_dim_x - 2.*grid->halo_x * grid->periods[1]) * grid->delta_x;
-    double L_y = (grid->global_dim_y - 2.*grid->halo_x * grid->periods[0]) * grid->delta_y;
+	double L_x = grid->global_no_halo_dim_x * grid->delta_x;
+    double L_y = grid->global_no_halo_dim_x * grid->delta_y;
     return sqrt(norm/(L_x*L_y)) * exp(complex<double>(0., phase)) * exp(complex<double>(0., 2*M_PI*double(n_x)/L_x * x + 2*M_PI* double(n_y)/L_y * y));
 }
 
@@ -515,8 +517,8 @@ GaussianState::GaussianState(Lattice *_grid, double _omega, double _mean_x, doub
 }
 
 complex<double> GaussianState::gauss_state(double x, double y) {
-    double x_c = (grid->global_dim_x - 2.*grid->halo_x * grid->periods[1]) * grid->delta_x * 0.5;
-    double y_c = (grid->global_dim_y - 2.*grid->halo_y * grid->periods[1]) * grid->delta_y * 0.5;
+    double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
+    double y_c = grid->global_no_halo_dim_y * grid->delta_y * 0.5;
     return complex<double>(sqrt(norm * omega / M_PI) * exp(-(pow(x + mean_x - x_c, 2.0) + pow(y + mean_y - y_c, 2.0)) * 0.5 * omega), 0.) * exp(complex<double>(0., phase));
 }
 
@@ -536,8 +538,8 @@ SinusoidState::SinusoidState(Lattice *_grid, int _n_x, int _n_y, double _norm, d
 }
 
 complex<double> SinusoidState::sinusoid_state(double x, double y) {
-    double L_x = (grid->global_dim_x - 2.*grid->halo_x * grid->periods[1]) * grid->delta_x;
-    double L_y = (grid->global_dim_y - 2.*grid->halo_x * grid->periods[0]) * grid->delta_y;
+    double L_x = grid->global_no_halo_dim_x * grid->delta_x;
+    double L_y = grid->global_no_halo_dim_y * grid->delta_y;
     return sqrt(norm/(L_x*L_y)) * 2.* exp(complex<double>(0., phase)) * complex<double> (sin(2*M_PI*double(n_x) / L_x*x) * sin(2*M_PI*double(n_y) / L_y*y), 0.0);
 }
 
