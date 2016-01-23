@@ -101,7 +101,6 @@ void my_test<F>::imaginary_intra_particle_interaction_test() {
 	Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, 1., 10);
 	Solver *solver = new Solver(grid, state, hamiltonian, 1.e-3, this->kernel_type);
 	double ini_norm = solver->get_squared_norm();
-	double ini_mean_XX = state->get_mean_xx();
 	solver->evolve(1000, true);
 	double tot_energy = solver->get_total_energy();
 	double mean_XX = state->get_mean_xx();
