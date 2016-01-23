@@ -27,6 +27,8 @@ class my_test: public F {
     CPPUNIT_TEST( imaginary_harmonic_oscillator_test );
     CPPUNIT_TEST( intra_particle_interaction_test );
     CPPUNIT_TEST( imaginary_intra_particle_interaction_test );
+    CPPUNIT_TEST( rotating_frame_of_reference_test );
+    CPPUNIT_TEST( imaginary_rotating_frame_of_reference_test );
     CPPUNIT_TEST( mixed_BEC_test );
     CPPUNIT_TEST( imaginary_mixed_BEC_test );
     CPPUNIT_TEST_SUITE_END();
@@ -36,6 +38,8 @@ class my_test: public F {
     void imaginary_harmonic_oscillator_test();
     void intra_particle_interaction_test();
     void imaginary_intra_particle_interaction_test();
+    void rotating_frame_of_reference_test();
+    void imaginary_rotating_frame_of_reference_test();
     void mixed_BEC_test();
     void imaginary_mixed_BEC_test();
 };

@@ -118,6 +118,54 @@ void my_test<F>::imaginary_intra_particle_interaction_test() {
 }
 
 template<class F>
+void my_test<F>::rotating_frame_of_reference_test() {
+	double angular_velocity = 0.7;
+	Lattice *grid = new Lattice(300, 20, 20, false, false, angular_velocity);
+	State *state = new GaussianState(grid, 1);
+	Potential *potential = new HarmonicPotential(grid, 1., 1.);
+	Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, 1., 100., angular_velocity);
+	Solver *solver = new Solver(grid, state, hamiltonian, 1.e-4, this->kernel_type);
+	double ini_tot_energy = solver->get_total_energy();
+	double ini_norm = solver->get_squared_norm();
+	solver->evolve(1000);
+	double tot_energy = solver->get_total_energy();
+	double norm = solver->get_squared_norm();
+	delete solver;
+	delete hamiltonian;
+	delete state;
+	delete grid;
+	//Check
+	CPPUNIT_ASSERT( std::abs(ini_tot_energy - tot_energy) < TOLERANCE*10. );
+	CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
+	std::cout << "TEST FUNCTION: rotating_frame_of_reference_test -> PASSED! " << std::endl;
+
+}
+
+template<class F>
+void my_test<F>::imaginary_rotating_frame_of_reference_test() {
+	double fin_energy = 4.89895;
+	double angular_velocity = 0.7;
+	Lattice *grid = new Lattice(300, 20, 20, false, false, angular_velocity);
+	State *state = new GaussianState(grid, 1);
+	Potential *potential = new HarmonicPotential(grid, 1., 1.);
+	Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, 1., 100., angular_velocity);
+	Solver *solver = new Solver(grid, state, hamiltonian, 1.e-4, this->kernel_type);
+	double ini_norm = solver->get_squared_norm();
+	solver->evolve(1000, true);
+	double tot_energy = solver->get_total_energy();
+	double norm = solver->get_squared_norm();
+	delete solver;
+	delete hamiltonian;
+	delete state;
+	delete grid;
+	//Check
+	CPPUNIT_ASSERT( std::abs(fin_energy - tot_energy) < TOLERANCE );
+	CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
+	std::cout << "TEST FUNCTION: imaginary_rotating_frame_of_reference_test -> PASSED! " << std::endl;
+
+}
+
+template<class F>
 void my_test<F>::mixed_BEC_test() {
 	Lattice *grid = new Lattice(100, 20, 20);
 	State *state1 = new GaussianState(grid, 1);
