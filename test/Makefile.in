@@ -35,11 +35,11 @@ srcdir	 = ./../src
 
 LIBOBJS=$(srcdir)/common.o $(srcdir)/cpublock.o $(srcdir)/solver.o $(srcdir)/model.o
 
+TEST_OBJS=$(LIBOBJS) unittest.o kerneltest.o
+
 ifdef CUDA_LIBS
 	LIBOBJS+=$(srcdir)/cc2kernel.cu.co $(srcdir)/hybrid.cu.co
 endif
-
-TEST_OBJS=$(LIBOBJS) unittest.o cpukerneltest.o
 
 all: check
 

@@ -60,7 +60,7 @@ public:
     // Computational topology
     int halo_x, halo_y;    ///< Halo length along the x and y halos.
     int start_x, start_y;    ///< Spatial coordinates (not physical) of the first element of the tile.
-    int end_x, end_y    ///< Spatial coordinates (not physical) of the last element of the tile.
+    int end_x, end_y;    ///< Spatial coordinates (not physical) of the last element of the tile.
     int inner_start_x, inner_start_y;    ///< Spatial coordinates (not physical) of the first element of the tile, excluding the eventual surrounding halo.
     int inner_end_x, inner_end_y;    ///< Spatial coordinates (not physical) of the last element of the tile, excluding the eventual surrounding halo.
     int mpi_coords[2], mpi_dims[2];    ///< Coordinate of the process in the MPI topology and structure of the MPI topology.
