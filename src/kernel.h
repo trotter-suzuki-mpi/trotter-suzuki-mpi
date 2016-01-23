@@ -43,13 +43,15 @@ void process_band(bool two_wavefunctions, int offset_tile_x, int offset_tile_y, 
 
 
 /**
- * \brief This class define the CPU kernel.
+ * \brief This class defines the CPU kernel.
  *
- * This kernel provides real time and imaginary time evolution exploiting CPUs.
- * It implements a solver for a single wave function, whose evolution is governed by nonlinear Schrodinger equation. The Hamiltonian of the physical system includes:
- *  - static external potential
- *  - density self-interacting term
- *  - rotational energy
+ * This kernel provides real time and imaginary time evolution of a quantum state, using CPUs.
+ * It implements a solver for a single or two wave functions, whose evolution is governed by nonlinear Schrodinger equation (Gross Pitaevskii equation). The Hamiltonian of the physical system includes:
+ *  - time-dependent external potential
+ *  - rotating system of reference
+ *  - intra species interaction
+ *  - extra species interaction
+ *  - Rabi coupling
  */
 
 class CPUBlock: public ITrotterKernel {
@@ -57,24 +59,24 @@ public:
     CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian, 
              double *_external_pot_real, double *_external_pot_imag, 
              double _a, double _b, double delta_t, 
-             double _norm, bool _imag_time);
+             double _norm, bool _imag_time);    ///< Instantiate the kernel for single wave functions state evolution.
            
     
     CPUBlock(Lattice *grid, State *state1, State *state2, 
              Hamiltonian2Component *hamiltonian, 
              double **_external_pot_real, double **_external_pot_imag, 
              double *_a, double *_b, double delta_t,
-             double *_norm, bool _imag_time);
+             double *_norm, bool _imag_time);    ///< Instantiate the kernel for two wave functions state evolution.
     
     ~CPUBlock();
     void run_kernel_on_halo();          ///< Evolve blocks of wave function at the edge of the tile. This comprises the halos.
     void run_kernel();              ///< Evolve the remaining blocks in the inner part of the tile.
-    void wait_for_completion();         ///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
+    void wait_for_completion();         ///< Synchronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution in the case of single wave-function evolution.
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2=0, double * dest_imag2=0) const;  ///< Copy the wave function from the two buffers pointed by p_real and p_imag, without halos, to dest_real and dest_imag.
-    void normalization();
-    void rabi_coupling(double var, double delta_t);
-    double calculate_squared_norm(bool global=true);
-    void update_potential(double *_external_pot_real, double *_external_pot_imag);
+    void normalization();    ///<Normalize the state when performing an imaginary time evolution (only two wave-function evolution).
+    void rabi_coupling(double var, double delta_t);    ///< Evolution corresponding to the Rabi coupling term of the Hamiltonian (only two wave-function evolution).
+    double calculate_squared_norm(bool global=true);    ///< Calculate squared norm of the state.
+    void update_potential(double *_external_pot_real, double *_external_pot_imag);    ///< Update memory pointed by external_potential_real and external_potential_imag (only non static external potential).
     
     bool runs_in_place() const {
         return false;
@@ -98,11 +100,11 @@ private:
     double *b;            ///< Off diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
     double delta_x;         ///< Physical length between two neighbour along x axis dots of the lattice.
     double delta_y;         ///< Physical length between two neighbour along y axis dots of the lattice.
-    double *norm;         ///< Squared norm of the wave function.
-    double tot_norm;
+    double *norm;         ///< Squared norm of the single wave functions.
+    double tot_norm;    ///< Squared norm of the total state.
     double *coupling_const;     ///< Coupling constant of the density self-interacting term.
     int sense;            ///< Takes values 0 or 1 and tells which of the two buffers pointed by p_real and p_imag is used to calculate the next time step.
-    int state_index;
+    int state_index;    ///< Takes values 0 or 1 and tells which wave function is pointed by p_real and p_imag, and is being evolved.
     size_t halo_x;          ///< Thickness of the vertical halos (number of lattice's dots).
     size_t halo_y;          ///< Thickness of the horizontal halos (number of lattice's dots).
     size_t tile_width;        ///< Width of the tile (number of lattice's dots).
@@ -110,7 +112,7 @@ private:
     bool imag_time;         ///< True: imaginary time evolution; False: real time evolution.
     static const size_t block_width = BLOCK_WIDTH_CACHE;      ///< Width of the lattice block which is cached (number of lattice's dots).
     static const size_t block_height = BLOCK_HEIGHT_CACHE;    ///< Height of the lattice block which is cached (number of lattice's dots).
-    bool two_wavefunctions;
+    bool two_wavefunctions;    ///< Flag parameter to distinguish whether the kernel is evolving a two-wave-function or a single-wave-function
     
     double alpha_x;         ///< Real coupling constant associated to the X*P_y operator, part of the angular momentum.
     double alpha_y;         ///< Real coupling constant associated to the Y*P_x operator, part of the angular momentum.
@@ -164,7 +166,7 @@ void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, s
 
 
 /**
- * \brief This class define the GPU kernel.
+ * \brief This class defines the GPU kernel.
  *
  * This kernel provides real time and imaginary time evolution exploiting GPUs.
  * It implements a solver for a single wave function, whose evolution is governed by linear Schrodinger equation. The Hamiltonian of the physical system includes:
@@ -176,17 +178,17 @@ public:
     CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian, 
               double *_external_pot_real, double *_external_pot_imag, 
               double a, double _b, double delta_t, 
-              double _norm, bool _imag_time);
+              double _norm, bool _imag_time);    ///< Instantiate the kernel for single wave functions state evolution.
     ~CC2Kernel();
     void run_kernel_on_halo();				    ///< Evolve blocks of wave function at the edge of the tile. This comprises the halos.
     void run_kernel();							///< Evolve the remaining blocks in the inner part of the tile.
     void wait_for_completion();					///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
     void copy_results();						///< Copy wave function from buffer pointed by pdev_real and pdev_imag to buffers pointed by p_real and p_imag.
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2=0, double * dest_imag2=0) const;  ///< Copy the wave function from the two buffers pointed by pdev_real and pdev_imag, without halos, to dest_real and dest_imag.
-    void normalization() {};
-    void rabi_coupling(double var, double delta_t) {};
-	  double calculate_squared_norm(bool global=true);
-    void update_potential(double *_external_pot_real, double *_external_pot_imag);
+    void normalization() {};    ///<Normalize the state when performing an imaginary time evolution (only two wave-function evolution).
+    void rabi_coupling(double var, double delta_t) {};    ///< Evolution corresponding to the Rabi coupling term of the Hamiltonian (only two wave-function evolution).
+    double calculate_squared_norm(bool global=true);    ///< Calculate squared norm of the state.
+    void update_potential(double *_external_pot_real, double *_external_pot_imag);    ///< Update memory pointed by external_potential_real and external_potential_imag (only non static external potential).
     
     bool runs_in_place() const {
         return false;
@@ -258,7 +260,7 @@ private:
 };
 
 /**
- * \brief This class define the Hybrid kernel.
+ * \brief This class defines the Hybrid kernel.
  *
  * This kernel provides real time and imaginary time evolution exploiting GPUs and CPUs.
  * It implements a solver for a single wave function, whose evolution is governed by linear Schrodinger equation. The Hamiltonian of the physical system includes:
@@ -270,16 +272,16 @@ public:
     HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian, 
                  double *_external_pot_real, double *_external_pot_imag, 
                  double a, double b, double delta_t, 
-                 double _norm, bool _imag_time);
+                 double _norm, bool _imag_time);    ///< Instantiate the kernel for single wave functions state evolution.
     ~HybridKernel();
     void run_kernel_on_halo();					///< Evolve blocks of wave function at the edge of the tile. This comprises the halos.
     void run_kernel();							///< Evolve the remaining blocks in the inner part of the tile.
     void wait_for_completion();					///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2=0, double * dest_imag2=0) const;  ///< Copy the wave function from the two buffers pointed by pdev_real and pdev_imag, without halos, to dest_real and dest_imag.
-    void normalization() {};
-    void rabi_coupling(double var, double delta_t) {};
-    double calculate_squared_norm(bool global=true);
-    void update_potential(double *_external_pot_real, double *_external_pot_imag);
+    void normalization() {};    ///<Normalize the state when performing an imaginary time evolution (only two wave-function evolution).
+    void rabi_coupling(double var, double delta_t) {};    ///< Evolution corresponding to the Rabi coupling term of the Hamiltonian (only two wave-function evolution).
+    double calculate_squared_norm(bool global=true);    ///< Calculate squared norm of the state.
+    void update_potential(double *_external_pot_real, double *_external_pot_imag);    ///< Update memory pointed by external_potential_real and external_potential_imag (only non static external potential).
     
     bool runs_in_place() const {
         return false;
