@@ -169,7 +169,7 @@ void stamp(Lattice *grid, State *state, string fileprefix) {
                   MPI_MODE_CREATE | MPI_MODE_WRONLY,
                   MPI_INFO_NULL, &file);
 
-    MPI_File_set_view(file, 0,  MPI_CHAR, complex_localarray, "native", MPI_INFO_NULL);
+    MPI_File_set_view(file, 0,  MPI_CHAR, complex_localarray, (char *)"native", MPI_INFO_NULL);
 
     MPI_File_write_all(file, data_as_txt, (grid->inner_end_x - grid->inner_start_x) * (grid->inner_end_y - grid->inner_start_y), complex_num_as_string, &status);
     MPI_File_close(&file);
@@ -201,7 +201,7 @@ void stamp(Lattice *grid, State *state, string fileprefix) {
                   MPI_MODE_CREATE | MPI_MODE_WRONLY,
                   MPI_INFO_NULL, &file);
 
-    MPI_File_set_view(file, 0,  MPI_CHAR, localarray, "native", MPI_INFO_NULL);
+    MPI_File_set_view(file, 0,  MPI_CHAR, localarray, (char *)"native", MPI_INFO_NULL);
 
     MPI_File_write_all(file, data_as_txt, (grid->inner_end_x - grid->inner_start_x) * ( grid->inner_end_y - grid->inner_start_y), num_as_string, &status);
     MPI_File_close(&file);
@@ -270,7 +270,7 @@ void stamp_matrix(Lattice *grid, double *matrix, string filename) {
                   MPI_MODE_CREATE | MPI_MODE_WRONLY,
                   MPI_INFO_NULL, &file);
 
-    MPI_File_set_view(file, 0,  MPI_CHAR, localarray, "native", MPI_INFO_NULL);
+    MPI_File_set_view(file, 0,  MPI_CHAR, localarray, (char *)"native", MPI_INFO_NULL);
 
     MPI_File_write_all(file, data_as_txt, (grid->inner_end_x - grid->inner_start_x) * (grid->inner_end_y - grid->inner_start_y), num_as_string, &status);
     MPI_File_close(&file);
