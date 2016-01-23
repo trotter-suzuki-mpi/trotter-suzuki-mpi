@@ -30,97 +30,181 @@
 
 using namespace std;
 
+/**
+ * \brief This class defines the lattice structure over which the state and potential matrices are defined.
+ *
+ * As to single-process execution, the lattice is a single tile which can be surrounded by a halo, in the case of periodic boundary conditions.
+ * As to multi-process execution, the lattice is divided in smaller lattices, dubbed tiles, one for each process. Each of the tiles is surrounded by a halo.
+ */
+
 class Lattice {
 public:
+	/**
+	    Lattice constructor.
+
+	    @param [in] dim              Linear dimension of the squared lattice.
+	    @param [in] length_x         Physical length of the lattice's side along the x axis.
+	    @param [in] length_y         Physical length of the lattice's side along the y axis.
+	    @param [in] periodic_x_axis  Boundary condition along the x axis (false=close, true=periodic).
+	    @param [in] periodic_y_axis  Boundary condition along the y axis (false=close, true=periodic).
+	 */
     Lattice(int dim=100, double length_x=20., double length_y=20.,
             bool periodic_x_axis=false, bool periodic_y_axis=false, double omega=0.);
-    double length_x, length_y;
-    double delta_x, delta_y;
-    int dim_x, dim_y;
-    int global_no_halo_dim_x, global_no_halo_dim_y;
-    int global_dim_x, global_dim_y;
-    int periods[2];
+    double length_x, length_y;    ///< Physical length of the lattice's sides.
+    double delta_x, delta_y;    ///< Physical distance between two consecutive point of the grid, along the x and y axes.
+    int dim_x, dim_y;    ///< Linear dimension of the tile along x and y axes.
+    int global_no_halo_dim_x, global_no_halo_dim_y;    ///< Linear dimension of the lattice, excluding the eventual surrounding halo, along x and y axes.
+    int global_dim_x, global_dim_y;    ///< Linear dimension of the lattice, comprising the eventual surrounding halo, along x and y axes.
+    int periods[2];    ///< Whether the grid is periodic in any of the directions.
 
     // Computational topology
-    int halo_x, halo_y;
-    int start_x, end_x, inner_start_x, inner_end_x,
-        start_y, end_y, inner_start_y, inner_end_y;
-    int mpi_coords[2], mpi_dims[2];
-    int mpi_rank;
-    int mpi_procs;
+    int halo_x, halo_y;    ///< Halo length along the x and y halos.
+    int start_x, start_y;    ///< Spatial coordinates (not physical) of the first element of the tile.
+    int end_x, end_y    ///< Spatial coordinates (not physical) of the last element of the tile.
+    int inner_start_x, inner_start_y;    ///< Spatial coordinates (not physical) of the first element of the tile, excluding the eventual surrounding halo.
+    int inner_end_x, inner_end_y;    ///< Spatial coordinates (not physical) of the last element of the tile, excluding the eventual surrounding halo.
+    int mpi_coords[2], mpi_dims[2];    ///< Coordinate of the process in the MPI topology and structure of the MPI topology.
+    int mpi_rank;    ///< Rank of the process in the MPI topology.
+    int mpi_procs;    ///< Number of processes in the MPI topology.
 #ifdef HAVE_MPI
-    MPI_Comm cartcomm;
+    MPI_Comm cartcomm;    ///< MPI communitaros chart.
 #endif
 };
 
+/**
+ * \brief This class defines the quantum state.
+ */
+
 class State{
 public:
-    double *p_real;
-    double *p_imag;
-    Lattice *grid;
-    State(Lattice *grid, double *p_real=0, double *p_imag=0);
-    State(const State &obj);
-    ~State();
-    void init_state(complex<double> (*ini_state)(double x, double y));
-    void loadtxt(char *file_name);
+    double *p_real;    ///< Real part of the wave function.
+    double *p_imag;    ///< Imaginary part of the wave function.
+    Lattice *grid;    ///< Object that defines the lattice structure.
 
-    void imprint(complex<double> (*function)(double x, double y));
-    double *get_particle_density(double *density=0);
-    double *get_phase(double *phase=0);
-    double get_squared_norm(void);
-    double get_mean_x(void);
-    double get_mean_xx(void);
-    double get_mean_y(void);
-    double get_mean_yy(void);
-    double get_mean_px(void);
-    double get_mean_pxpx(void);
-    double get_mean_py(void);
-    double get_mean_pypy(void);
-    void write_to_file(string fileprefix);
-    void write_particle_density(string fileprefix);
-    void write_phase(string fileprefix);
-    bool expected_values_updated;
+    /**
+   	    Construct the state from given matrices if they are provided, otherwise construct a state with null wave function, initializing p_real and p_imag.
+
+   	    @param [in] grid             Lattice object.
+   	    @param [in] p_real           Pointer to the real part of the wave function.
+   	    @param [in] p_imag           Pointer to the imaginary part of the wave function.
+   	 */
+    State(Lattice *grid, double *p_real=0, double *p_imag=0);
+    State(const State &obj /**< [in] State object. */);    ///< Copy constructor: copy the state object.
+    ~State();    ///< Destructor.
+    void init_state(complex<double> (*ini_state)(double x, double y) /** Pointer to a wave function */);    ///< Write the wave function from a C++ function to p_real and p_imag matrices.
+    void loadtxt(char *file_name);    ///< Load the wave function from a file to p_real and p_imag matrices.
+
+    void imprint(complex<double> (*function)(double x, double y) /** Pointer to a function */);    ///< Multiply the wave function of the state by the function provided.
+    double *get_particle_density(double *density=0 /** [out] matrix storing the squared norm of the wave function. */);    ///< Return a matrix storing the squared norm of the wave function.
+    double *get_phase(double *phase=0 /** [out] matrix storing the phase of the wave function. */);    ///< Return a matrix storing the phase of the wave function.
+    double get_squared_norm(void);    ///< Return the squared norm of the quantum state.
+    double get_mean_x(void);    ///< Return the expected value of the X operator.
+    double get_mean_xx(void);    ///< Return the expected value of the X^2 operator.
+    double get_mean_y(void);    ///< Return the expected value of the Y operator.
+    double get_mean_yy(void);    ///< Return the expected value of the Y^2 operator.
+    double get_mean_px(void);    ///< Return the expected value of the P_x operator.
+    double get_mean_pxpx(void);    ///< Return the expected value of the P_x^2 operator.
+    double get_mean_py(void);    ///< Return the expected value of the P_y operator.
+    double get_mean_pypy(void);    ///< Return the expected value of the P_y^2 operator.
+    void write_to_file(string fileprefix /** [in] prefix name of the file */);    ///< Write to a file the wave function.
+    void write_particle_density(string fileprefix /** [in] prefix name of the file */);    ///< Write to a file the squared norm of the wave function.
+    void write_phase(string fileprefix /** [in] prefix name of the file */);    ///< Write to a file the phase of the wave function.
+    bool expected_values_updated;    ///< Whether the expected values fo the state object are updated with respect to the last evolution.
 
 protected:
-
-    bool self_init;
-    void calculate_expected_values(void);
-    double mean_X, mean_XX;
-    double mean_Y, mean_YY;
-    double mean_Px, mean_PxPx;
-    double mean_Py, mean_PyPy;
-    double norm2;
+    bool self_init;    ///< Whether the p_real and p_imag matrices have been initialized from the State constructor or not.
+    void calculate_expected_values(void);    ///< Calculate squared norm and expected values.
+    double mean_X, mean_XX;    ///< Expected values of the X and X^2 operators.
+    double mean_Y, mean_YY;    ///< Expected values of the Y and Y^2 operators.
+    double mean_Px, mean_PxPx;    ///< Expected values of the P_x and P_x^2 operators.
+    double mean_Py, mean_PyPy;    ///< Expected values of the P_y and P_y^2 operators.
+    double norm2;    ///< Squared norm of the state.
 };
 
+/**
+ * \brief This class define a quantum state with exponential like wave function.
+ *
+ * This class is a child of State class.
+ */
 
 class ExponentialState: public State {
 public:
+	/**
+   	    Construct the quantum state with exponential like wave function.
+
+   	    @param [in] grid             Lattice object.
+   	    @param [in] n_x              First quantum number.
+   	    @param [in] n_y              Second quantum number.
+   	    @param [in] norm             Squared norm of the quantum state.
+   	    @param [in] phase            Relative phase of the wave function.
+   	    @param [in] p_real           Pointer to the real part of the wave function.
+   	    @param [in] p_imag           Pointer to the imaginary part of the wave function.
+   	 */
     ExponentialState(Lattice *grid, int n_x=1, int n_y=1, double norm=1, double phase=0, double *p_real=0, double *p_imag=0);
 
 private:
-    int n_x, n_y;
-    double norm, phase;
-    complex<double> exp_state(double x, double y);
+    int n_x, n_y;    ///< First and second quantum number.
+    double norm, phase;    ///< Norm and phase of the state.
+    complex<double> exp_state(double x, double y);    ///< Exponential wave function.
 };
+
+/**
+ * \brief This class define a quantum state with gaussian like wave function.
+ *
+ * This class is a child of State class.
+ */
 
 class GaussianState: public State {
 public:
+	/**
+   	    Construct the quantum state with gaussian like wave function.
+
+   	    @param [in] grid             Lattice object.
+   	    @param [in] omega            Gaussian coefficient.
+   	    @param [in] mean_x           X coordinate of the gaussian function's center.
+   	    @param [in] mean_y           Y coordinate of the gaussian function's center.
+   	    @param [in] norm             Squared norm of the state.
+   	    @param [in] phase            Relative phase of the wave function.
+   	    @param [in] p_real           Pointer to the real part of the wave function.
+   	    @param [in] p_imag           Pointer to the imaginary part of the wave function.
+   	 */
     GaussianState(Lattice *grid, double omega, double mean_x=0, double mean_y=0, double norm=1, double phase=0,
                   double *p_real=0, double *p_imag=0);
 
 private:
-    double mean_x, mean_y, omega, norm, phase;
-    complex<double> gauss_state(double x, double y);
+    double mean_x;    ///< X coordinate of the gaussian function's center.
+    double mean_y;    ///< Y coordinate of the gaussian function's center.
+    double omega;    ///< Gaussian coefficient.
+    double norm;    ///< Norm of the state.
+    double phase;    ///< Relative phase of the wave function.
+    complex<double> gauss_state(double x, double y);    ///< Gaussian function.
 };
+
+/**
+ * \brief This class define a quantum state with sinusoidal like wave function.
+ *
+ * This class is a child of State class.
+ */
 
 class SinusoidState: public State {
 public:
+	/**
+   	    Construct the quantum state with sinusoidal like wave function.
+
+   	    @param [in] grid             Lattice object.
+   	    @param [in] n_x              First quantum number.
+   	    @param [in] n_y              Second quantum number.
+   	    @param [in] norm             Squared norm of the quantum state.
+   	    @param [in] phase            Relative phase of the wave function.
+   	    @param [in] p_real           Pointer to the real part of the wave function.
+   	    @param [in] p_imag           Pointer to the imaginary part of the wave function.
+   	 */
     SinusoidState(Lattice *grid, int n_x=1, int n_y=1, double norm=1, double phase=0, double *p_real=0, double *p_imag=0);
 
 private:
-    int n_x, n_y;
-    double norm, phase;
-    complex<double> sinusoid_state(double x, double y);
+    int n_x, n_y;    ///< First and second quantum number.
+    double norm, phase;    ///< Norm and phase of the state.
+    complex<double> sinusoid_state(double x, double y);    ///< Sinusoidal function.
 };
 
 
