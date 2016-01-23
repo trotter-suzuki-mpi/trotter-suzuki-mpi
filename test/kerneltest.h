@@ -1,10 +1,27 @@
 #ifndef __CPUKERNELTEST_H
 #define __CPUKERNELTEST_H
 
+#include <string>
 #include <cppunit/extensions/HelperMacros.h>
+#include "trottersuzuki.h"
 
-class CPUkernelTest: public CppUnit::TestFixture {
-    CPPUNIT_TEST_SUITE( CPUkernelTest );
+#define TOLERANCE 1.e-3
+#define NORM_TOLERANCE 1.e-5
+
+class KernelTest: public CppUnit::TestFixture {
+public:
+    std::string kernel_type;
+};
+
+class CpuKernelTest: public KernelTest {
+public:
+    void setUp();
+};
+
+
+template<class F>
+class my_test: public F {
+    CPPUNIT_TEST_SUITE(my_test<F>);
     CPPUNIT_TEST( free_particle_test );
     CPPUNIT_TEST( harmonic_oscillator_test );
     CPPUNIT_TEST( imaginary_harmonic_oscillator_test );
@@ -14,9 +31,6 @@ class CPUkernelTest: public CppUnit::TestFixture {
     CPPUNIT_TEST( imaginary_mixed_BEC_test );
     CPPUNIT_TEST_SUITE_END();
 
-public:
-    void setUp();
-    void tearDown();
     void free_particle_test();
     void harmonic_oscillator_test();
     void imaginary_harmonic_oscillator_test();
@@ -25,4 +39,14 @@ public:
     void mixed_BEC_test();
     void imaginary_mixed_BEC_test();
 };
+
+CPPUNIT_TEST_SUITE_REGISTRATION(my_test<CpuKernelTest>);
+#ifdef CUDA
+class GpuKernelTest: public KernelTest {
+public:
+    void setUp();
+};
+CPPUNIT_TEST_SUITE_REGISTRATION(my_test<GpuKernelTest>);
+#endif
+
 #endif
