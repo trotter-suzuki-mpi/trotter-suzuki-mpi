@@ -3,7 +3,6 @@
 
 template<class F>
 void my_test<F>::free_particle_test() {
-  std::cout << this->kernel_type << "\n";
 	Lattice *grid = new Lattice(100, 20, 20, true, true);
 	State *state = new ExponentialState(grid);
 	Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL);
