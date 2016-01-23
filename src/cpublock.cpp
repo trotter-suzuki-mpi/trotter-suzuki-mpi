@@ -550,7 +550,7 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
     p_real[1][0] = state2->p_real;
     p_imag[1][0] = state2->p_imag;
 
-     for(int i = 0; i < 2; i++) {
+    for(int i = 0; i < 2; i++) {
         p_real[i][1] = new double[tile_width * tile_height];
         p_imag[i][1] = new double[tile_width * tile_height];
         memcpy2D(p_real[i][1], tile_width * sizeof(double), p_real[i][0], tile_width * sizeof(double), tile_width * sizeof(double), tile_height);
