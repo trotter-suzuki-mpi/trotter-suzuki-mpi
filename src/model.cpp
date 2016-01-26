@@ -653,6 +653,20 @@ Hamiltonian::Hamiltonian(Lattice *_grid, Potential *_potential,
                          double _angular_velocity,
                          double _rot_coord_x, double _rot_coord_y): mass(_mass),
                          coupling_a(_coupling_a), angular_velocity(_angular_velocity), grid(_grid) {
+	if (angular_velocity != 0.) {
+		if (grid->periods[0] != 0 || grid->periods[1] != 0) {
+			cout << "Boundary conditions must be closed for rotating frame of refernce\n";
+			return;
+		}
+		if (grid->mpi_procs == 1) {
+			grid->halo_x = 8;
+			grid->halo_y = 8;
+		}
+		if (grid->mpi_procs > 1 && (grid->halo_x == 4 || grid->halo_y == 4)) {
+			cout << "Halos must be of 8 points width\n";
+			return;
+		}
+	}
     rot_coord_x = (grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x) * 0.5 + _rot_coord_x / grid->delta_x;
     rot_coord_y = (grid->global_dim_y - grid->periods[1] * 2 * grid->halo_y) * 0.5 + _rot_coord_y / grid->delta_y;
     if (_potential == NULL) {
