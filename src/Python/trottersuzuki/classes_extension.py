@@ -25,7 +25,6 @@ class Lattice(_Lattice):
 class State(_State):
     
     def init_state(self, state_function):
-        
         real = np.zeros((self.grid.dim_x, self.grid.dim_y))
         imag = np.zeros((self.grid.dim_x ,self.grid.dim_y))
         
@@ -46,7 +45,9 @@ class State(_State):
                 idx += delta_x
             idy += delta_y
             
-        self.init_state_matrix(real, imag)
+        real_fl = real[::-1]
+        imag_fl = imag[::-1]
+        self.init_state_matrix(real_fl, imag_fl)
         
     def imprint(self, function):
         
@@ -55,10 +56,10 @@ class State(_State):
         
         delta_x = self.grid.delta_x 
         delta_y = self.grid.delta_y
-        idy = self.grid.start_y * delta_y + 0.5 * delta_y
+        
         x_c = self.grid.global_no_halo_dim_x * self.grid.delta_x * 0.5
         y_c = self.grid.global_no_halo_dim_y * self.grid.delta_y * 0.5
-        
+        idy = self.grid.start_y * delta_y + 0.5 * delta_y
         for y in range(0, self.grid.dim_y):
             y_r = idy - y_c
             idx = self.grid.start_x * delta_x + 0.5 * delta_x
@@ -70,12 +71,14 @@ class State(_State):
                 idx += delta_x
             idy += delta_y
             
-        self.imprint_matrix(real, imag)
+        real_fl = real[::-1]
+        imag_fl = imag[::-1]
+        self.imprint_matrix(real_fl, imag_fl)
         
 class GaussianState(_GaussianState):
     
     def imprint(self, function):
-        
+
         real = np.zeros((self.grid.dim_x, self.grid.dim_y))
         imag = np.zeros((self.grid.dim_x ,self.grid.dim_y))
         
@@ -95,13 +98,15 @@ class GaussianState(_GaussianState):
                 imag[x, y] = np.imag(tmp)
                 idx += delta_x
             idy += delta_y
-            
-        self.imprint_matrix(real, imag)
+        
+        real_fl = real[::-1]
+        imag_fl = imag[::-1]
+        self.imprint_matrix(real_fl, imag_fl)
         
 class SinusoidState(_SinusoidState):
     
     def imprint(self, function):
-        
+
         real = np.zeros((self.grid.dim_x, self.grid.dim_y))
         imag = np.zeros((self.grid.dim_x ,self.grid.dim_y))
         
@@ -122,12 +127,14 @@ class SinusoidState(_SinusoidState):
                 idx += delta_x
             idy += delta_y
             
-        self.imprint_matrix(real, imag)
+        real_fl = real[::-1]
+        imag_fl = imag[::-1]
+        self.imprint_matrix(real_fl, imag_fl)
 
 class ExponentialState(_ExponentialState):
     
     def imprint(self, function):
-        
+
         real = np.zeros((self.grid.dim_x, self.grid.dim_y))
         imag = np.zeros((self.grid.dim_x ,self.grid.dim_y))
         
@@ -143,12 +150,14 @@ class ExponentialState(_ExponentialState):
             for x in range(0, self.grid.dim_x):
                 x_r = idx - x_c
                 tmp = function(x_r, y_r)
-                real[x, y] = np.real(tmp)
-                imag[x, y] = np.imag(tmp)
+                real[y, x] = np.real(tmp)
+                imag[y, x] = np.imag(tmp)
                 idx += delta_x
             idy += delta_y
-            
-        self.imprint_matrix(real, imag)
+        
+        real_fl = real[::-1]
+        imag_fl = imag[::-1]
+        self.imprint_matrix(real_fl, imag_fl)
         
 class Potential(_Potential):
     
@@ -170,5 +179,6 @@ class Potential(_Potential):
                 potential[x, y] = pot_function(x_r, y_r)
                 idx += delta_x
             idy += delta_y
-            
-        self.init_potential_matrix(potential)
+        
+        potential_fl = potential[::-1]
+        self.init_potential_matrix(potential_fl)

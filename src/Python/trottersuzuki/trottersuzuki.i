@@ -3,6 +3,7 @@
 %{
 #define SWIG_FILE_WITH_INIT
 #include "src/trottersuzuki.h"
+#include <iostream>
 %}
 
 %include "numpy.i"
@@ -76,12 +77,13 @@ public:
                             double* state_imag, int state_imag_width, int state_imag_height) {
             for (int y = 0; y < self->grid->dim_y; y++) {
                 for (int x = 0; x < self->grid->dim_x; x++) {
+                    double tmp = self->p_real[y * self->grid->dim_x + x];
                     self->p_real[y * self->grid->dim_x + x] = self->p_real[y * self->grid->dim_x + x] * state_real[y * self->grid->dim_x + x] -
                                                               self->p_imag[y * self->grid->dim_x + x] * state_imag[y * self->grid->dim_x + x];
-                    self->p_imag[y * self->grid->dim_x + x] = self->p_real[y * self->grid->dim_x + x] * state_imag[y * self->grid->dim_x + x] +
+                    self->p_imag[y * self->grid->dim_x + x] = tmp * state_imag[y * self->grid->dim_x + x] +
                                                               self->p_imag[y * self->grid->dim_x + x] * state_real[y * self->grid->dim_x + x];
                 }
-            }    
+            }
         }
     }
     %extend {
