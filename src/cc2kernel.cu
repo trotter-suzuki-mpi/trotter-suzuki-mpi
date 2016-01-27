@@ -434,28 +434,29 @@ template<int BLOCK_WIDTH, int BLOCK_HEIGHT>
 static  inline __device__ void imag_gpu_kernel_potential(int tile_width, int tile_height, double &cell_r, double &cell_i,
         int kx, int ky, int px, int py,
         double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH],
-        double pot_r[BLOCK_HEIGHT][BLOCK_WIDTH]) {
+        double pot_r[BLOCK_HEIGHT][BLOCK_WIDTH], double coupling_a) {
     double peer_r;
     double peer_i;
     double pot_cell_r, pot_peer_r;
-
+    double tmp;
     const int ky_peer = ky + 1 - 2 * (kx % 2);
     if(ky >= 0 && ky < BLOCK_HEIGHT && ky_peer >= 0 && ky_peer < BLOCK_HEIGHT && kx >= 0 && kx < BLOCK_WIDTH) {
         pot_cell_r = pot_r[ky][kx];
         pot_peer_r = pot_r[ky_peer][kx];
         peer_r = rl[ky_peer][kx];
         peer_i = im[ky_peer][kx];
-
-        cell_r = pot_cell_r * cell_r;
-        cell_i = pot_cell_r * cell_i;
-        rl[ky_peer][kx] = pot_peer_r * peer_r;
-        im[ky_peer][kx] = pot_peer_r * peer_i;
+        tmp = exp(-1. * coupling_a * (cell_r * cell_r + cell_i * cell_i));
+        cell_r = tmp * pot_cell_r * cell_r;
+        cell_i = tmp * pot_cell_r * cell_i;
+        tmp = exp(-1. * coupling_a * (peer_r * peer_r + peer_i * peer_i));
+        rl[ky_peer][kx] = tmp * pot_peer_r * peer_r;
+        im[ky_peer][kx] = tmp * pot_peer_r * peer_i;
     }
 }
 
 __launch_bounds__(BLOCK_X * STRIDE_Y)
 __global__ void imag_cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y,
-                               double a, double b, const double * __restrict__ external_pot_real, const double * __restrict__ external_pot_imag,
+                               double a, double b, double coupling_a, const double * __restrict__ external_pot_real, const double * __restrict__ external_pot_imag,
                                const double * __restrict__ p_real, const double * __restrict__ p_imag,
                                double * __restrict__ p2_real, double * __restrict__ p2_imag,
                                int inner, int horizontal, int vertical) {
@@ -534,7 +535,7 @@ __global__ void imag_cc2kernel(size_t tile_width, size_t tile_height, size_t off
 //potential
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_gpu_kernel_potential<BLOCK_X, BLOCK_Y>(tile_width, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, checkerboard_py + part * 2 * STRIDE_Y, rl, im, pot_r);
+        imag_gpu_kernel_potential<BLOCK_X, BLOCK_Y>(tile_width, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, checkerboard_py + part * 2 * STRIDE_Y, rl, im, pot_r, coupling_a);
     }
     __syncthreads();
 
@@ -587,7 +588,7 @@ __global__ void imag_cc2kernel(size_t tile_width, size_t tile_height, size_t off
 // Wrapper function for the hybrid kernel
 void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, double a, double b, double coupling_a, const double * __restrict__ dev_external_pot_real, const double * __restrict__ dev_external_pot_imag, const double * __restrict__ pdev_real, const double * __restrict__ pdev_imag, double * __restrict__ pdev2_real, double * __restrict__ pdev2_imag, int inner, int horizontal, int vertical, bool imag_time) {
     if(imag_time)
-        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream>>>(tile_width, tile_height, offset_x, offset_y, halo_x, halo_y, a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real, pdev_imag, pdev2_real, pdev2_imag, inner, horizontal, vertical);
+        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream>>>(tile_width, tile_height, offset_x, offset_y, halo_x, halo_y, a, b, coupling_a, dev_external_pot_real, dev_external_pot_imag, pdev_real, pdev_imag, pdev2_real, pdev2_imag, inner, horizontal, vertical);
     else
         cc2kernel <<< numBlocks, threadsPerBlock, 0, stream>>>(tile_width, tile_height, offset_x, offset_y, halo_x, halo_y, a, b, coupling_a, dev_external_pot_real, dev_external_pot_imag, pdev_real, pdev_imag, pdev2_real, pdev2_imag, inner, horizontal, vertical);
     CUT_CHECK_ERROR("Kernel error in cc2kernel_wrapper");
@@ -738,7 +739,7 @@ void CC2Kernel::run_kernel_on_halo() {
     numBlocks.x = (tile_width  + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x);
     numBlocks.y = 2;
     if(imag_time)
-        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
+        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, coupling_const[state_index], dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
     else
         cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, coupling_const[state_index], dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
 
@@ -748,7 +749,7 @@ void CC2Kernel::run_kernel_on_halo() {
     numBlocks.x = 2;
     numBlocks.y = (tile_height  + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y);
     if(imag_time)
-        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
+        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, coupling_const[state_index], dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
     else
         cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, coupling_const[state_index], dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
 }
@@ -762,7 +763,7 @@ void CC2Kernel::run_kernel() {
     numBlocks.y = (tile_height + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y) - 2;
 
     if(imag_time)
-        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
+        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, coupling_const[state_index], dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
     else
         cc2kernel <<< numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, coupling_const[state_index], dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
     sense = 1 - sense;
