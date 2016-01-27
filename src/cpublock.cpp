@@ -132,22 +132,16 @@ void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, siz
     for (size_t y = 0; y < height; ++y) {
       for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
         double tmp = exp(-1. * (coupling_a * (p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx]) + coupling_b * (pb_real[idx_pot] * pb_real[idx_pot] + pb_imag[idx_pot] * pb_imag[idx_pot])));
-        p_real[idx] = external_pot_real[idx_pot] * p_real[idx];
-        p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx];
-
-        p_real[idx] = tmp * p_real[idx];
-        p_imag[idx] = tmp * p_imag[idx];
+        p_real[idx] = tmp * external_pot_real[idx_pot] * p_real[idx];
+        p_imag[idx] = tmp * external_pot_real[idx_pot] * p_imag[idx];
       }
     }
   } else {
     for (size_t y = 0; y < height; ++y) {
       for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
         double tmp = exp(-1. * coupling_a * (p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx]));
-        p_real[idx] = external_pot_real[idx_pot] * p_real[idx];
-        p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx];
-
-        p_real[idx] = tmp * p_real[idx];
-        p_imag[idx] = tmp * p_imag[idx];
+        p_real[idx] = tmp * external_pot_real[idx_pot] * p_real[idx];
+        p_imag[idx] = tmp * external_pot_real[idx_pot] * p_imag[idx];
       }
     }
   }
