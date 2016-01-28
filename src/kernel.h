@@ -162,7 +162,7 @@ void setDevice(int commRank
 #endif
               );
 
-void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, double a, double b, double coupling_a, const double * __restrict__ dev_external_pot_real, const double * __restrict__ dev_external_pot_imag, const double * __restrict__ pdev_real, const double * __restrict__ pdev_imag, double * __restrict__ pdev2_real, double * __restrict__ pdev2_imag, int inner, int horizontal, int vertical, bool imag_time);
+void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, double a, double b, double coupling_a, double alpha_x, double alpha_y, const double * __restrict__ dev_external_pot_real, const double * __restrict__ dev_external_pot_imag, const double * __restrict__ pdev_real, const double * __restrict__ pdev_imag, double * __restrict__ pdev2_real, double * __restrict__ pdev2_imag, int inner, int horizontal, int vertical, bool imag_time);
 
 
 /**
@@ -223,6 +223,8 @@ private:
     double delta_y;						///< Physical length between two neighbour along y axis dots of the lattice.
     double norm;						///< Squared norm of the wave function.
     double *coupling_const;     ///< Coupling constant of the density self-interacting term.
+    double alpha_x;         ///< Real coupling constant associated to the X*P_y operator, part of the angular momentum.
+    double alpha_y;         ///< Real coupling constant associated to the Y*P_x operator, part of the angular momentum.
     int state_index;    ///< Takes values 0 or 1 and tells which wave function is pointed by p_real and p_imag, and is being evolved.    
     int sense;							///< Takes values 0 or 1 and tells which of the two buffers pointed by p_real and p_imag is used to calculate the next time step.
     size_t halo_x;						///< Thickness of the vertical halos (number of lattice's dots).
@@ -318,6 +320,8 @@ private:
     double a;								///< Diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
     double b;								///< Off diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
     double *coupling_const;     ///< Coupling constant of the density self-interacting term.
+    double alpha_x;         ///< Real coupling constant associated to the X*P_y operator, part of the angular momentum.
+    double alpha_y;         ///< Real coupling constant associated to the Y*P_x operator, part of the angular momentum.
     int state_index;    ///< Takes values 0 or 1 and tells which wave function is pointed by p_real and p_imag, and is being evolved.    
     double delta_x;							///< Physical length between two neighbour along x axis dots of the lattice.
     double delta_y;							///< Physical length between two neighbour along y axis dots of the lattice.

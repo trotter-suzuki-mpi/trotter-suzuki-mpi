@@ -43,6 +43,8 @@ HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian
     coupling_const[0] = hamiltonian->coupling_a * delta_t;
     coupling_const[1] = 0.;
     coupling_const[2] = 0.;
+    alpha_x = hamiltonian->angular_velocity*delta_t*grid->delta_x / (2*grid->delta_y);
+    alpha_y = hamiltonian->angular_velocity*delta_t*grid->delta_y / (2*grid->delta_x);
 
     int rank;
 #ifdef HAVE_MPI
@@ -196,7 +198,7 @@ void HybridKernel::run_kernel_on_halo() {
     numBlocks.x = (gpu_tile_width  + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x);
     numBlocks.y = (gpu_tile_height + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y);
 
-    cc2kernel_wrapper(gpu_tile_width, gpu_tile_height, -BLOCK_X + 3 * halo_x, -BLOCK_Y + 3 * halo_y, halo_x, halo_y, numBlocks, threadsPerBlock, stream,  a, b, coupling_const[state_index], dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical, imag_time);
+    cc2kernel_wrapper(gpu_tile_width, gpu_tile_height, -BLOCK_X + 3 * halo_x, -BLOCK_Y + 3 * halo_y, halo_x, halo_y, numBlocks, threadsPerBlock, stream, a, b, coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical, imag_time);
 
     // The CPU calculates the halo
     inner = 0;
