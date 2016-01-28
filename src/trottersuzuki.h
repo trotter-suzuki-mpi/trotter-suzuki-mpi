@@ -49,7 +49,7 @@ public:
 	    @param [in] periodic_y_axis  Boundary condition along the y axis (false=close, true=periodic).
 	 */
     Lattice(int dim=100, double length_x=20., double length_y=20.,
-            bool periodic_x_axis=false, bool periodic_y_axis=false, double omega=0.);
+            bool periodic_x_axis=false, bool periodic_y_axis=false, double angular_velocity=0.);
     double length_x, length_y;    ///< Physical length of the lattice's sides.
     double delta_x, delta_y;    ///< Physical distance between two consecutive point of the grid, along the x and y axes.
     int dim_x, dim_y;    ///< Linear dimension of the tile along x and y axes.
@@ -122,7 +122,7 @@ protected:
 };
 
 /**
- * \brief This class define a quantum state with exponential like wave function.
+ * \brief This class defines a quantum state with exponential like wave function.
  *
  * This class is a child of State class.
  */
@@ -149,7 +149,7 @@ private:
 };
 
 /**
- * \brief This class define a quantum state with gaussian like wave function.
+ * \brief This class defines a quantum state with gaussian like wave function.
  *
  * This class is a child of State class.
  */
@@ -181,7 +181,7 @@ private:
 };
 
 /**
- * \brief This class define a quantum state with sinusoidal like wave function.
+ * \brief This class defines a quantum state with sinusoidal like wave function.
  *
  * This class is a child of State class.
  */
@@ -207,70 +207,145 @@ private:
     complex<double> sinusoid_state(double x, double y);    ///< Sinusoidal function.
 };
 
-
+/**
+ * \brief This class defines the external potential, that is used for Hamiltonian class.
+ */
 class Potential {
 public:
-    Lattice *grid;
-    double *matrix;
+    Lattice *grid;    ///< Object that defines the lattice structure.
+    double *matrix;    ///< Matrix storing the potential.
 
+    /**
+		Construct the external potential.
+
+		@param [in] grid             Lattice object.
+		@param [in] filename         Name of the file that store the external potential matrix.
+	 */
     Potential(Lattice *grid, char *filename);
+    /**
+		Construct the external potential.
+
+		@param [in] grid             Lattice object.
+		@param [in] external_pot     Pointer to the external potential matrix.
+	 */
     Potential(Lattice *grid, double *external_pot=0);
+    /**
+		Construct the external potential.
+
+		@param [in] grid                   Lattice object.
+		@param [in] potential_function     Pointer to the static external potential function.
+	 */
     Potential(Lattice *grid, double (*potential_function)(double x, double y));
+    /**
+		Construct the external potential.
+
+		@param [in] grid                   Lattice object.
+		@param [in] potential_function     Pointer to the time-dependent external potential function.
+	 */
     Potential(Lattice *grid, double (*potential_function)(double x, double y, double t), int t=0);
     virtual ~Potential();
-    virtual double get_value(int x, int y);
-    bool update(double t);
+    virtual double get_value(int x, int y);    ///< Get the value at the coordinate (x,y).
+    bool update(double t);    ///< Update the potential matrix at time t.
 
 protected:
-    double current_evolution_time;
+    double current_evolution_time;    ///< Amount of time evolved since the beginning of the evolution.
 
-    double (*static_potential)(double x, double y);
-    double (*evolving_potential)(double x, double y, double t);
+    double (*static_potential)(double x, double y);    ///< Function of the static external potential.
+    double (*evolving_potential)(double x, double y, double t);    ///< Function of the time-dependent external potential.
 
-    bool self_init;
-    bool is_static;
+    bool self_init;    ///< Whether the external potential matrix has been initialized from the Potential constructor or not.
+    bool is_static;    ///< Whether the external potential is static or time-dependent.
 };
 
+/**
+ * \brief This class defines the external potential, that is used for Hamiltonian class.
+ *
+ * This class is a child of Potential class.
+ */
 class HarmonicPotential: public Potential {
 public:
+	/**
+		Construct the harmonic external potential.
+
+		@param [in] grid       Lattice object.
+		@param [in] omegax     Frequency along x axis.
+		@param [in] omegay     Frequency along y axis.
+		@param [in] mass       Mass of the particle.
+		@param [in] mean_x     Minimum of the potential along x axis.
+		@param [in] mean_y     Minimum of the potential along y axis.
+	 */
     HarmonicPotential(Lattice *grid, double omegax, double omegay, double mass=1., double mean_x = 0., double mean_y = 0.);
     ~HarmonicPotential();
-    double get_value(int x, int y);
+    double get_value(int x, int y);    ///< Return the value of the external potential at coordinate (x,y)
 
 private:
-    double omegax, omegay;
-    double mass;
-    double mean_x, mean_y;
+    double omegax, omegay;    ///< Frequencies along x and y axis.
+    double mass;    ///< Mass of the particle.
+    double mean_x, mean_y;    ///< Minimum of the potential along x and y axis.
 };
 
+/**
+ * \brief This class defines the Hamiltonian of a single component system.
+ */
 class Hamiltonian {
 public:
-    Potential *potential;
-    double mass;
-    double coupling_a;
-    double angular_velocity;
-    double rot_coord_x;
-    double rot_coord_y;
+    Potential *potential;   ///< Potential object.
+    double mass;    ///< Mass of the particle.
+    double coupling_a;    ///< Coupling constant of intra-particle interaction.
+    double angular_velocity;    ///< The frame of reference rotates with this angular velocity.
+    double rot_coord_x;    ///< X coordinate of the center of rotation.
+    double rot_coord_y;    ///< Y coordinate of the center of rotation.
 
+    /**
+		Construct the Hamiltonian of a single component system.
+
+		@param [in] grid                Lattice object.
+		@param [in] potential           Potential object.
+		@param [in] mass                Mass of the particle.
+		@param [in] coupling_a          Coupling constant of intra-particle interaction.
+		@param [in] angular_velocity    The frame of reference rotates with this angular velocity.
+		@param [in] rot_coord_x         X coordinate of the center of rotation.
+		@param [in] rot_coord_y         Y coordinate of the center of rotation.
+	 */
     Hamiltonian(Lattice *grid, Potential *potential=0, double mass=1., double coupling_a=0.,
                 double angular_velocity=0.,
                 double rot_coord_x=0, double rot_coord_y=0);
     ~Hamiltonian();
 
 protected:
-    bool self_init;
-    Lattice *grid;
+    bool self_init;    ///< Whether the potential is initialized in the Hamiltonian constructor or not.
+    Lattice *grid;    ///< Lattice object.
 };
 
+/**
+ * \brief This class defines the Hamiltonian of a two component system.
+ */
 class Hamiltonian2Component: public Hamiltonian {
 public:
-    double mass_b;
-    double coupling_ab;
-    double coupling_b;
-    double omega_r;
-    double omega_i;
-    Potential *potential_b;
+    double mass_b;    ///< Mass of the second component.
+    double coupling_ab;    ///< Coupling constant of the inter-particles interaction.
+    double coupling_b;    ///< Coupling constant of the intra-particles interaction of the second component.
+    double omega_r;    ///< Real part of the Rabi coupling.
+    double omega_i;    ///< Imaginary part of the Rabi coupling.
+    Potential *potential_b;    ///< External potential for the second component.
 
+    /**
+		Construct the Hamiltonian of a two component system.
+
+		@param [in] grid                Lattice object.
+		@param [in] potential           Potential of the first component.
+		@param [in] potential_b         Potential of the second component.
+		@param [in] mass                Mass of the first-component's particles.
+		@param [in] mass_b              Mass of the second-component's particles.
+		@param [in] coupling_a          Coupling constant of intra-particle interaction for the first component.
+		@param [in] coupling_ab         Coupling constant of inter-particle interaction between the two components.
+		@param [in] coupling_b          Coupling constant of intra-particle interaction for the second component.
+		@param [in] omega_r             Real part of the Rabi coupling.
+		@param [in] omega_i             Imaginary part of the Rabi coupling.
+		@param [in] angular_velocity    The frame of reference rotates with this angular velocity.
+		@param [in] rot_coord_x         X coordinate of the center of rotation.
+		@param [in] rot_coord_y         Y coordinate of the center of rotation.
+	 */
     Hamiltonian2Component(Lattice *grid, Potential *potential=0,
                           Potential *potential_b=0,
                           double mass=1., double mass_b=1.,
@@ -283,24 +358,22 @@ public:
     ~Hamiltonian2Component();
 };
 
-
 /**
- * \brief This class define the prototipe of the kernel classes: CPU, GPU, Hybrid.
+ * \brief This class defines the prototipe of the kernel classes: CPU, GPU, Hybrid.
  */
-
 class ITrotterKernel {
 public:
     virtual ~ITrotterKernel() {};
-    virtual void run_kernel() = 0;							///< Evolve the remaining blocks in the inner part of the tile.
-    virtual void run_kernel_on_halo() = 0;					///< Evolve blocks of wave function at the edge of the tile. This comprises the halos.
-    virtual void wait_for_completion() = 0;	                ///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
-    virtual void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2=0, double * dest_imag2=0) const = 0;					///< Get the evolved wave function.
-    virtual void normalization() = 0;
-    virtual void rabi_coupling(double var, double delta_t) = 0;
-    virtual double calculate_squared_norm(bool global=true) = 0;
+    virtual void run_kernel() = 0;    ///< Evolve the remaining blocks in the inner part of the tile.
+    virtual void run_kernel_on_halo() = 0;    ///< Evolve blocks of wave function at the edge of the tile. This comprises the halos.
+    virtual void wait_for_completion() = 0;    ///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
+    virtual void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2=0, double * dest_imag2=0) const = 0;    ///< Get the evolved wave function.
+    virtual void normalization() = 0;    ///< Normalization of the two components wave function.
+    virtual void rabi_coupling(double var, double delta_t) = 0;    ///< Perform the evolution regarding the Rabi coupling.
+    virtual double calculate_squared_norm(bool global=true) = 0;    ///< Calculate the squared norm of the wave function.
     virtual bool runs_in_place() const = 0;
     virtual string get_name() const = 0;				///< Get kernel name.
-    virtual void update_potential(double *_external_pot_real, double *_external_pot_imag) = 0;
+    virtual void update_potential(double *_external_pot_real, double *_external_pot_imag) = 0;    ///< Update the evolution matrix, regarding the external potential, at time t.
 
     virtual void start_halo_exchange() = 0;					///< Exchange halos between processes.
     virtual void finish_halo_exchange() = 0;				///< Exchange halos between processes.
@@ -308,78 +381,77 @@ public:
 };
 
 /**
-    API call to calculate the evolution through the Trotter-Suzuki decomposition.
-
-    @param h_a               Kinetic term of the Hamiltonian (cosine part)
-    @param h_b               Kinetic term of the Hamiltonian (sine part)
-    @param external_pot_real External potential, real part
-    @param external_pot_imag External potential, imaginary part
-    @param p_real            Initial state, real part
-    @param p_imag            Initial state, imaginary part
-    @param matrix_width      The width of the initial state
-    @param matrix_height     The height of the initial state
-    @param iterations        Number of iterations to be calculated
-    @param snapshots         Number of iterations between taking snapshots
-                             (0 means no snapshots)
-    @param kernel_type       The kernel type: "cpu", "gpu", or "hybrid"
-    @param periods            Whether the grid is periodic in any of the directions
-    @param output_folder      The folder to write the snapshots in
-    @param verbose            Optional verbosity parameter
-    @param imag_time          Optional parameter to calculate imaginary time evolution
-    @param particle_tag       Optional parameter to tag a particle in the snapshots
-
-*/
-
+ * \brief This class defines the evolution tasks.
+ */
 class Solver {
 public:
-    Lattice *grid;
-    State *state;
-    State *state_b;
-    Hamiltonian *hamiltonian;
-    double current_evolution_time;
+    Lattice *grid;    ///< Lattice object.
+    State *state;    ///< State of the first component.
+    State *state_b;    ///< State of the second component.
+    Hamiltonian *hamiltonian;    ///< Hamiltonian of the system; either single component or two components.
+    double current_evolution_time;    ///< Amount of time evolved since the beginning of the evolution.
+    /**
+		Construct the Solver object for a single-component system.
+
+		@param [in] grid                Lattice object.
+		@param [in] state               State of the system.
+		@param [in] hamiltonian         Hamiltonian of the system.
+		@param [in] delta_t             A single evolution iteration, evolves the state for this time.
+		@param [in] kernel_type         Which kernel to use (either cpu or gpu).
+	 */
     Solver(Lattice *grid, State *state, Hamiltonian *hamiltonian, double delta_t,
            string kernel_type="cpu");
+    /**
+		Construct the Solver object for a two-component system.
+
+		@param [in] grid                Lattice object.
+		@param [in] state1              First component's state of the system.
+		@param [in] state2              Second component's state of the system.
+		@param [in] hamiltonian         Hamiltonian of the two-component system.
+		@param [in] delta_t             A single evolution iteration, evolves the state for this time.
+		@param [in] kernel_type         Which kernel to use (either cpu or gpu).
+	 */
     Solver(Lattice *grid, State *state1, State *state2,
            Hamiltonian2Component *hamiltonian,
            double delta_t, string kernel_type="cpu");
     ~Solver();
-    void evolve(int iterations, bool imag_time=false);
-    double get_total_energy(void);
-    double get_squared_norm(size_t which=3);
-    double get_kinetic_energy(size_t which=3);
-    double get_potential_energy(size_t which=3);
-    double get_rotational_energy(size_t which=3);
-    double get_intra_species_energy(size_t which=3);
-    double get_inter_species_energy(void);
-    double get_rabi_energy(void);
+    void evolve(int iterations, bool imag_time=false);    ///< Evolve the state of the system.
+    double get_total_energy(void);    ///< Get the total energy of the system.
+    double get_squared_norm(size_t which=3);    ///< Get the squared norm of the state (default: total wave-function).
+    double get_kinetic_energy(size_t which=3);    ///< Get the kinetic energy of the system.
+    double get_potential_energy(size_t which=3);    ///< Get the potential energy of the system.
+    double get_rotational_energy(size_t which=3);    ///< Get the rotational energy of the system.
+    double get_intra_species_energy(size_t which=3);    ///< Get the intra-particles interaction energy of the system.
+    double get_inter_species_energy(void);    ///< Get the inter-particles interaction energy of the system.
+    double get_rabi_energy(void);    ///< Get the Rabi energy of the system.
 private:
-    bool imag_time;
-    double h_a[2];
-    double h_b[2];
-    double **external_pot_real;
-    double **external_pot_imag;
-    double delta_t;
-    double norm2[2];
-    bool single_component;
-    string kernel_type;
-    ITrotterKernel * kernel;
-    void initialize_exp_potential(double time_single_it, int which);
-    void init_kernel();
-    double total_energy;
-    double kinetic_energy[2];
-    double tot_kinetic_energy;
-    double potential_energy[2];
-    double tot_potential_energy;
-    double rotational_energy[2];
-    double tot_rotational_energy;
-    double intra_species_energy[2];
-    double tot_intra_species_energy;
-    double inter_species_energy;
-    double rabi_energy;
-    bool energy_expected_values_updated;
-    void calculate_energy_expected_values(void);
+    bool imag_time;    ///< Whether the time of evolution is imaginary(true) or real(false).
+    double h_a[2];    ///< Parameters of the evolution operator regarding the kinetic operator of the first-component.
+    double h_b[2];    ///< Parameters of the evolution operator regarding the kinetic operator of the second-component.
+    double **external_pot_real;    ///< Real part of the evolution operator regarding the external potential.
+    double **external_pot_imag;    ///< Imaginary part of the evolution operator regarding the external potential.
+    double delta_t;    ///< A single evolution iteration, evolves the state for this time.
+    double norm2[2];    ///< Squared norms of the two wave function.
+    bool single_component;    ///< Whether the system is single-component(true) or two-components(false).
+    string kernel_type;    ///< Which kernel are being used (cpu or gpu).
+    ITrotterKernel * kernel;    ///< Pointer to the kernel object.
+    void initialize_exp_potential(double time_single_it, int which);    ///< Initialize the evolution operator regarding the external potential.
+    void init_kernel();    ///< Initialize the kernel (cpu or gpu).
+    double total_energy;    ///< Total energy of the system.
+    double kinetic_energy[2];    ///< Kinetic energy for the single components.
+    double tot_kinetic_energy;    ///< Total kinetic energy of the system.
+    double potential_energy[2];    ///< Potential energy for the single components.
+    double tot_potential_energy;    ///< Total potential energy of the system.
+    double rotational_energy[2];    ///< Rotational energy for the single components.
+    double tot_rotational_energy;    ///< Total Rotational energy of the system.
+    double intra_species_energy[2];    ///< Intra-particles interaction energy for the single components.
+    double tot_intra_species_energy;    ///< Total intra-particles interaction energy of the system.
+    double inter_species_energy;    ///< Inter-particles interaction energy of the system.
+    double rabi_energy;    ///< Rabi energy of the system.
+    bool energy_expected_values_updated;    ///< Whether the expectation values are updated or not.
+    void calculate_energy_expected_values(void);    ///< Calculate all the expectation values and the state's norm.
 };
 
-double const_potential(double x, double y);
+double const_potential(double x, double y);    ///< Defines the null potential function.
 
 #endif // __TROTTERSUZUKI_H
