@@ -92,14 +92,18 @@ void Solver::init_kernel() {
       } else {
           kernel = new CPUBlock(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm2, imag_time);
       }
-    } else if (!single_component) {
-        my_abort("Two-component Hamiltonians only work with the CPU kernel!");
     } else if (kernel_type == "gpu") {
 #ifdef CUDA
-        kernel = new CC2Kernel(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_t, norm2[0], imag_time);
+      if (single_component) {
+          kernel = new CC2Kernel(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_t, norm2[0], imag_time);
+      } else {
+          kernel = new CC2Kernel(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm2, imag_time);
+      }
 #else
         my_abort("Compiled without CUDA\n");
 #endif
+    } else if (!single_component) {
+        my_abort("Two-component Hamiltonians only work with the CPU and GPU kernels!");
     } else if (kernel_type == "hybrid") {
 #ifdef CUDA
         kernel = new HybridKernel(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_t, norm2[0], imag_time);

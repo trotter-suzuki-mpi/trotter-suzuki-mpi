@@ -244,31 +244,6 @@ static  inline __device__ void gpu_kernel_potential(int tile_width, int tile_hei
     }
 }
 
-template<int BLOCK_WIDTH, int BLOCK_HEIGHT>
-static  inline __device__ void gpu_kernel_rotation(int tile_width, int tile_height, double &cell_r, double &cell_i,
-        int kx, int ky, int px, int py,
-        double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH],
-        double pot_r[BLOCK_HEIGHT][BLOCK_WIDTH], double pot_i[BLOCK_HEIGHT][BLOCK_WIDTH], double alpha_x, double alpha_y) {
-    double tmp;
-    double peer_r;
-    double peer_i;
-    double pot_cell_r, pot_cell_i, pot_peer_r, pot_peer_i;
-    double c_cos;
-    double c_sin;
-
-    const int ky_peer = ky + 1 - 2 * (kx % 2);
-    if(ky >= 0 && ky < BLOCK_HEIGHT && ky_peer >= 0 && ky_peer < BLOCK_HEIGHT && kx >= 0 && kx < BLOCK_WIDTH) {
-        pot_cell_r = pot_r[ky][kx];
-        pot_cell_i = pot_i[ky][kx];
-        pot_peer_r = pot_r[ky_peer][kx];
-        pot_peer_i = pot_i[ky_peer][kx];
-
-        peer_r = rl[ky_peer][kx];
-        peer_i = im[ky_peer][kx];
-
-    }
-}
-
 __launch_bounds__(BLOCK_X * STRIDE_Y)
 __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y,
                           double a, double b, double coupling_a, double alpha_x, double alpha_y, const double * __restrict__ external_pot_real, const double * __restrict__ external_pot_imag,
@@ -357,10 +332,7 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x
     __syncthreads();
 
     if (alpha_x != 0. && alpha_y != 0.) {
-		#pragma unroll
-		for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-			gpu_kernel_rotation<BLOCK_X, BLOCK_Y>(tile_width, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, checkerboard_py + part * 2 * STRIDE_Y, rl, im, pot_r, pot_i, alpha_x, alpha_y);
-		}
+      // TODO: Rotation kernel should come here
     }
 
 #pragma unroll
@@ -571,6 +543,10 @@ __global__ void imag_cc2kernel(size_t tile_width, size_t tile_height, size_t off
     }
     __syncthreads();
 
+    if (alpha_x != 0. && alpha_y != 0.) {
+      // TODO: Rotation kernel should come here
+    }
+
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
         imag_gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
@@ -631,19 +607,16 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
                      double _a, double _b, double delta_t,
                      double _norm, bool _imag_time):
     threadsPerBlock(BLOCK_X, STRIDE_Y),
-    external_pot_real(_external_pot_real),
-    external_pot_imag(_external_pot_imag),
     sense(0),
     state_index(0),
-    a(_a),
-    b(_b),
-    norm(_norm),
     imag_time(_imag_time) {
 
     halo_x = grid->halo_x;
     halo_y = grid->halo_y;
-    p_real = state->p_real;
-    p_imag = state->p_imag;
+    p_real[0] = state->p_real;
+    p_imag[0] = state->p_imag;
+    p_real[1] = NULL;
+    p_imag[1] = NULL;
     delta_x = grid->delta_x;
     delta_y = grid->delta_y;
     periods = grid->periods;
@@ -655,6 +628,16 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     coupling_const[1] = 0.;
     coupling_const[2] = 0.;
 
+    a = new double [1];
+    b = new double [1];
+    norm = new double [1];
+    a[0] = _a;
+    b[0] = _b;
+    norm[0] = _norm;
+    external_pot_real[0] = _external_pot_real;
+    external_pot_imag[0] = _external_pot_imag;
+    two_wavefunctions = false;
+        
     int rank;
 #ifdef HAVE_MPI
     cartcomm = grid->cartcomm;
@@ -681,17 +664,137 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
               , cartcomm
 #endif
              );
-    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_real), tile_width * tile_height * sizeof(double)));
-    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_imag), tile_width * tile_height * sizeof(double)));
-    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_real, external_pot_real, tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_imag, external_pot_imag, tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_real[0]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_imag[0]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_real[0], external_pot_real[0], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_imag[0], external_pot_imag[0], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
 
-    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[0]), tile_width * tile_height * sizeof(double)));
-    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[1]), tile_width * tile_height * sizeof(double)));
-    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[0]), tile_width * tile_height * sizeof(double)));
-    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[1]), tile_width * tile_height * sizeof(double)));
-    CUDA_SAFE_CALL(cudaMemcpy(pdev_real[0], p_real, tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(pdev_imag[0], p_imag, tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[0][0]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[0][1]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[0][0]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[0][1]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMemcpy(pdev_real[0][0], p_real[0], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(pdev_imag[0][0], p_imag[0], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+    cudaStreamCreate(&stream1);
+    cudaStreamCreate(&stream2);
+    cublasStatus_t status = cublasCreate(&handle);
+    if (status != CUBLAS_STATUS_SUCCESS) {
+        my_abort("CuBLAS initialization error");
+    }
+
+    // Halo exchange uses wave pattern to communicate
+    int height = inner_end_y - inner_start_y;	// The vertical halo in rows
+    int width = halo_x;	// The number of columns of the matrix
+    // Allocating pinned memory for the buffers
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &left_real_receive, height * width * sizeof(double), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &left_real_send, height * width * sizeof(double), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &right_real_receive, height * width * sizeof(double), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &right_real_send, height * width * sizeof(double), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &left_imag_receive, height * width * sizeof(double), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &left_imag_send, height * width * sizeof(double), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &right_imag_receive, height * width * sizeof(double), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &right_imag_send, height * width * sizeof(double), cudaHostAllocDefault));
+
+    height = halo_y;	// The vertical halo in rows
+    width = tile_width;	// The number of columns of the matrix
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &bottom_real_receive, height * width * sizeof(double), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &bottom_real_send, height * width * sizeof(double), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &top_real_receive, height * width * sizeof(double), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &top_real_send, height * width * sizeof(double), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &bottom_imag_receive, height * width * sizeof(double), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &bottom_imag_send, height * width * sizeof(double), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &top_imag_receive, height * width * sizeof(double), cudaHostAllocDefault));
+    CUDA_SAFE_CALL(cudaHostAlloc( (void **) &top_imag_send, height * width * sizeof(double), cudaHostAllocDefault));
+
+}
+
+CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2, 
+                     Hamiltonian2Component *hamiltonian, 
+                     double **_external_pot_real, double **_external_pot_imag, 
+                     double *_a, double *_b, double delta_t,
+                     double *_norm, bool _imag_time):
+    threadsPerBlock(BLOCK_X, STRIDE_Y),
+    sense(0),
+    state_index(0),
+    imag_time(_imag_time) {
+
+    halo_x = grid->halo_x;
+    halo_y = grid->halo_y;
+    p_real[0] = state1->p_real;
+    p_imag[0] = state1->p_imag;
+    p_real[1] = state2->p_real;
+    p_imag[1] = state2->p_imag;
+    delta_x = grid->delta_x;
+    delta_y = grid->delta_y;
+    periods = grid->periods;
+    alpha_x = hamiltonian->angular_velocity*delta_t*grid->delta_x / (2*grid->delta_y);
+    alpha_y = hamiltonian->angular_velocity*delta_t*grid->delta_y / (2*grid->delta_x);
+
+    coupling_const = new double[5];
+    coupling_const[0] = delta_t*hamiltonian->coupling_a;
+    coupling_const[1] = delta_t*hamiltonian->coupling_b;
+    coupling_const[2] = delta_t*hamiltonian->coupling_ab;
+    coupling_const[3] = 0.5 * hamiltonian->omega_r;
+    coupling_const[4] = 0.5 * hamiltonian->omega_i;
+    a = _a;
+    b = _b;
+    norm = _norm;
+    external_pot_real[0] = _external_pot_real[0];
+    external_pot_imag[0] = _external_pot_imag[0];
+    external_pot_real[1] = _external_pot_real[1];
+    external_pot_imag[1] = _external_pot_imag[1];
+    two_wavefunctions = true;
+        
+    int rank;
+#ifdef HAVE_MPI
+    cartcomm = grid->cartcomm;
+    MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
+    MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
+    MPI_Comm_rank(cartcomm, &rank);
+#else
+    neighbors[UP] = neighbors[DOWN] = neighbors[LEFT] = neighbors[RIGHT] = 0;
+    rank = 0;
+#endif
+    start_x = grid->start_x;
+    end_x = grid->end_x;
+    inner_start_x = grid->inner_start_x;
+    inner_end_x = grid->inner_end_x;
+    start_y = grid->start_y;
+    end_y = grid->end_y;
+    inner_start_y = grid->inner_start_y;
+    inner_end_y = grid->inner_end_y;
+    tile_width = end_x - start_x;
+    tile_height = end_y - start_y;
+
+    setDevice(rank
+#ifdef HAVE_MPI
+              , cartcomm
+#endif
+             );
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_real[0]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_imag[0]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_real[0], external_pot_real[0], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_imag[0], external_pot_imag[0], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[0][0]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[0][1]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[0][0]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[0][1]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMemcpy(pdev_real[0][0], p_real[0], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(pdev_imag[0][0], p_imag[0], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+    
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_real[1]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_imag[1]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_real[1], external_pot_real[1], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_imag[1], external_pot_imag[1], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[1][0]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[1][1]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[1][0]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[1][1]), tile_width * tile_height * sizeof(double)));
+    CUDA_SAFE_CALL(cudaMemcpy(pdev_real[1][0], p_real[1], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(pdev_imag[1][0], p_imag[1], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+    
     cudaStreamCreate(&stream1);
     cudaStreamCreate(&stream2);
     cublasStatus_t status = cublasCreate(&handle);
@@ -726,10 +829,10 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
 }
 
 void CC2Kernel::update_potential(double *_external_pot_real, double *_external_pot_imag) {
-    external_pot_real = _external_pot_real;
-    external_pot_imag = _external_pot_imag;
-    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_real, external_pot_real, tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_imag, external_pot_imag, tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+    external_pot_real[0] = _external_pot_real;
+    external_pot_imag[0] = _external_pot_imag;
+    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_real[0], external_pot_real[0], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_imag[0], external_pot_imag[0], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
 }
 
 
@@ -751,11 +854,21 @@ CC2Kernel::~CC2Kernel() {
     CUDA_SAFE_CALL(cudaFreeHost(top_imag_receive));
     CUDA_SAFE_CALL(cudaFreeHost(top_imag_send));
 
-    //CUDA_SAFE_CALL(cudaFree(pdev_real[0]));
-    CUDA_SAFE_CALL(cudaFree(pdev_real[1]));
-    //CUDA_SAFE_CALL(cudaFree(pdev_imag[0]));
-    CUDA_SAFE_CALL(cudaFree(pdev_imag[1]));
+    CUDA_SAFE_CALL(cudaFree(pdev_real[0][0]));
+    CUDA_SAFE_CALL(cudaFree(pdev_real[0][1]));
+    CUDA_SAFE_CALL(cudaFree(pdev_imag[0][0]));
+    CUDA_SAFE_CALL(cudaFree(pdev_imag[0][1]));
+    CUDA_SAFE_CALL(cudaFree(dev_external_pot_real[0]));
+    CUDA_SAFE_CALL(cudaFree(dev_external_pot_imag[0]));
 
+    if (two_wavefunctions) {
+        CUDA_SAFE_CALL(cudaFree(pdev_real[1][0]));
+        CUDA_SAFE_CALL(cudaFree(pdev_real[1][1]));
+        CUDA_SAFE_CALL(cudaFree(pdev_imag[1][0]));
+        CUDA_SAFE_CALL(cudaFree(pdev_imag[1][1]));
+        CUDA_SAFE_CALL(cudaFree(dev_external_pot_real[1]));
+        CUDA_SAFE_CALL(cudaFree(dev_external_pot_imag[1]));
+    }
     cudaStreamDestroy(stream1);
     cudaStreamDestroy(stream2);
 
@@ -773,9 +886,9 @@ void CC2Kernel::run_kernel_on_halo() {
     numBlocks.x = (tile_width  + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x);
     numBlocks.y = 2;
     if(imag_time)
-        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
+        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a[state_index], b[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
     else
-        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
+        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a[state_index], b[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
 
     inner = 0;
     horizontal = 0;
@@ -783,9 +896,9 @@ void CC2Kernel::run_kernel_on_halo() {
     numBlocks.x = 2;
     numBlocks.y = (tile_height  + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y);
     if(imag_time)
-        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
+        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a[state_index], b[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
     else
-        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
+        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a[state_index], b[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
 }
 
 void CC2Kernel::run_kernel() {
@@ -797,9 +910,9 @@ void CC2Kernel::run_kernel() {
     numBlocks.y = (tile_height + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y) - 2;
 
     if(imag_time)
-        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
+        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a[state_index], b[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
     else
-        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a, b, coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical);
+        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a[state_index], b[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
     sense = 1 - sense;
     CUT_CHECK_ERROR("Kernel error in CC2Kernel::run_kernel");
 }
@@ -807,8 +920,8 @@ void CC2Kernel::run_kernel() {
 
 double CC2Kernel::calculate_squared_norm(bool global) {
     double norm2 = 0., result_imag = 0.;
-    cublasStatus_t status = cublasDnrm2(handle, tile_width * tile_height, pdev_real[sense], 1, &norm2);
-    status = cublasDnrm2(handle, tile_width * tile_height, pdev_imag[sense], 1, &result_imag);
+    cublasStatus_t status = cublasDnrm2(handle, tile_width * tile_height, pdev_real[state_index][sense], 1, &norm2);
+    status = cublasDnrm2(handle, tile_width * tile_height, pdev_imag[state_index][sense], 1, &result_imag);
     if (status != CUBLAS_STATUS_SUCCESS) {
         my_abort("CuBLAS error");
     }
@@ -833,18 +946,20 @@ void CC2Kernel::wait_for_completion() {
     //normalization
     if(imag_time) {
         double tot_sum = calculate_squared_norm(true);
-        double inverse_norm = 1./sqrt(tot_sum / norm);
-        cublasStatus_t status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_real[sense], 1);
-        status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_imag[sense], 1);
+        double inverse_norm = 1./sqrt(tot_sum / norm[state_index]);
+        cublasStatus_t status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_real[state_index][sense], 1);
+        status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_imag[state_index][sense], 1);
         if (status != CUBLAS_STATUS_SUCCESS) {
             my_abort("CuBLAS error");
         }
     }
-}
+    if (two_wavefunctions) {
+        if (state_index == 0) {
+          sense = 1 - sense;
+        }
+        state_index = 1 - state_index;
+    }
 
-void CC2Kernel::copy_results() {
-    CUDA_SAFE_CALL(cudaMemcpy(p_real, pdev_real[sense], tile_width * tile_height * sizeof(double), cudaMemcpyDeviceToHost));
-    CUDA_SAFE_CALL(cudaMemcpy(p_imag, pdev_imag[sense], tile_width * tile_height * sizeof(double), cudaMemcpyDeviceToHost));
 }
 
 void CC2Kernel::get_sample(size_t dest_stride, size_t x, size_t y,
@@ -855,8 +970,12 @@ void CC2Kernel::get_sample(size_t dest_stride, size_t x, size_t y,
     assert(y < tile_height);
     assert(x + width <= tile_width);
     assert(y + height <= tile_height);
-    CUDA_SAFE_CALL(cudaMemcpy2D(dest_real, dest_stride * sizeof(double), &(pdev_real[sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost));
-    CUDA_SAFE_CALL(cudaMemcpy2D(dest_imag, dest_stride * sizeof(double), &(pdev_imag[sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost));
+    CUDA_SAFE_CALL(cudaMemcpy2D(dest_real, dest_stride * sizeof(double), &(pdev_real[0][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost));
+    CUDA_SAFE_CALL(cudaMemcpy2D(dest_imag, dest_stride * sizeof(double), &(pdev_imag[0][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost));
+    if (dest_real2 != 0) {
+        CUDA_SAFE_CALL(cudaMemcpy2D(dest_real2, dest_stride * sizeof(double), &(pdev_real[1][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost));
+        CUDA_SAFE_CALL(cudaMemcpy2D(dest_imag2, dest_stride * sizeof(double), &(pdev_imag[1][sense][y * tile_width + x]), tile_width * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost));
+    }
 }
 
 void CC2Kernel::start_halo_exchange() {
@@ -875,11 +994,11 @@ void CC2Kernel::finish_halo_exchange() {
     int width = halo_x;	// The number of columns of the matrix
     int stride = tile_width;	// The combined width of the matrix with the halo
     offset = (inner_start_y - start_y) * tile_width + inner_end_x - halo_x - start_x;
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(right_real_send, width * sizeof(double), &(pdev_real[sense][offset]), stride * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream1));
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(right_imag_send, width * sizeof(double), &(pdev_imag[sense][offset]), stride * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream1));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(right_real_send, width * sizeof(double), &(pdev_real[state_index][sense][offset]), stride * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream1));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(right_imag_send, width * sizeof(double), &(pdev_imag[state_index][sense][offset]), stride * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream1));
     offset = (inner_start_y - start_y) * tile_width + halo_x;
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(left_real_send, width * sizeof(double), &(pdev_real[sense][offset]), stride * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream1));
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(left_imag_send, width * sizeof(double), &(pdev_imag[sense][offset]), stride * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream1));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(left_real_send, width * sizeof(double), &(pdev_real[state_index][sense][offset]), stride * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream1));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(left_imag_send, width * sizeof(double), &(pdev_imag[state_index][sense][offset]), stride * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream1));
 
     // Halo copy: UP/DOWN
     height = halo_y;	// The vertical halo in rows
@@ -887,11 +1006,11 @@ void CC2Kernel::finish_halo_exchange() {
     stride = tile_width;	// The combined width of the matrix with the halo
 
     offset = (inner_end_y - halo_y - start_y) * tile_width;
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(bottom_real_send, width * sizeof(double), &(pdev_real[sense][offset]), stride * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream1));
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(bottom_imag_send, width * sizeof(double), &(pdev_imag[sense][offset]), stride * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream1));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(bottom_real_send, width * sizeof(double), &(pdev_real[state_index][sense][offset]), stride * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream1));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(bottom_imag_send, width * sizeof(double), &(pdev_imag[state_index][sense][offset]), stride * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream1));
     offset = halo_y * tile_width;
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(top_real_send, width * sizeof(double), &(pdev_real[sense][offset]), stride * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream1));
-    CUDA_SAFE_CALL(cudaMemcpy2DAsync(top_imag_send, width * sizeof(double), &(pdev_imag[sense][offset]), stride * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream1));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(top_real_send, width * sizeof(double), &(pdev_real[state_index][sense][offset]), stride * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream1));
+    CUDA_SAFE_CALL(cudaMemcpy2DAsync(top_imag_send, width * sizeof(double), &(pdev_imag[state_index][sense][offset]), stride * sizeof(double), width * sizeof(double), height, cudaMemcpyDeviceToHost, stream1));
 
     cudaStreamSynchronize(stream1);
 
@@ -964,13 +1083,13 @@ void CC2Kernel::finish_halo_exchange() {
 	if(periods[1] != 0 || MPI) {
 		offset = (inner_start_y - start_y) * tile_width;
 		if (neighbors[LEFT] >= 0) {
-			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), left_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), left_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[state_index][sense][offset]), stride * sizeof(double), left_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[state_index][sense][offset]), stride * sizeof(double), left_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
 		}
 		offset = (inner_start_y - start_y) * tile_width + inner_end_x - start_x;
 		if (neighbors[RIGHT] >= 0) {
-			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), right_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), right_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[state_index][sense][offset]), stride * sizeof(double), right_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[state_index][sense][offset]), stride * sizeof(double), right_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
 		}
 	}
 
@@ -981,15 +1100,45 @@ void CC2Kernel::finish_halo_exchange() {
 	if(periods[0] != 0 || MPI) {
 		offset = 0;
 		if (neighbors[UP] >= 0) {
-			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), top_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), top_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[state_index][sense][offset]), stride * sizeof(double), top_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[state_index][sense][offset]), stride * sizeof(double), top_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
 		}
 
 		offset = (inner_end_y - start_y) * tile_width;
 		if (neighbors[DOWN] >= 0) {
-			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[sense][offset]), stride * sizeof(double), bottom_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[sense][offset]), stride * sizeof(double), bottom_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[state_index][sense][offset]), stride * sizeof(double), bottom_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[state_index][sense][offset]), stride * sizeof(double), bottom_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
 		}
 	}
 }
 
+void CC2Kernel::rabi_coupling(double var, double delta_t) {
+    double norm_omega = sqrt(coupling_const[3] * coupling_const[3] + coupling_const[4] * coupling_const[4]);
+    double cc, cs_r, cs_i;
+    if(imag_time) {
+        /*
+        cc = cosh(- delta_t * var * norm_omega);
+        if (norm_omega == 0) {
+            cs_r = 0;
+            cs_i = 0;
+        }
+        else {
+            cs_r = coupling_const[3] / norm_omega * sinh(- delta_t * var * norm_omega);
+            cs_i = coupling_const[4] / norm_omega * sinh(- delta_t * var * norm_omega);
+        }
+        rabi_coupling_imaginary(tile_width, tile_width, tile_height, cc, cs_r, cs_i, p_real[0][sense], p_imag[0][sense], p_real[1][sense], p_imag[1][sense]);*/
+    }
+    else {
+        /*
+        cc = cos(- delta_t * var * norm_omega);
+        if (norm_omega == 0) {
+            cs_r = 0;
+            cs_i = 0;
+        }
+        else {
+            cs_r = coupling_const[3] / norm_omega * sin(- delta_t * var * norm_omega);
+            cs_i = coupling_const[4] / norm_omega * sin(- delta_t * var * norm_omega);
+        }
+        rabi_coupling_real(tile_width, tile_width, tile_height, cc, cs_r, cs_i, p_real[0][sense], p_imag[0][sense], p_real[1][sense], p_imag[1][sense]);*/
+    }
+}
