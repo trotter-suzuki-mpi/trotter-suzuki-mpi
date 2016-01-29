@@ -13,13 +13,13 @@ void my_test<F>::free_particle_test() {
 	double tot_energy = solver->get_total_energy();
 	double norm = solver->get_squared_norm();
 	delete solver;
-    delete hamiltonian;
-    delete state;
-    delete grid;
-    //Check
-    CPPUNIT_ASSERT( std::abs(ini_tot_energy - tot_energy) < TOLERANCE );
-    CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
-    std::cout << "TEST FUNCTION: free_particle_test -> PASSED! " << std::endl;
+  delete hamiltonian;
+  delete state;
+  delete grid;
+  //Check
+  CPPUNIT_ASSERT( std::abs(ini_tot_energy - tot_energy) < TOLERANCE );
+  CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
+  std::cout << "TEST FUNCTION: free_particle_test -> PASSED! " << std::endl;
 }
 
 template<class F>
@@ -35,9 +35,9 @@ void my_test<F>::harmonic_oscillator_test() {
 	double tot_energy = solver->get_total_energy();
 	double norm = solver->get_squared_norm();
 	delete solver;
-    delete hamiltonian;
-    delete state;
-    delete grid;
+  delete hamiltonian;
+  delete state;
+  delete grid;
 	//Check
 	CPPUNIT_ASSERT( std::abs(ini_tot_energy - tot_energy) < TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
@@ -57,9 +57,9 @@ void my_test<F>::imaginary_harmonic_oscillator_test() {
 	double tot_energy = solver->get_total_energy();
 	double norm = solver->get_squared_norm();
 	delete solver;
-    delete hamiltonian;
-    delete state;
-    delete grid;
+  delete hamiltonian;
+  delete state;
+  delete grid;
 	//Check
 	CPPUNIT_ASSERT( std::abs(std_energy - tot_energy) < TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
@@ -217,10 +217,6 @@ void my_test<F>::imaginary_mixed_BEC_test() {
 	delete state2;
 	delete grid;
 	//Check
-  std::cout << this->kernel_type << "\n";
-  std::cout << std_norm1 << " " << norm1 << "\n";
-  std::cout << std_norm2 << " " << norm2 << "\n";
-  std::cout << ini_norm << " " << norm << "\n";
 	CPPUNIT_ASSERT( std::abs(ini_tot_energy - tot_energy) < TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(std_norm1 - norm1) < NORM_TOLERANCE );
@@ -235,5 +231,9 @@ void CpuKernelTest::setUp() {
 #ifdef CUDA
 void GpuKernelTest::setUp() {
     this->kernel_type = "gpu";
+}
+
+void HybridKernelTest::setUp() {
+    this->kernel_type = "hybrid";
 }
 #endif
