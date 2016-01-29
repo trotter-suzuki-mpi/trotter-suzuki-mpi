@@ -15,8 +15,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
-#include <stdio.h>
 #include "common.h"
 #include "kernel.h"
 
@@ -70,7 +68,6 @@ HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian
     inner_end_y = grid->inner_end_y;
     tile_width = end_x - start_x;
     tile_height = end_y - start_y;
-
     // The indices of the last blocks are necessary, because their sizes
     // are different from the rest of the blocks
     size_t last_block_start_x = ((tile_width - block_width) / (block_width - 2 * halo_x) + 1) * (block_width - 2 * halo_x);
@@ -78,9 +75,8 @@ HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian
     size_t last_block_width = tile_width - last_block_start_x;
     size_t last_block_height = tile_height - last_block_start_y;
 
-    gpu_tile_width = tile_width - block_width - last_block_width + 4 * halo_x;
+    gpu_tile_width = tile_width - (block_width - last_block_width + 4 * halo_x);
     gpu_start_x = block_width - 2 * halo_x;
-
     setDevice(rank
 #ifdef HAVE_MPI
               , cartcomm
@@ -103,23 +99,16 @@ HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian
     if (n_cpu_rows > 0) {
         n_bands_on_cpu = (n_cpu_rows + (block_height - 2 * halo_y) - 1) / (block_height - 2 * halo_y);
     }
-#ifdef DEBUG
-    printf("Max GPU rows: %d\n", max_gpu_rows);
-    printf("GPU columns: %d\n", gpu_tile_width);
-    printf("CPU rows %d\n", n_cpu_rows);
-    printf("%d\n", n_bands_on_cpu);
-#endif
-    gpu_tile_height = tile_height - (n_bands_on_cpu + 1) * (block_height - 2 * halo_y) - last_block_height + 2 * halo_y;
+    gpu_tile_height = tile_height + 2 * halo_y - (n_bands_on_cpu + 1) * (block_height - 2 * halo_y) - last_block_height;
     gpu_start_y = (n_bands_on_cpu + 1) * (block_height - 2 * halo_y);
-#ifdef DEBUG
-    printf("%d %d %d %d\n", gpu_start_x, gpu_tile_width, gpu_start_y, gpu_tile_height);
-#endif
+    if (tile_height+2*halo_y  - (n_bands_on_cpu+1)* (block_height-2*halo_y) - last_block_height < 0) {
+        my_abort("The lattice is two small for the hybrid kernel");
+    }
 
     p_real[0] = state->p_real;
     p_imag[0] = state->p_imag;
     p_real[1] = new double[tile_width * tile_height];
     p_imag[1] = new double[tile_width * tile_height];
-
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[0]), gpu_tile_width * gpu_tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_real[1]), gpu_tile_width * gpu_tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[0]), gpu_tile_width * gpu_tile_height * sizeof(double)));
@@ -158,12 +147,8 @@ void HybridKernel::update_potential(double *_external_pot_real, double *_externa
 }
 
 HybridKernel::~HybridKernel() {
-    delete[] p_real[0];
     delete[] p_real[1];
-    delete[] p_imag[0];
     delete[] p_imag[1];
-    delete[] external_pot_real;
-    delete[] external_pot_imag;
 
     CUDA_SAFE_CALL(cudaFree(pdev_real[0]));
     CUDA_SAFE_CALL(cudaFree(pdev_real[1]));
@@ -202,7 +187,9 @@ void HybridKernel::run_kernel_on_halo() {
     numBlocks.x = (gpu_tile_width  + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x);
     numBlocks.y = (gpu_tile_height + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y);
 
-    cc2kernel_wrapper(gpu_tile_width, gpu_tile_height, -BLOCK_X + 3 * halo_x, -BLOCK_Y + 3 * halo_y, halo_x, halo_y, numBlocks, threadsPerBlock, stream, a[state_index], b[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical, imag_time);
+    void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, double a, double b, double coupling_a, double alpha_x, double alpha_y, const double * __restrict__ dev_external_pot_real, const double * __restrict__ dev_external_pot_imag, const double * __restrict__ pdev_real, const double * __restrict__ pdev_imag, double * __restrict__ pdev2_real, double * __restrict__ pdev2_imag, int inner, int horizontal, int vertical, bool imag_time);
+
+    cc2kernel_wrapper(gpu_tile_width, gpu_tile_height, 3*halo_x-BLOCK_X, 3*halo_y-BLOCK_Y, halo_x, halo_y, numBlocks, threadsPerBlock, stream, a[state_index], b[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real, dev_external_pot_imag, pdev_real[sense], pdev_imag[sense], pdev_real[1 - sense], pdev_imag[1 - sense], inner, horizontal, vertical, imag_time);
 
     // The CPU calculates the halo
     inner = 0;

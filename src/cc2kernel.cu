@@ -17,12 +17,8 @@
  */
 
 #undef _GLIBCXX_ATOMIC_BUILTINS
-#include <iostream>
-#include <stdexcept>
 #include <sstream>
 #include <cassert>
-#include <vector>
-#include <map>
 #include "common.h"
 #include "kernel.h"
 
