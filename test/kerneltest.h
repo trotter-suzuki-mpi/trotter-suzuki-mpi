@@ -55,7 +55,7 @@ public:
     void setUp();
 };
 CPPUNIT_TEST_SUITE_REGISTRATION(my_test<GpuKernelTest>);
-// CPPUNIT_TEST_SUITE_REGISTRATION(my_test<HybridKernelTest>);
+CPPUNIT_TEST_SUITE_REGISTRATION(my_test<HybridKernelTest>);
 #endif
 
 #endif
