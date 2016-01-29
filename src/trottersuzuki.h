@@ -45,8 +45,9 @@ public:
 	    @param [in] dim              Linear dimension of the squared lattice.
 	    @param [in] length_x         Physical length of the lattice's side along the x axis.
 	    @param [in] length_y         Physical length of the lattice's side along the y axis.
-	    @param [in] periodic_x_axis  Boundary condition along the x axis (false=close, true=periodic).
-	    @param [in] periodic_y_axis  Boundary condition along the y axis (false=close, true=periodic).
+	    @param [in] periodic_x_axis  Boundary condition along the x axis (false=closed, true=periodic).
+	    @param [in] periodic_y_axis  Boundary condition along the y axis (false=closed, true=periodic).
+	    @param [in] angular_velocity Angular velocity of the frame of reference.
 	 */
     Lattice(int dim=100, double length_x=20., double length_y=20.,
             bool periodic_x_axis=false, bool periodic_y_axis=false, double angular_velocity=0.);
@@ -109,7 +110,7 @@ public:
     void write_to_file(string fileprefix /** [in] prefix name of the file */);    ///< Write to a file the wave function.
     void write_particle_density(string fileprefix /** [in] prefix name of the file */);    ///< Write to a file the squared norm of the wave function.
     void write_phase(string fileprefix /** [in] prefix name of the file */);    ///< Write to a file the phase of the wave function.
-    bool expected_values_updated;    ///< Whether the expected values fo the state object are updated with respect to the last evolution.
+    bool expected_values_updated;    ///< Whether the expected values of the state object are updated with respect to the last evolution.
 
 protected:
     bool self_init;    ///< Whether the p_real and p_imag matrices have been initialized from the State constructor or not.
@@ -126,7 +127,6 @@ protected:
  *
  * This class is a child of State class.
  */
-
 class ExponentialState: public State {
 public:
 	/**
@@ -153,7 +153,6 @@ private:
  *
  * This class is a child of State class.
  */
-
 class GaussianState: public State {
 public:
 	/**
@@ -185,7 +184,6 @@ private:
  *
  * This class is a child of State class.
  */
-
 class SinusoidState: public State {
 public:
 	/**
@@ -219,7 +217,7 @@ public:
 		Construct the external potential.
 
 		@param [in] grid             Lattice object.
-		@param [in] filename         Name of the file that store the external potential matrix.
+		@param [in] filename         Name of the file that stores the external potential matrix.
 	 */
     Potential(Lattice *grid, char *filename);
     /**
@@ -249,10 +247,8 @@ public:
 
 protected:
     double current_evolution_time;    ///< Amount of time evolved since the beginning of the evolution.
-
     double (*static_potential)(double x, double y);    ///< Function of the static external potential.
     double (*evolving_potential)(double x, double y, double t);    ///< Function of the time-dependent external potential.
-
     bool self_init;    ///< Whether the external potential matrix has been initialized from the Potential constructor or not.
     bool is_static;    ///< Whether the external potential is static or time-dependent.
 };
@@ -417,11 +413,11 @@ public:
     ~Solver();
     void evolve(int iterations, bool imag_time=false);    ///< Evolve the state of the system.
     double get_total_energy(void);    ///< Get the total energy of the system.
-    double get_squared_norm(size_t which=3);    ///< Get the squared norm of the state (default: total wave-function).
-    double get_kinetic_energy(size_t which=3);    ///< Get the kinetic energy of the system.
-    double get_potential_energy(size_t which=3);    ///< Get the potential energy of the system.
-    double get_rotational_energy(size_t which=3);    ///< Get the rotational energy of the system.
-    double get_intra_species_energy(size_t which=3);    ///< Get the intra-particles interaction energy of the system.
+    double get_squared_norm(size_t which=3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);    ///< Get the squared norm of the state (default: total wave-function).
+    double get_kinetic_energy(size_t which=3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);    ///< Get the kinetic energy of the system.
+    double get_potential_energy(size_t which=3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);    ///< Get the potential energy of the system.
+    double get_rotational_energy(size_t which=3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);    ///< Get the rotational energy of the system.
+    double get_intra_species_energy(size_t which=3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);    ///< Get the intra-particles interaction energy of the system.
     double get_inter_species_energy(void);    ///< Get the inter-particles interaction energy of the system.
     double get_rabi_energy(void);    ///< Get the Rabi energy of the system.
 private:

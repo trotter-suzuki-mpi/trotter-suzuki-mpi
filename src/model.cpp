@@ -47,7 +47,7 @@ double const_potential(double x, double y) {
 
 Lattice::Lattice(int dim, double _length_x, double _length_y,
                  bool periodic_x_axis, bool periodic_y_axis,
-                 double omega): length_x(_length_x), length_y(_length_y) {
+                 double angular_velocity): length_x(_length_x), length_y(_length_y) {
     delta_x = length_x / double(dim);
     delta_y = length_y / double(dim);
     periods[0] = (int) periodic_y_axis;
@@ -65,8 +65,8 @@ Lattice::Lattice(int dim, double _length_x, double _length_y,
     mpi_dims[0] = mpi_dims[1] = 1;
     mpi_coords[0] = mpi_coords[1] = 0;
 #endif
-    halo_x = (omega == 0. ? 4 : 8);
-    halo_y = (omega == 0. ? 4 : 8);
+    halo_x = (angular_velocity == 0. ? 4 : 8);
+    halo_y = (angular_velocity == 0. ? 4 : 8);
     global_dim_x = dim + periods[1] * 2 * halo_x;
     global_dim_y = dim + periods[0] * 2 * halo_y;
     global_no_halo_dim_x = dim;
