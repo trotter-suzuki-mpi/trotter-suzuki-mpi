@@ -217,6 +217,10 @@ void my_test<F>::imaginary_mixed_BEC_test() {
 	delete state2;
 	delete grid;
 	//Check
+  std::cout << this->kernel_type << "\n";
+  std::cout << std_norm1 << " " << norm1 << "\n";
+  std::cout << std_norm2 << " " << norm2 << "\n";
+  std::cout << ini_norm << " " << norm << "\n";
 	CPPUNIT_ASSERT( std::abs(ini_tot_energy - tot_energy) < TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(std_norm1 - norm1) < NORM_TOLERANCE );
