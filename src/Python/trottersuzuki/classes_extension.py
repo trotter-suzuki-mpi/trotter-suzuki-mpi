@@ -45,9 +45,7 @@ class State(_State):
                 idx += delta_x
             idy += delta_y
             
-        real_fl = real[::-1]
-        imag_fl = imag[::-1]
-        self.init_state_matrix(real_fl, imag_fl)
+        self.init_state_matrix(real, imag)
         
     def imprint(self, function):
         
@@ -71,9 +69,7 @@ class State(_State):
                 idx += delta_x
             idy += delta_y
             
-        real_fl = real[::-1]
-        imag_fl = imag[::-1]
-        self.imprint_matrix(real_fl, imag_fl)
+        self.imprint_matrix(real, imag)
         
 class GaussianState(_GaussianState):
     
@@ -99,9 +95,7 @@ class GaussianState(_GaussianState):
                 idx += delta_x
             idy += delta_y
         
-        real_fl = real[::-1]
-        imag_fl = imag[::-1]
-        self.imprint_matrix(real_fl, imag_fl)
+        self.imprint_matrix(real, imag)
         
 class SinusoidState(_SinusoidState):
     
@@ -127,9 +121,7 @@ class SinusoidState(_SinusoidState):
                 idx += delta_x
             idy += delta_y
             
-        real_fl = real[::-1]
-        imag_fl = imag[::-1]
-        self.imprint_matrix(real_fl, imag_fl)
+        self.imprint_matrix(real, imag)
 
 class ExponentialState(_ExponentialState):
     
@@ -155,9 +147,7 @@ class ExponentialState(_ExponentialState):
                 idx += delta_x
             idy += delta_y
         
-        real_fl = real[::-1]
-        imag_fl = imag[::-1]
-        self.imprint_matrix(real_fl, imag_fl)
+        self.imprint_matrix(real, imag)
         
 class Potential(_Potential):
     
@@ -180,5 +170,4 @@ class Potential(_Potential):
                 idx += delta_x
             idy += delta_y
         
-        potential_fl = potential[::-1]
-        self.init_potential_matrix(potential_fl)
+        self.init_potential_matrix(potential)
