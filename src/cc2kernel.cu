@@ -593,6 +593,40 @@ __global__ void imag_cc2kernel(size_t tile_width, size_t tile_height, size_t off
     }
 }
 
+__global__ void gpu_rabi_coupling_real(size_t width, size_t height,
+                                       double cc, double cs_r, double cs_i,
+                                       double *p_real, double *p_imag,
+                                       double *pb_real, double *pb_imag) {
+   int idx = blockDim.x * blockIdx.x + threadIdx.x;
+   double real, imag;
+   /* The test shouldn't be necessary */
+   if (blockIdx.x < height && threadIdx.x < width) {
+        real = p_real[idx];
+        imag = p_imag[idx];
+        p_real[idx] = cc * real - cs_i * pb_real[idx] - cs_r * pb_imag[idx];
+        p_imag[idx] = cc * imag + cs_r * pb_real[idx] - cs_i * pb_imag[idx];
+        pb_real[idx] = cc * pb_real[idx] + cs_i * real - cs_r * imag;
+        pb_imag[idx] = cc * pb_imag[idx] + cs_r * real + cs_i * imag;
+  }
+}
+
+__global__ void gpu_rabi_coupling_imag(size_t width, size_t height,
+                                       double cc, double cs_r, double cs_i,
+                                       double *p_real, double *p_imag,
+                                       double *pb_real, double *pb_imag) {
+   int idx = blockDim.x * blockIdx.x + threadIdx.x;
+   double real, imag;
+   /* The test shouldn't be necessary */
+   if (blockIdx.x < height && threadIdx.x < width) {
+        real = p_real[idx];
+        imag = p_imag[idx];
+        p_real[idx] = cc * real + cs_r * pb_real[idx] - cs_i * pb_imag[idx];
+        p_imag[idx] = cc * imag + cs_i * pb_real[idx] + cs_r * pb_imag[idx];
+        pb_real[idx] = cc * pb_real[idx] + cs_r * real + cs_i * imag;
+        pb_imag[idx] = cc * pb_imag[idx] - cs_i * real + cs_r * imag;
+  }
+}
+
 // Wrapper function for the hybrid kernel
 void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, double a, double b, double coupling_a, double alpha_x, double alpha_y, const double * __restrict__ dev_external_pot_real, const double * __restrict__ dev_external_pot_imag, const double * __restrict__ pdev_real, const double * __restrict__ pdev_imag, double * __restrict__ pdev2_real, double * __restrict__ pdev2_imag, int inner, int horizontal, int vertical, bool imag_time) {
     if(imag_time)
@@ -944,7 +978,7 @@ double CC2Kernel::calculate_squared_norm(bool global) {
 void CC2Kernel::wait_for_completion() {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
     //normalization
-    if(imag_time) {
+    if (!two_wavefunctions && imag_time && norm[state_index] != 0) {
         double tot_sum = calculate_squared_norm(true);
         double inverse_norm = 1./sqrt(tot_sum / norm[state_index]);
         cublasStatus_t status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_real[state_index][sense], 1);
@@ -1116,7 +1150,6 @@ void CC2Kernel::rabi_coupling(double var, double delta_t) {
     double norm_omega = sqrt(coupling_const[3] * coupling_const[3] + coupling_const[4] * coupling_const[4]);
     double cc, cs_r, cs_i;
     if(imag_time) {
-        /*
         cc = cosh(- delta_t * var * norm_omega);
         if (norm_omega == 0) {
             cs_r = 0;
@@ -1126,10 +1159,11 @@ void CC2Kernel::rabi_coupling(double var, double delta_t) {
             cs_r = coupling_const[3] / norm_omega * sinh(- delta_t * var * norm_omega);
             cs_i = coupling_const[4] / norm_omega * sinh(- delta_t * var * norm_omega);
         }
-        rabi_coupling_imaginary(tile_width, tile_width, tile_height, cc, cs_r, cs_i, p_real[0][sense], p_imag[0][sense], p_real[1][sense], p_imag[1][sense]);*/
+        gpu_rabi_coupling_imag<<<tile_height, tile_width>>>(tile_width, tile_height, cc, cs_r, cs_i,
+                                                            pdev_real[0][sense], pdev_imag[0][sense],
+                                                            pdev_real[1][sense], pdev_imag[1][sense]);
     }
     else {
-        /*
         cc = cos(- delta_t * var * norm_omega);
         if (norm_omega == 0) {
             cs_r = 0;
@@ -1139,6 +1173,8 @@ void CC2Kernel::rabi_coupling(double var, double delta_t) {
             cs_r = coupling_const[3] / norm_omega * sin(- delta_t * var * norm_omega);
             cs_i = coupling_const[4] / norm_omega * sin(- delta_t * var * norm_omega);
         }
-        rabi_coupling_real(tile_width, tile_width, tile_height, cc, cs_r, cs_i, p_real[0][sense], p_imag[0][sense], p_real[1][sense], p_imag[1][sense]);*/
+        gpu_rabi_coupling_real<<<tile_height, tile_width>>>(tile_width, tile_height, cc, cs_r, cs_i,
+                                                            pdev_real[0][sense], pdev_imag[0][sense],
+                                                            pdev_real[1][sense], pdev_imag[1][sense]);
     }
 }
