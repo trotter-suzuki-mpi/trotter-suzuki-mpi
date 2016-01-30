@@ -81,7 +81,7 @@ if test -z "${MPI_DIR}";	then
 	pathlibs="$(echo $LD_LIBRARY_PATH|sed -e 's/:/ /g')"
 	counter=1
 	end=no
-  CANDIDATES="/usr"
+  CANDIDATES="/usr /usr/lib/openmpi"
 	until [test x"$end" = x"yes"]
 	do
 		pathlib="$(echo $pathlibs | awk -v awk_var=$counter '{print $awk_var}' )"
