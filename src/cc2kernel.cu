@@ -18,6 +18,8 @@
 
 #undef _GLIBCXX_ATOMIC_BUILTINS
 #include <sstream>
+#include <vector>
+#include <map>
 #include <cassert>
 #include "common.h"
 #include "kernel.h"
