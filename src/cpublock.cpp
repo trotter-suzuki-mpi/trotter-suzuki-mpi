@@ -430,13 +430,13 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     b = new double [1];
     coupling_const = new double [3];
     norm = new double [1];
-
     a[0] = _a;
     b[0] = _b;
     coupling_const[0] = hamiltonian->coupling_a * delta_t;
     coupling_const[1] = 0.;
     coupling_const[2] = 0.;
     norm[0] = _norm;
+
 #ifdef HAVE_MPI
     cartcomm = grid->cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
@@ -511,6 +511,7 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
     coupling_const[3] = 0.5 * hamiltonian->omega_r;
     coupling_const[4] = 0.5 * hamiltonian->omega_i;
     periods = grid->periods;
+
 #ifdef HAVE_MPI
     cartcomm = grid->cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
@@ -632,7 +633,7 @@ void CPUBlock::run_kernel_on_halo() {
     }
 }
 
-double CPUBlock::calculate_squared_norm(bool global) {
+double CPUBlock::calculate_squared_norm(bool global) const {
     double norm2 = 0.;
 #ifndef HAVE_MPI
     #pragma omp parallel for reduction(+:norm2)
@@ -670,7 +671,6 @@ void CPUBlock::wait_for_completion() {
             }
         }
     }
-
     if (two_wavefunctions) {
         if (state_index == 0) {
           sense = 1 - sense;

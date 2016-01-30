@@ -366,7 +366,7 @@ public:
     virtual void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2=0, double * dest_imag2=0) const = 0;    ///< Get the evolved wave function.
     virtual void normalization() = 0;    ///< Normalization of the two components wave function.
     virtual void rabi_coupling(double var, double delta_t) = 0;    ///< Perform the evolution regarding the Rabi coupling.
-    virtual double calculate_squared_norm(bool global=true) = 0;    ///< Calculate the squared norm of the wave function.
+    virtual double calculate_squared_norm(bool global=true) const = 0;    ///< Calculate the squared norm of the wave function.
     virtual bool runs_in_place() const = 0;
     virtual string get_name() const = 0;				///< Get kernel name.
     virtual void update_potential(double *_external_pot_real, double *_external_pot_imag) = 0;    ///< Update the evolution matrix, regarding the external potential, at time t.

@@ -95,7 +95,7 @@ python_clean:
 	-rm -rf Python/COPYING Python/trottersuzuki/src Python/*.pyc Python/trottersuzuki/*.pyc Python/trottersuzuki/*.h Python/trottersuzuki/*.cpp  Python/trottersuzuki/*.cxx Python/dist Python/trottersuzuki.egg* Python/build Python/trottersuzuki/trottersuzuki.py Python/trottersuzuki/*.so
 
 clean: python_clean matlab_clean
-	-rm -f trottersuzuki trottersuzuki.so $(OBJS) 1>/dev/null
+	-rm -f trottersuzuki libtrottersuzuki.so $(OBJS) 1>/dev/null
 
 install: all
 	$(INSTALL) -d $(DESTDIR)$(bindir)

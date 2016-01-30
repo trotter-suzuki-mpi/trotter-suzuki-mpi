@@ -667,7 +667,7 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     external_pot_real[0] = _external_pot_real;
     external_pot_imag[0] = _external_pot_imag;
     two_wavefunctions = false;
-        
+
     int rank;
 #ifdef HAVE_MPI
     cartcomm = grid->cartcomm;
@@ -738,9 +738,9 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
 
 }
 
-CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2, 
-                     Hamiltonian2Component *hamiltonian, 
-                     double **_external_pot_real, double **_external_pot_imag, 
+CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2,
+                     Hamiltonian2Component *hamiltonian,
+                     double **_external_pot_real, double **_external_pot_imag,
                      double *_a, double *_b, double delta_t,
                      double *_norm, bool _imag_time):
     threadsPerBlock(BLOCK_X, STRIDE_Y),
@@ -774,7 +774,7 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2,
     external_pot_real[1] = _external_pot_real[1];
     external_pot_imag[1] = _external_pot_imag[1];
     two_wavefunctions = true;
-        
+
     int rank;
 #ifdef HAVE_MPI
     cartcomm = grid->cartcomm;
@@ -812,7 +812,7 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2,
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[0][1]), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMemcpy(pdev_real[0][0], p_real[0], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy(pdev_imag[0][0], p_imag[0], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
-    
+
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_real[1]), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_imag[1]), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_real[1], external_pot_real[1], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
@@ -824,7 +824,7 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2,
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[1][1]), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMemcpy(pdev_real[1][0], p_real[1], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy(pdev_imag[1][0], p_imag[1], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
-    
+
     cudaStreamCreate(&stream1);
     cudaStreamCreate(&stream2);
     cublasStatus_t status = cublasCreate(&handle);
@@ -890,7 +890,6 @@ CC2Kernel::~CC2Kernel() {
     CUDA_SAFE_CALL(cudaFree(pdev_imag[0][1]));
     CUDA_SAFE_CALL(cudaFree(dev_external_pot_real[0]));
     CUDA_SAFE_CALL(cudaFree(dev_external_pot_imag[0]));
-
     if (two_wavefunctions) {
         CUDA_SAFE_CALL(cudaFree(pdev_real[1][0]));
         CUDA_SAFE_CALL(cudaFree(pdev_real[1][1]));
@@ -948,7 +947,7 @@ void CC2Kernel::run_kernel() {
 }
 
 
-double CC2Kernel::calculate_squared_norm(bool global) {
+double CC2Kernel::calculate_squared_norm(bool global) const {
     double norm2 = 0., result_imag = 0.;
     cublasStatus_t status = cublasDnrm2(handle, tile_width * tile_height, pdev_real[state_index][sense], 1, &norm2);
     status = cublasDnrm2(handle, tile_width * tile_height, pdev_imag[state_index][sense], 1, &result_imag);

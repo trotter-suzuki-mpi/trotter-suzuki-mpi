@@ -19,9 +19,9 @@
 #include "kernel.h"
 
 // Class methods
-HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian, 
-                           double *_external_pot_real, double *_external_pot_imag, 
-                           double _a, double _b, double delta_t, 
+HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
+                           double *_external_pot_real, double *_external_pot_imag,
+                           double _a, double _b, double delta_t,
                            double _norm, bool _imag_time):
     threadsPerBlock(BLOCK_X, STRIDE_Y),
     external_pot_real(_external_pot_real),
@@ -47,7 +47,7 @@ HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian
     b[0] = _b;
     norm[0] = _norm;
     two_wavefunctions = false;
-    
+
     int rank;
 #ifdef HAVE_MPI
     cartcomm = grid->cartcomm;
@@ -101,7 +101,7 @@ HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian
     }
     gpu_tile_height = tile_height + 2 * halo_y - (n_bands_on_cpu + 1) * (block_height - 2 * halo_y) - last_block_height;
     gpu_start_y = (n_bands_on_cpu + 1) * (block_height - 2 * halo_y);
-    if (tile_height+2*halo_y  - (n_bands_on_cpu+1)* (block_height-2*halo_y) - last_block_height < 0) {
+    if ((int)(tile_height+2*halo_y  - (n_bands_on_cpu+1)* (block_height-2*halo_y) - last_block_height) < 0) {
         my_abort("The lattice is two small for the hybrid kernel");
     }
 
@@ -174,7 +174,7 @@ void HybridKernel::run_kernel() {
         #pragma omp for schedule(runtime) nowait
         for (block_start = block_height - 2 * halo_y; block_start < (int)last_band; block_start += block_height - 2 * halo_y) {
             process_band(false, 0., 0., 0., 0., tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a[state_index], b[state_index], coupling_const[state_index], coupling_const[2], external_pot_real, external_pot_imag, p_real[sense], p_imag[sense], NULL, NULL, p_real[1 - sense], p_imag[1 - sense], inner, sides, imag_time);
-        }   
+        }
     }
     #pragma omp barrier
     sense = 1 - sense;
@@ -256,7 +256,7 @@ void HybridKernel::run_kernel_on_halo() {
     }
 }
 
-double HybridKernel::calculate_squared_norm(bool global) {
+double HybridKernel::calculate_squared_norm(bool global) const {
     CUDA_SAFE_CALL(cudaMemcpy2D(&(p_real[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), pdev_real[sense], gpu_tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyDeviceToHost));
     CUDA_SAFE_CALL(cudaMemcpy2D(&(p_imag[sense][gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), pdev_imag[sense], gpu_tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyDeviceToHost));
     double norm2 = 0.;
@@ -284,7 +284,7 @@ double HybridKernel::calculate_squared_norm(bool global) {
 void HybridKernel::wait_for_completion() {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
     //normalization for imaginary time evolution
-    if(imag_time) {
+    if (imag_time) {
         double tot_sum = calculate_squared_norm(true);
         double _norm = sqrt(tot_sum / norm[state_index]);
 
@@ -299,9 +299,9 @@ void HybridKernel::wait_for_completion() {
     }
 }
 
-void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y, 
-                              size_t width, size_t height, 
-                              double *dest_real, double *dest_imag, 
+void HybridKernel::get_sample(size_t dest_stride, size_t x, size_t y,
+                              size_t width, size_t height,
+                              double *dest_real, double *dest_imag,
                               double *dest_real2, double *dest_imag2) const {
     if ( (x != 0) || (y != 0) || (width != tile_width) || (height != tile_height)) {
         my_abort("Only full tile samples are implemented!\n");
