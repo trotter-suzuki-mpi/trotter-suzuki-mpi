@@ -49,20 +49,20 @@ double omega = 0;
 
 void print_usage() {
     cout << "Usage:\n" \
-              "     trotter [OPTION] -n filename\n" \
-              "Arguments:\n" \
-              "     -m NUMBER     Particle mass (default: " << PARTICLE_MASS << ")\n"\
-              "     -c NUMBER     Coupling constant of the self-interacting term (default: " << COUPLING_CONST << ")\n"\
-              "     -d NUMBER     Matrix dimension (default: " << DIM << ")\n" \
-              "     -l NUMBER     Physical dimension of the square lattice's edge (default: " << EDGE_LENGTH << ")\n" \
-              "     -t NUMBER     Single time step (default: " << SINGLE_TIME_STEP << ")\n" \
-              "     -i NUMBER     Number of iterations before a snapshot (default: " << ITERATIONS << ")\n" \
-              "     -g            Imaginary time evolution to evolve towards the ground state\n" \
-              "     -k STRING     Kernel type (cpu, gpu, or hybrid; default: " << KERNEL_TYPE << "): \n" \
-              "     -s NUMBER     Snapshots are taken at every NUMBER of iterations.\n" \
-              "                   Zero means no snapshots. Default: " << SNAPSHOTS << ".\n"\
-              "     -n STRING     Name of file that defines the initial state.\n"\
-              "     -p STRING     Name of file that stores the potential operator (in coordinate representation)\n";
+         "     trotter [OPTION] -n filename\n" \
+         "Arguments:\n" \
+         "     -m NUMBER     Particle mass (default: " << PARTICLE_MASS << ")\n"\
+         "     -c NUMBER     Coupling constant of the self-interacting term (default: " << COUPLING_CONST << ")\n"\
+         "     -d NUMBER     Matrix dimension (default: " << DIM << ")\n" \
+         "     -l NUMBER     Physical dimension of the square lattice's edge (default: " << EDGE_LENGTH << ")\n" \
+         "     -t NUMBER     Single time step (default: " << SINGLE_TIME_STEP << ")\n" \
+         "     -i NUMBER     Number of iterations before a snapshot (default: " << ITERATIONS << ")\n" \
+         "     -g            Imaginary time evolution to evolve towards the ground state\n" \
+         "     -k STRING     Kernel type (cpu, gpu, or hybrid; default: " << KERNEL_TYPE << "): \n" \
+         "     -s NUMBER     Snapshots are taken at every NUMBER of iterations.\n" \
+         "                   Zero means no snapshots. Default: " << SNAPSHOTS << ".\n"\
+         "     -n STRING     Name of file that defines the initial state.\n"\
+         "     -p STRING     Name of file that stores the potential operator (in coordinate representation)\n";
 }
 
 void process_command_line(int argc, char** argv, int *dim, double *length_x, double *length_y, int *iterations, int *snapshots, string *kernel_type, char *filename, double *delta_t, double *coupling_const, double *particle_mass, char *pot_name, bool *imag_time) {
@@ -75,7 +75,7 @@ void process_command_line(int argc, char** argv, int *dim, double *length_x, dou
     *coupling_const = double(COUPLING_CONST);
     *particle_mass = double(PARTICLE_MASS);
 
-	double length = double(EDGE_LENGTH);
+    double length = double(EDGE_LENGTH);
     int c;
     bool file_supplied = false;
     while ((c = getopt (argc, argv, "gd:hi:k:s:n:t:l:p:c:m:")) != -1) {
@@ -161,9 +161,9 @@ void process_command_line(int argc, char** argv, int *dim, double *length_x, dou
                 my_abort(sstm.str());
             }
         default:
-                stringstream sstm;
-                sstm << "Unknown option -" << optopt;
-                my_abort(sstm.str());
+            stringstream sstm;
+            sstm << "Unknown option -" << optopt;
+            my_abort(sstm.str());
         }
     }
     if(!file_supplied) {
@@ -184,51 +184,52 @@ int main(int argc, char** argv) {
     double delta_t = 0;
     double coupling_a = 0;
     double length_x = 10, length_y = 10;
-    
+
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
     try {
         process_command_line(argc, argv, &dim, &length_x, &length_y, &iterations, &snapshots, &kernel_type, filename, &delta_t, &coupling_a, &particle_mass, pot_name, &imag_time);
-    } catch (runtime_error& e) {
+    }
+    catch (runtime_error& e) {
         cerr << e.what() << endl;
         return 1; // exit is okay here because an MPI runtime would have aborted in my_abort
     }
     //set lattice
     Lattice *grid = new Lattice(dim, length_x, length_y);
 
-	//set hamiltonian
+    //set hamiltonian
     Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass, coupling_a);
 
     //set initial state
     State *state = new State(grid);
     state->loadtxt(filename);
-    
+
     //set evolution
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, kernel_type);
 
     //evolve the state
     for(int count_snap = 0; count_snap <= snapshots; count_snap++) {
 
-      if(count_snap != snapshots) {
+        if(count_snap != snapshots) {
 #ifdef WIN32
-        SYSTEMTIME start;
-        GetSystemTime(&start);
+            SYSTEMTIME start;
+            GetSystemTime(&start);
 #else
-        struct timeval start, end;
-        gettimeofday(&start, NULL);
+            struct timeval start, end;
+            gettimeofday(&start, NULL);
 #endif
-        solver->evolve(iterations, imag_time);
+            solver->evolve(iterations, imag_time);
 #ifdef WIN32
-        SYSTEMTIME end;
-        GetSystemTime(&end);
-        time = (end.wMinute - start.wMinute) * 60000 + (end.wSecond - start.wSecond) * 1000 + (end.wMilliseconds - start.wMilliseconds);
+            SYSTEMTIME end;
+            GetSystemTime(&end);
+            time = (end.wMinute - start.wMinute) * 60000 + (end.wSecond - start.wSecond) * 1000 + (end.wMilliseconds - start.wMilliseconds);
 #else
-        gettimeofday(&end, NULL);
-        time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
+            gettimeofday(&end, NULL);
+            time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
 #endif
-        tot_time += time;
-      }
+            tot_time += time;
+        }
     }
 
     if (grid->mpi_coords[0] == 0 && grid->mpi_coords[1] == 0 && verbose == true) {
