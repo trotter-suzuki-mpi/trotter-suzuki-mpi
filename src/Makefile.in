@@ -29,7 +29,6 @@ NVCC       	   = @NVCC@
 MPI_INC        = @MPI_INC@
 MPI_LIBDIR     = @MPI_LIBDIR@
 MPI_LIBS       = @MPI_LIBS@
-MATLAB_ROOT    = @MATLAB_ROOT@
 MEX_BIN        = @MEX_BIN@
 
 # VPATH-related substitution variables
@@ -38,15 +37,8 @@ VPATH	  = @srcdir@
 
 LIBOBJS=common.o cpublock.o solver.o model.o
 
-MEX_FLAGS=-I./
-MEX_LIBS=-lgomp
-MEX_OBJS=common.o cpublock.o solver.o model.o
-
 ifdef CUDA_LIBS
 	LIBOBJS+=cc2kernel.cu.co hybrid.cu.co
-	MEX_FLAGS+=-I"$(MATLAB_ROOT)/toolbox/distcomp/gpu/extern/include/" -DCUDA
-	MEX_LIBS+=$(CUDA_LDFLAGS) $(CUDA_LIBS) -lnvblas -lmwgpu
-	MEX_OBJS+=cc2kernel.cu.o hybrid.cu.o
 endif
 
 OBJS=$(LIBOBJS) main.o
@@ -64,16 +56,6 @@ trottersuzuki: $(OBJS)
 
 %.cu.co: %.cu
 	$(NVCC) $(DEFS) $(CUDA_CFLAGS) ${MPI_INC} -I$(srcdir) -I.. -o $@ -c $(srcdir)/$<
-
-matlab: lib
-	if [ -e cc2kernel.cu.co ]; then cp cc2kernel.cu.co cc2kernel.cu.o; cp hybrid.cu.co hybrid.cu.o; fi
-	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexSolver.cpp $(MEX_OBJS) $(MEX_LIBS)
-	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexH.cpp ./common.o $(MEX_LIBS)
-	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexK.cpp ./common.o $(MEX_LIBS)
-	$(MEX_BIN) $(MEX_FLAGS) MATLAB/MexNorm.cpp ./common.o $(MEX_LIBS)
-
-matlab_clean:
-	-rm -f Mex*
 
 python:
 	mkdir -p ./Python/trottersuzuki/src
@@ -94,7 +76,7 @@ python_install: python
 python_clean:
 	-rm -rf Python/COPYING Python/trottersuzuki/src Python/*.pyc Python/trottersuzuki/*.pyc Python/trottersuzuki/*.h Python/trottersuzuki/*.cpp  Python/trottersuzuki/*.cxx Python/dist Python/trottersuzuki.egg* Python/build Python/trottersuzuki/trottersuzuki.py Python/trottersuzuki/*.so
 
-clean: python_clean matlab_clean
+clean: python_clean
 	-rm -f trottersuzuki libtrottersuzuki.so $(OBJS) 1>/dev/null
 
 install: all
