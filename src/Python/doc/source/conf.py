@@ -16,8 +16,8 @@ import sys
 import os
 import mock
 
-MOCK_MODULES = ['numpy',  'matplotlib', 'matplotlib.cm', 'matplotlib.pyplot',
-                'matplotlib.collections']
+MOCK_MODULES = ['numpy',  'numpy.core', 'numpy.core.multiarray', 'matplotlib',
+                'matplotlib.cm', 'matplotlib.pyplot', 'matplotlib.collections']
 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
@@ -56,7 +56,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'TrotterSuzuki'
-copyright = u'2015, Peter Wittek, Luca Calderaro'
+copyright = u'2015-2016, Peter Wittek, Luca Calderaro'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
