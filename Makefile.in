@@ -40,6 +40,7 @@ $(distdir).tar.gz: FORCE $(distdir)
 	rm -rf $(distdir)
 
 $(distdir):
+	mkdir -p $(distdir)/doc
 	mkdir -p $(distdir)/examples
 	mkdir -p $(distdir)/src
 	mkdir -p $(distdir)/src/Python
@@ -53,6 +54,7 @@ $(distdir):
 	cp $(srcdir)/README.md $(distdir)
 	cp $(srcdir)/COPYING $(distdir)
 	cp $(srcdir)/CHANGES $(distdir)
+	cp -R $(srcdir)/doc/* $(distdir)/doc/
 	cp $(srcdir)/examples/Makefile.in $(srcdir)/examples/*cpp $(distdir)/examples
 	cp $(srcdir)/src/Makefile.in $(distdir)/src
 	cp $(srcdir)/src/*.c* $(srcdir)/src/*.h $(distdir)/src
