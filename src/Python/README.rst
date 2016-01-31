@@ -7,7 +7,7 @@ Key features of the Python interface:
 
 * Fast execution by parallelization: OpenMP and CUDA are supported.
 * Many-body simulations with non-interacting particles.
-* [Gross-Pitaevskii equation](https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb).
+* `Gross-Pitaevskii equation <https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb>`_.
 * Imaginary time evolution to approximate the ground state.
 * Stationary and time-dependent external potential.
 * NumPy arrays are supported for efficient data exchange.
@@ -15,7 +15,7 @@ Key features of the Python interface:
 
 Usage
 ------
-Documentation is available on [Read the Docs](http://trotter-suzuki-mpi.readthedocs.org). The following code block gives a simple example of initializing a state and calculating the expectation values of the Hamiltonian and kinetic operators and the norm of the state after the evolution.
+Documentation is available on `Read the Docs <http://trotter-suzuki-mpi.readthedocs.org>`_. The following code block gives a simple example of initializing a state and calculating the expectation values of the Hamiltonian and kinetic operators and the norm of the state after the evolution.
 
 .. code-block:: python
 
