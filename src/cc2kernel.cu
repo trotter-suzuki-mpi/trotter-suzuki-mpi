@@ -899,7 +899,12 @@ CC2Kernel::~CC2Kernel() {
         CUDA_SAFE_CALL(cudaFree(pdev_imag[1][1]));
         CUDA_SAFE_CALL(cudaFree(dev_external_pot_real[1]));
         CUDA_SAFE_CALL(cudaFree(dev_external_pot_imag[1]));
+    } else {
+        delete [] a;
+        delete [] b;
+        delete [] norm;
     }
+    delete [] coupling_const;
     cudaStreamDestroy(stream1);
     cudaStreamDestroy(stream2);
 

@@ -127,7 +127,7 @@ void Solver::init_kernel() {
 void Solver::evolve(int iterations, bool _imag_time) {
     if (_imag_time != imag_time || kernel == NULL) {
         imag_time = _imag_time;
-        if(imag_time) {
+        if (imag_time) {
             h_a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
             h_b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
             initialize_exp_potential(delta_t, 0);
@@ -210,7 +210,6 @@ void Solver::evolve(int iterations, bool _imag_time) {
 }
 
 void Solver::calculate_energy_expected_values(void) {
-
 
     double sum_norm2_0 = 0;
     double sum_norm2_1 = 0;
@@ -415,7 +414,7 @@ void Solver::calculate_energy_expected_values(void) {
     delete [] intra_species_energy_mpi;
 
     if (!single_component) {
-    double *norm2_mpi = new double[grid->mpi_procs];
+        double *norm2_mpi = new double[grid->mpi_procs];
         double *kinetic_energy_mpi = new double[grid->mpi_procs];
         double *potential_energy_mpi = new double[grid->mpi_procs];
         double *rotational_energy_mpi = new double[grid->mpi_procs];

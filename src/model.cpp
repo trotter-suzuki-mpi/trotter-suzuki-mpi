@@ -123,8 +123,8 @@ State::State(const State &obj): grid(obj.grid), expected_values_updated(obj.expe
 
 State::~State() {
     if (self_init) {
-        delete p_real;
-        delete p_imag;
+        delete [] p_real;
+        delete [] p_imag;
     }
 }
 
@@ -251,7 +251,7 @@ void State::write_particle_density(string fileprefix) {
     stringstream filename;
     filename << fileprefix << "-density";
     stamp_matrix(grid, get_particle_density(density), filename.str());
-    delete density;
+    delete [] density;
 }
 
 double *State::get_phase(double *_phase) {
@@ -280,7 +280,7 @@ void State::write_phase(string fileprefix) {
     stringstream filename;
     filename << fileprefix << "-phase";
     stamp_matrix(grid, get_phase(phase), filename.str());
-    delete phase;
+    delete [] phase;
 }
 
 void State::calculate_expected_values(void) {

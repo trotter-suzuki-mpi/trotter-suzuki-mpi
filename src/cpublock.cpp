@@ -573,6 +573,12 @@ CPUBlock::~CPUBlock() {
     delete[] p_imag[0][1];
     delete[] p_real[1][1];
     delete[] p_imag[1][1];
+    if (!two_wavefunctions) {
+        delete [] a;
+        delete [] b;
+        delete [] norm;
+    }
+    delete [] coupling_const;
 }
 
 void CPUBlock::run_kernel() {

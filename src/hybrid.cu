@@ -149,7 +149,10 @@ void HybridKernel::update_potential(double *_external_pot_real, double *_externa
 HybridKernel::~HybridKernel() {
     delete[] p_real[1];
     delete[] p_imag[1];
-
+    delete [] a;
+    delete [] b;
+    delete [] norm;
+    delete [] coupling_const;
     CUDA_SAFE_CALL(cudaFree(pdev_real[0]));
     CUDA_SAFE_CALL(cudaFree(pdev_real[1]));
     CUDA_SAFE_CALL(cudaFree(pdev_imag[0]));
