@@ -7,11 +7,11 @@ Expectation values of the Hamiltonian and kinetic operators
 The following code block gives a simple example of initializing a state and calculating the expectation values of the Hamiltonian and kinetic operators and the norm of the state after the evolution.
 
 .. code-block:: python
-			
+
     import numpy as np
     from trottersuzuki import *
 
-    # create a 2D lattice with 100x100 points and 20x20 area
+    # create a 2D lattice
     grid = Lattice(256, 15, 15)
 
     # define an symmetric harmonic potential with unit frequecy
@@ -52,7 +52,7 @@ Imaginary time evolution to approximate the ground-state energy
     import numpy as np
     from trottersuzuki import *
 
-    # create a 2D lattice with 100x100 points and 20x20 area
+    # create a 2D lattice
     grid = Lattice(256, 15, 15)
 
     # define an symmetric harmonic potential with unit frequecy
@@ -129,7 +129,7 @@ This example simulates the evolution of a dark soliton in a Bose-Einstein Conden
     external_potential = get_external_potential(dim)
 
     ####################################
-    # ground state approximation
+    # Ground state approximation
     ####################################
 
     # initial state
@@ -157,7 +157,7 @@ This example simulates the evolution of a dark soliton in a Bose-Einstein Conden
     plt.show()
 
     ####################################
-    # phase imprinting
+    # Phase imprinting
     ####################################
 
     a = 1.98128
@@ -178,7 +178,7 @@ This example simulates the evolution of a dark soliton in a Bose-Einstein Conden
     plt.show()
 
     ####################################
-    # real time evolution
+    # Real time evolution
     ####################################
 
     # evolution variables

@@ -9,7 +9,7 @@ Key features of the Python interface:
 * Many-body simulations with non-interacting particles.
 * [Gross-Pitaevskii equation](https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb).
 * Imaginary time evolution to approximate the ground state.
-* Stationary external potential.
+* Stationary and time-dependent external potential.
 * NumPy arrays are supported for efficient data exchange.
 * Multi-platform: Linux, OS X, and Windows are supported.
 

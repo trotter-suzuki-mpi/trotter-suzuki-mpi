@@ -206,7 +206,7 @@ private:
 };
 
 /**
- * \brief This class defines the external potential, that is used for Hamiltonian class.
+ * \brief This class defines the external potential that is used for Hamiltonian class.
  */
 class Potential {
 public:
@@ -254,7 +254,7 @@ protected:
 };
 
 /**
- * \brief This class defines the external potential, that is used for Hamiltonian class.
+ * \brief This class defines the external potential that is used for Hamiltonian class.
  *
  * This class is a child of Potential class.
  */
