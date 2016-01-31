@@ -7,11 +7,44 @@ Lattice Class
 .. py:class:: Lattice(dim=100, length_x=20.0, length_y=20.0, periodic_x_axis=False, periodic_y_axis=False, angular_velocity=0.0)
    :module: trottersuzuki
 
+   This class defines the lattice structure over which the state and potential
+   matrices are defined.
+
+   As to single-process execution, the lattice is a single tile which can be
+   surrounded by a halo, in the case of periodic boundary conditions.
+
+   Constructors
+   ------------
+   * `Lattice(dim=100, length_x=20.0, length_y=20.0, periodic_x_axis=False, periodic_y_axis=False, angular_velocity=0.0)`
+
+       Construct the Lattice.
+
+       Parameters
+       ----------
+       * `dim` :
+           Linear dimension of the squared lattice.
+       * `length_x` :
+           Physical length of the lattice's side along the x axis.
+       * `length_y` :
+           Physical length of the lattice's side along the y axis.
+       * `periodic_x_axis` :
+           Boundary condition along the x axis (false=closed, true=periodic).
+       * `periodic_y_axis` :
+           Boundary condition along the y axis (false=closed, true=periodic).
+       * `angular_velocity` :
+           Angular velocity of the frame of reference.
+
+   C++ includes: trottersuzuki.h
+
+
 State Classes
 =============
 .. py:class:: State(*args)
    :module: trottersuzuki
 
+   This class defines the quantum state.
+
+   C++ includes: trottersuzuki.h
 
    .. py:method:: State.get_mean_px()
       :module: trottersuzuki
@@ -113,6 +146,37 @@ State Classes
 
 .. py:class:: ExponentialState(_grid, _n_x=1, _n_y=1, _norm=1, _phase=0, _p_real=None, _p_imag=None)
    :module: trottersuzuki
+
+   This class defines a quantum state with exponential like wave function.
+
+   This class is a child of State class.
+
+   Constructors
+   ------------
+   * `ExponentialState(_grid, _n_x=1, _n_y=1, _norm=1, _phase=0, _p_real=None, _p_imag=None)`
+
+       Construct the Lattice.
+
+       Construct the quantum state with exponential like wave function.
+
+       Parameters
+       ----------
+       * `grid` :
+           Lattice object.
+       * `n_x` :
+           First quantum number.
+       * `n_y` :
+           Second quantum number.
+       * `norm` :
+           Squared norm of the quantum state.
+       * `phase` :
+           Relative phase of the wave function.
+       * `p_real` :
+           Pointer to the real part of the wave function.
+       * `p_imag` :
+           Pointer to the imaginary part of the wave function.
+
+   C++ includes: trottersuzuki.h
 
 
    .. py:method:: ExponentialState.get_mean_px()
@@ -216,6 +280,36 @@ State Classes
 .. py:class:: GaussianState(_grid, _omega, _mean_x=0, _mean_y=0, _norm=1, _phase=0, _p_real=None, _p_imag=None)
    :module: trottersuzuki
 
+   This class defines a quantum state with gaussian like wave function.
+
+   This class is a child of State class.
+
+   Constructors
+   ------------
+   * `GaussianState(_grid, _omega, _mean_x=0, _mean_y=0, _norm=1, _phase=0, _p_real=None, _p_imag=None)`
+
+       Construct the quantum state with gaussian like wave function.
+
+       Parameters
+       ----------
+       * `grid` :
+           Lattice object.
+       * `omega` :
+           Gaussian coefficient.
+       * `mean_x` :
+           X coordinate of the gaussian function's center.
+       * `mean_y` :
+           Y coordinate of the gaussian function's center.
+       * `norm` :
+           Squared norm of the state.
+       * `phase` :
+           Relative phase of the wave function.
+       * `p_real` :
+           Pointer to the real part of the wave function.
+       * `p_imag` :
+           Pointer to the imaginary part of the wave function.
+
+   C++ includes: trottersuzuki.h
 
    .. py:method:: GaussianState.get_mean_px()
       :module: trottersuzuki
@@ -318,6 +412,36 @@ State Classes
 .. py:class:: SinusoidState(_grid, _n_x=1, _n_y=1, _norm=1, _phase=0, _p_real=None, _p_imag=None)
    :module: trottersuzuki
 
+   This class defines a quantum state with sinusoidal like wave function.
+
+   This class is a child of State class.
+
+   C++ includes: trottersuzuki.h
+
+   Constructors
+   ------------
+   * `SinusoidState(_grid, _n_x=1, _n_y=1, _norm=1, _phase=0, _p_real=None, _p_imag=None)`
+
+       Construct the quantum state with sinusoidal like wave function.
+
+       Parameters
+       ----------
+       * `grid` :
+           Lattice object.
+       * `n_x` :
+           First quantum number.
+       * `n_y` :
+           Second quantum number.
+       * `norm` :
+           Squared norm of the quantum state.
+       * `phase` :
+           Relative phase of the wave function.
+       * `p_real` :
+           Pointer to the real part of the wave function.
+       * `p_imag` :
+           Pointer to the imaginary part of the wave function.
+
+   C++ includes: trottersuzuki.h
 
    .. py:method:: SinusoidState.get_mean_px()
       :module: trottersuzuki
@@ -420,6 +544,25 @@ Potential Classes
 =================
 .. py:class:: Potential(*args)
    :module: trottersuzuki
+
+   This class defines the external potential that is used for Hamiltonian class.
+
+   C++ includes: trottersuzuki.h
+
+   Constructors
+   ------------
+   * `Potential(*args)`
+
+       Construct the external potential.
+
+       Parameters
+       ----------
+       * `grid` :
+           Lattice object.
+       * `filename` :
+           Name of the file that stores the external potential matrix.
+
+   C++ includes: trottersuzuki.h
 
 
    .. py:method:: Potential.get_value(x, y)
