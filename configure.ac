@@ -46,6 +46,21 @@ else
   SUFFIX=""
 fi
 
+#Setup MPI Paths
+# ------------------------------------------------------------------------------
+AC_ARG_WITH([mpi],
+   [  --with-mpi=PATH    prefix where MPI is installed])
+
+mpi_enabled=no
+if test x"$with_mpi" != x"no" ; then
+    AX_MPI_OPTIONS
+    if test x"$MPI_CXX" != x"none"; then
+      AX_MPI_TESTS
+      CXX=$MPI_CXX
+      mpi_enabled=yes
+    fi
+fi
+
 # Setup CUDA paths
 # ------------------------------------------------------------------------------
 if test -z "$CUDAHOME" ; then
@@ -67,7 +82,7 @@ if test x"$with_cuda" != x"no" ; then
   AC_CHECK_PROG(NVCC_CHECK,nvcc,yes,no,$CUDA_PATH/bin)
   if test x"$NVCC_CHECK" = x"yes" ; then
      cuda_enabled=yes
-     CUDA_CFLAGS="-I$CUDA_PATH/include -use_fast_math -Xptxas "-v" -Xcompiler \"${CXXFLAGS}\""
+     CUDA_CFLAGS="-I$CUDA_PATH/include -use_fast_math -ccbin ${CXX} -Xptxas "-v" -Xcompiler \"${CXXFLAGS}\""
      CXXFLAGS="${CXXFLAGS} -I$CUDA_PATH/include"
      CUDA_LIBS="-lcudart -lcublas"
      if test -e "$CUDA_PATH/lib$SUFFIX"; then
@@ -95,21 +110,6 @@ else
 fi
 
 AM_CONDITIONAL([HAVE_CUDA], [test x"$cuda_enabled" = x"yes"])
-
-#Setup MPI Paths
-# ------------------------------------------------------------------------------
-AC_ARG_WITH([mpi],
-   [  --with-mpi=PATH    prefix where MPI is installed])
-
-mpi_enabled=no
-if test x"$with_mpi" != x"no" ; then
-    AX_MPI_OPTIONS
-    if test x"$MPI_CXX" != x"none"; then
-      AX_MPI_TESTS
-      CXX=$MPI_CXX
-      mpi_enabled=yes
-    fi
-fi
 
 #Setup CppUnit
 #-------------------------------------------------------------------------------
