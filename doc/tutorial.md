@@ -1,7 +1,7 @@
 Tutorial
 ========
 
-This tutorial is about using the command-line interface and the C++ API. If you are interested in the Python or the MATLAB version, refer to [Read the Docs](https://trotter-suzuki-mpi.readthedocs.org) and [FileExchange](https://www.mathworks.com/matlabcentral/fileexchange/51975-mextrotter), respectively.
+This tutorial is about using the command-line interface and the C++ API. If you are interested in the Python version, refer to [Read the Docs](https://trotter-suzuki-mpi.readthedocs.org).
 
 Command-line Interface
 ----------------------
