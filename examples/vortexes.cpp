@@ -24,8 +24,8 @@
 #include "trottersuzuki.h"
 
 #define LENGTH 25
-#define DIM 640
-#define ITERATIONS 1000
+#define DIM 200
+#define ITERATIONS 100
 #define PARTICLES_NUM 1.e+6
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 60
@@ -52,15 +52,15 @@ int main(int argc, char** argv) {
     Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, particle_mass, coupling_const, angular_velocity);
     //set evolution
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, KERNEL_TYPE);
-    
+
     //set file output directory
     stringstream fileprefix;
     string dirname = "vortexesdir";
     mkdir(dirname.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    
+
     fileprefix << dirname << "/file_info.txt";
     ofstream out(fileprefix.str().c_str());
-    
+
     double norm2 = state->get_squared_norm();
     double rot_energy = solver->get_rotational_energy();
     double tot_energy = solver->get_total_energy();
@@ -70,11 +70,11 @@ int main(int argc, char** argv) {
       out << "iterations \t rotation energy \t kin energy \t total energy \t norm2\n";
       out << "0\t" << rot_energy << "\t" << kin_energy << "\t" << tot_energy << "\t" << norm2 << endl;
     }
-    
+
     fileprefix.str("");
     fileprefix << dirname << "/" << 0;
     state->write_particle_density(fileprefix.str());
-    
+
     for(int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);
 
@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
         if (grid->mpi_rank == 0){
             out << (count_snap + 1) * ITERATIONS << "\t" << rot_energy << "\t" << kin_energy << "\t" << tot_energy << "\t" << norm2 << endl;
         }
-    
+
         //stamp phase and particles density
         if(count_snap % SNAP_PER_STAMP == 0.) {
             //get and stamp phase
@@ -103,6 +103,7 @@ int main(int argc, char** argv) {
     cout << "\n";
     delete solver;
     delete hamiltonian;
+    delete potential;
     delete state;
     delete grid;
 #ifdef HAVE_MPI

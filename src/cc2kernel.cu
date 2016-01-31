@@ -18,6 +18,8 @@
 
 #undef _GLIBCXX_ATOMIC_BUILTINS
 #include <sstream>
+#include <vector>
+#include <map>
 #include <cassert>
 #include "common.h"
 #include "kernel.h"
@@ -189,7 +191,7 @@ static  inline __device__ void gpu_kernel_potential(int tile_width, int tile_hei
         peer_i = im[ky_peer][kx];
 
 #ifndef DISABLE_FMA
-        tmp = cell_r*cell_r + cell_i * cell_i;
+        tmp = cell_r * cell_r + cell_i * cell_i;
         c_cos = cos(coupling_a * tmp);
         c_sin = sin(coupling_a * tmp);
 
@@ -201,20 +203,20 @@ static  inline __device__ void gpu_kernel_potential(int tile_width, int tile_hei
         cell_r = c_cos * cell_r + c_sin * cell_i;
         cell_i = c_cos * cell_i - c_sin * cell_r;
 
-        tmp = peer_r*peer_r + peer_i * peer_i;
+        tmp = peer_r * peer_r + peer_i * peer_i;
         c_cos = cos(coupling_a * tmp);
         c_sin = sin(coupling_a * tmp);
 
         tmp = peer_r;
         peer_r = pot_peer_r * tmp - pot_peer_i * peer_i;
-        peer_i =pot_peer_r * peer_i + pot_peer_i * tmp;
+        peer_i = pot_peer_r * peer_i + pot_peer_i * tmp;
 
         rl[ky_peer][kx] = c_cos * peer_r + c_sin * peer_i;
         im[ky_peer][kx] = c_cos * peer_i - c_sin * peer_r;
 #else
         // NOTE: disabling FMA has worse precision and performance
         // use only for exact implementation verification against CPU results
-        tmp = __dadd_rn(cell_r*cell_r, cell_i * cell_i);
+        tmp = __dadd_rn(cell_r * cell_r, cell_i * cell_i);
         c_cos = cos(coupling_a * tmp);
         c_sin = sin(coupling_a * tmp);
 
@@ -226,7 +228,7 @@ static  inline __device__ void gpu_kernel_potential(int tile_width, int tile_hei
         cell_r = __dadd_rn(c_cos * cell_r, c_sin * cell_i);
         cell_i = __dadd_rn(c_cos * cell_i, - c_sin * cell_i);
 
-        tmp = __dadd_rn(peer_r*peer_r, peer_i * peer_i);
+        tmp = __dadd_rn(peer_r * peer_r, peer_i * peer_i);
         c_cos = cos(coupling_a * tmp);
         c_sin = sin(coupling_a * tmp);
 
@@ -328,7 +330,7 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x
     __syncthreads();
 
     if (alpha_x != 0. && alpha_y != 0.) {
-      // TODO: Rotation kernel should come here
+        // TODO: Rotation kernel should come here
     }
 
 #pragma unroll
@@ -540,7 +542,7 @@ __global__ void imag_cc2kernel(size_t tile_width, size_t tile_height, size_t off
     __syncthreads();
 
     if (alpha_x != 0. && alpha_y != 0.) {
-      // TODO: Rotation kernel should come here
+        // TODO: Rotation kernel should come here
     }
 
 #pragma unroll
@@ -593,34 +595,34 @@ __global__ void gpu_rabi_coupling_real(size_t width, size_t height,
                                        double cc, double cs_r, double cs_i,
                                        double *p_real, double *p_imag,
                                        double *pb_real, double *pb_imag) {
-   int idx = blockDim.x * blockIdx.x + threadIdx.x;
-   double real, imag;
-   /* The test shouldn't be necessary */
-   if (blockIdx.x < height && threadIdx.x < width) {
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    double real, imag;
+    /* The test shouldn't be necessary */
+    if (blockIdx.x < height && threadIdx.x < width) {
         real = p_real[idx];
         imag = p_imag[idx];
         p_real[idx] = cc * real - cs_i * pb_real[idx] - cs_r * pb_imag[idx];
         p_imag[idx] = cc * imag + cs_r * pb_real[idx] - cs_i * pb_imag[idx];
         pb_real[idx] = cc * pb_real[idx] + cs_i * real - cs_r * imag;
         pb_imag[idx] = cc * pb_imag[idx] + cs_r * real + cs_i * imag;
-  }
+    }
 }
 
 __global__ void gpu_rabi_coupling_imag(size_t width, size_t height,
                                        double cc, double cs_r, double cs_i,
                                        double *p_real, double *p_imag,
                                        double *pb_real, double *pb_imag) {
-   int idx = blockDim.x * blockIdx.x + threadIdx.x;
-   double real, imag;
-   /* The test shouldn't be necessary */
-   if (blockIdx.x < height && threadIdx.x < width) {
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    double real, imag;
+    /* The test shouldn't be necessary */
+    if (blockIdx.x < height && threadIdx.x < width) {
         real = p_real[idx];
         imag = p_imag[idx];
         p_real[idx] = cc * real + cs_r * pb_real[idx] - cs_i * pb_imag[idx];
         p_imag[idx] = cc * imag + cs_i * pb_real[idx] + cs_r * pb_imag[idx];
         pb_real[idx] = cc * pb_real[idx] + cs_r * real + cs_i * imag;
         pb_imag[idx] = cc * pb_imag[idx] - cs_i * real + cs_r * imag;
-  }
+    }
 }
 
 // Wrapper function for the hybrid kernel
@@ -650,8 +652,8 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     delta_x = grid->delta_x;
     delta_y = grid->delta_y;
     periods = grid->periods;
-    alpha_x = hamiltonian->angular_velocity*delta_t*grid->delta_x / (2*grid->delta_y);
-    alpha_y = hamiltonian->angular_velocity*delta_t*grid->delta_y / (2*grid->delta_x);
+    alpha_x = hamiltonian->angular_velocity * delta_t * grid->delta_x / (2 * grid->delta_y);
+    alpha_y = hamiltonian->angular_velocity * delta_t * grid->delta_y / (2 * grid->delta_x);
 
     coupling_const = new double[3];
     coupling_const[0] = hamiltonian->coupling_a * delta_t;
@@ -667,7 +669,7 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     external_pot_real[0] = _external_pot_real;
     external_pot_imag[0] = _external_pot_imag;
     two_wavefunctions = false;
-        
+
     int rank;
 #ifdef HAVE_MPI
     cartcomm = grid->cartcomm;
@@ -738,9 +740,9 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
 
 }
 
-CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2, 
-                     Hamiltonian2Component *hamiltonian, 
-                     double **_external_pot_real, double **_external_pot_imag, 
+CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2,
+                     Hamiltonian2Component *hamiltonian,
+                     double **_external_pot_real, double **_external_pot_imag,
                      double *_a, double *_b, double delta_t,
                      double *_norm, bool _imag_time):
     threadsPerBlock(BLOCK_X, STRIDE_Y),
@@ -757,13 +759,13 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2,
     delta_x = grid->delta_x;
     delta_y = grid->delta_y;
     periods = grid->periods;
-    alpha_x = hamiltonian->angular_velocity*delta_t*grid->delta_x / (2*grid->delta_y);
-    alpha_y = hamiltonian->angular_velocity*delta_t*grid->delta_y / (2*grid->delta_x);
+    alpha_x = hamiltonian->angular_velocity * delta_t * grid->delta_x / (2 * grid->delta_y);
+    alpha_y = hamiltonian->angular_velocity * delta_t * grid->delta_y / (2 * grid->delta_x);
 
     coupling_const = new double[5];
-    coupling_const[0] = delta_t*hamiltonian->coupling_a;
-    coupling_const[1] = delta_t*hamiltonian->coupling_b;
-    coupling_const[2] = delta_t*hamiltonian->coupling_ab;
+    coupling_const[0] = delta_t * hamiltonian->coupling_a;
+    coupling_const[1] = delta_t * hamiltonian->coupling_b;
+    coupling_const[2] = delta_t * hamiltonian->coupling_ab;
     coupling_const[3] = 0.5 * hamiltonian->omega_r;
     coupling_const[4] = 0.5 * hamiltonian->omega_i;
     a = _a;
@@ -774,7 +776,7 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2,
     external_pot_real[1] = _external_pot_real[1];
     external_pot_imag[1] = _external_pot_imag[1];
     two_wavefunctions = true;
-        
+
     int rank;
 #ifdef HAVE_MPI
     cartcomm = grid->cartcomm;
@@ -812,7 +814,7 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2,
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[0][1]), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMemcpy(pdev_real[0][0], p_real[0], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy(pdev_imag[0][0], p_imag[0], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
-    
+
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_real[1]), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&dev_external_pot_imag[1]), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_real[1], external_pot_real[1], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
@@ -824,7 +826,7 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2,
     CUDA_SAFE_CALL(cudaMalloc(reinterpret_cast<void**>(&pdev_imag[1][1]), tile_width * tile_height * sizeof(double)));
     CUDA_SAFE_CALL(cudaMemcpy(pdev_real[1][0], p_real[1], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy(pdev_imag[1][0], p_imag[1], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
-    
+
     cudaStreamCreate(&stream1);
     cudaStreamCreate(&stream2);
     cublasStatus_t status = cublasCreate(&handle);
@@ -890,7 +892,6 @@ CC2Kernel::~CC2Kernel() {
     CUDA_SAFE_CALL(cudaFree(pdev_imag[0][1]));
     CUDA_SAFE_CALL(cudaFree(dev_external_pot_real[0]));
     CUDA_SAFE_CALL(cudaFree(dev_external_pot_imag[0]));
-
     if (two_wavefunctions) {
         CUDA_SAFE_CALL(cudaFree(pdev_real[1][0]));
         CUDA_SAFE_CALL(cudaFree(pdev_real[1][1]));
@@ -898,7 +899,12 @@ CC2Kernel::~CC2Kernel() {
         CUDA_SAFE_CALL(cudaFree(pdev_imag[1][1]));
         CUDA_SAFE_CALL(cudaFree(dev_external_pot_real[1]));
         CUDA_SAFE_CALL(cudaFree(dev_external_pot_imag[1]));
+    } else {
+        delete [] a;
+        delete [] b;
+        delete [] norm;
     }
+    delete [] coupling_const;
     cudaStreamDestroy(stream1);
     cudaStreamDestroy(stream2);
 
@@ -948,14 +954,14 @@ void CC2Kernel::run_kernel() {
 }
 
 
-double CC2Kernel::calculate_squared_norm(bool global) {
+double CC2Kernel::calculate_squared_norm(bool global) const {
     double norm2 = 0., result_imag = 0.;
     cublasStatus_t status = cublasDnrm2(handle, tile_width * tile_height, pdev_real[state_index][sense], 1, &norm2);
     status = cublasDnrm2(handle, tile_width * tile_height, pdev_imag[state_index][sense], 1, &result_imag);
     if (status != CUBLAS_STATUS_SUCCESS) {
         my_abort("CuBLAS error");
     }
-    norm2 = norm2*norm2 + result_imag*result_imag;
+    norm2 = norm2 * norm2 + result_imag * result_imag;
 #ifdef HAVE_MPI
     if (global) {
         int nProcs = 1;
@@ -976,7 +982,7 @@ void CC2Kernel::wait_for_completion() {
     //normalization
     if (!two_wavefunctions && imag_time && norm[state_index] != 0) {
         double tot_sum = calculate_squared_norm(true);
-        double inverse_norm = 1./sqrt(tot_sum / norm[state_index]);
+        double inverse_norm = 1. / sqrt(tot_sum / norm[state_index]);
         cublasStatus_t status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_real[state_index][sense], 1);
         status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_imag[state_index][sense], 1);
         if (status != CUBLAS_STATUS_SUCCESS) {
@@ -985,7 +991,7 @@ void CC2Kernel::wait_for_completion() {
     }
     if (two_wavefunctions) {
         if (state_index == 0) {
-          sense = 1 - sense;
+            sense = 1 - sense;
         }
         state_index = 1 - state_index;
     }
@@ -1106,40 +1112,40 @@ void CC2Kernel::finish_halo_exchange() {
 #endif
     // Copy back the halos to the GPU memory
 
-	height = inner_end_y - inner_start_y;	// The vertical halo in rows
-	width = halo_x;	// The number of columns of the matrix
-	stride = tile_width;	// The combined width of the matrix with the halo
+    height = inner_end_y - inner_start_y;	// The vertical halo in rows
+    width = halo_x;	// The number of columns of the matrix
+    stride = tile_width;	// The combined width of the matrix with the halo
 
-	if(periods[1] != 0 || MPI) {
-		offset = (inner_start_y - start_y) * tile_width;
-		if (neighbors[LEFT] >= 0) {
-			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[state_index][sense][offset]), stride * sizeof(double), left_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[state_index][sense][offset]), stride * sizeof(double), left_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-		}
-		offset = (inner_start_y - start_y) * tile_width + inner_end_x - start_x;
-		if (neighbors[RIGHT] >= 0) {
-			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[state_index][sense][offset]), stride * sizeof(double), right_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[state_index][sense][offset]), stride * sizeof(double), right_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-		}
-	}
+    if(periods[1] != 0 || MPI) {
+        offset = (inner_start_y - start_y) * tile_width;
+        if (neighbors[LEFT] >= 0) {
+            CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[state_index][sense][offset]), stride * sizeof(double), left_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+            CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[state_index][sense][offset]), stride * sizeof(double), left_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+        }
+        offset = (inner_start_y - start_y) * tile_width + inner_end_x - start_x;
+        if (neighbors[RIGHT] >= 0) {
+            CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[state_index][sense][offset]), stride * sizeof(double), right_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+            CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[state_index][sense][offset]), stride * sizeof(double), right_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+        }
+    }
 
-	height = halo_y;	// The vertical halo in rows
-	width = tile_width;	// The number of columns of the matrix
-	stride = tile_width;	// The combined width of the matrix with the halo
+    height = halo_y;	// The vertical halo in rows
+    width = tile_width;	// The number of columns of the matrix
+    stride = tile_width;	// The combined width of the matrix with the halo
 
-	if(periods[0] != 0 || MPI) {
-		offset = 0;
-		if (neighbors[UP] >= 0) {
-			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[state_index][sense][offset]), stride * sizeof(double), top_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[state_index][sense][offset]), stride * sizeof(double), top_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-		}
+    if(periods[0] != 0 || MPI) {
+        offset = 0;
+        if (neighbors[UP] >= 0) {
+            CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[state_index][sense][offset]), stride * sizeof(double), top_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+            CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[state_index][sense][offset]), stride * sizeof(double), top_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+        }
 
-		offset = (inner_end_y - start_y) * tile_width;
-		if (neighbors[DOWN] >= 0) {
-			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[state_index][sense][offset]), stride * sizeof(double), bottom_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-			CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[state_index][sense][offset]), stride * sizeof(double), bottom_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
-		}
-	}
+        offset = (inner_end_y - start_y) * tile_width;
+        if (neighbors[DOWN] >= 0) {
+            CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_real[state_index][sense][offset]), stride * sizeof(double), bottom_real_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+            CUDA_SAFE_CALL(cudaMemcpy2DAsync(&(pdev_imag[state_index][sense][offset]), stride * sizeof(double), bottom_imag_receive, width * sizeof(double), width * sizeof(double), height, cudaMemcpyHostToDevice, stream1));
+        }
+    }
 }
 
 void CC2Kernel::rabi_coupling(double var, double delta_t) {
@@ -1155,9 +1161,9 @@ void CC2Kernel::rabi_coupling(double var, double delta_t) {
             cs_r = coupling_const[3] / norm_omega * sinh(- delta_t * var * norm_omega);
             cs_i = coupling_const[4] / norm_omega * sinh(- delta_t * var * norm_omega);
         }
-        gpu_rabi_coupling_imag<<<tile_height, tile_width>>>(tile_width, tile_height, cc, cs_r, cs_i,
-                                                            pdev_real[0][sense], pdev_imag[0][sense],
-                                                            pdev_real[1][sense], pdev_imag[1][sense]);
+        gpu_rabi_coupling_imag <<< tile_height, tile_width>>>(tile_width, tile_height, cc, cs_r, cs_i,
+                pdev_real[0][sense], pdev_imag[0][sense],
+                pdev_real[1][sense], pdev_imag[1][sense]);
     }
     else {
         cc = cos(- delta_t * var * norm_omega);
@@ -1169,8 +1175,8 @@ void CC2Kernel::rabi_coupling(double var, double delta_t) {
             cs_r = coupling_const[3] / norm_omega * sin(- delta_t * var * norm_omega);
             cs_i = coupling_const[4] / norm_omega * sin(- delta_t * var * norm_omega);
         }
-        gpu_rabi_coupling_real<<<tile_height, tile_width>>>(tile_width, tile_height, cc, cs_r, cs_i,
-                                                            pdev_real[0][sense], pdev_imag[0][sense],
-                                                            pdev_real[1][sense], pdev_imag[1][sense]);
+        gpu_rabi_coupling_real <<< tile_height, tile_width>>>(tile_width, tile_height, cc, cs_r, cs_i,
+                pdev_real[0][sense], pdev_imag[0][sense],
+                pdev_real[1][sense], pdev_imag[1][sense]);
     }
 }

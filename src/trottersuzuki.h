@@ -39,18 +39,18 @@ using namespace std;
 
 class Lattice {
 public:
-	/**
-	    Lattice constructor.
+    /**
+        Lattice constructor.
 
-	    @param [in] dim              Linear dimension of the squared lattice.
-	    @param [in] length_x         Physical length of the lattice's side along the x axis.
-	    @param [in] length_y         Physical length of the lattice's side along the y axis.
-	    @param [in] periodic_x_axis  Boundary condition along the x axis (false=closed, true=periodic).
-	    @param [in] periodic_y_axis  Boundary condition along the y axis (false=closed, true=periodic).
-	    @param [in] angular_velocity Angular velocity of the frame of reference.
-	 */
-    Lattice(int dim=100, double length_x=20., double length_y=20.,
-            bool periodic_x_axis=false, bool periodic_y_axis=false, double angular_velocity=0.);
+        @param [in] dim              Linear dimension of the squared lattice.
+        @param [in] length_x         Physical length of the lattice's side along the x axis.
+        @param [in] length_y         Physical length of the lattice's side along the y axis.
+        @param [in] periodic_x_axis  Boundary condition along the x axis (false=closed, true=periodic).
+        @param [in] periodic_y_axis  Boundary condition along the y axis (false=closed, true=periodic).
+        @param [in] angular_velocity Angular velocity of the frame of reference.
+     */
+    Lattice(int dim = 100, double length_x = 20., double length_y = 20.,
+            bool periodic_x_axis = false, bool periodic_y_axis = false, double angular_velocity = 0.);
     double length_x, length_y;    ///< Physical length of the lattice's sides.
     double delta_x, delta_y;    ///< Physical distance between two consecutive point of the grid, along the x and y axes.
     int dim_x, dim_y;    ///< Linear dimension of the tile along x and y axes.
@@ -76,28 +76,28 @@ public:
  * \brief This class defines the quantum state.
  */
 
-class State{
+class State {
 public:
     double *p_real;    ///< Real part of the wave function.
     double *p_imag;    ///< Imaginary part of the wave function.
     Lattice *grid;    ///< Object that defines the lattice structure.
 
     /**
-   	    Construct the state from given matrices if they are provided, otherwise construct a state with null wave function, initializing p_real and p_imag.
+        Construct the state from given matrices if they are provided, otherwise construct a state with null wave function, initializing p_real and p_imag.
 
-   	    @param [in] grid             Lattice object.
-   	    @param [in] p_real           Pointer to the real part of the wave function.
-   	    @param [in] p_imag           Pointer to the imaginary part of the wave function.
-   	 */
-    State(Lattice *grid, double *p_real=0, double *p_imag=0);
+        @param [in] grid             Lattice object.
+        @param [in] p_real           Pointer to the real part of the wave function.
+        @param [in] p_imag           Pointer to the imaginary part of the wave function.
+     */
+    State(Lattice *grid, double *p_real = 0, double *p_imag = 0);
     State(const State &obj /**< [in] State object. */);    ///< Copy constructor: copy the state object.
     ~State();    ///< Destructor.
     void init_state(complex<double> (*ini_state)(double x, double y) /** Pointer to a wave function */);    ///< Write the wave function from a C++ function to p_real and p_imag matrices.
     void loadtxt(char *file_name);    ///< Load the wave function from a file to p_real and p_imag matrices.
 
     void imprint(complex<double> (*function)(double x, double y) /** Pointer to a function */);    ///< Multiply the wave function of the state by the function provided.
-    double *get_particle_density(double *density=0 /** [out] matrix storing the squared norm of the wave function. */);    ///< Return a matrix storing the squared norm of the wave function.
-    double *get_phase(double *phase=0 /** [out] matrix storing the phase of the wave function. */);    ///< Return a matrix storing the phase of the wave function.
+    double *get_particle_density(double *density = 0 /** [out] matrix storing the squared norm of the wave function. */);  ///< Return a matrix storing the squared norm of the wave function.
+    double *get_phase(double *phase = 0 /** [out] matrix storing the phase of the wave function. */);  ///< Return a matrix storing the phase of the wave function.
     double get_squared_norm(void);    ///< Return the squared norm of the quantum state.
     double get_mean_x(void);    ///< Return the expected value of the X operator.
     double get_mean_xx(void);    ///< Return the expected value of the X^2 operator.
@@ -129,18 +129,18 @@ protected:
  */
 class ExponentialState: public State {
 public:
-	/**
-   	    Construct the quantum state with exponential like wave function.
+    /**
+        Construct the quantum state with exponential like wave function.
 
-   	    @param [in] grid             Lattice object.
-   	    @param [in] n_x              First quantum number.
-   	    @param [in] n_y              Second quantum number.
-   	    @param [in] norm             Squared norm of the quantum state.
-   	    @param [in] phase            Relative phase of the wave function.
-   	    @param [in] p_real           Pointer to the real part of the wave function.
-   	    @param [in] p_imag           Pointer to the imaginary part of the wave function.
-   	 */
-    ExponentialState(Lattice *grid, int n_x=1, int n_y=1, double norm=1, double phase=0, double *p_real=0, double *p_imag=0);
+        @param [in] grid             Lattice object.
+        @param [in] n_x              First quantum number.
+        @param [in] n_y              Second quantum number.
+        @param [in] norm             Squared norm of the quantum state.
+        @param [in] phase            Relative phase of the wave function.
+        @param [in] p_real           Pointer to the real part of the wave function.
+        @param [in] p_imag           Pointer to the imaginary part of the wave function.
+     */
+    ExponentialState(Lattice *grid, int n_x = 1, int n_y = 1, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
 
 private:
     int n_x, n_y;    ///< First and second quantum number.
@@ -155,20 +155,20 @@ private:
  */
 class GaussianState: public State {
 public:
-	/**
-   	    Construct the quantum state with gaussian like wave function.
+    /**
+        Construct the quantum state with gaussian like wave function.
 
-   	    @param [in] grid             Lattice object.
-   	    @param [in] omega            Gaussian coefficient.
-   	    @param [in] mean_x           X coordinate of the gaussian function's center.
-   	    @param [in] mean_y           Y coordinate of the gaussian function's center.
-   	    @param [in] norm             Squared norm of the state.
-   	    @param [in] phase            Relative phase of the wave function.
-   	    @param [in] p_real           Pointer to the real part of the wave function.
-   	    @param [in] p_imag           Pointer to the imaginary part of the wave function.
-   	 */
-    GaussianState(Lattice *grid, double omega, double mean_x=0, double mean_y=0, double norm=1, double phase=0,
-                  double *p_real=0, double *p_imag=0);
+        @param [in] grid             Lattice object.
+        @param [in] omega            Gaussian coefficient.
+        @param [in] mean_x           X coordinate of the gaussian function's center.
+        @param [in] mean_y           Y coordinate of the gaussian function's center.
+        @param [in] norm             Squared norm of the state.
+        @param [in] phase            Relative phase of the wave function.
+        @param [in] p_real           Pointer to the real part of the wave function.
+        @param [in] p_imag           Pointer to the imaginary part of the wave function.
+     */
+    GaussianState(Lattice *grid, double omega, double mean_x = 0, double mean_y = 0, double norm = 1, double phase = 0,
+                  double *p_real = 0, double *p_imag = 0);
 
 private:
     double mean_x;    ///< X coordinate of the gaussian function's center.
@@ -186,18 +186,18 @@ private:
  */
 class SinusoidState: public State {
 public:
-	/**
-   	    Construct the quantum state with sinusoidal like wave function.
+    /**
+        Construct the quantum state with sinusoidal like wave function.
 
-   	    @param [in] grid             Lattice object.
-   	    @param [in] n_x              First quantum number.
-   	    @param [in] n_y              Second quantum number.
-   	    @param [in] norm             Squared norm of the quantum state.
-   	    @param [in] phase            Relative phase of the wave function.
-   	    @param [in] p_real           Pointer to the real part of the wave function.
-   	    @param [in] p_imag           Pointer to the imaginary part of the wave function.
-   	 */
-    SinusoidState(Lattice *grid, int n_x=1, int n_y=1, double norm=1, double phase=0, double *p_real=0, double *p_imag=0);
+        @param [in] grid             Lattice object.
+        @param [in] n_x              First quantum number.
+        @param [in] n_y              Second quantum number.
+        @param [in] norm             Squared norm of the quantum state.
+        @param [in] phase            Relative phase of the wave function.
+        @param [in] p_real           Pointer to the real part of the wave function.
+        @param [in] p_imag           Pointer to the imaginary part of the wave function.
+     */
+    SinusoidState(Lattice *grid, int n_x = 1, int n_y = 1, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
 
 private:
     int n_x, n_y;    ///< First and second quantum number.
@@ -214,33 +214,33 @@ public:
     double *matrix;    ///< Matrix storing the potential.
 
     /**
-		Construct the external potential.
+    	Construct the external potential.
 
-		@param [in] grid             Lattice object.
-		@param [in] filename         Name of the file that stores the external potential matrix.
-	 */
+    	@param [in] grid             Lattice object.
+    	@param [in] filename         Name of the file that stores the external potential matrix.
+     */
     Potential(Lattice *grid, char *filename);
     /**
-		Construct the external potential.
+    	Construct the external potential.
 
-		@param [in] grid             Lattice object.
-		@param [in] external_pot     Pointer to the external potential matrix.
-	 */
-    Potential(Lattice *grid, double *external_pot=0);
+    	@param [in] grid             Lattice object.
+    	@param [in] external_pot     Pointer to the external potential matrix.
+     */
+    Potential(Lattice *grid, double *external_pot = 0);
     /**
-		Construct the external potential.
+    	Construct the external potential.
 
-		@param [in] grid                   Lattice object.
-		@param [in] potential_function     Pointer to the static external potential function.
-	 */
+    	@param [in] grid                   Lattice object.
+    	@param [in] potential_function     Pointer to the static external potential function.
+     */
     Potential(Lattice *grid, double (*potential_function)(double x, double y));
     /**
-		Construct the external potential.
+    	Construct the external potential.
 
-		@param [in] grid                   Lattice object.
-		@param [in] potential_function     Pointer to the time-dependent external potential function.
-	 */
-    Potential(Lattice *grid, double (*potential_function)(double x, double y, double t), int t=0);
+    	@param [in] grid                   Lattice object.
+    	@param [in] potential_function     Pointer to the time-dependent external potential function.
+     */
+    Potential(Lattice *grid, double (*potential_function)(double x, double y, double t), int t = 0);
     virtual ~Potential();
     virtual double get_value(int x, int y);    ///< Get the value at the coordinate (x,y).
     bool update(double t);    ///< Update the potential matrix at time t.
@@ -260,17 +260,17 @@ protected:
  */
 class HarmonicPotential: public Potential {
 public:
-	/**
-		Construct the harmonic external potential.
+    /**
+    	Construct the harmonic external potential.
 
-		@param [in] grid       Lattice object.
-		@param [in] omegax     Frequency along x axis.
-		@param [in] omegay     Frequency along y axis.
-		@param [in] mass       Mass of the particle.
-		@param [in] mean_x     Minimum of the potential along x axis.
-		@param [in] mean_y     Minimum of the potential along y axis.
-	 */
-    HarmonicPotential(Lattice *grid, double omegax, double omegay, double mass=1., double mean_x = 0., double mean_y = 0.);
+    	@param [in] grid       Lattice object.
+    	@param [in] omegax     Frequency along x axis.
+    	@param [in] omegay     Frequency along y axis.
+    	@param [in] mass       Mass of the particle.
+    	@param [in] mean_x     Minimum of the potential along x axis.
+    	@param [in] mean_y     Minimum of the potential along y axis.
+     */
+    HarmonicPotential(Lattice *grid, double omegax, double omegay, double mass = 1., double mean_x = 0., double mean_y = 0.);
     ~HarmonicPotential();
     double get_value(int x, int y);    ///< Return the value of the external potential at coordinate (x,y)
 
@@ -293,19 +293,19 @@ public:
     double rot_coord_y;    ///< Y coordinate of the center of rotation.
 
     /**
-		Construct the Hamiltonian of a single component system.
+    	Construct the Hamiltonian of a single component system.
 
-		@param [in] grid                Lattice object.
-		@param [in] potential           Potential object.
-		@param [in] mass                Mass of the particle.
-		@param [in] coupling_a          Coupling constant of intra-particle interaction.
-		@param [in] angular_velocity    The frame of reference rotates with this angular velocity.
-		@param [in] rot_coord_x         X coordinate of the center of rotation.
-		@param [in] rot_coord_y         Y coordinate of the center of rotation.
-	 */
-    Hamiltonian(Lattice *grid, Potential *potential=0, double mass=1., double coupling_a=0.,
-                double angular_velocity=0.,
-                double rot_coord_x=0, double rot_coord_y=0);
+    	@param [in] grid                Lattice object.
+    	@param [in] potential           Potential object.
+    	@param [in] mass                Mass of the particle.
+    	@param [in] coupling_a          Coupling constant of intra-particle interaction.
+    	@param [in] angular_velocity    The frame of reference rotates with this angular velocity.
+    	@param [in] rot_coord_x         X coordinate of the center of rotation.
+    	@param [in] rot_coord_y         Y coordinate of the center of rotation.
+     */
+    Hamiltonian(Lattice *grid, Potential *potential = 0, double mass = 1., double coupling_a = 0.,
+                double angular_velocity = 0.,
+                double rot_coord_x = 0, double rot_coord_y = 0);
     ~Hamiltonian();
 
 protected:
@@ -326,31 +326,31 @@ public:
     Potential *potential_b;    ///< External potential for the second component.
 
     /**
-		Construct the Hamiltonian of a two component system.
+    	Construct the Hamiltonian of a two component system.
 
-		@param [in] grid                Lattice object.
-		@param [in] potential           Potential of the first component.
-		@param [in] potential_b         Potential of the second component.
-		@param [in] mass                Mass of the first-component's particles.
-		@param [in] mass_b              Mass of the second-component's particles.
-		@param [in] coupling_a          Coupling constant of intra-particle interaction for the first component.
-		@param [in] coupling_ab         Coupling constant of inter-particle interaction between the two components.
-		@param [in] coupling_b          Coupling constant of intra-particle interaction for the second component.
-		@param [in] omega_r             Real part of the Rabi coupling.
-		@param [in] omega_i             Imaginary part of the Rabi coupling.
-		@param [in] angular_velocity    The frame of reference rotates with this angular velocity.
-		@param [in] rot_coord_x         X coordinate of the center of rotation.
-		@param [in] rot_coord_y         Y coordinate of the center of rotation.
-	 */
-    Hamiltonian2Component(Lattice *grid, Potential *potential=0,
-                          Potential *potential_b=0,
-                          double mass=1., double mass_b=1.,
-                          double coupling_a=0., double coupling_ab=0.,
-                          double coupling_b=0.,
-                          double omega_r=0, double omega_i=0,
-                          double angular_velocity=0.,
-                          double rot_coord_x=0,
-                          double rot_coord_y=0);
+    	@param [in] grid                Lattice object.
+    	@param [in] potential           Potential of the first component.
+    	@param [in] potential_b         Potential of the second component.
+    	@param [in] mass                Mass of the first-component's particles.
+    	@param [in] mass_b              Mass of the second-component's particles.
+    	@param [in] coupling_a          Coupling constant of intra-particle interaction for the first component.
+    	@param [in] coupling_ab         Coupling constant of inter-particle interaction between the two components.
+    	@param [in] coupling_b          Coupling constant of intra-particle interaction for the second component.
+    	@param [in] omega_r             Real part of the Rabi coupling.
+    	@param [in] omega_i             Imaginary part of the Rabi coupling.
+    	@param [in] angular_velocity    The frame of reference rotates with this angular velocity.
+    	@param [in] rot_coord_x         X coordinate of the center of rotation.
+    	@param [in] rot_coord_y         Y coordinate of the center of rotation.
+     */
+    Hamiltonian2Component(Lattice *grid, Potential *potential = 0,
+                          Potential *potential_b = 0,
+                          double mass = 1., double mass_b = 1.,
+                          double coupling_a = 0., double coupling_ab = 0.,
+                          double coupling_b = 0.,
+                          double omega_r = 0, double omega_i = 0,
+                          double angular_velocity = 0.,
+                          double rot_coord_x = 0,
+                          double rot_coord_y = 0);
     ~Hamiltonian2Component();
 };
 
@@ -363,10 +363,10 @@ public:
     virtual void run_kernel() = 0;    ///< Evolve the remaining blocks in the inner part of the tile.
     virtual void run_kernel_on_halo() = 0;    ///< Evolve blocks of wave function at the edge of the tile. This comprises the halos.
     virtual void wait_for_completion() = 0;    ///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
-    virtual void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2=0, double * dest_imag2=0) const = 0;    ///< Get the evolved wave function.
+    virtual void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2 = 0, double * dest_imag2 = 0) const = 0; ///< Get the evolved wave function.
     virtual void normalization() = 0;    ///< Normalization of the two components wave function.
     virtual void rabi_coupling(double var, double delta_t) = 0;    ///< Perform the evolution regarding the Rabi coupling.
-    virtual double calculate_squared_norm(bool global=true) = 0;    ///< Calculate the squared norm of the wave function.
+    virtual double calculate_squared_norm(bool global = true) const = 0;  ///< Calculate the squared norm of the wave function.
     virtual bool runs_in_place() const = 0;
     virtual string get_name() const = 0;				///< Get kernel name.
     virtual void update_potential(double *_external_pot_real, double *_external_pot_imag) = 0;    ///< Update the evolution matrix, regarding the external potential, at time t.
@@ -387,37 +387,37 @@ public:
     Hamiltonian *hamiltonian;    ///< Hamiltonian of the system; either single component or two components.
     double current_evolution_time;    ///< Amount of time evolved since the beginning of the evolution.
     /**
-		Construct the Solver object for a single-component system.
+    	Construct the Solver object for a single-component system.
 
-		@param [in] grid                Lattice object.
-		@param [in] state               State of the system.
-		@param [in] hamiltonian         Hamiltonian of the system.
-		@param [in] delta_t             A single evolution iteration, evolves the state for this time.
-		@param [in] kernel_type         Which kernel to use (either cpu or gpu).
-	 */
+    	@param [in] grid                Lattice object.
+    	@param [in] state               State of the system.
+    	@param [in] hamiltonian         Hamiltonian of the system.
+    	@param [in] delta_t             A single evolution iteration, evolves the state for this time.
+    	@param [in] kernel_type         Which kernel to use (either cpu or gpu).
+     */
     Solver(Lattice *grid, State *state, Hamiltonian *hamiltonian, double delta_t,
-           string kernel_type="cpu");
+           string kernel_type = "cpu");
     /**
-		Construct the Solver object for a two-component system.
+    	Construct the Solver object for a two-component system.
 
-		@param [in] grid                Lattice object.
-		@param [in] state1              First component's state of the system.
-		@param [in] state2              Second component's state of the system.
-		@param [in] hamiltonian         Hamiltonian of the two-component system.
-		@param [in] delta_t             A single evolution iteration, evolves the state for this time.
-		@param [in] kernel_type         Which kernel to use (either cpu or gpu).
-	 */
+    	@param [in] grid                Lattice object.
+    	@param [in] state1              First component's state of the system.
+    	@param [in] state2              Second component's state of the system.
+    	@param [in] hamiltonian         Hamiltonian of the two-component system.
+    	@param [in] delta_t             A single evolution iteration, evolves the state for this time.
+    	@param [in] kernel_type         Which kernel to use (either cpu or gpu).
+     */
     Solver(Lattice *grid, State *state1, State *state2,
            Hamiltonian2Component *hamiltonian,
-           double delta_t, string kernel_type="cpu");
+           double delta_t, string kernel_type = "cpu");
     ~Solver();
-    void evolve(int iterations, bool imag_time=false);    ///< Evolve the state of the system.
+    void evolve(int iterations, bool imag_time = false);  ///< Evolve the state of the system.
     double get_total_energy(void);    ///< Get the total energy of the system.
-    double get_squared_norm(size_t which=3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);    ///< Get the squared norm of the state (default: total wave-function).
-    double get_kinetic_energy(size_t which=3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);    ///< Get the kinetic energy of the system.
-    double get_potential_energy(size_t which=3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);    ///< Get the potential energy of the system.
-    double get_rotational_energy(size_t which=3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);    ///< Get the rotational energy of the system.
-    double get_intra_species_energy(size_t which=3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);    ///< Get the intra-particles interaction energy of the system.
+    double get_squared_norm(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the squared norm of the state (default: total wave-function).
+    double get_kinetic_energy(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the kinetic energy of the system.
+    double get_potential_energy(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the potential energy of the system.
+    double get_rotational_energy(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the rotational energy of the system.
+    double get_intra_species_energy(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the intra-particles interaction energy of the system.
     double get_inter_species_energy(void);    ///< Get the inter-particles interaction energy of the system.
     double get_rabi_energy(void);    ///< Get the Rabi energy of the system.
 private:
