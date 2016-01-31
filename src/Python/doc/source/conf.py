@@ -16,7 +16,7 @@ import sys
 import os
 import mock
 
-MOCK_MODULES = ['numpy',  'numpy.core', 'numpy.core.multiarray', 'matplotlib',
+MOCK_MODULES = ['matplotlib',
                 'matplotlib.cm', 'matplotlib.pyplot', 'matplotlib.collections']
 
 for mod_name in MOCK_MODULES:
