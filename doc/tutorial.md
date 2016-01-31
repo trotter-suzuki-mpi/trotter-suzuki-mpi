@@ -5,6 +5,7 @@ This tutorial is about using the command-line interface and the C++ API. If you 
 
 Command-line Interface
 ----------------------
+The command-line interface is severely limited in functionality. For instance, only static external potential and single-component Hamiltonians are supported. Most functionality related to the solution of various flavours of the Gross-Pitaevskii equation is also inaccessible. It is primarily useful to study the evolution of states with the linear Schrödinger equation. For anything more complicated, please use the C++ API or the Python interface.
 
 Usage: `trottersuzuki [OPTIONS] -n filename`
 
@@ -19,14 +20,14 @@ Arguments:
     -t NUMBER     Single time step (default: 0.01)
     -i NUMBER     Number of iterations (default: 1000)
     -g            Imaginary time evolution to evolve towards the ground state
-    -k NUMBER     Kernel type (default: 0): 
+    -k NUMBER     Kernel type (default: 0):
                     0: CPU, cache-optimized
                     2: GPU
                     3: Hybrid CPU-GPU (experimental)                    
     -s NUMBER     Snapshots are taken at every NUMBER of iterations.
                     Zero means no snapshots. Default: 0.
     -n FILENAME   The initial state.
-    -p FILENAME   Name of file that stores the potential operator 
+    -p FILENAME   Name of file that stores the potential operator
                   (in coordinate representation)
 
 Examples:
@@ -44,8 +45,8 @@ To run it on a cluster, you must compile the code with MPI. In this case, OpenMP
 
     mpirun -np 32 trotter -i 100 -d 640 -s 10 -n psi0.dat
 
-   
-Naturally, if the system is distributed, MPI must be told of a host file. 
+
+Naturally, if the system is distributed, MPI must be told of a host file.
 
 The hybrid kernel is experimental. It splits the work between the GPU and the CPU. It uses one MPI thread per GPU, and uses OpenMP to use parallelism on the CPU. It can be faster than the GPU kernel alone, especially if the GPU is consumer-grade. The kernel is especially efficient if the matrix does not fit the GPU memory. For instance, given twelve physical cores in a single node with two Tesla C2050 GPUs, a 14,000x14,000 would not fit the GPU memory. The following command would calculate the part that does not fit the device memory on the CPU:
 
@@ -139,9 +140,19 @@ int main(int argc, char** argv) {
 
 Compile it with
 
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~{.cpp}
 g++ -I/PATH/TO/TROTTERSUZUKI/HEADER -L/PATH/TO/TROTTERSUZUKI/LIBRARY simple_example.cpp -o simple_example -ltrottersuzuki
 ~~~~~~~~~~~~~~~
+
+**GPU version**
+
+If the library was compiled with CUDA support, it is enough to change a single line of code, requesting the GPU kernel when instantiating the solver class:
+
+~~~~~~~~~~~~~~~{.cpp}
+     Solver *solver = new Solver(grid, state, hamiltonian, delta_t, "gpu");
+~~~~~~~~~~~~~~~
+
+The compilation is the same as above.
 
 **Distributed version**
 
@@ -189,7 +200,7 @@ int main(int argc, char** argv) {
 
 Compile it with
 
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~{.cpp}
 mpic++ -I/PATH/TO/TROTTERSUZUKI/HEADER -L/PATH/TO/TROTTERSUZUKI/LIBRARY simple_example_mpi.cpp -o simple_example_mpi -ltrottersuzuki
 ~~~~~~~~~~~~~~~
 
