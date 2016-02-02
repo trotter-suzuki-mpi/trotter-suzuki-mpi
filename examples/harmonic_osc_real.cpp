@@ -27,23 +27,23 @@
 
 #define EDGE_LENGTH 14.14     //Physical length of the grid's edge
 #define DIM 256         //Number of dots of the grid's edge
-#define DELTA_T 1.e-5     //Time step evolution
-#define ITERATIONS 2000     //Number of iterations before calculating expected values
+#define DELTA_T 1.e-4     //Time step evolution
+#define ITERATIONS 1000     //Number of iterations before calculating expected values
 #define KERNEL_TYPE "cpu"
-#define SNAPSHOTS 105      //Number of times the expected values are calculated
+#define SNAPSHOTS 20      //Number of times the expected values are calculated
 #define SNAP_PER_STAMP 5    //The particles density and phase of the wave function are stamped every "SNAP_PER_STAMP" expected values calculations
 #define PARTICLES_NUM 1     //Particle numbers (nonlinear Schrodinger equation)
 
 complex<double> gauss_ini_state(double x, double y) {
-    double x_c = x - double(EDGE_LENGTH)*0.5, y_c = y - double(EDGE_LENGTH)*0.5;
     double w = 1.;
-    return complex<double>(sqrt(0.5 * w / M_PI) * exp(-(x_c * x_c + y_c * y_c) * 0.5 * w) * (1. + sqrt(2. * w) * x_c), 0.);
+    return complex<double>(sqrt(0.5 * w / M_PI) * exp(-(x * x + y * y) * 0.5 * w) * (1. + sqrt(2. * w) * x), 0.);
 }
 int main(int argc, char** argv) {
     double particle_mass = 1.;
+    double angular_velocity = 1.;
     bool imag_time = false;
     int time, tot_time = 0;
-    double delta_t = double(DELTA_T) * M_PI;
+    double delta_t = double(DELTA_T);
     double length_x = double(EDGE_LENGTH), length_y = double(EDGE_LENGTH);
     
 #ifdef HAVE_MPI
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 #endif
 
     //set lattice
-    Lattice *grid = new Lattice(DIM, length_x, length_y);
+    Lattice *grid = new Lattice(DIM, length_x, length_y, false, false, angular_velocity);
     //set initial state
     State *state = new State(grid);
     state->init_state(gauss_ini_state);
