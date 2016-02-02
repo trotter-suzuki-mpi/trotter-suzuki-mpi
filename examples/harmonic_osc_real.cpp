@@ -29,7 +29,7 @@
 #define DIM 256         //Number of dots of the grid's edge
 #define DELTA_T 1.e-4     //Time step evolution
 #define ITERATIONS 1000     //Number of iterations before calculating expected values
-#define KERNEL_TYPE "cpu"
+#define KERNEL_TYPE "gpu"
 #define SNAPSHOTS 20      //Number of times the expected values are calculated
 #define SNAP_PER_STAMP 5    //The particles density and phase of the wave function are stamped every "SNAP_PER_STAMP" expected values calculations
 #define PARTICLES_NUM 1     //Particle numbers (nonlinear Schrodinger equation)
