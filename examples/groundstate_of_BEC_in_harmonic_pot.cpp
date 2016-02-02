@@ -42,12 +42,12 @@ int main(int argc, char** argv) {
     bool imag_time = true;
     double delta_t = 1.e-5;
     const double particle_mass = 1.;
-    double coupling_a = 4. * M_PI * double(SCATTER_LENGTH_2D);    
-    
+    double coupling_a = 4. * M_PI * double(SCATTER_LENGTH_2D);
+
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
-    
+
     //set lattice
     Lattice *grid = new Lattice(DIM, (double)LENGTH, (double)LENGTH);
     //set initial state
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
     stringstream dirname, fileprefix;
     dirname << "D" << DIM << "_I" << ITERATIONS << "_S" << SNAPSHOTS << "";
     mkdir(dirname.str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    
+
     fileprefix.str("");
 	fileprefix << dirname.str() << "/" << 0;
 	state->write_to_file(fileprefix.str());
@@ -82,6 +82,7 @@ int main(int argc, char** argv) {
     }
     delete solver;
     delete hamiltonian;
+    delete potential;
     delete state;
     delete grid;
 #ifdef HAVE_MPI

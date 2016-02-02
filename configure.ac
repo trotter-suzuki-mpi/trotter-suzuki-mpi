@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.61])
-AC_INIT([trotter-suzuki], [1.4])
+AC_INIT([trotter-suzuki], [1.5])
 m4_include([m4/ax_mpi_options.m4])
 m4_include([m4/ax_mpi_tests.m4])
 AC_CONFIG_SRCDIR([src/trottersuzuki.h])
@@ -46,6 +46,21 @@ else
   SUFFIX=""
 fi
 
+#Setup MPI Paths
+# ------------------------------------------------------------------------------
+AC_ARG_WITH([mpi],
+   [  --with-mpi=PATH    prefix where MPI is installed])
+
+mpi_enabled=no
+if test x"$with_mpi" != x"no" ; then
+    AX_MPI_OPTIONS
+    if test x"$MPI_CXX" != x"none"; then
+      AX_MPI_TESTS
+      CXX=$MPI_CXX
+      mpi_enabled=yes
+    fi
+fi
+
 # Setup CUDA paths
 # ------------------------------------------------------------------------------
 if test -z "$CUDAHOME" ; then
@@ -67,7 +82,7 @@ if test x"$with_cuda" != x"no" ; then
   AC_CHECK_PROG(NVCC_CHECK,nvcc,yes,no,$CUDA_PATH/bin)
   if test x"$NVCC_CHECK" = x"yes" ; then
      cuda_enabled=yes
-     CUDA_CFLAGS="-I$CUDA_PATH/include -use_fast_math -Xptxas "-v" -Xcompiler \"${CXXFLAGS}\""
+     CUDA_CFLAGS="-I$CUDA_PATH/include -use_fast_math -ccbin ${CXX} -Xptxas "-v" -Xcompiler \"${CXXFLAGS}\""
      CXXFLAGS="${CXXFLAGS} -I$CUDA_PATH/include"
      CUDA_LIBS="-lcudart -lcublas"
      if test -e "$CUDA_PATH/lib$SUFFIX"; then
@@ -96,43 +111,10 @@ fi
 
 AM_CONDITIONAL([HAVE_CUDA], [test x"$cuda_enabled" = x"yes"])
 
-#Setup MPI Paths
-# ------------------------------------------------------------------------------
-AC_ARG_WITH([mpi],
-   [  --with-mpi=PATH    prefix where MPI is installed])
-
-mpi_enabled=no
-if test x"$with_mpi" != x"no" ; then
-    AX_MPI_OPTIONS
-    if test x"$MPI_CXX" != x"none"; then
-      AX_MPI_TESTS
-      CXX=$MPI_CXX
-      mpi_enabled=yes
-    fi
-fi
-
 #Setup CppUnit
 #-------------------------------------------------------------------------------
 TEST_LIBS="-lcppunit -ldl"
 AC_SUBST(TEST_LIBS)
-
-#Setup MEX compiler
-# ------------------------------------------------------------------------------
-MATLAB_ROOT="/usr/local/MATLAB/R2013a"
-AC_ARG_WITH([matlab],
-   [  --with-matlab=PATH    prefix where MATLAB is installed [default=/usr/local/MATLAB/R2013a]])
-if test x"$with_matlab" != x"no" ; then
-
-  if test -n "$with_matlab"
-  then
-     MATLAB_ROOT=$with_matlab
-  fi
-
-fi
-MEX_BIN=$MATLAB_ROOT/bin/mex
-AC_SUBST(MATLAB_ROOT)
-AC_SUBST(MEX_BIN)
-
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile

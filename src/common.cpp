@@ -34,9 +34,9 @@ void my_abort(string err) {
 #endif
 }
 
-void add_padding(double *padded_matrix, double *matrix, 
-                 int padded_dim_x, int padded_dim_y, 
-                 int halo_x, int halo_y, 
+void add_padding(double *padded_matrix, double *matrix,
+                 int padded_dim_x, int padded_dim_y,
+                 int halo_x, int halo_y,
                  const int dim_x, const int dim_y, int *periods) {
     for (int i = 0; i < dim_y; i++) {
         for (int j = 0; j < dim_x; j++) {
@@ -138,7 +138,7 @@ void stamp(Lattice *grid, State *state, string fileprefix) {
 
     MPI_Datatype complex_localarray;
     MPI_Type_create_subarray(2, globalsizes, localsizes, starts, order, complex_num_as_string, &complex_localarray);
-        MPI_Type_commit(&complex_localarray);
+    MPI_Type_commit(&complex_localarray);
     MPI_Datatype localarray;
     MPI_Type_create_subarray(2, globalsizes, localsizes, starts, order, num_as_string, &localarray);
     MPI_Type_commit(&localarray);

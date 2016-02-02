@@ -1,25 +1,23 @@
 Download
 ========
-Download the latest stable release [here](https://github.com/trotter_suzuki-mpi/trotter-suzuki-mpi/releases/latest). The development version is on [GitHub](https://github.com/trotter-suzuki-mpi/trotter-suzuki-mpi). If you are interested in the Python or the MATLAB version, refer to [Read the Docs](https://trotter-suzuki-mpi.readthedocs.org) and [FileExchange](https://www.mathworks.com/matlabcentral/fileexchange/51975-mextrotter), respectively.
+Download the latest stable release [here](https://github.com/trotter_suzuki-mpi/trotter-suzuki-mpi/releases/latest). The development version is on [GitHub](https://github.com/trotter-suzuki-mpi/trotter-suzuki-mpi). If you are interested in the Python version, refer to [Read the Docs](https://trotter-suzuki-mpi.readthedocs.org). If you encounter problems or a bug, please open an [issue on GitHub](https://github.com/trotter-suzuki-mpi/trotter-suzuki-mpi/issues).
 
 Compilation & Installation
 --------------------------
-The code was tested with the GNU Compiler Chain (GCC), with Intel compilers, and with Visual Studio. The unit testing framework is separate and it requires [CppUnit](http://sourceforge.net/projects/cppunit/) to compile. To use the GPU-accelerated version, CUDA and a GPU with at least Compute Cabapility 2.0 are necessary.
-
-**Building on Linux**
+The code was tested with the GNU Compiler Chain (GCC), Clang, Intel compilers, and with Visual Studio. For the distributed variant, you need an MPI installation; OpenMPI and MPICH were tested. The unit testing framework requires [CppUnit](http://sourceforge.net/projects/cppunit/) to compile. To use the GPU-accelerated version, CUDA and a GPU with at least Compute Cabapility 2.0 are necessary.
 
 If you clone the git repository, first run
 
     $ ./autogen.sh
 
-Then follow the standard POSIX procedure:
+Then follow the standard procedure:
 
     $ ./configure [options]
     $ make
     $ make install
 
 To compile and run the unit tests, enter
-    
+
     $ make test
     $ test/unittest
 
@@ -29,7 +27,22 @@ If you prefer the Intel compilers you have to set the following variables, so mp
     $ export CXX=/path/of/intel/compiler/icpc
     $ export OMPI_CC=/path/of/intel/compiler/icc
     $ export OMPI_CXX=/path/of/intel/compiler/icpc
-    
+
+If you compile it on OS X and your Clang version does not support OpenMP, then install GCC first with brew, and then set the environment variables to point to this compiler chain:
+
+    $ export CC=/usr/local/bin/gcc
+    $ export CXX=/usr/local/bin/g++
+    $ export CPP=/usr/local/bin/cpp
+    $ export LD=/usr/local/bin/gcc
+    $ alias c++=/usr/local/bin/c++
+    $ alias g++=/usr/local/bin/g++
+    $ alias gcc=/usr/local/bin/gcc
+    $ alias cpp=/usr/local/bin/cpp
+    $ alias ld=/usr/local/bin/gcc
+    $ alias cc=/usr/local/bin/gcc
+
+Note that GCC is no longer supported by NVCC on OS X, therefore you have to choose between multicore execution and GPU support at compile time if your Clang version does not support OpenMP.
+
 Options for configure
 
     --prefix=PATH           Set directory prefix for installation

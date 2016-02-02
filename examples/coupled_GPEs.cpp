@@ -26,11 +26,11 @@
 #endif
 
 #define LENGTH 10
-#define DIM 200
-#define ITERATIONS 1000
+#define DIM 50
+#define ITERATIONS 1
 #define PARTICLES_NUM 1700000
 #define KERNEL_TYPE "cpu"
-#define SNAPSHOTS 20
+#define SNAPSHOTS 1
 #define SNAP_PER_STAMP 5
 
 int main(int argc, char** argv) {
@@ -51,19 +51,19 @@ int main(int argc, char** argv) {
     //set initial state
     State *state1 = new GaussianState(grid, 1, 0., 0., PARTICLES_NUM);
     State *state2 = new GaussianState(grid, 1, 0., 0., PARTICLES_NUM, M_PI/2.);
-    
+
     //set hamiltonian
     Potential *potential = new HarmonicPotential(grid, 1., 1.);
     Hamiltonian2Component *hamiltonian = new Hamiltonian2Component(grid, potential, potential, particle_mass_a, particle_mass_b, coupling_a, coupling_ab, coupling_b, omega_r, omega_i);
-    
+
     //set evolution
     Solver *solver = new Solver(grid, state1, state2, hamiltonian, delta_t, KERNEL_TYPE);
-    
+
     //set file output directory
     stringstream fileprefix;
     string dirname = "coupledGPE";
     mkdir(dirname.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    
+
     fileprefix << dirname << "/file_info.txt";
     ofstream out(fileprefix.str().c_str());
 
@@ -78,23 +78,23 @@ int main(int argc, char** argv) {
     double intra_energy = solver->get_intra_species_energy();
     double inter_energy = solver->get_inter_species_energy();
 
-    
+
     if (grid->mpi_rank == 0){
-      out << std::setw(11) << "time" << std::setw(14) << "squared norm" << std::setw(14) << "sq norm1" << std::setw(14) << "sq norm2" << std::setw(14) << "tot energy" << std::setw(14) 
-          << "kin energy" << std::setw(14) << "pot energy" << std::setw(14) << "intra energy" << std::setw(14) << "inter energy"  << std::setw(14) << "rabi energy\n";        
-      out << std::setw(11) << "0" << std::setw(14) << norm2[0] + norm2[1] << std::setw(14) << norm2[0] << std::setw(14) << norm2[1] << std::setw(14) << tot_energy << std::setw(14) 
+      out << std::setw(11) << "time" << std::setw(14) << "squared norm" << std::setw(14) << "sq norm1" << std::setw(14) << "sq norm2" << std::setw(14) << "tot energy" << std::setw(14)
+          << "kin energy" << std::setw(14) << "pot energy" << std::setw(14) << "intra energy" << std::setw(14) << "inter energy"  << std::setw(14) << "rabi energy\n";
+      out << std::setw(11) << "0" << std::setw(14) << norm2[0] + norm2[1] << std::setw(14) << norm2[0] << std::setw(14) << norm2[1] << std::setw(14) << tot_energy << std::setw(14)
           << kin_energy << std::setw(14) << pot_energy << std::setw(14) << intra_energy << std::setw(14) << inter_energy << std::setw(14) << rabi_energy << endl;
     }
-    
+
     //write phase and density
     fileprefix.str("");
     fileprefix << dirname << "/1-" << 0;
     state1->write_phase(fileprefix.str());
-    state1->write_particle_density(fileprefix.str());    
+    state1->write_particle_density(fileprefix.str());
     fileprefix.str("");
     fileprefix << dirname << "/2-" << 0;
     state2->write_phase(fileprefix.str());
-    state2->write_particle_density(fileprefix.str());    
+    state2->write_particle_density(fileprefix.str());
 
     for (int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);
@@ -108,9 +108,9 @@ int main(int argc, char** argv) {
         pot_energy = solver->get_potential_energy();
         intra_energy = solver->get_intra_species_energy();
         inter_energy = solver->get_inter_species_energy();
-        
+
         if(grid->mpi_rank == 0){
-            out << std::setw(11) << (count_snap + 1) * ITERATIONS * delta_t << std::setw(14) << norm2[0] + norm2[1] << std::setw(14) << norm2[0] << std::setw(14) << norm2[1] << std::setw(14) << tot_energy << std::setw(14) 
+            out << std::setw(11) << (count_snap + 1) * ITERATIONS * delta_t << std::setw(14) << norm2[0] + norm2[1] << std::setw(14) << norm2[0] << std::setw(14) << norm2[1] << std::setw(14) << tot_energy << std::setw(14)
                 << kin_energy << std::setw(14) << pot_energy << std::setw(14) << intra_energy << std::setw(14) << inter_energy << std::setw(14) << rabi_energy << endl;
         }
 
@@ -120,11 +120,11 @@ int main(int argc, char** argv) {
             fileprefix.str("");
             fileprefix << dirname << "/1-" << ITERATIONS * (count_snap + 1);
             state1->write_phase(fileprefix.str());
-            state1->write_particle_density(fileprefix.str());    
+            state1->write_particle_density(fileprefix.str());
             fileprefix.str("");
             fileprefix << dirname << "/2-" << ITERATIONS * (count_snap + 1);
             state2->write_phase(fileprefix.str());
-            state2->write_particle_density(fileprefix.str());    
+            state2->write_particle_density(fileprefix.str());
         }
     }
 
@@ -132,8 +132,9 @@ int main(int argc, char** argv) {
     fileprefix.str("");
     fileprefix << dirname << "/" << 1 << "-" << ITERATIONS * SNAPSHOTS;
     state1->write_to_file(fileprefix.str());
-    //delete solver;
-    //delete hamiltonian;
+    delete solver;
+    delete hamiltonian;
+    delete potential;
     delete state1;
     delete state2;
     delete grid;

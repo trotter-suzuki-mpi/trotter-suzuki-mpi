@@ -24,7 +24,7 @@ clean:
 	$(MAKE) -C examples $@
 	$(MAKE) -C test $@
 
-trottersuzuki install uninstall lib python python_clean python_install matlab matlab_clean:
+trottersuzuki install uninstall lib python python_clean python_install:
 	$(MAKE) -C src $@
 
 example:
@@ -40,9 +40,9 @@ $(distdir).tar.gz: FORCE $(distdir)
 	rm -rf $(distdir)
 
 $(distdir):
+	mkdir -p $(distdir)/doc
 	mkdir -p $(distdir)/examples
 	mkdir -p $(distdir)/src
-	mkdir -p $(distdir)/src/MATLAB
 	mkdir -p $(distdir)/src/Python
 	mkdir -p $(distdir)/src/windows
 	mkdir -p $(distdir)/src/windows/trotter
@@ -54,10 +54,10 @@ $(distdir):
 	cp $(srcdir)/README.md $(distdir)
 	cp $(srcdir)/COPYING $(distdir)
 	cp $(srcdir)/CHANGES $(distdir)
+	cp -R $(srcdir)/doc/* $(distdir)/doc/
 	cp $(srcdir)/examples/Makefile.in $(srcdir)/examples/*cpp $(distdir)/examples
 	cp $(srcdir)/src/Makefile.in $(distdir)/src
 	cp $(srcdir)/src/*.c* $(srcdir)/src/*.h $(distdir)/src
-	cp $(srcdir)/src/MATLAB/* $(distdir)/src/MATLAB
 	cp -R $(srcdir)/src/Python/* $(distdir)/src/Python
 	cp $(srcdir)/src/windows/trotter/* $(distdir)/src/windows/trotter
 	cp $(srcdir)/test/*.c* $(srcdir)/test/*.h $(srcdir)/test/Makefile.in $(distdir)/test

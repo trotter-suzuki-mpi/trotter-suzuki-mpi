@@ -1,24 +1,22 @@
-============
 Introduction
 ============
-The module is a massively parallel implementation of the Trotter-Suzuki approximation to simulate the evolution of quantum systems classically. It relies on interfacing with C++ code with OpenMP for multicore execution.
+The module is a massively parallel implementation of the Trotter-Suzuki approximation to simulate the evolution of quantum systems classically.  It relies on interfacing with C++ code with OpenMP for multicore execution, and it can be accelerated by CUDA.
 
 Key features of the Python interface:
 
-* Fast execution by parallelization: OpenMP.
-* NumPy arrays are supported for efficient data exchange.
-* Multi-platform: Linux, OS X, and Windows are supported.
-* Arbitrary single-body initial state with closed and periodic boundary conditions.
+* Fast execution by parallelization: OpenMP and CUDA are supported.
 * Many-body simulations with non-interacting particles.
 * `Gross-Pitaevskii equation <https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb>`_.
-* Imaginary time evolution to calculate the ground state.
-
+* Imaginary time evolution to approximate the ground state.
+* Stationary and time-dependent external potential.
+* NumPy arrays are supported for efficient data exchange.
+* Multi-platform: Linux, OS X, and Windows are supported.
 
 Copyright and License
 ---------------------
 Trotter-Suzuki-MPI  is free software; you can redistribute it and/or modify it under the terms of the `GNU General Public License <http://www.gnu.org/licenses/gpl-3.0.html>`_ as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
 
-Trotter-Suzuki-MPI is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the `GNU General Public License <http://www.gnu.org/licenses/gpl-3.0.html>`_ for more details. 
+Trotter-Suzuki-MPI is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the `GNU General Public License <http://www.gnu.org/licenses/gpl-3.0.html>`_ for more details.
 
 
 Acknowledgement
@@ -27,8 +25,8 @@ The `original high-performance kernels <https://bitbucket.org/zzzoom/trottersuzu
 
 Citations
 ---------
-  
-1. Bederián, C. & Dente, A. Boosting quantum evolutions using Trotter-Suzuki algorithms on GPUs. *Proceedings of HPCLatAm-11, 4th High-Performance Computing Symposium*, 2011. `PDF <http://www.famaf.unc.edu.ar/grupos/GPGPU/boosting_trotter-suzuki.pdf>`_
+
+1. Bederián, C. & Dente, A. (2011). Boosting quantum evolutions using Trotter-Suzuki algorithms on GPUs. *Proceedings of HPCLatAm-11, 4th High-Performance Computing Symposium*. `PDF <http://www.famaf.unc.edu.ar/grupos/GPGPU/boosting_trotter-suzuki.pdf>`_
 
 2. Wittek, P. and Cucchietti, F.M. (2013). `A Second-Order Distributed Trotter-Suzuki Solver with a Hybrid CPU-GPU Kernel <http://dx.doi.org/10.1016/j.cpc.2012.12.008>`_. *Computer Physics Communications*, 184, pp. 1165-1171. `PDF <http://arxiv.org/pdf/1208.2407>`_
 

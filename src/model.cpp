@@ -83,56 +83,58 @@ Lattice::Lattice(int dim, double _length_x, double _length_y,
 }
 
 
-State::State(Lattice *_grid, double *_p_real, double *_p_imag): grid(_grid){
+State::State(Lattice *_grid, double *_p_real, double *_p_imag): grid(_grid) {
     expected_values_updated = false;
     if (_p_real == 0) {
         self_init = true;
         p_real = new double[grid->dim_x * grid->dim_y];
         for (int i = 0; i < grid->dim_x * grid->dim_y; i++) {
-        	p_real[i] = 0;
+            p_real[i] = 0;
         }
-    } else {
+    }
+    else {
         self_init = false;
         p_real = _p_real;
     }
     if (_p_imag == 0) {
         p_imag = new double[grid->dim_x * grid->dim_y];
         for (int i = 0; i < grid->dim_x * grid->dim_y; i++) {
-			p_imag[i] = 0;
-		}
-    } else {
+            p_imag[i] = 0;
+        }
+    }
+    else {
         p_imag = _p_imag;
     }
 }
 
 State::State(const State &obj): grid(obj.grid), expected_values_updated(obj.expected_values_updated), self_init(obj.self_init),
-								mean_X(obj.mean_X), mean_XX(obj.mean_XX), mean_Y(obj.mean_Y), mean_YY(obj.mean_YY),
-								mean_Px(obj.mean_Px), mean_PxPx(obj.mean_PxPx), mean_Py(obj.mean_Py), mean_PyPy(obj.mean_PyPy),
-								norm2(obj.norm2){
-	p_real = new double[grid->dim_x * grid->dim_y];
-	p_imag = new double[grid->dim_x * grid->dim_y];
-	for (int y = 0; y < grid->dim_y; y++) {
-		for (int x = 0; x < grid->dim_x; x++) {
-			p_real[y * grid->dim_x + x] = obj.p_real[y * grid->dim_x + x];
-			p_imag[y * grid->dim_x + x] = obj.p_imag[y * grid->dim_x + x];
-		}
-	}
+    mean_X(obj.mean_X), mean_XX(obj.mean_XX), mean_Y(obj.mean_Y), mean_YY(obj.mean_YY),
+    mean_Px(obj.mean_Px), mean_PxPx(obj.mean_PxPx), mean_Py(obj.mean_Py), mean_PyPy(obj.mean_PyPy),
+    norm2(obj.norm2) {
+    p_real = new double[grid->dim_x * grid->dim_y];
+    p_imag = new double[grid->dim_x * grid->dim_y];
+    for (int y = 0; y < grid->dim_y; y++) {
+        for (int x = 0; x < grid->dim_x; x++) {
+            p_real[y * grid->dim_x + x] = obj.p_real[y * grid->dim_x + x];
+            p_imag[y * grid->dim_x + x] = obj.p_imag[y * grid->dim_x + x];
+        }
+    }
 }
 
 State::~State() {
     if (self_init) {
-        delete p_real;
-        delete p_imag;
+        delete [] p_real;
+        delete [] p_imag;
     }
 }
 
 void State::imprint(complex<double> (*function)(double x, double y)) {
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y + 0.5*delta_y, idx;
+    double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
     double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
     double y_c = grid->global_no_halo_dim_y * grid->delta_y * 0.5;
     for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x + 0.5*delta_x;
+        idx = grid->start_x * delta_x + 0.5 * delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
             complex<double> tmp = function(idx - x_c, idy - y_c);
             double tmp_p_real = p_real[y * grid->dim_x + x];
@@ -145,11 +147,11 @@ void State::imprint(complex<double> (*function)(double x, double y)) {
 void State::init_state(complex<double> (*ini_state)(double x, double y)) {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y + 0.5*delta_y, idx;
+    double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
     double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
     double y_c = grid->global_no_halo_dim_y * grid->delta_y * 0.5;
     for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x + 0.5*delta_x;
+        idx = grid->start_x * delta_x + 0.5 * delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
             tmp = ini_state(idx - x_c, idy - y_c);
             p_real[y * grid->dim_x + x] = real(tmp);
@@ -231,14 +233,15 @@ void State::loadtxt(char *file_name) {
 double *State::get_particle_density(double *_density) {
     double *density;
     if (_density == 0) {
-      density = new double[grid->dim_x * grid->dim_y];
-    } else {
-      density = _density;
+        density = new double[grid->dim_x * grid->dim_y];
+    }
+    else {
+        density = _density;
     }
     for(int j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; j++) {
         for(int i = grid->inner_start_x - grid->start_x; i < grid->inner_end_x - grid->start_x; i++) {
             density[j * grid->dim_x + i] = p_real[j * grid->dim_x + i] * p_real[j * grid->dim_x + i] + p_imag[j * grid->dim_x + i] * p_imag[j * grid->dim_x + i];
-      }
+        }
     }
     return density;
 }
@@ -248,15 +251,16 @@ void State::write_particle_density(string fileprefix) {
     stringstream filename;
     filename << fileprefix << "-density";
     stamp_matrix(grid, get_particle_density(density), filename.str());
-    delete density;
+    delete [] density;
 }
 
 double *State::get_phase(double *_phase) {
     double *phase;
     if (_phase == 0) {
-      phase = new double[grid->dim_x * grid->dim_y];
-    } else {
-      phase = _phase;
+        phase = new double[grid->dim_x * grid->dim_y];
+    }
+    else {
+        phase = _phase;
     }
     double norm;
     for(int j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; j++) {
@@ -276,7 +280,7 @@ void State::write_phase(string fileprefix) {
     stringstream filename;
     filename << fileprefix << "-phase";
     stamp_matrix(grid, get_phase(phase), filename.str());
-    delete phase;
+    delete [] phase;
 }
 
 void State::calculate_expected_values(void) {
@@ -292,55 +296,55 @@ void State::calculate_expected_values(void) {
     double sum_norm2 = 0.;
     double sum_x_mean = 0, sum_xx_mean = 0, sum_y_mean = 0, sum_yy_mean = 0;
     double sum_px_mean = 0, sum_pxpx_mean = 0, sum_py_mean = 0,
-                         sum_pypy_mean = 0,
-                         param_px = - 1. / grid->delta_x,
-                         param_py = 1. / grid->delta_y;
-    complex<double> const_1 = -1./12., const_2 = 4./3., const_3 = -2.5;
-    complex<double> derivate1_1 = 1./6., derivate1_2 = - 1., derivate1_3 = 0.5, derivate1_4 = 1./3.;
+           sum_pypy_mean = 0,
+           param_px = - 1. / grid->delta_x,
+           param_py = 1. / grid->delta_y;
+    complex<double> const_1 = -1. / 12., const_2 = 4. / 3., const_3 = -2.5;
+    complex<double> derivate1_1 = 1. / 6., derivate1_2 = - 1., derivate1_3 = 0.5, derivate1_4 = 1. / 3.;
 
 #ifndef HAVE_MPI
-#pragma omp parallel for reduction(+:sum_norm2,sum_x_mean,sum_y_mean,sum_xx_mean,sum_yy_mean,sum_px_mean,sum_py_mean,sum_pxpx_mean,sum_pypy_mean)
+    #pragma omp parallel for reduction(+:sum_norm2,sum_x_mean,sum_y_mean,sum_xx_mean,sum_yy_mean,sum_px_mean,sum_py_mean,sum_pxpx_mean,sum_pypy_mean)
 #endif
-    for (int i=grid->inner_start_y - grid->start_y; i < grid->inner_end_y - grid->start_y; ++i) {
+    for (int i = grid->inner_start_y - grid->start_y; i < grid->inner_end_y - grid->start_y; ++i) {
         int y = grid->inner_start_y + i - (grid->inner_start_y - grid->start_y);
         complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
         complex<double> psi_up_up, psi_down_down, psi_left_left, psi_right_right;
         int x = grid->inner_start_x;
         for (int j = grid->inner_start_x - grid->start_x; j < grid->inner_end_x - grid->start_x; ++j) {
-            
+
             psi_center = complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
             sum_norm2 += real(conj(psi_center) * psi_center);
             sum_x_mean += real(conj(psi_center) * psi_center * complex<double>(grid->delta_x * x - grid_center_x, 0.));
             sum_y_mean += real(conj(psi_center) * psi_center * complex<double>(grid->delta_y * y - grid_center_y, 0.));
             sum_xx_mean += real(conj(psi_center) * psi_center * complex<double>(grid->delta_x * x - grid_center_x, 0.) * complex<double>(grid->delta_x * x - grid_center_x, 0.));
             sum_yy_mean += real(conj(psi_center) * psi_center * complex<double>(grid->delta_y * y - grid_center_y, 0.) * complex<double>(grid->delta_y * y - grid_center_y, 0.));
-            
-            if (i - (grid->inner_start_y - grid->start_y) >= (ini_halo_y == 0)*2 &&
-                i < grid->inner_end_y - grid->start_y - (end_halo_y == 0)*2 &&
-                j - (grid->inner_start_x - grid->start_x) >= (ini_halo_x == 0)*2 &&
-                j < grid->inner_end_x - grid->start_x - (end_halo_x == 0)*2) {
+
+            if (i - (grid->inner_start_y - grid->start_y) >= (ini_halo_y == 0) * 2 &&
+                    i < grid->inner_end_y - grid->start_y - (end_halo_y == 0) * 2 &&
+                    j - (grid->inner_start_x - grid->start_x) >= (ini_halo_x == 0) * 2 &&
+                    j < grid->inner_end_x - grid->start_x - (end_halo_x == 0) * 2) {
 
                 psi_up = complex<double> (p_real[(i - 1) * tile_width + j],
-                                               p_imag[(i - 1) * tile_width + j]);
+                                          p_imag[(i - 1) * tile_width + j]);
                 psi_down = complex<double> (p_real[(i + 1) * tile_width + j],
-                                                 p_imag[(i + 1) * tile_width + j]);
+                                            p_imag[(i + 1) * tile_width + j]);
                 psi_right = complex<double> (p_real[i * tile_width + j + 1],
-                                                  p_imag[i * tile_width + j + 1]);
+                                             p_imag[i * tile_width + j + 1]);
                 psi_left = complex<double> (p_real[i * tile_width + j - 1],
-                                                 p_imag[i * tile_width + j - 1]);
+                                            p_imag[i * tile_width + j - 1]);
                 psi_up_up = complex<double> (p_real[(i - 2) * tile_width + j],
-                                               p_imag[(i - 2) * tile_width + j]);
+                                             p_imag[(i - 2) * tile_width + j]);
                 psi_down_down = complex<double> (p_real[(i + 2) * tile_width + j],
                                                  p_imag[(i + 2) * tile_width + j]);
                 psi_right_right = complex<double> (p_real[i * tile_width + j + 2],
-                                                  p_imag[i * tile_width + j + 2]);
+                                                   p_imag[i * tile_width + j + 2]);
                 psi_left_left = complex<double> (p_real[i * tile_width + j - 2],
                                                  p_imag[i * tile_width + j - 2]);
-                
-                sum_px_mean += imag(conj(psi_center) * (derivate1_4*psi_right + derivate1_3*psi_center + derivate1_2*psi_left + derivate1_1*psi_left_left));
-                sum_py_mean += imag(conj(psi_center) * (derivate1_4*psi_up + derivate1_3*psi_center + derivate1_2*psi_down + derivate1_1*psi_down_down));
-                sum_pxpx_mean += real(conj(psi_center) * (const_1*psi_right_right + const_2*psi_right + const_2*psi_left + const_1*psi_left_left + const_3*psi_center));
-                sum_pypy_mean += real(conj(psi_center) * (const_1*psi_down_down + const_2*psi_down + const_2*psi_up + const_1*psi_up_up + const_3*psi_center));
+
+                sum_px_mean += imag(conj(psi_center) * (derivate1_4 * psi_right + derivate1_3 * psi_center + derivate1_2 * psi_left + derivate1_1 * psi_left_left));
+                sum_py_mean += imag(conj(psi_center) * (derivate1_4 * psi_up + derivate1_3 * psi_center + derivate1_2 * psi_down + derivate1_1 * psi_down_down));
+                sum_pxpx_mean += real(conj(psi_center) * (const_1 * psi_right_right + const_2 * psi_right + const_2 * psi_left + const_1 * psi_left_left + const_3 * psi_center));
+                sum_pypy_mean += real(conj(psi_center) * (const_1 * psi_down_down + const_2 * psi_down + const_2 * psi_up + const_1 * psi_up_up + const_3 * psi_center));
             }
             ++x;
         }
@@ -365,7 +369,7 @@ void State::calculate_expected_values(void) {
     double *mean_Py_mpi = new double[grid->mpi_procs];
     double *mean_PxPx_mpi = new double[grid->mpi_procs];
     double *mean_PyPy_mpi = new double[grid->mpi_procs];
-    
+
     MPI_Allgather(&norm2, 1, MPI_DOUBLE, norm2_mpi, 1, MPI_DOUBLE, grid->cartcomm);
     MPI_Allgather(&mean_X, 1, MPI_DOUBLE, mean_X_mpi, 1, MPI_DOUBLE, grid->cartcomm);
     MPI_Allgather(&mean_Y, 1, MPI_DOUBLE, mean_Y_mpi, 1, MPI_DOUBLE, grid->cartcomm);
@@ -375,7 +379,7 @@ void State::calculate_expected_values(void) {
     MPI_Allgather(&mean_Py, 1, MPI_DOUBLE, mean_Py_mpi, 1, MPI_DOUBLE, grid->cartcomm);
     MPI_Allgather(&mean_PxPx, 1, MPI_DOUBLE, mean_PxPx_mpi, 1, MPI_DOUBLE, grid->cartcomm);
     MPI_Allgather(&mean_PyPy, 1, MPI_DOUBLE, mean_PyPy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
-    
+
     norm2 = 0.;
     mean_X = 0.;
     mean_Y = 0.;
@@ -385,7 +389,7 @@ void State::calculate_expected_values(void) {
     mean_Py = 0.;
     mean_PxPx = 0.;
     mean_PyPy = 0.;
-    
+
     for(int i = 0; i < grid->mpi_procs; i++) {
         norm2 += norm2_mpi[i];
         mean_X += mean_X_mpi[i];
@@ -479,12 +483,12 @@ void State::write_to_file(string filename) {
 }
 
 ExponentialState::ExponentialState(Lattice *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
-                  State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase) {
+    State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase) {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y + 0.5*delta_y, idx;
+    double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
     for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x + 0.5*delta_x;
+        idx = grid->start_x * delta_x + 0.5 * delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
             tmp = exp_state(idx, idy);
             p_real[y * grid->dim_x + x] = real(tmp);
@@ -494,20 +498,20 @@ ExponentialState::ExponentialState(Lattice *_grid, int _n_x, int _n_y, double _n
 }
 
 complex<double> ExponentialState::exp_state(double x, double y) {
-	double L_x = grid->global_no_halo_dim_x * grid->delta_x;
+    double L_x = grid->global_no_halo_dim_x * grid->delta_x;
     double L_y = grid->global_no_halo_dim_x * grid->delta_y;
-    return sqrt(norm/(L_x*L_y)) * exp(complex<double>(0., phase)) * exp(complex<double>(0., 2*M_PI*double(n_x)/L_x * x + 2*M_PI* double(n_y)/L_y * y));
+    return sqrt(norm / (L_x * L_y)) * exp(complex<double>(0., phase)) * exp(complex<double>(0., 2 * M_PI * double(n_x) / L_x * x + 2 * M_PI * double(n_y) / L_y * y));
 }
 
 GaussianState::GaussianState(Lattice *_grid, double _omega, double _mean_x, double _mean_y,
                              double _norm, double _phase, double *_p_real, double *_p_imag):
-                             State(_grid, _p_real, _p_imag), mean_x(_mean_x),
-                             mean_y(_mean_y), omega(_omega), norm(_norm), phase(_phase) {
+    State(_grid, _p_real, _p_imag), mean_x(_mean_x),
+    mean_y(_mean_y), omega(_omega), norm(_norm), phase(_phase) {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y + 0.5*delta_y, idx;
+    double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
     for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x + 0.5*delta_x;
+        idx = grid->start_x * delta_x + 0.5 * delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
             tmp = gauss_state(idx, idy);
             p_real[y * grid->dim_x + x] = real(tmp);
@@ -523,12 +527,12 @@ complex<double> GaussianState::gauss_state(double x, double y) {
 }
 
 SinusoidState::SinusoidState(Lattice *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
-                             State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase)  {
+    State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase)  {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y + 0.5*delta_y, idx;
+    double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
     for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x + 0.5*delta_x;
+        idx = grid->start_x * delta_x + 0.5 * delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
             tmp = sinusoid_state(idx, idy);
             p_real[y * grid->dim_x + x] = real(tmp);
@@ -540,7 +544,7 @@ SinusoidState::SinusoidState(Lattice *_grid, int _n_x, int _n_y, double _norm, d
 complex<double> SinusoidState::sinusoid_state(double x, double y) {
     double L_x = grid->global_no_halo_dim_x * grid->delta_x;
     double L_y = grid->global_no_halo_dim_y * grid->delta_y;
-    return sqrt(norm/(L_x*L_y)) * 2.* exp(complex<double>(0., phase)) * complex<double> (sin(2*M_PI*double(n_x) / L_x*x) * sin(2*M_PI*double(n_y) / L_y*y), 0.0);
+    return sqrt(norm / (L_x * L_y)) * 2.* exp(complex<double>(0., phase)) * complex<double> (sin(2 * M_PI * double(n_x) / L_x * x) * sin(2 * M_PI * double(n_y) / L_y * y), 0.0);
 }
 
 Potential::Potential(Lattice *_grid, char *filename): grid(_grid) {
@@ -559,12 +563,13 @@ Potential::Potential(Lattice *_grid, char *filename): grid(_grid) {
 }
 
 Potential::Potential(Lattice *_grid, double *_external_pot): grid(_grid) {
-	if (_external_pot == 0) {
-		self_init = true;
-		matrix = new double[grid->dim_x * grid->dim_y];
-	} else {
-		matrix = _external_pot;
-	}
+    if (_external_pot == 0) {
+        self_init = true;
+        matrix = new double[grid->dim_x * grid->dim_y];
+    }
+    else {
+        matrix = _external_pot;
+    }
     self_init = false;
     is_static = true;
     evolving_potential = NULL;
@@ -588,14 +593,16 @@ Potential::Potential(Lattice *_grid, double (*potential_function)(double x, doub
 }
 
 double Potential::get_value(int x, int y) {
-	if (matrix != NULL) {
+    if (matrix != NULL) {
         return matrix[y * grid->dim_x + x];
-    } else {
-        double idy = grid->start_y * grid->delta_y + y*grid->delta_y + 0.5*grid->delta_y;
-        double idx = grid->start_x * grid->delta_x + x*grid->delta_x + 0.5*grid->delta_x;
+    }
+    else {
+        double idy = grid->start_y * grid->delta_y + y * grid->delta_y + 0.5 * grid->delta_y;
+        double idx = grid->start_x * grid->delta_x + x * grid->delta_x + 0.5 * grid->delta_x;
         if (is_static) {
             return static_potential(idx, idy);
-        } else {
+        }
+        else {
             return evolving_potential(idx, idy, current_evolution_time);
         }
     }
@@ -606,9 +613,9 @@ bool Potential::update(double t) {
     if (!is_static) {
         if (matrix != NULL) {
             double delta_x = grid->delta_x, delta_y = grid->delta_y;
-            double idy = grid->start_y * delta_y + 0.5*delta_y, idx;
+            double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
             for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-                idx = grid->start_x * delta_x + 0.5*delta_x;
+                idx = grid->start_x * delta_x + 0.5 * delta_x;
                 for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
                     matrix[y * grid->dim_x + x] = evolving_potential(idx, idy, t);
                 }
@@ -626,8 +633,8 @@ Potential::~Potential() {
 }
 
 HarmonicPotential::HarmonicPotential(Lattice *_grid, double _omegax, double _omegay, double _mass, double _mean_x, double _mean_y):
-                                       Potential(_grid, const_potential), omegax(_omegax), omegay(_omegay),
-                                       mass(_mass), mean_x(_mean_x), mean_y(_mean_y) {
+    Potential(_grid, const_potential), omegax(_omegax), omegay(_omegay),
+    mass(_mass), mean_x(_mean_x), mean_y(_mean_y) {
     is_static = true;
     self_init = false;
     evolving_potential = NULL;
@@ -636,8 +643,8 @@ HarmonicPotential::HarmonicPotential(Lattice *_grid, double _omegax, double _ome
 }
 
 double HarmonicPotential::get_value(int x, int y) {
-    double idy = (grid->start_y + y) * grid->delta_y + mean_x + 0.5*grid->delta_y;
-    double idx = (grid->start_x + x) * grid->delta_x + mean_y + 0.5*grid->delta_x;
+    double idy = (grid->start_y + y) * grid->delta_y + mean_x + 0.5 * grid->delta_y;
+    double idx = (grid->start_x + x) * grid->delta_x + mean_y + 0.5 * grid->delta_x;
     double x_c = (grid->global_dim_x - 2.*grid->halo_x * grid->periods[1]) * grid->delta_x * 0.5;
     double y_c = (grid->global_dim_y - 2.*grid->halo_y * grid->periods[1]) * grid->delta_y * 0.5;
     double x_r = idx - x_c;
@@ -652,27 +659,28 @@ Hamiltonian::Hamiltonian(Lattice *_grid, Potential *_potential,
                          double _mass, double _coupling_a,
                          double _angular_velocity,
                          double _rot_coord_x, double _rot_coord_y): mass(_mass),
-                         coupling_a(_coupling_a), angular_velocity(_angular_velocity), grid(_grid) {
-	if (angular_velocity != 0.) {
-		if (grid->periods[0] != 0 || grid->periods[1] != 0) {
-			cout << "Boundary conditions must be closed for rotating frame of refernce\n";
-			return;
-		}
-		if (grid->mpi_procs == 1) {
-			grid->halo_x = 8;
-			grid->halo_y = 8;
-		}
-		if (grid->mpi_procs > 1 && (grid->halo_x == 4 || grid->halo_y == 4)) {
-			cout << "Halos must be of 8 points width\n";
-			return;
-		}
-	}
+    coupling_a(_coupling_a), angular_velocity(_angular_velocity), grid(_grid) {
+    if (angular_velocity != 0.) {
+        if (grid->periods[0] != 0 || grid->periods[1] != 0) {
+            cout << "Boundary conditions must be closed for rotating frame of refernce\n";
+            return;
+        }
+        if (grid->mpi_procs == 1) {
+            grid->halo_x = 8;
+            grid->halo_y = 8;
+        }
+        if (grid->mpi_procs > 1 && (grid->halo_x == 4 || grid->halo_y == 4)) {
+            cout << "Halos must be of 8 points width\n";
+            return;
+        }
+    }
     rot_coord_x = (grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x) * 0.5 + _rot_coord_x / grid->delta_x;
     rot_coord_y = (grid->global_dim_y - grid->periods[1] * 2 * grid->halo_y) * 0.5 + _rot_coord_y / grid->delta_y;
     if (_potential == NULL) {
         self_init = true;
         potential = new Potential(grid, const_potential);
-    } else {
+    }
+    else {
         self_init = false;
         potential = _potential;
     }
@@ -685,24 +693,25 @@ Hamiltonian::~Hamiltonian() {
 }
 
 Hamiltonian2Component::Hamiltonian2Component(Lattice *_grid,
-                         Potential *_potential,
-                         Potential *_potential_b,
-                         double _mass,
-                         double _mass_b, double _coupling_a,
-                         double _coupling_ab, double _coupling_b,
-                         double _omega_r, double _omega_i,
-                         double _angular_velocity,
-                         double _rot_coord_x, double _rot_coord_y):
-                         Hamiltonian(_grid, _potential, _mass, _coupling_a, _angular_velocity, _rot_coord_x, rot_coord_y), mass_b(_mass_b),
-                         coupling_ab( _coupling_ab), coupling_b(_coupling_b), omega_r(_omega_r), omega_i(_omega_i) {
+        Potential *_potential,
+        Potential *_potential_b,
+        double _mass,
+        double _mass_b, double _coupling_a,
+        double _coupling_ab, double _coupling_b,
+        double _omega_r, double _omega_i,
+        double _angular_velocity,
+        double _rot_coord_x, double _rot_coord_y):
+    Hamiltonian(_grid, _potential, _mass, _coupling_a, _angular_velocity, _rot_coord_x, rot_coord_y), mass_b(_mass_b),
+    coupling_ab( _coupling_ab), coupling_b(_coupling_b), omega_r(_omega_r), omega_i(_omega_i) {
 
     if (_potential_b == NULL) {
         potential_b = _potential;
-    } else {
+    }
+    else {
         potential_b = _potential_b;
     }
 }
 
 Hamiltonian2Component::~Hamiltonian2Component() {
-    
+
 }

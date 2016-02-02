@@ -1,9 +1,12 @@
 #include <iostream>
 #include "kerneltest.h"
 
+#define DIM 250
+#define LENGTH 100
+
 template<class F>
 void my_test<F>::free_particle_test() {
-	Lattice *grid = new Lattice(100, 20, 20, true, true);
+	Lattice *grid = new Lattice(DIM, LENGTH, LENGTH, true, true);
 	State *state = new ExponentialState(grid);
 	Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL);
 	Solver *solver = new Solver(grid, state, hamiltonian, 5.e-3, this->kernel_type);
@@ -13,18 +16,19 @@ void my_test<F>::free_particle_test() {
 	double tot_energy = solver->get_total_energy();
 	double norm = solver->get_squared_norm();
 	delete solver;
-    delete hamiltonian;
-    delete state;
-    delete grid;
-    //Check
-    CPPUNIT_ASSERT( std::abs(ini_tot_energy - tot_energy) < TOLERANCE );
-    CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
-    std::cout << "TEST FUNCTION: free_particle_test -> PASSED! " << std::endl;
+  delete hamiltonian;
+  delete state;
+  delete grid;
+  //Check
+  CPPUNIT_ASSERT( std::abs(ini_tot_energy - tot_energy) < TOLERANCE );
+  CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
+  std::cout << "TEST FUNCTION: free_particle_test with " << this->kernel_type <<
+            " kernel -> PASSED! " << std::endl;
 }
 
 template<class F>
 void my_test<F>::harmonic_oscillator_test() {
-	Lattice *grid = new Lattice(100, 20, 20);
+	Lattice *grid = new Lattice(DIM, LENGTH, LENGTH);
 	State *state = new GaussianState(grid, 1.);
 	Potential *potential = new HarmonicPotential(grid, 1., 1.);
 	Hamiltonian *hamiltonian = new Hamiltonian(grid, potential);
@@ -35,19 +39,20 @@ void my_test<F>::harmonic_oscillator_test() {
 	double tot_energy = solver->get_total_energy();
 	double norm = solver->get_squared_norm();
 	delete solver;
-    delete hamiltonian;
-    delete state;
-    delete grid;
+  delete hamiltonian;
+  delete state;
+  delete grid;
 	//Check
 	CPPUNIT_ASSERT( std::abs(ini_tot_energy - tot_energy) < TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
-    std::cout << "TEST FUNCTION: harmonic_oscillator_test -> PASSED! " << std::endl;
+    std::cout << "TEST FUNCTION: harmonic_oscillator_test with " << this->kernel_type <<
+              " kernel -> PASSED! " << std::endl;
 }
 
 template<class F>
 void my_test<F>::imaginary_harmonic_oscillator_test() {
 	double std_energy = 1.00001;
-	Lattice *grid = new Lattice(100, 20, 20);
+	Lattice *grid = new Lattice(DIM, LENGTH, LENGTH);
 	State *state = new GaussianState(grid, 0.5);
 	Potential *potential = new HarmonicPotential(grid, 1., 1.);
 	Hamiltonian *hamiltonian = new Hamiltonian(grid, potential);
@@ -57,19 +62,20 @@ void my_test<F>::imaginary_harmonic_oscillator_test() {
 	double tot_energy = solver->get_total_energy();
 	double norm = solver->get_squared_norm();
 	delete solver;
-    delete hamiltonian;
-    delete state;
-    delete grid;
+  delete hamiltonian;
+  delete state;
+  delete grid;
 	//Check
 	CPPUNIT_ASSERT( std::abs(std_energy - tot_energy) < TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
-    std::cout << "TEST FUNCTION: imaginary_harmonic_oscillator_test -> PASSED! " << std::endl;
+    std::cout << "TEST FUNCTION: imaginary_harmonic_oscillator_test with " << this->kernel_type <<
+              " kernel -> PASSED! " << std::endl;
 }
 
 template<class F>
 void my_test<F>::intra_particle_interaction_test() {
-	double std_mean_XX = 1.05368;
-	Lattice *grid = new Lattice(100, 20, 20);
+	double std_mean_XX = 1.02321; //1.05368;
+	Lattice *grid = new Lattice(DIM, LENGTH, LENGTH);
 	State *state = new GaussianState(grid, 1);
 	Potential *potential = new HarmonicPotential(grid, 1., 1.);
 	Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, 1., 10);
@@ -88,14 +94,15 @@ void my_test<F>::intra_particle_interaction_test() {
 	CPPUNIT_ASSERT( std::abs(ini_tot_energy - tot_energy) < TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(std_mean_XX - mean_XX) < TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
-	std::cout << "TEST FUNCTION: intra_particle_interaction_test -> PASSED! " << std::endl;
+	std::cout << "TEST FUNCTION: intra_particle_interaction_test with " << this->kernel_type <<
+            " kernel -> PASSED! " << std::endl;
 }
 
 template<class F>
 void my_test<F>::imaginary_intra_particle_interaction_test() {
 	double std_energy = 1.59273;
-	double std_mean_XX = 0.780077;
-	Lattice *grid = new Lattice(100, 20, 20);
+	double std_mean_XX = 0.768148; // 0.780077;
+	Lattice *grid = new Lattice(DIM, LENGTH, LENGTH);
 	State *state = new GaussianState(grid, 1);
 	Potential *potential = new HarmonicPotential(grid, 1., 1.);
 	Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, 1., 10);
@@ -113,7 +120,8 @@ void my_test<F>::imaginary_intra_particle_interaction_test() {
 	CPPUNIT_ASSERT( std::abs(std_energy - tot_energy) < TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(std_mean_XX - mean_XX) < TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
-	std::cout << "TEST FUNCTION: imaginary_intra_particle_interaction_test -> PASSED! " << std::endl;
+	std::cout << "TEST FUNCTION: imaginary_intra_particle_interaction_test with " << this->kernel_type <<
+            " kernel -> PASSED! " << std::endl;
 }
 
 template<class F>
@@ -136,7 +144,8 @@ void my_test<F>::rotating_frame_of_reference_test() {
 	//Check
 	CPPUNIT_ASSERT( std::abs(ini_tot_energy - tot_energy) < TOLERANCE*10. );
 	CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
-	std::cout << "TEST FUNCTION: rotating_frame_of_reference_test -> PASSED! " << std::endl;
+	std::cout << "TEST FUNCTION: rotating_frame_of_reference_test with " << this->kernel_type <<
+            " kernel -> PASSED! " << std::endl;
 
 }
 
@@ -160,13 +169,14 @@ void my_test<F>::imaginary_rotating_frame_of_reference_test() {
 	//Check
 	CPPUNIT_ASSERT( std::abs(fin_energy - tot_energy) < TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
-	std::cout << "TEST FUNCTION: imaginary_rotating_frame_of_reference_test -> PASSED! " << std::endl;
+	std::cout << "TEST FUNCTION: imaginary_rotating_frame_of_reference_test with " << this->kernel_type <<
+            " kernel -> PASSED! " << std::endl;
 
 }
 
 template<class F>
 void my_test<F>::mixed_BEC_test() {
-	Lattice *grid = new Lattice(100, 20, 20);
+	Lattice *grid = new Lattice(DIM, LENGTH, LENGTH);
 	State *state1 = new GaussianState(grid, 1);
 	State *state2 = new State(grid);
 	Potential *potential = new HarmonicPotential(grid, 1., 1.);
@@ -191,14 +201,15 @@ void my_test<F>::mixed_BEC_test() {
 	CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(ini_norm1 - norm2) < NORM_TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(ini_norm2 - norm1) < NORM_TOLERANCE );
-	std::cout << "TEST FUNCTION: mixed_BEC_test -> PASSED! " << std::endl;
+	std::cout << "TEST FUNCTION: mixed_BEC_test with " << this->kernel_type <<
+            " kernel -> PASSED! " << std::endl;
 }
 
 template<class F>
 void my_test<F>::imaginary_mixed_BEC_test() {
 	double std_norm1 = 0.915292;
 	double std_norm2 = 0.084708;
-	Lattice *grid = new Lattice(100, 20, 20);
+	Lattice *grid = new Lattice(DIM, LENGTH, LENGTH);
 	State *state1 = new GaussianState(grid, 1);
 	State *state2 = new State(grid);
 	Potential *potential = new HarmonicPotential(grid, 1., 1.);
@@ -221,7 +232,8 @@ void my_test<F>::imaginary_mixed_BEC_test() {
 	CPPUNIT_ASSERT( std::abs(ini_norm - norm) < NORM_TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(std_norm1 - norm1) < NORM_TOLERANCE );
 	CPPUNIT_ASSERT( std::abs(std_norm2 - norm2) < NORM_TOLERANCE );
-	std::cout << "TEST FUNCTION: imaginary_mixed_BEC_test -> PASSED! " << std::endl;
+	std::cout << "TEST FUNCTION: imaginary_mixed_BEC_test with " << this->kernel_type <<
+            " kernel -> PASSED! " << std::endl;
 }
 
 void CpuKernelTest::setUp() {
@@ -231,5 +243,9 @@ void CpuKernelTest::setUp() {
 #ifdef CUDA
 void GpuKernelTest::setUp() {
     this->kernel_type = "gpu";
+}
+
+void HybridKernelTest::setUp() {
+    this->kernel_type = "hybrid";
 }
 #endif

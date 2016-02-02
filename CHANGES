@@ -1,8 +1,9 @@
-Since 1.4:
+Version 1.4: 2016-01-31
  - New: Improved API that allows the user to define and solve problems in physical terms. Classes were introduced for the lattice, the state, the potential, the Hamiltonian, and for the solver.
- - New: Time-dependent potentials are allowed.
- - New: CUDA support in Python and MATLAB interfaces.
- - Changed: SSE kernel is removed.
+ - New: Time-dependent potentials are possible.
+ - New: CUDA support in the Python interface.
+ - Changed: SSE kernel was removed.
+ - Changed: MATLAB interface was removed.
  - Changed: More robust compilation of CUDA version in the Python wrapper.
  - Fixed: Code compiles again with the hybrid kernel.
 
@@ -35,11 +36,11 @@ Version 1.2: 2015-06-08
  - Changed: Examples split into separate folder.
  - Changed: Better testing of MPI dependencies by configure script.
  - Changed: Improved treatment of Intel compilers.
- 
+
 Version 1.1: 2014-06-12
 
  - New: Build system revised, CUDA is no longer necessary.
- 
+
 Version 1.0: 2012-06-28
 
  - Initial release.
