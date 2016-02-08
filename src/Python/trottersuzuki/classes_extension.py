@@ -25,8 +25,8 @@ class Lattice(_Lattice):
 class State(_State):
     
     def init_state(self, state_function):
-        real = np.zeros((self.grid.dim_x, self.grid.dim_y))
-        imag = np.zeros((self.grid.dim_x ,self.grid.dim_y))
+        real = np.zeros((self.grid.dim_y, self.grid.dim_x))
+        imag = np.zeros((self.grid.dim_y, self.grid.dim_x))
         
         delta_x = self.grid.delta_x 
         delta_y = self.grid.delta_y
@@ -40,8 +40,8 @@ class State(_State):
             for x in range(0, self.grid.dim_x):
                 x_r = idx - x_c
                 tmp = state_function(x_r, y_r)
-                real[x, y] = np.real(tmp)
-                imag[x, y] = np.imag(tmp)
+                real[y, x] = np.real(tmp)
+                imag[y, x] = np.imag(tmp)
                 idx += delta_x
             idy += delta_y
             
@@ -49,8 +49,8 @@ class State(_State):
         
     def imprint(self, function):
         
-        real = np.zeros((self.grid.dim_x, self.grid.dim_y))
-        imag = np.zeros((self.grid.dim_x ,self.grid.dim_y))
+        real = np.zeros((self.grid.dim_y, self.grid.dim_x))
+        imag = np.zeros((self.grid.dim_y, self.grid.dim_x))
         
         delta_x = self.grid.delta_x 
         delta_y = self.grid.delta_y
@@ -64,8 +64,8 @@ class State(_State):
             for x in range(0, self.grid.dim_x):
                 x_r = idx - x_c
                 tmp = function(x_r, y_r)
-                real[x, y] = np.real(tmp)
-                imag[x, y] = np.imag(tmp)
+                real[y, x] = np.real(tmp)
+                imag[y, x] = np.imag(tmp)
                 idx += delta_x
             idy += delta_y
             
@@ -75,8 +75,8 @@ class GaussianState(_GaussianState):
     
     def imprint(self, function):
 
-        real = np.zeros((self.grid.dim_x, self.grid.dim_y))
-        imag = np.zeros((self.grid.dim_x ,self.grid.dim_y))
+        real = np.zeros((self.grid.dim_y, self.grid.dim_x))
+        imag = np.zeros((self.grid.dim_y, self.grid.dim_x))
         
         delta_x = self.grid.delta_x 
         delta_y = self.grid.delta_y
@@ -90,8 +90,8 @@ class GaussianState(_GaussianState):
             for x in range(0, self.grid.dim_x):
                 x_r = idx - x_c
                 tmp = function(x_r, y_r)
-                real[x, y] = np.real(tmp)
-                imag[x, y] = np.imag(tmp)
+                real[y, x] = np.real(tmp)
+                imag[y, x] = np.imag(tmp)
                 idx += delta_x
             idy += delta_y
         
@@ -101,8 +101,8 @@ class SinusoidState(_SinusoidState):
     
     def imprint(self, function):
 
-        real = np.zeros((self.grid.dim_x, self.grid.dim_y))
-        imag = np.zeros((self.grid.dim_x ,self.grid.dim_y))
+        real = np.zeros((self.grid.dim_y, self.grid.dim_x))
+        imag = np.zeros((self.grid.dim_y, self.grid.dim_x))
         
         delta_x = self.grid.delta_x 
         delta_y = self.grid.delta_y
@@ -116,8 +116,8 @@ class SinusoidState(_SinusoidState):
             for x in range(0, self.grid.dim_x):
                 x_r = idx - x_c
                 tmp = function(x_r, y_r)
-                real[x, y] = np.real(tmp)
-                imag[x, y] = np.imag(tmp)
+                real[y, x] = np.real(tmp)
+                imag[y, x] = np.imag(tmp)
                 idx += delta_x
             idy += delta_y
             
@@ -127,8 +127,8 @@ class ExponentialState(_ExponentialState):
     
     def imprint(self, function):
 
-        real = np.zeros((self.grid.dim_x, self.grid.dim_y))
-        imag = np.zeros((self.grid.dim_x ,self.grid.dim_y))
+        real = np.zeros((self.grid.dim_y, self.grid.dim_x))
+        imag = np.zeros((self.grid.dim_y, self.grid.dim_x))
         
         delta_x = self.grid.delta_x 
         delta_y = self.grid.delta_y
@@ -153,7 +153,7 @@ class Potential(_Potential):
     
     def init_potential(self, pot_function):
         
-        potential = np.zeros((self.grid.dim_x, self.grid.dim_y))
+        potential = np.zeros((self.grid.dim_y, self.grid.dim_x))
         
         delta_x = self.grid.delta_x 
         delta_y = self.grid.delta_y
@@ -166,7 +166,7 @@ class Potential(_Potential):
             idx = self.grid.start_x * delta_x + 0.5 * delta_x            
             for x in range(0, self.grid.dim_x):
                 x_r = idx - x_c
-                potential[x, y] = pot_function(x_r, y_r)
+                potential[y, x] = pot_function(x_r, y_r)
                 idx += delta_x
             idy += delta_y
         
