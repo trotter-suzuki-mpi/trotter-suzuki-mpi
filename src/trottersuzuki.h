@@ -159,7 +159,8 @@ public:
         Construct the quantum state with gaussian like wave function.
 
         @param [in] grid             Lattice object.
-        @param [in] omega            Gaussian coefficient.
+        @param [in] omega_x          Inverse of the variance along x-axis.
+        @param [in] omega_y          Inverse of the variance along y-axis.
         @param [in] mean_x           X coordinate of the gaussian function's center.
         @param [in] mean_y           Y coordinate of the gaussian function's center.
         @param [in] norm             Squared norm of the state.
@@ -167,13 +168,14 @@ public:
         @param [in] p_real           Pointer to the real part of the wave function.
         @param [in] p_imag           Pointer to the imaginary part of the wave function.
      */
-    GaussianState(Lattice *grid, double omega, double mean_x = 0, double mean_y = 0, double norm = 1, double phase = 0,
+    GaussianState(Lattice *grid, double omega_x, double omega_y = -1., double mean_x = 0, double mean_y = 0, double norm = 1, double phase = 0,
                   double *p_real = 0, double *p_imag = 0);
 
 private:
     double mean_x;    ///< X coordinate of the gaussian function's center.
     double mean_y;    ///< Y coordinate of the gaussian function's center.
-    double omega;    ///< Gaussian coefficient.
+    double omega_x;    ///< Gaussian coefficient.
+    double omega_y;    ///< Gaussian coefficient.
     double norm;    ///< Norm of the state.
     double phase;    ///< Relative phase of the wave function.
     complex<double> gauss_state(double x, double y);    ///< Gaussian function.

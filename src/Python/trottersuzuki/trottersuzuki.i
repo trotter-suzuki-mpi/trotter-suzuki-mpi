@@ -144,13 +144,14 @@ private:
 
 class GaussianState: public State {
 public:
-    GaussianState(Lattice *_grid, double _omega, double _mean_x=0, double _mean_y=0, double _norm=1, double _phase=0,
-                  double *_p_real=0, double *_p_imag=0);
+    GaussianState(Lattice *grid, double omega_x, double omega_y = -1., double mean_x = 0, double mean_y = 0, double norm = 1, double phase = 0,
+                  double *p_real = 0, double *p_imag = 0);
 
 private:
     double mean_x;
     double mean_y;
-    double omega;
+    double omega_x;
+    double omega_y;
     double norm;
     double phase;
     complex<double> gauss_state(double x, double y);
