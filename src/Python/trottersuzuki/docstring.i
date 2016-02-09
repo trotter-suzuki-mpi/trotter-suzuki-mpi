@@ -1027,22 +1027,60 @@ Returns
 
 %feature("docstring") State::State "
 
-Construct the state from given matrices if they are provided, otherwise
-construct a state with null wave function, initializing p_real and p_imag.  
+Create a quantum state.  
 
 Parameters
 ----------
-* `grid` :  
-    Lattice object.  
-* `p_real` :  
-    Pointer to the real part of the wave function.  
-* `p_imag` :  
-    Pointer to the imaginary part of the wave function.  
+* `grid` : Lattice object  
+    Define the geometry of the simulation.
+
+Notes
+-----
+It may be used to copy a quantum state.
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> state = ts.GaussianState(grid, 1.)  # Create the system's state with a gaussian wave function
+    >>> state2 = ts.State(state)  # Copy state into state2
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> def wave_function(x,y):  # Define a flat wave function
+    >>>     return 1.
+    >>> state = ts.State(grid)  # Create the system's state
+    >>> state.ini_state(wave_function)  # Initialize the wave function of the state
 ";
 
 %feature("docstring") State::State "
 
-Copy constructor: copy the state object.  
+Create a quantum state.  
+
+Parameters
+----------
+* `grid` : Lattice object  
+    Define the geometry of the simulation.
+
+Notes
+-----
+It may be used to copy a quantum state.
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> state = ts.GaussianState(grid, 1.)  # Create the system's state with a gaussian wave function
+    >>> state2 = ts.State(state)  # Copy state into state2
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> def wave_function(x,y):  # Define a flat wave function
+    >>>     return 1.
+    >>> state = ts.State(grid)  # Create the system's state
+    >>> state.ini_state(wave_function)  # Initialize the wave function of the state
 ";
 
 %feature("docstring") State::imprint "
