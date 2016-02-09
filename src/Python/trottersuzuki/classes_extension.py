@@ -95,8 +95,11 @@ class State(_State):
         Notes
         -----
         Useful, for instance, to imprint solitons and vortices on a condensate. 
-        Generally, it performs a transformation of the state whose wave function 
-        risult in the multiplication of the prior wave function by the input function.
+        Generally, it performs a transformation of the state whose wave function
+        
+        .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
+        
+        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.        
         
         Example
         -------
@@ -146,8 +149,11 @@ class GaussianState(_GaussianState):
         Notes
         -----
         Useful, for instance, to imprint solitons and vortices on a condensate. 
-        Generally, it performs a transformation of the state whose wave function 
-        risult in the multiplication of the prior wave function by the input function.
+        Generally, it performs a transformation of the state whose wave function
+        
+        .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
+        
+        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.        
         
         Example
         -------
@@ -197,8 +203,11 @@ class SinusoidState(_SinusoidState):
         Notes
         -----
         Useful, for instance, to imprint solitons and vortices on a condensate. 
-        Generally, it performs a transformation of the state whose wave function 
-        risult in the multiplication of the prior wave function by the input function.
+        Generally, it performs a transformation of the state whose wave function
+        
+        .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
+        
+        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.        
         
         Example
         -------
@@ -248,8 +257,11 @@ class ExponentialState(_ExponentialState):
         Notes
         -----
         Useful, for instance, to imprint solitons and vortices on a condensate. 
-        Generally, it performs a transformation of the state whose wave function 
-        risult in the multiplication of the prior wave function by the input function.
+        Generally, it performs a transformation of the state whose wave function
+        
+        .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
+        
+        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.        
         
         Example
         -------

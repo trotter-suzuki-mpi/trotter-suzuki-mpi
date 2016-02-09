@@ -133,8 +133,12 @@ Returns
 -------
 * `ExponentialState` : State object. 
     Quantum state with exponential like wave function. The wave function is give by:\n
-    f(x,y) = sqrt(norm / (Lx * Ly)) * exp(1j * 2pi (n_x / Lx * x + n_y / L_y * y) + 1j * phase), \n
-    where Lx and Ly are the lattice length along the x-axis and the y-axis respectively.
+    
+    .. math:: \psi(x,y) = \sqrt{N}/L \mathrm{e}^{i 2 \pi (n_x x + n_y y) / L} \mathrm{e}^{i \phi}
+    
+    being :math:`N` the norm of the state, :math:`L` 
+    the length of the lattice edge, :math:`n_x` and :math:`n_y` the quantum numbers 
+    and :math:`\phi` the relative phase.
 
 Notes
 -----
@@ -175,9 +179,9 @@ Parameters
 * `omega_y` : float, optional (default: omega_x) 
     Inverse of the variance along y-axis.
 * `mean_x` : float, optional (default: 0)
-    X coordinate of the gaussian function's center.  
+    X coordinate of the gaussian function's peak.  
 * `mean_y` : float, optional (default: 0)
-    Y coordinate of the gaussian function's center.  
+    Y coordinate of the gaussian function's peak.  
 * `norm` : float, optional (default: 1) 
     Squared norm of the state.  
 * `phase` : float, optional (default: 0) 
@@ -187,7 +191,12 @@ Returns
 -------
 * `GaussianState` : State object. 
     Quantum state with gaussian like wave function. The wave function is given by:\n
-    f(x,y) = sqrt(norm * sqrt(omega_x * omega_y) / pi) * exp(- 0.5(omega_x * (x - mean_x)**2 + omega_y * (y - mean_y)**2)) * exp(1j * phase) 
+    
+    .. math:: \psi(x,y) = (N/\pi)^{1/2} (\omega_x \omega_y)^{1/4} \mathrm{e}^{-(\omega_x(x-\mu_x)^2 + \omega_y(y-\mu_y)^2)/2} \mathrm{e}^{i \phi}
+    
+    being :math:`N` the norm of the state, :math:`\omega_x` and :math:`\omega_y` 
+    the inverse of the variances, :math:`\mu_x` and :math:`\mu_y` the coordinates of the
+    function's peak and :math:`\phi` the relative phase.
 
 Notes
 -----
@@ -353,7 +362,11 @@ Returns
 
 Notes
 -----
-    V(x,y) = 0.5 * mass * (omegax**2 * x**2 + omegay**2 * y**2)
+External potential function:\n
+
+.. math:: V(x,y) = 1/2 m (\omega_x^2  x^2 + \omega_y^2 y^2)
+
+being :math:`m` the particle mass, :math:`\omega_x` and :math:`\omega_y` the potential frequencies.
 
 Example
 -------
@@ -663,9 +676,13 @@ Parameters
 Returns
 -------
 * `SinusoidState` : State object. 
-    Quantum state with sinusoidal like wave function. The wave function is given by:\n
-    f(x,y) = sin(2pi * n_x / Lx * x) * sin(2pi * n_y / L_y * y) * 2 * sqrt(norm / (Lx * Ly)) * np.exp(1j * phase),\n
-    where Lx and Ly are the lattice length along the x-axis and the y-axis respectively.
+    Quantum state with sinusoidal like wave function. The wave function is given by:
+    
+    .. math:: \psi(x,y) = 2\sqrt{N}/L \sin(2\pi n_x x / L) \sin(2\pi n_y y / L) \mathrm{e}^{(i \phi)}
+    
+    being :math:`N` the norm of the state, :math:`L` 
+    the length of the lattice edge, :math:`n_x` and :math:`n_y` the quantum numbers 
+    and :math:`\phi` the relative phase.
 
 Example
 -------
