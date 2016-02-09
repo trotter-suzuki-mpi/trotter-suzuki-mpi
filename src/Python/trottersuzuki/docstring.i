@@ -118,20 +118,36 @@ Construct the quantum state with exponential like wave function.
 
 Parameters
 ----------
-* `grid` :  
-    Lattice object.  
-* `n_x` :  
+* `grid` : Lattice object 
+    Defines the geometry of the simulation.  
+* `n_x` : integer,optional (default: 1)
     First quantum number.  
-* `n_y` :  
+* `n_y` : integer,optional (default: 1)
     Second quantum number.  
-* `norm` :  
+* `norm` : float,optional (default: 1)
     Squared norm of the quantum state.  
-* `phase` :  
-    Relative phase of the wave function.  
-* `p_real` :  
-    Pointer to the real part of the wave function.  
-* `p_imag` :  
-    Pointer to the imaginary part of the wave function.  
+* `phase` : float,optional (default: 0)
+    Relative phase of the wave function. 
+
+Returns
+-------
+* `ExponentialState` : State object. 
+    Quantum state with exponential like wave function. The wave function is give by:\n
+    f(x,y) = sqrt(norm / (Lx * Ly)) * exp(1j * 2pi (n_x / Lx * x + n_y / L_y * y) + 1j * phase), \n
+    where Lx and Ly are the lattice length along the x-axis and the y-axis respectively.
+
+Notes
+-----
+The geometry of the simulation has to have periodic boundary condition 
+to use Exponential state as initial state of a real time evolution. 
+Indeed, the wave function is not null at the edges of the space.
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice(300, 30., True, True)  # Define the simulation's geometry
+    >>> state = ts.ExponentialState(grid, 2, 1)  # Create the system's state
 ";
 
 // File: classGaussianState.xml
@@ -152,22 +168,38 @@ Construct the quantum state with gaussian like wave function.
 
 Parameters
 ----------
-* `grid` :  
-    Lattice object.  
-* `omega` :  
-    Gaussian coefficient.  
-* `mean_x` :  
+* `grid` : Lattice object 
+    Defines the geometry of the simulation.  
+* `omega_x` : float
+    Inverse of the variance along x-axis.  
+* `omega_y` : float, optional (default: omega_x) 
+    Inverse of the variance along y-axis.
+* `mean_x` : float, optional (default: 0)
     X coordinate of the gaussian function's center.  
-* `mean_y` :  
+* `mean_y` : float, optional (default: 0)
     Y coordinate of the gaussian function's center.  
-* `norm` :  
+* `norm` : float, optional (default: 1) 
     Squared norm of the state.  
-* `phase` :  
-    Relative phase of the wave function.  
-* `p_real` :  
-    Pointer to the real part of the wave function.  
-* `p_imag` :  
-    Pointer to the imaginary part of the wave function.  
+* `phase` : float, optional (default: 0) 
+    Relative phase of the wave function. 
+
+Returns
+-------
+* `GaussianState` : State object. 
+    Quantum state with gaussian like wave function. The wave function is given by:\n
+    f(x,y) = sqrt(norm * sqrt(omega_x * omega_y) / pi) * exp(- 0.5(omega_x * (x - mean_x)**2 + omega_y * (y - mean_y)**2)) * exp(1j * phase) 
+
+Notes
+-----
+The physical dimensions of the Lattice have to be enough to ensure that 
+the wave function is almost zero at the edges.
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice(300, 30.)  # Define the simulation's geometry
+    >>> state = ts.GaussianState(grid, 2.)  # Create the system's state
 ";
 
 // File: classHamiltonian.xml
@@ -189,20 +221,33 @@ Construct the Hamiltonian of a single component system.
 
 Parameters
 ----------
-* `grid` :  
-    Lattice object.  
-* `potential` :  
-    Potential object.  
-* `mass` :  
+* `grid` : Lattice object 
+    Define the geometry of the simulation.  
+* `potential` : Potential object 
+    Define the external potential of the Hamiltonian.  
+* `mass` : float,optional (default: 1.) 
     Mass of the particle.  
-* `coupling_a` :  
+* `coupling_a` : float,optional (default: 0.) 
     Coupling constant of intra-particle interaction.  
-* `angular_velocity` :  
+* `angular_velocity` : float,optional (default: 0.) 
     The frame of reference rotates with this angular velocity.  
-* `rot_coord_x` :  
+* `rot_coord_x` : float,optional (default: 0.) 
     X coordinate of the center of rotation.  
-* `rot_coord_y` :  
-    Y coordinate of the center of rotation.  
+* `rot_coord_y` : float,optional (default: 0.)
+    Y coordinate of the center of rotation.
+
+Returns
+-------
+* `Hamiltonian` : Hamiltonian object
+    Hamiltonian of the system to be simulated.
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> potential = ts.HarmonicPotential(grid, 1., 1.)  # Create an harmonic external potential
+    >>> hamiltonian = ts.Hamiltonian(grid, potential)  # Create the Hamiltonian of an harmonic oscillator
 ";
 
 // File: classHamiltonian2Component.xml
@@ -221,32 +266,45 @@ Construct the Hamiltonian of a two component system.
 
 Parameters
 ----------
-* `grid` :  
-    Lattice object.  
-* `potential` :  
-    Potential of the first component.  
-* `potential_b` :  
-    Potential of the second component.  
-* `mass` :  
+* `grid` : Lattice object  
+    Define the geometry of the simulation.  
+* `potential` : Potential object 
+    External potential to which the first state is subjected.  
+* `potential_b` : Potential object 
+    External potential to which the second state is subjected.  
+* `mass` : float,optional (default: 1.) 
     Mass of the first-component's particles.  
-* `mass_b` :  
+* `mass_b` : float,optional (default: 1.) 
     Mass of the second-component's particles.  
-* `coupling_a` :  
+* `coupling_a` : float,optional (default: 0.) 
     Coupling constant of intra-particle interaction for the first component.  
-* `coupling_ab` :  
+* `coupling_ab` : float,optional (default: 0.) 
     Coupling constant of inter-particle interaction between the two components.  
-* `coupling_b` :  
+* `coupling_b` : float,optional (default: 0.) 
     Coupling constant of intra-particle interaction for the second component.  
-* `omega_r` :  
+* `omega_r` : float,optional (default: 0.) 
     Real part of the Rabi coupling.  
-* `omega_i` :  
+* `omega_i` : float,optional (default: 0.) 
     Imaginary part of the Rabi coupling.  
-* `angular_velocity` :  
+* `angular_velocity` : float,optional (default: 0.) 
     The frame of reference rotates with this angular velocity.  
-* `rot_coord_x` :  
+* `rot_coord_x` : float,optional (default: 0.) 
     X coordinate of the center of rotation.  
-* `rot_coord_y` :  
+* `rot_coord_y` : float,optional (default: 0.) 
     Y coordinate of the center of rotation.  
+
+Returns
+-------
+* `Hamiltonian2Component` : Hamiltonian2Component object 
+    Hamiltonian of the two-component system to be simulated.
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> potential = ts.HarmonicPotential(grid, 1., 1.)  # Create an harmonic external potential
+    >>> hamiltonian = ts.Hamiltonian2Component(grid, potential, potential)  # Create the Hamiltonian of an harmonic oscillator for a two-component system
 ";
 
 %feature("docstring") Hamiltonian2Component::~Hamiltonian2Component "
@@ -275,18 +333,35 @@ Construct the harmonic external potential.
 
 Parameters
 ----------
-* `grid` :  
-    Lattice object.  
-* `omegax` :  
-    Frequency along x axis.  
-* `omegay` :  
-    Frequency along y axis.  
-* `mass` :  
+* `grid` : Lattice object  
+    Define the geometry of the simulation.  
+* `omegax` : float
+    Frequency along x-axis.  
+* `omegay` : float 
+    Frequency along y-axis.  
+* `mass` : float,optional (default: 1.) 
     Mass of the particle.  
-* `mean_x` :  
+* `mean_x` : float,optional (default: 0.) 
     Minimum of the potential along x axis.  
-* `mean_y` :  
+* `mean_y` : float,optional (default: 0.) 
     Minimum of the potential along y axis.  
+
+Returns
+-------
+* `HarmonicPotential` : Potential object 
+    Harmonic external potential.
+
+Notes
+-----
+    V(x,y) = 0.5 * mass * (omegax**2 * x**2 + omegay**2 * y**2)
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> potential = ts.HarmonicPotential(grid, 2., 1.)  # Create an harmonic external potential
+    
 ";
 
 %feature("docstring") HarmonicPotential::~HarmonicPotential "
@@ -387,18 +462,32 @@ Lattice constructor.
 
 Parameters
 ----------
-* `dim` :  
+* `dim` : integer,optional (default: 100)
     Linear dimension of the squared lattice.  
-* `length_x` :  
-    Physical length of the lattice's side along the x axis.  
-* `length_y` :  
-    Physical length of the lattice's side along the y axis.  
-* `periodic_x_axis` :  
+* `length` : float,optional (default: 20.)
+    Physical length of the lattice's side.   
+* `periodic_x_axis` : bool,optional (default: False)
     Boundary condition along the x axis (false=closed, true=periodic).  
-* `periodic_y_axis` :  
-    Boundary condition along the y axis (false=closed, true=periodic).  
-* `angular_velocity` :  
-    Angular velocity of the frame of reference.  
+* `periodic_y_axis` : bool,optional (default: False) 
+    Boundary condition along the y axis (false=closed, true=periodic).
+
+Returns
+-------
+* `Lattice` : Lattice object 
+    Define the geometry of the simulation.
+
+Notes
+-----
+The lattice created is squared.
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> # Generate a 200x200 Lattice with physical dimensions of 30x30
+    >>> # and closed boundary conditions.
+    >>> grid = ts.Lattice(200, 30.)
+  
 ";
 
 // File: structoption.xml
@@ -423,10 +512,27 @@ Construct the external potential.
 
 Parameters
 ----------
-* `grid` :  
-    Lattice object.  
-* `filename` :  
+* `grid` : Lattice object 
+    Define the geometry of the simulation.  
+* `filename` :  string,optional
     Name of the file that stores the external potential matrix.  
+
+Returns
+-------
+* `Potential` : Potential object 
+    Create external potential.
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> # Define a constant external potential
+    >>> def external_potential_function(x,y):
+    >>>     return 1.
+    >>> potential = ts.Potential(grid)  # Create the external potential
+    >>> potential.init_potential(external_potential_function)  # Initialize the external potential
+
 ";
 
 %feature("docstring") Potential::Potential "
@@ -435,10 +541,24 @@ Construct the external potential.
 
 Parameters
 ----------
-* `grid` :  
-    Lattice object.  
-* `external_pot` :  
-    Pointer to the external potential matrix.  
+* `grid` : Lattice object 
+    Define the geometry of the simulation.  
+
+Returns
+-------
+* `Potential` : Potential object 
+    Create external potential.
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> # Define a constant external potential
+    >>> def external_potential_function(x,y):
+    >>>     return 1.
+    >>> potential = ts.Potential(grid)  # Create the external potential
+    >>> potential.init_potential(external_potential_function)  # Initialize the external potential
 ";
 
 %feature("docstring") Potential::Potential "
@@ -447,10 +567,24 @@ Construct the external potential.
 
 Parameters
 ----------
-* `grid` :  
-    Lattice object.  
-* `potential_function` :  
-    Pointer to the static external potential function.  
+* `grid` : Lattice object 
+    Define the geometry of the simulation. 
+  
+Returns
+-------
+* `Potential` : Potential object 
+    Create external potential.
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> # Define a constant external potential
+    >>> def external_potential_function(x,y):
+    >>>     return 1.
+    >>> potential = ts.Potential(grid)  # Create the external potential
+    >>> potential.init_potential(external_potential_function)  # Initialize the external potential 
 ";
 
 %feature("docstring") Potential::Potential "
@@ -459,10 +593,24 @@ Construct the external potential.
 
 Parameters
 ----------
-* `grid` :  
-    Lattice object.  
-* `potential_function` :  
-    Pointer to the time-dependent external potential function.  
+* `grid` : Lattice object 
+    Define the geometry of the simulation.  
+
+Returns
+-------
+* `Potential` : Potential object 
+    Create external potential.
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> # Define a constant external potential
+    >>> def external_potential_function(x,y):
+    >>>     return 1.
+    >>> potential = ts.Potential(grid)  # Create the external potential
+    >>> potential.init_potential(external_potential_function)  # Initialize the external potential
 ";
 
 %feature("docstring") Potential::update "
@@ -475,7 +623,12 @@ Update the potential matrix at time t.
 
 %feature("docstring") Potential::get_value "
 
-Get the value at the coordinate (x,y).  
+Get the value at the lattice's coordinate (x,y).
+
+Returns
+-------
+* `value` : float
+    Value of the external potential.
 ";
 
 // File: classSinusoidState.xml
@@ -496,20 +649,31 @@ Construct the quantum state with sinusoidal like wave function.
 
 Parameters
 ----------
-* `grid` :  
-    Lattice object.  
-* `n_x` :  
+* `grid` : Lattice object  
+    Define the geometry of the simulation.  
+* `n_x` : integer, optional (default: 1) 
     First quantum number.  
-* `n_y` :  
+* `n_y` : integer, optional (default: 1)  
     Second quantum number.  
-* `norm` :  
+* `norm` : float, optional (default: 1)  
     Squared norm of the quantum state.  
-* `phase` :  
-    Relative phase of the wave function.  
-* `p_real` :  
-    Pointer to the real part of the wave function.  
-* `p_imag` :  
-    Pointer to the imaginary part of the wave function.  
+* `phase` : float, optional (default: 1) 
+    Relative phase of the wave function.
+
+Returns
+-------
+* `SinusoidState` : State object. 
+    Quantum state with sinusoidal like wave function. The wave function is given by:\n
+    f(x,y) = sin(2pi * n_x / Lx * x) * sin(2pi * n_y / L_y * y) * 2 * sqrt(norm / (Lx * Ly)) * np.exp(1j * phase),\n
+    where Lx and Ly are the lattice length along the x-axis and the y-axis respectively.
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice(300, 30., True, True)  # Define the simulation's geometry
+    >>> state = ts.SinusoidState(grid, 2, 0)  # Create the system's state
+
 ";
 
 // File: classSolver.xml
@@ -524,17 +688,54 @@ C++ includes: trottersuzuki.h
 
 %feature("docstring") Solver::get_kinetic_energy "
 
-Get the kinetic energy of the system.  
+Get the kinetic energy of the system.
+
+Parameters
+----------
+* `which` : integer,optional (default: 3)
+    Which kinetic energy to return: total system (default, which=3), first component (which=1), second component (which=2). 
+
+Returns
+-------
+* `get_kinetic_energy` : float
+    kinetic energy of the system.
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
+    >>> potential = ts.HarmonicPotential(grid, 1., 1.)  # Create harmonic potential
+    >>> hamiltonian = ts.Hamiltonian(grid, potential)  # Create a harmonic oscillator Hamiltonian
+    >>> solver = ts.Solver(grid, state, hamiltonian, 1e-2)  # Create the solver
+    >>> solver.get_kinetic_energy()  # Get the kinetic energy
+    0.5
 ";
 
 %feature("docstring") Solver::get_rabi_energy "
 
-Get the Rabi energy of the system.  
+Get the Rabi energy of the system.
+
+Returns
+-------
+* `get_rabi_energy` : float
+    Rabi energy of the system.  
 ";
 
 %feature("docstring") Solver::get_squared_norm "
 
-Get the squared norm of the state (default: total wave-function).  
+Get the squared norm of the state (default: total wave-function).
+
+Parameters
+----------
+* `which` : integer,optional (default: 3)
+    Which squared state norm to return: total system (default, which=3), first component (which=1), second component (which=2). 
+
+Returns
+-------
+* `get_squared_norm` : float
+    Squared norm of the state.   
 ";
 
 %feature("docstring") Solver::~Solver "
@@ -543,26 +744,86 @@ Get the squared norm of the state (default: total wave-function).
 %feature("docstring") Solver::get_intra_species_energy "
 
 Get the intra-particles interaction energy of the system.  
+
+Parameters
+----------
+* `which` : integer,optional (default: 3)
+    Which intra-particles interaction energy to return: total system (default, which=3), first component (which=1), second component (which=2). 
+
+Returns
+-------
+* `get_intra_species_energy` : float
+    Intra-particles interaction energy of the system. 
 ";
 
 %feature("docstring") Solver::get_rotational_energy "
 
-Get the rotational energy of the system.  
+Get the rotational energy of the system.
+
+Parameters
+----------
+* `which` : integer,optional (default: 3)
+    Which rotational energy to return: total system (default, which=3), first component (which=1), second component (which=2). 
+
+Returns
+-------
+* `get_rotational_energy` : float
+    Rotational energy of the system.
 ";
 
 %feature("docstring") Solver::get_inter_species_energy "
 
 Get the inter-particles interaction energy of the system.  
+
+Returns
+-------
+* `get_inter_species_energy` : float
+    Inter-particles interaction energy of the system. 
 ";
 
 %feature("docstring") Solver::get_total_energy "
 
-Get the total energy of the system.  
+Get the total energy of the system.
+
+Returns
+-------
+* `get_total_energy` : float
+    Total energy of the system.  
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
+    >>> potential = ts.HarmonicPotential(grid, 1., 1.)  # Create harmonic potential
+    >>> hamiltonian = ts.Hamiltonian(grid, potential)  # Create a harmonic oscillator Hamiltonian
+    >>> solver = ts.Solver(grid, state, hamiltonian, 1e-2)  # Create the solver
+    >>> solver.get_total_energy()  # Get the total energy
+    1
 ";
 
 %feature("docstring") Solver::evolve "
 
-Evolve the state of the system.  
+Evolve the state of the system.
+
+Parameters
+----------
+* `iterations` : integer 
+    Number of iterations.
+* `imag_time` : bool,optional (default: False)  
+    Whether to perform imaginary time evolution (True) or real time evolution (False).    
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
+    >>> potential = ts.HarmonicPotential(grid, 1., 1.)  # Create harmonic potential
+    >>> hamiltonian = ts.Hamiltonian(grid, potential)  # Create a harmonic oscillator Hamiltonian
+    >>> solver = ts.Solver(grid, state, hamiltonian, 1e-2)  # Create the solver
+    >>> solver.evolve(1000)  # perform 1000 iteration in real time evolution
 ";
 
 %feature("docstring") Solver::Solver "
@@ -571,16 +832,31 @@ Construct the Solver object for a single-component system.
 
 Parameters
 ----------
-* `grid` :  
-    Lattice object.  
-* `state` :  
+* `grid` : Lattice object  
+    Define the geometry of the simulation.  
+* `state` : State object 
     State of the system.  
-* `hamiltonian` :  
+* `hamiltonian` : Hamiltonian object 
     Hamiltonian of the system.  
-* `delta_t` :  
+* `delta_t` : float 
     A single evolution iteration, evolves the state for this time.  
-* `kernel_type` :  
+* `kernel_type` : string,optional (default: 'cpu') 
     Which kernel to use (either cpu or gpu).  
+
+Returns
+-------
+* `Solver` : Solver object  
+    Solver object for the simulation of a single-component system.
+    
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
+    >>> potential = ts.HarmonicPotential(grid, 1., 1.)  # Create harmonic potential
+    >>> hamiltonian = ts.Hamiltonian(grid, potential)  # Create a harmonic oscillator Hamiltonian
+    >>> solver = ts.Solver(grid, state, hamiltonian, 1e-2)  # Create the solver
 
 Massively Parallel Trotter-Suzuki Solver  
 
@@ -603,23 +879,50 @@ Construct the Solver object for a two-component system.
 
 Parameters
 ----------
-* `grid` :  
-    Lattice object.  
-* `state1` :  
+* `grid` : Lattice object  
+    Define the geometry of the simulation.
+* `state1` : State object
     First component's state of the system.  
-* `state2` :  
+* `state2` : State object 
     Second component's state of the system.  
-* `hamiltonian` :  
+* `hamiltonian` : Hamiltonian object
     Hamiltonian of the two-component system.  
-* `delta_t` :  
+* `delta_t` : float
     A single evolution iteration, evolves the state for this time.  
-* `kernel_type` :  
+* `kernel_type` : string,optional (default: 'cpu') 
     Which kernel to use (either cpu or gpu).  
+
+Returns
+-------
+* `Solver` : Solver object  
+    Solver object for the simulation of a two-component system.
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> state_1 = ts.GaussianState(grid, 1.)  # Create first-component system's state
+    >>> state_2 = ts.GaussianState(grid, 1.)  # Create second-component system's state
+    >>> potential = ts.HarmonicPotential(grid, 1., 1.)  # Create harmonic potential
+    >>> hamiltonian = ts.Hamiltonian2Component(grid, potential, potential)  # Create an harmonic oscillator Hamiltonian
+    >>> solver = ts.Solver(grid, state_1, state_2, hamiltonian, 1e-2)  # Create the solver
+
 ";
 
 %feature("docstring") Solver::get_potential_energy "
 
 Get the potential energy of the system.  
+
+Parameters
+----------
+* `which` : integer,optional (default: 3)
+    Which potential energy to return: total system (default, which=3), first component (which=1), second component (which=2). 
+
+Returns
+-------
+* `get_potential_energy` : float
+    Potential energy of the system.
 ";
 
 // File: classState.xml
@@ -634,27 +937,67 @@ C++ includes: trottersuzuki.h
 
 %feature("docstring") State::write_particle_density "
 
-Write to a file the squared norm of the wave function.  
+Write to a file the particle density matrix of the wave function.
+
+Parameters
+----------
+* `file_name` : string
+    Name of the file.  
 ";
 
 %feature("docstring") State::init_state "
 
-Write the wave function from a C++ function to p_real and p_imag matrices.  
+Initialize the wave function of the state using a function.
+
+Parameters
+----------
+* `function` : python function
+    Python function defining the wave function of the state.
+
+Notes
+-----
+The input arguments of the python function must be (x,y).
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> def wave_function(x,y):  # Define a flat wave function
+    >>>     return 1.
+    >>> state = ts.State(grid)  # Create the system's state
+    >>> state.ini_state(wave_function)  # Initialize the wave function of the state
+    
 ";
 
 %feature("docstring") State::get_phase "
 
-Return a matrix storing the phase of the wave function.  
+Return a matrix of the wave function's phase.
+
+Returns
+-------
+* `get_phase` : numpy matrix
+    Matrix of the wave function's phase
 ";
 
 %feature("docstring") State::write_phase "
 
-Write to a file the phase of the wave function.  
+Write to a file the phase of the wave function. 
+
+Parameters
+----------
+* `file_name` : string
+    Name of the file.
 ";
 
 %feature("docstring") State::get_mean_yy "
 
-Return the expected value of the Y^2 operator.  
+Return the expected value of the Y^2 operator.
+
+Returns
+-------
+* `mean_yy` : float
+      Expected value of the Y^2 operator.
 ";
 
 %feature("docstring") State::~State "
@@ -665,11 +1008,21 @@ Destructor.
 %feature("docstring") State::get_mean_px "
 
 Return the expected value of the P_x operator.  
+
+Returns
+-------
+* `mean_px` : float
+      Expected value of the P_x operator.
 ";
 
 %feature("docstring") State::get_mean_py "
 
 Return the expected value of the P_y operator.  
+
+Returns
+-------
+* `mean_py` : float
+      Expected value of the P_y operator.
 ";
 
 %feature("docstring") State::State "
@@ -694,52 +1047,141 @@ Copy constructor: copy the state object.
 
 %feature("docstring") State::imprint "
 
-Multiply the wave function of the state by the function provided.  
+Multiply the wave function of the state by the function provided.
+
+Parameters
+----------
+* `function` : python function
+    Function to be printed on the state.
+
+Notes
+-----
+Useful for instance to imprint solitons and vortices on a condensate. 
+Generally, it performs a transformation of the state whose wave function 
+risult in the multiplication of the prior wave function by the input function.
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> def vortex(x,y):  # Vortex function
+    >>>     z = x + 1j*y
+    >>>     angle = np.angle(z)
+    >>>     return np.exp(1j * angle)
+    >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
+    >>> state.imprint(vortex)  # Imprint a vortex on the state
+     
 ";
 
 %feature("docstring") State::get_mean_pxpx "
 
-Return the expected value of the P_x^2 operator.  
+Return the expected value of the P_x^2 operator.
+
+Returns
+-------
+* `mean_pxpx` : float
+      Expected value of the P_x^2 operator.  
 ";
 
 %feature("docstring") State::get_squared_norm "
 
-Return the squared norm of the quantum state.  
+Return the squared norm of the quantum state.
+
+Returns
+-------
+* `squared_norm` : float
+      Squared norm of the quantum state.
 ";
 
 %feature("docstring") State::get_mean_xx "
 
-Return the expected value of the X^2 operator.  
+Return the expected value of the X^2 operator.
+
+Returns
+-------
+* `mean_xx` : float
+      Expected value of the X^2 operator.   
 ";
 
 %feature("docstring") State::loadtxt "
 
-Load the wave function from a file to p_real and p_imag matrices.  
+Load the wave function from a file.
+
+Parameters
+----------
+* `file_name` : string
+      Name of the file to be written.
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
+    >>> state.write_to_file('wave_function.txt')  # Write to a file the wave function
+    >>> state2 = ts.State(grid)  # Create a quantum state
+    >>> state2.loadtxt('wave_function.txt')  # Load the wave function
 ";
 
 %feature("docstring") State::get_particle_density "
 
-Return a matrix storing the squared norm of the wave function.  
+Return a matrix storing the squared norm of the wave function.
+
+Returns
+-------
+* `particle_density` : numpy matrix
+    Particle density of the state  
 ";
 
 %feature("docstring") State::get_mean_y "
 
-Return the expected value of the Y operator.  
+Return the expected value of the Y operator.
+
+Returns
+-------
+* `mean_y` : float
+      Expected value of the Y operator.   
 ";
 
 %feature("docstring") State::get_mean_x "
 
 Return the expected value of the X operator.  
+
+Returns
+-------
+* `mean_x` : float
+      Expected value of the X operator. 
 ";
 
 %feature("docstring") State::get_mean_pypy "
 
 Return the expected value of the P_y^2 operator.  
+
+Returns
+-------
+* `mean_pypy` : float
+      Expected value of the P_y^2 operator. 
 ";
 
 %feature("docstring") State::write_to_file "
 
 Write to a file the wave function.  
+
+Parameters
+----------
+* `file_name` : string
+      Name of the file to be written. 
+
+Example
+-------
+
+    >>> import trottersuzuki as ts  # import the module
+    >>> grid = ts.Lattice()  # Define the simulation's geometry
+    >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
+    >>> state.write_to_file('wave_function.txt')  # Write to a file the wave function
+    >>> state2 = ts.State(grid)  # Create a quantum state
+    >>> state2.loadtxt('wave_function.txt')  # Load the wave function
 ";
 
 // File: namespacestd.xml
