@@ -525,7 +525,7 @@ GaussianState::GaussianState(Lattice *_grid, double _omega_x, double _omega_y, d
 complex<double> GaussianState::gauss_state(double x, double y) {
     double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
     double y_c = grid->global_no_halo_dim_y * grid->delta_y * 0.5;
-    return complex<double>(sqrt(norm * sqrt(omega_x * omega_y) / M_PI) * exp(-(omega_x * pow(x + mean_x - x_c, 2.0) + omega_y * pow(y + mean_y - y_c, 2.0)) * 0.5), 0.) * exp(complex<double>(0., phase));
+    return complex<double>(sqrt(norm * sqrt(omega_x * omega_y) / M_PI) * exp(-(omega_x * pow(x - mean_x - x_c, 2.0) + omega_y * pow(y - mean_y - y_c, 2.0)) * 0.5), 0.) * exp(complex<double>(0., phase));
 }
 
 SinusoidState::SinusoidState(Lattice *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
