@@ -31,7 +31,7 @@ import_array();
 
 class Lattice {
 public:
-    Lattice(int dim=100, double length_x=20., double length_y=20.,
+    Lattice(int dim=100, double length_x=20.,
             bool periodic_x_axis=false, bool periodic_y_axis=false, double angular_velocity=0.);
     double length_x, length_y;
     double delta_x, delta_y;

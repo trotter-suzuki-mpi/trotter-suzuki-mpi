@@ -49,7 +49,7 @@ public:
         @param [in] periodic_y_axis  Boundary condition along the y axis (false=closed, true=periodic).
         @param [in] angular_velocity Angular velocity of the frame of reference.
      */
-    Lattice(int dim = 100, double length_x = 20., double length_y = 20.,
+    Lattice(int dim = 100, double length = 20.,
             bool periodic_x_axis = false, bool periodic_y_axis = false, double angular_velocity = 0.);
     double length_x, length_y;    ///< Physical length of the lattice's sides.
     double delta_x, delta_y;    ///< Physical distance between two consecutive point of the grid, along the x and y axes.

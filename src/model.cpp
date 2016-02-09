@@ -45,9 +45,9 @@ double const_potential(double x, double y) {
     return 0.;
 }
 
-Lattice::Lattice(int dim, double _length_x, double _length_y,
+Lattice::Lattice(int dim, double _length,
                  bool periodic_x_axis, bool periodic_y_axis,
-                 double angular_velocity): length_x(_length_x), length_y(_length_y) {
+                 double angular_velocity): length_x(_length), length_y(_length) {
     delta_x = length_x / double(dim);
     delta_y = length_y / double(dim);
     periods[0] = (int) periodic_y_axis;
