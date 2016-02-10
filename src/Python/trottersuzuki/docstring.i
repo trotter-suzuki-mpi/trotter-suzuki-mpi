@@ -236,7 +236,7 @@ Parameters
     Define the external potential of the Hamiltonian.  
 * `mass` : float,optional (default: 1.) 
     Mass of the particle.  
-* `coupling_a` : float,optional (default: 0.) 
+* `coupling` : float,optional (default: 0.) 
     Coupling constant of intra-particle interaction.  
 * `angular_velocity` : float,optional (default: 0.) 
     The frame of reference rotates with this angular velocity.  
@@ -248,7 +248,13 @@ Parameters
 Returns
 -------
 * `Hamiltonian` : Hamiltonian object
-    Hamiltonian of the system to be simulated.
+    Hamiltonian of the system to be simulated: 
+    
+    .. math:: H(x,y) = K  + V(x,y) + g |\psi(x,y)|^2 + \omega L_z
+    
+    being :math:`K` the kinetic operator, :math:`V(x,y)` the external potential, 
+    :math:`g` the coupling constant of intra-particle interaction, :math:`\omega` 
+    the angular velocity of the frame of reference  and :math:`L_z` the angular momentum operator along the z-axis.
 
 Example
 -------
@@ -277,19 +283,19 @@ Parameters
 ----------
 * `grid` : Lattice object  
     Define the geometry of the simulation.  
-* `potential` : Potential object 
+* `potential_1` : Potential object 
     External potential to which the first state is subjected.  
-* `potential_b` : Potential object 
+* `potential_2` : Potential object 
     External potential to which the second state is subjected.  
-* `mass` : float,optional (default: 1.) 
+* `mass_1` : float,optional (default: 1.) 
     Mass of the first-component's particles.  
-* `mass_b` : float,optional (default: 1.) 
+* `mass_2` : float,optional (default: 1.) 
     Mass of the second-component's particles.  
-* `coupling_a` : float,optional (default: 0.) 
+* `coupling_1` : float,optional (default: 0.) 
     Coupling constant of intra-particle interaction for the first component.  
-* `coupling_ab` : float,optional (default: 0.) 
+* `coupling_12` : float,optional (default: 0.) 
     Coupling constant of inter-particle interaction between the two components.  
-* `coupling_b` : float,optional (default: 0.) 
+* `coupling_2` : float,optional (default: 0.) 
     Coupling constant of intra-particle interaction for the second component.  
 * `omega_r` : float,optional (default: 0.) 
     Real part of the Rabi coupling.  
@@ -306,7 +312,20 @@ Returns
 -------
 * `Hamiltonian2Component` : Hamiltonian2Component object 
     Hamiltonian of the two-component system to be simulated.
-
+    
+    .. math::
+    
+       H(x,y)(\psi_1,\psi_2) &= \n
+    
+       &(K_1 + V_1(x,y) + g_1 |\psi_1(x,y)|^2 + g_{12} |\psi_2(x,y)|^2 + \omega L_z)\psi_1 + \Omega \psi_2 /2 \n
+       &(K_2 + V_2(x,y) + g_2 |\psi_2(x,y)|^2 + g_{12} |\psi_1(x,y)|^2 + \omega L_z)\psi_2 + \Omega \psi_1 /2
+    
+    
+    being, for the i-th component, :math:`K_i` the kinetic operator, :math:`V_i(x,y)` the external potential, 
+    :math:`g_i` the coupling constant of intra-particle interaction; 
+    :math:`g_{12}` the coupling constant of inter-particle interaction 
+    :math:`\omega` the angular velocity of the frame of reference, :math:`L_z` the angular momentum operator along the z-axis 
+    and :math:`\Omega` the Rabi coupling.
 Example
 -------
 
@@ -994,7 +1013,7 @@ Return a matrix of the wave function's phase.
 Returns
 -------
 * `get_phase` : numpy matrix
-    Matrix of the wave function's phase
+    Matrix of the wave function's phase :math:`\phi(x,y) = \log(\psi(x,y))`
 ";
 
 %feature("docstring") State::write_phase "
@@ -1009,12 +1028,12 @@ Parameters
 
 %feature("docstring") State::get_mean_yy "
 
-Return the expected value of the Y^2 operator.
+Return the expected value of the :math:`Y^2` operator.
 
 Returns
 -------
 * `mean_yy` : float
-      Expected value of the Y^2 operator.
+      Expected value of the :math:`Y^2` operator.
 ";
 
 %feature("docstring") State::~State "
@@ -1024,22 +1043,22 @@ Destructor.
 
 %feature("docstring") State::get_mean_px "
 
-Return the expected value of the P_x operator.  
+Return the expected value of the :math:`P_x` operator.  
 
 Returns
 -------
 * `mean_px` : float
-      Expected value of the P_x operator.
+      Expected value of the :math:`P_x` operator.
 ";
 
 %feature("docstring") State::get_mean_py "
 
-Return the expected value of the P_y operator.  
+Return the expected value of the :math:`P_y` operator.  
 
 Returns
 -------
 * `mean_py` : float
-      Expected value of the P_y operator.
+      Expected value of the :math:`P_y` operator.
 ";
 
 %feature("docstring") State::State "
@@ -1131,12 +1150,12 @@ Example
 
 %feature("docstring") State::get_mean_pxpx "
 
-Return the expected value of the P_x^2 operator.
+Return the expected value of the :math:`P_x^2` operator.
 
 Returns
 -------
 * `mean_pxpx` : float
-      Expected value of the P_x^2 operator.  
+      Expected value of the :math:`P_x^2` operator.  
 ";
 
 %feature("docstring") State::get_squared_norm "
@@ -1151,12 +1170,12 @@ Returns
 
 %feature("docstring") State::get_mean_xx "
 
-Return the expected value of the X^2 operator.
+Return the expected value of the :math:`X^2` operator.
 
 Returns
 -------
 * `mean_xx` : float
-      Expected value of the X^2 operator.   
+      Expected value of the :math:`X^2` operator.   
 ";
 
 %feature("docstring") State::loadtxt "
@@ -1186,37 +1205,37 @@ Return a matrix storing the squared norm of the wave function.
 Returns
 -------
 * `particle_density` : numpy matrix
-    Particle density of the state  
+    Particle density of the state :math:`|\psi(x,y)|^2` 
 ";
 
 %feature("docstring") State::get_mean_y "
 
-Return the expected value of the Y operator.
+Return the expected value of the :math:`Y` operator.
 
 Returns
 -------
 * `mean_y` : float
-      Expected value of the Y operator.   
+      Expected value of the :math:`Y` operator.   
 ";
 
 %feature("docstring") State::get_mean_x "
 
-Return the expected value of the X operator.  
+Return the expected value of the :math:`X` operator.  
 
 Returns
 -------
 * `mean_x` : float
-      Expected value of the X operator. 
+      Expected value of the :math:`X` operator. 
 ";
 
 %feature("docstring") State::get_mean_pypy "
 
-Return the expected value of the P_y^2 operator.  
+Return the expected value of the :math:`P_y^2` operator.  
 
 Returns
 -------
 * `mean_pypy` : float
-      Expected value of the P_y^2 operator. 
+      Expected value of the :math:`P_y^2` operator. 
 ";
 
 %feature("docstring") State::write_to_file "

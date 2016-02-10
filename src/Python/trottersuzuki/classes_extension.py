@@ -45,7 +45,7 @@ class State(_State):
         Parameters
         ----------
         * `state_function` : python function
-            Python function defining the wave function of the state $\psi$.
+            Python function defining the wave function of the state :math:`\psi`.
         
         Notes
         -----
