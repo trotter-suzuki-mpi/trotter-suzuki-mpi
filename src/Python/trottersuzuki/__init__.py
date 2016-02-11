@@ -9,7 +9,8 @@ from .trottersuzuki import HarmonicPotential, \
                            Hamiltonian, Hamiltonian2Component, Solver
 from .classes_extension import Lattice, State, GaussianState, SinusoidState, \
                                ExponentialState, Potential
+from .tools import vortex_position
 
 __all__ = ['Lattice', 'State', 'ExponentialState', 'GaussianState',
            'SinusoidState', 'Potential', 'HarmonicPotential', 'Hamiltonian',
-           'Hamiltonian2Component', 'Solver']
+           'Hamiltonian2Component', 'Solver', 'vortex_position']

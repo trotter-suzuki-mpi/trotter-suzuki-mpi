@@ -2,7 +2,7 @@ import numpy as np
 
 def vortex_position(grid, state, approx_cloud_radius=0.):
     """
-    Get the position of a single vortex in the state.
+    Get the position of a single vortex in the quantum state.
     
     Parameters
     ----------
@@ -28,7 +28,6 @@ def vortex_position(grid, state, approx_cloud_radius=0.):
     
         >>> import trottersuzuki as ts  # import the module
         >>> import numpy as np
-        >>> from tools import vortex_position  # import function
         >>> grid = ts.Lattice()  # Define the simulation's geometry
         >>> state = ts.GaussianState(grid, 1.)  # Create a state with gaussian wave function
         >>> def vortex_a(x, y):  # Define the vortex to be imprinted
@@ -36,7 +35,7 @@ def vortex_position(grid, state, approx_cloud_radius=0.):
         >>>     angle = np.angle(z)
         >>>     return np.exp(1j * angle)
         >>> state.imprint(vortex)  # Imprint the vortex on the state
-        >>> vortex_position(grid, state)
+        >>> ts.vortex_position(grid, state)
         array([  8.88178420e-16,   8.88178420e-16])
     
     """
