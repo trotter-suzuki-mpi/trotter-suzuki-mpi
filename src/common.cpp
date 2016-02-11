@@ -164,7 +164,7 @@ void stamp(Lattice *grid, State *state, string fileprefix) {
 
     // open the file, and set the view
     stringstream output_filename;
-    output_filename << fileprefix << "-iter-comp.dat";
+    output_filename << fileprefix;
     MPI_File_open(grid->cartcomm, const_cast<char*>(output_filename.str().c_str()),
                   MPI_MODE_CREATE | MPI_MODE_WRONLY,
                   MPI_INFO_NULL, &file);
@@ -174,7 +174,7 @@ void stamp(Lattice *grid, State *state, string fileprefix) {
     MPI_File_write_all(file, data_as_txt, (grid->inner_end_x - grid->inner_start_x) * (grid->inner_end_y - grid->inner_start_y), complex_num_as_string, &status);
     MPI_File_close(&file);
     delete [] data_as_txt;
-
+    /*
     // output real matrix
     //conversion
     data_as_txt = new char[(grid->inner_end_x - grid->inner_start_x) * (grid->inner_end_y - grid->inner_start_y) * charspernum];
@@ -206,14 +206,16 @@ void stamp(Lattice *grid, State *state, string fileprefix) {
     MPI_File_write_all(file, data_as_txt, (grid->inner_end_x - grid->inner_start_x) * ( grid->inner_end_y - grid->inner_start_y), num_as_string, &status);
     MPI_File_close(&file);
     delete [] data_as_txt;
+    */
 #else
     stringstream output_filename;
+    /*
     output_filename << fileprefix << "-iter-real.dat";
     print_matrix(output_filename.str().c_str(), &(state->p_real[grid->global_dim_x * (grid->inner_start_y - grid->start_y) + grid->inner_start_x - grid->start_x]), grid->global_dim_x,
                  grid->global_dim_x - 2 * grid->periods[1]*grid->halo_x, grid->global_dim_y - 2 * grid->periods[0]*grid->halo_y);
-
+    */
     output_filename.str("");
-    output_filename << fileprefix << "-iter-comp.dat";
+    output_filename << fileprefix;
     print_complex_matrix(output_filename.str().c_str(), &(state->p_real[grid->global_dim_x * (grid->inner_start_y - grid->start_y) + grid->inner_start_x - grid->start_x]), &(state->p_imag[grid->global_dim_x * (grid->inner_start_y - grid->start_y) + grid->inner_start_x - grid->start_x]), grid->global_dim_x,
                          grid->global_dim_x - 2 * grid->periods[1]*grid->halo_x, grid->global_dim_y - 2 * grid->periods[0]*grid->halo_y);
 #endif
