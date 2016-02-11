@@ -43,8 +43,7 @@ public:
         Lattice constructor.
 
         @param [in] dim              Linear dimension of the squared lattice.
-        @param [in] length_x         Physical length of the lattice's side along the x axis.
-        @param [in] length_y         Physical length of the lattice's side along the y axis.
+        @param [in] length           Physical length of the lattice's side along the x axis.
         @param [in] periodic_x_axis  Boundary condition along the x axis (false=closed, true=periodic).
         @param [in] periodic_y_axis  Boundary condition along the y axis (false=closed, true=periodic).
         @param [in] angular_velocity Angular velocity of the frame of reference.

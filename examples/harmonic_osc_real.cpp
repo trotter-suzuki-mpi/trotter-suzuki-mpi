@@ -44,14 +44,14 @@ int main(int argc, char** argv) {
     bool imag_time = false;
     int time, tot_time = 0;
     double delta_t = double(DELTA_T);
-    double length_x = double(EDGE_LENGTH), length_y = double(EDGE_LENGTH);
+    double length = double(EDGE_LENGTH);
 
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
 
     //set lattice
-    Lattice *grid = new Lattice(DIM, length_x, length_y, false, false, angular_velocity);
+    Lattice *grid = new Lattice(DIM, length, false, false, angular_velocity);
     //set initial state
     State *state = new State(grid);
     state->init_state(gauss_ini_state);

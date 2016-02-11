@@ -40,14 +40,14 @@ int main(int argc, char** argv) {
     bool imag_time = true;
     int time, tot_time = 0;
     double delta_t = double(DELTA_T);
-    double length_x = double(EDGE_LENGTH), length_y = double(EDGE_LENGTH);
+    double length = double(EDGE_LENGTH);
     double coupling_const = double(COUPLING_CONST_2D);
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
 
     //set lattice
-    Lattice *grid = new Lattice(DIM, length_x, length_y);
+    Lattice *grid = new Lattice(DIM, length);
     //set initial state
     State *state = new GaussianState(grid, 3);
     //set hamiltonian

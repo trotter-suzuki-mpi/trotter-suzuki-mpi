@@ -37,7 +37,7 @@
 #define SNAPSHOTS 10
 
 int main(int argc, char** argv) {
-    double length_x = double(DIM), length_y = double(DIM);
+    double length = double(DIM);
     const double particle_mass = 1.;
     bool imag_time = false;
     double delta_t = 5.e-4;
@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
 #endif
     //set lattice
-    Lattice *grid = new Lattice(DIM, length_x, length_y, true, true);
+    Lattice *grid = new Lattice(DIM, length, true, true);
     //set initial state
     State *state = new ExponentialState(grid, 1, 0);
     //set hamiltonian

@@ -43,7 +43,7 @@ complex<double> super_position_two_exp_state(double x, double y) {
 
 int main(int argc, char** argv) {
     bool verbose = true;
-    double length_x = double(DIM), length_y = double(DIM);
+    double length = double(DIM);
     double delta_t = 0.08;
     const double particle_mass = 1.;
     bool imag_time = true;
@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
 #endif
 
     //set lattice
-    Lattice *grid = new Lattice(DIM, length_x, length_y, true, true);
+    Lattice *grid = new Lattice(DIM, length, true, true);
     //set initial state
     State *state = new State(grid);
     state->init_state(super_position_two_exp_state);

@@ -37,14 +37,14 @@ int main(int argc, char** argv) {
     const double particle_mass = 1.;
     bool imag_time = true;
     double delta_t = 2.e-4;
-    double length_x = double(LENGTH), length_y = double(LENGTH);
+    double length = double(LENGTH);
     double coupling_const = double(COUPLING_CONST_2D);
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
 
     //set lattice
-    Lattice *grid = new Lattice(DIM, length_x, length_y, false, false, angular_velocity);
+    Lattice *grid = new Lattice(DIM, length, false, false, angular_velocity);
     //set initial state
     State *state = new GaussianState(grid, 0.2, 0., 0., PARTICLES_NUM);
     //set hamiltonian

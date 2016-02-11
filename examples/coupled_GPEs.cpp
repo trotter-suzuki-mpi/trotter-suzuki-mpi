@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
     double particle_mass_a = 1., particle_mass_b = 1.;
     bool imag_time = false;
     double delta_t = 1.e-3;
-    double length_x = double(LENGTH), length_y = double(LENGTH);
+    double length = double(LENGTH);
     double coupling_a = 0;//7.116007999594e-4;
     double coupling_b = 0;//7.116007999594e-4;
     double coupling_ab = 0;
@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
 #endif
     //set lattice
-    Lattice *grid = new Lattice(DIM, length_x, length_y);
+    Lattice *grid = new Lattice(DIM, length);
     //set initial state
     State *state1 = new GaussianState(grid, 1, 0., 0., PARTICLES_NUM);
     State *state2 = new GaussianState(grid, 1, 0., 0., PARTICLES_NUM, M_PI/2.);

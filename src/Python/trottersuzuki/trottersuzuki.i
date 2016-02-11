@@ -40,7 +40,8 @@ public:
     int global_dim_x, global_dim_y;
     int periods[2];
 
-    int halo_x, halo_y;
+    int halo_x;
+    int halo_y;
     int start_x, start_y;
     int end_x, end_y;
     int inner_start_x, inner_start_y;
