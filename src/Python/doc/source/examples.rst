@@ -75,6 +75,8 @@ Imaginary time evolution to approximate the ground-state energy
 Imprinting of a vortex in a Bose-Einstein Condensate
 ----------------------------------------------------
 
+.. code-block:: python
+
     import numpy as np
     import trottersuzuki as ts
 

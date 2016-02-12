@@ -10,7 +10,7 @@ class Lattice(_Lattice):
     
     def get_x_axis(self):
         """
-        Get the x-axis of the lattice
+        Get the x-axis of the lattice.
         
         Returns
         -------
