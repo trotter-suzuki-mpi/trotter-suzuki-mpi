@@ -63,7 +63,7 @@ This example uses all cores on a single computer to calculate the total energy a
 ~~~~~~~~~~~~~~~{.cpp}
 double particle_mass = 1.;
 int dimension = 500.;
-double length_x = double(dimension), length_y = double(dimension);
+double length = double(dimension);
 double delta_t = 0.01;
 int iterations  = 100;
 ~~~~~~~~~~~~~~~
@@ -71,7 +71,7 @@ int iterations  = 100;
 The next step is the define the lattice, the state, and the Hamiltonian:
 
 ~~~~~~~~~~~~~~~{.cpp}
-Lattice *grid = new Lattice(dimension, length_x, length_y);
+Lattice *grid = new Lattice(dimension, length);
 State *state = new SinusoidState(grid, 1, 1);
 Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
 ~~~~~~~~~~~~~~~
@@ -115,11 +115,11 @@ The following file, `simple_example.cpp`, summarizes the above:
 int main(int argc, char** argv) {
     double particle_mass = 1.;
     int dimension = 500.;
-    double length_x = double(dimension), length_y = double(dimension);
+    double length = double(dimension);
     double delta_t = 0.01;
     int iterations  = 100;
 
-    Lattice *grid = new Lattice(dimension, length_x, length_y);
+    Lattice *grid = new Lattice(dimension, length);
     State *state = new SinusoidState(grid, 1, 1);
     Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t);
@@ -170,11 +170,11 @@ int main(int argc, char** argv) {
 #endif  
     double particle_mass = 1.;
     int dimension = 500.;
-    double length_x = double(dimension), length_y = double(dimension);
+    double length = double(dimension);
     double delta_t = 0.01;
     int iterations  = 100;
 
-    Lattice *grid = new Lattice(dimension, length_x, length_y);
+    Lattice *grid = new Lattice(dimension, length);
     State *state = new SinusoidState(grid, 1, 1);
     Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t);
