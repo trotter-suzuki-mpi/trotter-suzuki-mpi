@@ -25,7 +25,7 @@ length:
 
 ``grid`` is the object that defines the geometry of the system, and it
 will be used throughtout the set up. Note that the origin of the lattice
-is at its the centre.
+is at its centre.
 
 The physics of the problem is described by the Hamiltonian. A single
 object is going to store all the informations regarding the Hamiltonian.
@@ -88,15 +88,14 @@ class and then we initialize it with the function above:
     potential.init_potential(harmonic_potential)  # Initialize it using a python function
 
 Note that the module provides a quick way to define the harmonic
-potential, which is often used. The child class ``HarmonicPotential`` is
-what we need:
+potential, which is often used. The child class ``HarmonicPotential`` attains this task:
 
 .. code:: python
 
     omegax = omegay = 1.
     harmonicpotential = ts.HarmonicPotential(grid, omegax, omegay)
 
-We are ready to create the ``Hamiltonian`` object. As a simple example,
+We are ready to create the ``Hamiltonian`` object. For the sake of simplicity,
 let's create the Hamiltonian of the harmonic oscillator:
 
 .. code:: python
@@ -104,7 +103,7 @@ let's create the Hamiltonian of the harmonic oscillator:
     particle_mass = 1. # Mass of the particle
     hamiltonian = ts.Hamiltonian(grid, potential, particle_mass)  # Create the Hamiltonian object
 
-The quantum state is created through the ``State`` class, in the same
+The quantum state is created by means of the ``State`` class, in the same
 way as we did for the potential. Here we create the ground state of the
 harmonic oscillator:
 
@@ -215,8 +214,7 @@ state. Two members of ``State`` class provide these features
 Imprinting
 ~~~~~~~~~~
 
-The member ``imprint``, in the ``State`` class, allows to transform the
-wave function of the state in the following way:
+The member ``imprint``, in the ``State`` class, applies the following transformation to the state:
 
 .. raw:: latex
 
