@@ -5,6 +5,7 @@
    :maxdepth: 2
    
    download.rst
+   quickstart.rst
    examples.rst
    reference.rst
    

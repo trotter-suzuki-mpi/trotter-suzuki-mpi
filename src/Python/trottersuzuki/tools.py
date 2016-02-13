@@ -8,7 +8,7 @@ def vortex_position(grid, state, approx_cloud_radius=0.):
     ----------
     * `grid` : Lattice object
         Define the geometry of the simulation.
-    * 'state' : State object
+    * `state` : State object
         System's state.
     * `approx_cloud_radius` : float, optional
         Radius of the circle, centered at the Lattice's origin, where the vortex core

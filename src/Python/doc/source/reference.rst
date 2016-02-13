@@ -4,7 +4,7 @@ Function Reference
 
 Lattice Class
 =============
-.. py:class:: Lattice(dim=100, length=20.0, periodic_x_axis=False, periodic_y_axis=False)
+.. py:class:: Lattice
    :module: trottersuzuki
 
    This class defines the lattice structure over which the state and potential
@@ -44,7 +44,7 @@ Lattice Class
           >>> # and closed boundary conditions.
           >>> grid = ts.Lattice(200, 30.)
 
-   **Methods**
+   **Members**
 
    .. py:method:: get_x_axis()
       :module: trottersuzuki
@@ -66,11 +66,41 @@ Lattice Class
       * `y_axis` : numpy array
           Y-axis of the lattice
 
-   **
+   **Attributes**
    
+   .. py:attribute:: length_x
+      :module: trottersuzuki
+      
+      Physical length of the lattice along the X-axis.
+      
+   .. py:attribute:: length_y
+      :module: trottersuzuki
+      
+      Physical length of the lattice along the Y-axis.
+      
+   .. py:attribute:: dim_x
+      :module: trottersuzuki
+      
+      Number of dots of the lattice along the X-axis.
+
+   .. py:attribute:: dim_y
+      :module: trottersuzuki
+      
+      Number of dots of the lattice along the Y-axis.
+
+   .. py:attribute:: delta_x
+      :module: trottersuzuki
+      
+      Resolution of the lattice along the X-axis: ratio between `lenth_x` and `dim_x`.
+
+   .. py:attribute:: delta_y
+      :module: trottersuzuki
+      
+      Resolution of the lattice along the y-axis: ratio between `lenth_y` and `dim_y`.
+
 State Classes
 =============
-.. py:class:: State(*args)
+.. py:class:: State
    :module: trottersuzuki
 
    This class defines the quantum state.
@@ -92,7 +122,6 @@ State Classes
           Quantum state.
 
       **Example**
-
 
           >>> import trottersuzuki as ts  # import the module
           >>> grid = ts.Lattice()  # Define the simulation's geometry
@@ -122,7 +151,7 @@ State Classes
           >>> state = ts.GaussianState(grid, 1.)  # Create the system's state with a gaussian wave function
           >>> state2 = ts.State(state)  # Copy state into state2
    
-   **Methods**
+   **Members**
    
    .. py:method:: State.init_state(state_function):
       :module: trottersuzuki
@@ -147,7 +176,7 @@ State Classes
          >>> state = ts.State(grid)  # Create the system's state
          >>> state.ini_state(wave_function)  # Initialize the wave function of the state
    
-   .. py:method:: State.imprint(function):
+   .. py:method:: State.imprint(function)
       :module: trottersuzuki
       
         Multiply the wave function of the state by the function provided.
@@ -160,7 +189,7 @@ State Classes
         **Notes**
 
         Useful, for instance, to imprint solitons and vortices on a condensate. 
-        Generally, it performs a transformation of the state whose wave function
+        Generally, it performs a transformation of the state whose wave function becomes:
         
         .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
         
@@ -352,7 +381,7 @@ State Classes
           >>> state2.loadtxt('wave_function.txt')  # Load the wave function
 
 
-.. py:class:: ExponentialState(grid, n_x=1, n_y=1, norm=1, phase=0)
+.. py:class:: ExponentialState
    :module: trottersuzuki
 
    This class defines a quantum state with exponential like wave function.
@@ -361,7 +390,7 @@ State Classes
 
    **Constructors**
 
-   .. py:method:: ExponentialState(_grid, _n_x=1, _n_y=1, _norm=1, _phase=0)
+   .. py:method:: ExponentialState(grid, n_x=1, n_y=1, norm=1, phase=0)
       :module: trottersuzuki
       
       Construct the quantum state with exponential like wave function.
@@ -402,9 +431,9 @@ State Classes
           >>> grid = ts.Lattice(300, 30., True, True)  # Define the simulation's geometry
           >>> state = ts.ExponentialState(grid, 2, 1)  # Create the system's state
 
-   **Methods**
+   **Member**
 
-   .. py:method:: ExponentialState.imprint(function):
+   .. py:method:: ExponentialState.imprint(function)
       :module: trottersuzuki
       
         Multiply the wave function of the state by the function provided.
@@ -417,7 +446,7 @@ State Classes
         **Notes**
 
         Useful, for instance, to imprint solitons and vortices on a condensate. 
-        Generally, it performs a transformation of the state whose wave function
+        Generally, it performs a transformation of the state whose wave function becomes:
         
         .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
         
@@ -610,7 +639,7 @@ State Classes
 
 
 
-.. py:class:: GaussianState(grid, omega, mean_x=0, mean_y=0, norm=1)
+.. py:class:: GaussianState
    :module: trottersuzuki
 
    This class defines a quantum state with gaussian like wave function.
@@ -662,9 +691,9 @@ State Classes
           >>> grid = ts.Lattice(300, 30.)  # Define the simulation's geometry
           >>> state = ts.GaussianState(grid, 2.)  # Create the system's state
 
-   **Methods**
+   **Members**
 
-.. py:method:: GaussianState.imprint(function):
+   .. py:method:: GaussianState.imprint(function)
       :module: trottersuzuki
       
         Multiply the wave function of the state by the function provided.
@@ -677,7 +706,7 @@ State Classes
         **Notes**
 
         Useful, for instance, to imprint solitons and vortices on a condensate. 
-        Generally, it performs a transformation of the state whose wave function
+        Generally, it performs a transformation of the state whose wave function becomes:
         
         .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
         
@@ -869,7 +898,7 @@ State Classes
           >>> state2.loadtxt('wave_function.txt')  # Load the wave function
 
 
-.. py:class:: SinusoidState(grid, n_x=1, n_y=1, norm=1, phase=0)
+.. py:class:: SinusoidState
    :module: trottersuzuki
 
    This class defines a quantum state with sinusoidal like wave function.
@@ -912,9 +941,9 @@ State Classes
           >>> grid = ts.Lattice(300, 30., True, True)  # Define the simulation's geometry
           >>> state = ts.SinusoidState(grid, 2, 0)  # Create the system's state
 
-   **Methods**
+   **Members**
 
-   .. py:method:: SinusoidState.imprint(function):
+   .. py:method:: SinusoidState.imprint(function)
       :module: trottersuzuki
       
         Multiply the wave function of the state by the function provided.
@@ -927,7 +956,7 @@ State Classes
         **Notes**
 
         Useful, for instance, to imprint solitons and vortices on a condensate. 
-        Generally, it performs a transformation of the state whose wave function
+        Generally, it performs a transformation of the state whose wave function becomes:
         
         .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
         
@@ -1122,7 +1151,7 @@ State Classes
 
 Potential Classes
 =================
-.. py:class:: Potential(*args)
+.. py:class:: Potential
    :module: trottersuzuki
 
    This class defines the external potential that is used for Hamiltonian class.
@@ -1153,7 +1182,7 @@ Potential Classes
           >>> potential = ts.Potential(grid)  # Create the external potential
           >>> potential.init_potential(external_potential_function)  # Initialize the external potential
 
-   **Methods**
+   **Members**
 
    .. py:method:: Potential.init_potential(potential_function)
       :module: trottersuzuki
@@ -1186,7 +1215,7 @@ Potential Classes
           Value of the external potential.
 
 
-.. py:class:: HarmonicPotential(grid, omegax, omegay, mass=1.0, mean_x=0.0, mean_y=0.0)
+.. py:class:: HarmonicPotential
    :module: trottersuzuki
 
    This class defines the external potential, that is used for Hamiltonian class.
@@ -1233,7 +1262,7 @@ Potential Classes
           >>> grid = ts.Lattice()  # Define the simulation's geometry
           >>> potential = ts.HarmonicPotential(grid, 2., 1.)  # Create an harmonic external potential
 
-   **Methods**
+   **Members**
 
    .. py:method:: HarmonicPotential.get_value(x, y)
       :module: trottersuzuki
@@ -1249,15 +1278,14 @@ Potential Classes
 
 Hamiltonian Classes
 ===================
-.. py:class:: Hamiltonian(grid, potential=None, mass=1.0, coupling=0.0, angular_velocity=0.0, rot_coord_x=0, rot_coord_y=0)
+.. py:class:: Hamiltonian
    :module: trottersuzuki
 
    This class defines the Hamiltonian of a single component system.
 
    **Constructors**
    
-   .. py:method:: Hamiltonian(grid, potential=0, mass=1., coupling=0., angular_velocity=0.,
-       rot_coord_x=0, rot_coord_y=0)
+   .. py:method:: Hamiltonian(grid, potential=0, mass=1., coupling=0., angular_velocity=0., rot_coord_x=0, rot_coord_y=0)
 
       Construct the Hamiltonian of a single component system.  
 
@@ -1266,13 +1294,13 @@ Hamiltonian Classes
       * `grid` : Lattice object 
           Define the geometry of the simulation.  
       * `potential` : Potential object 
-          Define the external potential of the Hamiltonian.  
+          Define the external potential of the Hamiltonian (:math:`V`).  
       * `mass` : float,optional (default: 1.) 
-          Mass of the particle.  
+          Mass of the particle (:math:`m`).  
       * `coupling` : float,optional (default: 0.) 
-          Coupling constant of intra-particle interaction.  
+          Coupling constant of intra-particle interaction (:math:`g`).  
       * `angular_velocity` : float,optional (default: 0.) 
-          The frame of reference rotates with this angular velocity.  
+          The frame of reference rotates with this angular velocity (:math:`\omega`).  
       * `rot_coord_x` : float,optional (default: 0.) 
           X coordinate of the center of rotation.  
       * `rot_coord_y` : float,optional (default: 0.)
@@ -1283,11 +1311,11 @@ Hamiltonian Classes
       * `Hamiltonian` : Hamiltonian object
           Hamiltonian of the system to be simulated: 
           
-          .. math:: H(x,y) = K  + V(x,y) + g |\psi(x,y)|^2 + \omega L_z
+          .. math:: H(x,y) = \frac{1}{2m}(P_x^2 + P_y^2)  + V(x,y) + g |\psi(x,y)|^2 + \omega L_z
           
-          being :math:`K` the kinetic operator, :math:`V(x,y)` the external potential, 
+          being :math:`m` the particle mass, :math:`V(x,y)` the external potential, 
           :math:`g` the coupling constant of intra-particle interaction, :math:`\omega` 
-          the angular velocity of the frame of reference  and :math:`L_z` the angular momentum operator along the z-axis.
+          the angular velocity of the frame of reference and :math:`L_z` the angular momentum operator along the z-axis.
 
       **Example**
 
@@ -1297,7 +1325,7 @@ Hamiltonian Classes
           >>> hamiltonian = ts.Hamiltonian(grid, potential)  # Create the Hamiltonian of an harmonic oscillator
 
 
-.. py:class:: Hamiltonian2Component(grid, potential_1=None, potential_2=None, mass_1=1.0, mass_2=1.0, coupling_1=0.0, coupling_12=0.0, coupling_2=0.0, omega_r=0, omega_i=0, angular_velocity=0.0, rot_coord_x=0, rot_coord_y=0)
+.. py:class:: Hamiltonian2Component
    :module: trottersuzuki
 
    This class defines the Hamiltonian of a two component system.
@@ -1313,25 +1341,25 @@ Hamiltonian Classes
       * `grid` : Lattice object  
           Define the geometry of the simulation.  
       * `potential_1` : Potential object 
-          External potential to which the first state is subjected.  
+          External potential to which the first state is subjected (:math:`V_1`).  
       * `potential_2` : Potential object 
-          External potential to which the second state is subjected.  
+          External potential to which the second state is subjected (:math:`V_2`).  
       * `mass_1` : float,optional (default: 1.) 
-          Mass of the first-component's particles.  
+          Mass of the first-component's particles (:math:`m_1`).  
       * `mass_2` : float,optional (default: 1.) 
-          Mass of the second-component's particles.  
+          Mass of the second-component's particles (:math:`m_2`).  
       * `coupling_1` : float,optional (default: 0.) 
-          Coupling constant of intra-particle interaction for the first component.  
+          Coupling constant of intra-particle interaction for the first component (:math:`g_1`).  
       * `coupling_12` : float,optional (default: 0.) 
-          Coupling constant of inter-particle interaction between the two components.  
+          Coupling constant of inter-particle interaction between the two components (:math:`g_{12}`).  
       * `coupling_2` : float,optional (default: 0.) 
-          Coupling constant of intra-particle interaction for the second component.  
+          Coupling constant of intra-particle interaction for the second component (:math:`g_2`).  
       * `omega_r` : float,optional (default: 0.) 
-          Real part of the Rabi coupling.  
+          Real part of the Rabi coupling (:math:`\mathrm{Re}(\Omega)`).  
       * `omega_i` : float,optional (default: 0.) 
-          Imaginary part of the Rabi coupling.  
+          Imaginary part of the Rabi coupling (:math:`\mathrm{Im}(\Omega)`).  
       * `angular_velocity` : float,optional (default: 0.) 
-          The frame of reference rotates with this angular velocity.  
+          The frame of reference rotates with this angular velocity (:math:`\omega`).  
       * `rot_coord_x` : float,optional (default: 0.) 
           X coordinate of the center of rotation.  
       * `rot_coord_y` : float,optional (default: 0.) 
@@ -1342,15 +1370,23 @@ Hamiltonian Classes
       * `Hamiltonian2Component` : Hamiltonian2Component object 
           Hamiltonian of the two-component system to be simulated.
           
-          .. math::
-          
-             H(x,y)(\psi_1,\psi_2) &=\\
-          
-             &(K_1 + V_1(x,y) + g_1 |\psi_1(x,y)|^2 + g_{12} |\psi_2(x,y)|^2 + \omega L_z)\psi_1 + \Omega \psi_2 /2\\
-             &(K_2 + V_2(x,y) + g_2 |\psi_2(x,y)|^2 + g_{12} |\psi_1(x,y)|^2 + \omega L_z)\psi_2 + \Omega \psi_1 /2
-          
-          
-          being, for the i-th component, :math:`K_i` the kinetic operator, :math:`V_i(x,y)` the external potential, 
+          .. raw:: latex
+
+             \begin{equation}
+             H = \begin{bmatrix} H_1 &  \frac{\Omega}{2} \\ \frac{\Omega}{2} & H_2 \end{bmatrix} 
+             \end{equation}
+
+          being
+
+          .. raw:: latex
+
+             \begin{equation}
+             H_1 = \frac{1}{2m_1}(P_x^2 + P_y^2) + V_1(x,y) + g_1|\psi_1(x,y)|^2 + g_{12}|\psi_2(x,y)|^2 + \omega L_z  
+             \end{equation}\begin{equation}
+             H_2 = \frac{1}{2m_2}(P_x^2 + P_y^2) + V_2(x,y) + g_2|\psi_2(x,y)|^2 + g_{12}|\psi_1(x,y)|^2 + \omega L_z  
+             \end{equation}
+
+          and, for the i-th component, :math:`m_i` the particle mass, :math:`V_i(x,y)` the external potential, 
           :math:`g_i` the coupling constant of intra-particle interaction; 
           :math:`g_{12}` the coupling constant of inter-particle interaction 
           :math:`\omega` the angular velocity of the frame of reference, :math:`L_z` the angular momentum operator along the z-axis 
@@ -1365,7 +1401,7 @@ Hamiltonian Classes
 
 Solver Class
 ============
-.. py:class:: Solver(*args)
+.. py:class:: Solver
    :module: trottersuzuki
 
    This class defines the evolution tasks.
@@ -1438,7 +1474,7 @@ Solver Class
           >>> hamiltonian = ts.Hamiltonian2Component(grid, potential, potential)  # Create an harmonic oscillator Hamiltonian
           >>> solver = ts.Solver(grid, state_1, state_2, hamiltonian, 1e-2)  # Create the solver
 
-   **Methods**
+   **Members**
 
    .. py:method:: Solver.evolve(iterations, imag_time=False)
       :module: trottersuzuki
@@ -1451,6 +1487,10 @@ Solver Class
           Number of iterations.
       * `imag_time` : bool,optional (default: False)  
           Whether to perform imaginary time evolution (True) or real time evolution (False).    
+
+      **Notes**
+      
+      The norm of the state is preserved both in real-time and in imaginary-time evolution.
 
       **Example**
 
@@ -1570,15 +1610,15 @@ Tools
     
     * `grid` : Lattice object
         Define the geometry of the simulation.
-    * 'state' : State object
+    * `state` : State object
         System's state.
     * `approx_cloud_radius` : float, optional
         Radius of the circle, centered at the Lattice's origin, where the vortex core
-        is expected to be.
+        is expected to be. Need for a better accuracy.
     
     **Returns**
 
-    * `coords` numpy array
+    * `coords` : numpy array
         Coordinates of the vortex core's position (coords[0]: x coordinate; coords[1]: y coordinate).
     
     **Notes**

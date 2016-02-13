@@ -10,5 +10,6 @@ Trotter-Suzuki-MPI User's Guide
   
    introduction.rst
    download.rst
+   quickstart.rst
    examples.rst
    reference.rst

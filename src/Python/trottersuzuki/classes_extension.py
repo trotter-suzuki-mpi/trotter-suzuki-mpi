@@ -95,7 +95,7 @@ class State(_State):
         Notes
         -----
         Useful, for instance, to imprint solitons and vortices on a condensate. 
-        Generally, it performs a transformation of the state whose wave function
+        Generally, it performs a transformation of the state whose wave function becomes
         
         .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
         
@@ -149,7 +149,7 @@ class GaussianState(_GaussianState):
         Notes
         -----
         Useful, for instance, to imprint solitons and vortices on a condensate. 
-        Generally, it performs a transformation of the state whose wave function
+        Generally, it performs a transformation of the state whose wave function becomes
         
         .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
         
@@ -203,7 +203,7 @@ class SinusoidState(_SinusoidState):
         Notes
         -----
         Useful, for instance, to imprint solitons and vortices on a condensate. 
-        Generally, it performs a transformation of the state whose wave function
+        Generally, it performs a transformation of the state whose wave function becomes
         
         .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
         
@@ -257,7 +257,7 @@ class ExponentialState(_ExponentialState):
         Notes
         -----
         Useful, for instance, to imprint solitons and vortices on a condensate. 
-        Generally, it performs a transformation of the state whose wave function
+        Generally, it performs a transformation of the state whose wave function becomes
         
         .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
         

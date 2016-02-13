@@ -105,11 +105,6 @@ Update memory pointed by external_potential_real and external_potential_imag
 
 %feature("docstring") ExponentialState "
 
-This class defines a quantum state with exponential like wave function.  
-
-This class is a child of State class.  
-
-C++ includes: trottersuzuki.h
 ";
 
 %feature("docstring") ExponentialState::ExponentialState "
@@ -157,13 +152,8 @@ Example
 // File: classGaussianState.xml
 
 
-%feature("docstring") GaussianState "
+%feature("docstring") GaussianState " 
 
-This class defines a quantum state with gaussian like wave function.  
-
-This class is a child of State class.  
-
-C++ includes: trottersuzuki.h
 ";
 
 %feature("docstring") GaussianState::GaussianState "
@@ -216,9 +206,6 @@ Example
 
 %feature("docstring") Hamiltonian "
 
-This class defines the Hamiltonian of a single component system.  
-
-C++ includes: trottersuzuki.h
 ";
 
 %feature("docstring") Hamiltonian::~Hamiltonian "
@@ -233,13 +220,13 @@ Parameters
 * `grid` : Lattice object 
     Define the geometry of the simulation.  
 * `potential` : Potential object 
-    Define the external potential of the Hamiltonian.  
+    Define the external potential of the Hamiltonian (:math:`V`).  
 * `mass` : float,optional (default: 1.) 
-    Mass of the particle.  
+    Mass of the particle (:math:`m`).  
 * `coupling` : float,optional (default: 0.) 
-    Coupling constant of intra-particle interaction.  
+    Coupling constant of intra-particle interaction (:math:`g`).  
 * `angular_velocity` : float,optional (default: 0.) 
-    The frame of reference rotates with this angular velocity.  
+    The frame of reference rotates with this angular velocity (:math:`\omega`).  
 * `rot_coord_x` : float,optional (default: 0.) 
     X coordinate of the center of rotation.  
 * `rot_coord_y` : float,optional (default: 0.)
@@ -250,9 +237,9 @@ Returns
 * `Hamiltonian` : Hamiltonian object
     Hamiltonian of the system to be simulated: 
     
-    .. math:: H(x,y) = K  + V(x,y) + g |\psi(x,y)|^2 + \omega L_z
+    .. math:: H(x,y) = 1/(2m)(P_x^2 + P_y^2)  + V(x,y) + g |\psi(x,y)|^2 + \omega L_z
     
-    being :math:`K` the kinetic operator, :math:`V(x,y)` the external potential, 
+    being :math:`m` the particle mass, :math:`V(x,y)` the external potential, 
     :math:`g` the coupling constant of intra-particle interaction, :math:`\omega` 
     the angular velocity of the frame of reference  and :math:`L_z` the angular momentum operator along the z-axis.
 
@@ -267,12 +254,8 @@ Example
 
 // File: classHamiltonian2Component.xml
 
-
 %feature("docstring") Hamiltonian2Component "
 
-This class defines the Hamiltonian of a two component system.  
-
-C++ includes: trottersuzuki.h
 ";
 
 %feature("docstring") Hamiltonian2Component::Hamiltonian2Component "
@@ -284,25 +267,25 @@ Parameters
 * `grid` : Lattice object  
     Define the geometry of the simulation.  
 * `potential_1` : Potential object 
-    External potential to which the first state is subjected.  
+    External potential to which the first state is subjected (:math:`V_1`).  
 * `potential_2` : Potential object 
-    External potential to which the second state is subjected.  
+    External potential to which the second state is subjected (:math:`V_2`).  
 * `mass_1` : float,optional (default: 1.) 
-    Mass of the first-component's particles.  
+    Mass of the first-component's particles (:math:`m_1`).  
 * `mass_2` : float,optional (default: 1.) 
-    Mass of the second-component's particles.  
+    Mass of the second-component's particles (:math:`m_2`).  
 * `coupling_1` : float,optional (default: 0.) 
-    Coupling constant of intra-particle interaction for the first component.  
+    Coupling constant of intra-particle interaction for the first component (:math:`g_1`).  
 * `coupling_12` : float,optional (default: 0.) 
-    Coupling constant of inter-particle interaction between the two components.  
+    Coupling constant of inter-particle interaction between the two components (:math:`g_{12}`).  
 * `coupling_2` : float,optional (default: 0.) 
-    Coupling constant of intra-particle interaction for the second component.  
+    Coupling constant of intra-particle interaction for the second component (:math:`g_2`).  
 * `omega_r` : float,optional (default: 0.) 
-    Real part of the Rabi coupling.  
+    Real part of the Rabi coupling (:math:`\mathrm{Re}(\Omega)`).  
 * `omega_i` : float,optional (default: 0.) 
-    Imaginary part of the Rabi coupling.  
+    Imaginary part of the Rabi coupling (:math:`\mathrm{Im}(\Omega)`).  
 * `angular_velocity` : float,optional (default: 0.) 
-    The frame of reference rotates with this angular velocity.  
+    The frame of reference rotates with this angular velocity (:math:`\omega`).  
 * `rot_coord_x` : float,optional (default: 0.) 
     X coordinate of the center of rotation.  
 * `rot_coord_y` : float,optional (default: 0.) 
@@ -317,15 +300,16 @@ Returns
     
        H(x,y)(\psi_1,\psi_2) &= \n
     
-       &(K_1 + V_1(x,y) + g_1 |\psi_1(x,y)|^2 + g_{12} |\psi_2(x,y)|^2 + \omega L_z)\psi_1 + \Omega \psi_2 /2 \n
-       &(K_2 + V_2(x,y) + g_2 |\psi_2(x,y)|^2 + g_{12} |\psi_1(x,y)|^2 + \omega L_z)\psi_2 + \Omega \psi_1 /2
+       &(1/(2m_1)(P_x^2 + P_y^2) + V_1(x,y) + g_1 |\psi_1(x,y)|^2 + g_{12} |\psi_2(x,y)|^2 + \omega L_z)\psi_1 + \Omega \psi_2 /2 \n
+       &(1/(2m_2)(P_x^2 + P_y^2) + V_2(x,y) + g_2 |\psi_2(x,y)|^2 + g_{12} |\psi_1(x,y)|^2 + \omega L_z)\psi_2 + \Omega \psi_1 /2
     
     
-    being, for the i-th component, :math:`K_i` the kinetic operator, :math:`V_i(x,y)` the external potential, 
+    being, for the i-th component, :math:`m_i` the particle mass, :math:`V_i(x,y)` the external potential, 
     :math:`g_i` the coupling constant of intra-particle interaction; 
     :math:`g_{12}` the coupling constant of inter-particle interaction 
     :math:`\omega` the angular velocity of the frame of reference, :math:`L_z` the angular momentum operator along the z-axis 
     and :math:`\Omega` the Rabi coupling.
+    
 Example
 -------
 
@@ -343,11 +327,6 @@ Example
 
 %feature("docstring") HarmonicPotential "
 
-This class defines the external potential, that is used for Hamiltonian class.  
-
-This class is a child of Potential class.  
-
-C++ includes: trottersuzuki.h
 ";
 
 %feature("docstring") HarmonicPotential::get_value "
@@ -477,15 +456,6 @@ Normalization of the two components wave function.
 
 %feature("docstring") Lattice "
 
-This class defines the lattice structure over which the state and potential
-matrices are defined.  
-
-As to single-process execution, the lattice is a single tile which can be
-surrounded by a halo, in the case of periodic boundary conditions. As to multi-
-process execution, the lattice is divided in smaller lattices, dubbed tiles, one
-for each process. Each of the tiles is surrounded by a halo.  
-
-C++ includes: trottersuzuki.h
 ";
 
 %feature("docstring") Lattice::Lattice "
@@ -533,9 +503,6 @@ Example
 
 %feature("docstring") Potential "
 
-This class defines the external potential, that is used for Hamiltonian class.  
-
-C++ includes: trottersuzuki.h
 ";
 
 %feature("docstring") Potential::Potential "
@@ -668,11 +635,6 @@ Returns
 
 %feature("docstring") SinusoidState "
 
-This class defines a quantum state with sinusoidal like wave function.  
-
-This class is a child of State class.  
-
-C++ includes: trottersuzuki.h
 ";
 
 %feature("docstring") SinusoidState::SinusoidState "
@@ -717,9 +679,6 @@ Example
 
 %feature("docstring") Solver "
 
-This class defines the evolution tasks.  
-
-C++ includes: trottersuzuki.h
 ";
 
 %feature("docstring") Solver::get_kinetic_energy "
@@ -850,6 +809,11 @@ Parameters
 * `imag_time` : bool,optional (default: False)  
     Whether to perform imaginary time evolution (True) or real time evolution (False).    
 
+Notes
+-----
+
+The norm of the state is preserved both in real-time and in imaginary-time evolution.
+
 Example
 -------
 
@@ -966,9 +930,6 @@ Returns
 
 %feature("docstring") State "
 
-This class defines the quantum state.  
-
-C++ includes: trottersuzuki.h
 ";
 
 %feature("docstring") State::write_particle_density "
@@ -1070,6 +1031,11 @@ Parameters
 * `grid` : Lattice object  
     Define the geometry of the simulation.
 
+Returns
+-------
+* `state` : State object
+    Quantum state.
+
 Notes
 -----
 It may be used to copy a quantum state.
@@ -1098,6 +1064,11 @@ Parameters
 ----------
 * `grid` : Lattice object  
     Define the geometry of the simulation.
+
+Returns
+-------
+* `state` : State object
+    Quantum state.
 
 Notes
 -----
