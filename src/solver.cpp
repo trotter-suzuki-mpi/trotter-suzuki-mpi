@@ -159,6 +159,7 @@ void Solver::evolve(int iterations, bool _imag_time) {
             }
         }
         init_kernel();
+        has_parameters_changed = false();
     }
     // Main loop
     double var = 0.5;
