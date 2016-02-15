@@ -68,14 +68,21 @@ Solver::~Solver() {
 
 void Solver::initialize_exp_potential(double delta_t, int which) {
     complex<double> tmp;
+    double ptmp;
     double idy = grid->start_y * grid->delta_y, idx;
     for (int y = 0; y < grid->dim_y; y++, idy += grid->delta_y) {
         idx = grid->start_x * grid->delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += grid->delta_x) {
-            if(imag_time)
-                tmp = exp(complex<double> (-delta_t * hamiltonian->potential->get_value(x, y), 0.));
-            else
-                tmp = exp(complex<double> (0., -delta_t * hamiltonian->potential->get_value(x, y)));
+            if (single_component) {
+                ptmp = hamiltonian->potential->get_value(x, y);
+            } else {
+                ptmp = static_cast<Hamiltonian2Component*>(hamiltonian)->potential_b->get_value(x, y);
+            }
+            if (imag_time) {
+                tmp = exp(complex<double> (-delta_t * ptmp, 0.));
+            } else {
+                tmp = exp(complex<double> (0., -delta_t * ptmp));
+            }
             external_pot_real[which][y * grid->dim_x + x] = real(tmp);
             external_pot_imag[which][y * grid->dim_x + x] = imag(tmp);
         }
