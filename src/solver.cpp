@@ -73,7 +73,7 @@ void Solver::initialize_exp_potential(double delta_t, int which) {
     for (int y = 0; y < grid->dim_y; y++, idy += grid->delta_y) {
         idx = grid->start_x * grid->delta_x;
         for (int x = 0; x < grid->dim_x; x++, idx += grid->delta_x) {
-            if (single_component) {
+            if (which == 0) {
                 ptmp = hamiltonian->potential->get_value(x, y);
             } else {
                 ptmp = static_cast<Hamiltonian2Component*>(hamiltonian)->potential_b->get_value(x, y);
