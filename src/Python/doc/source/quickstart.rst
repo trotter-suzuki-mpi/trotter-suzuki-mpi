@@ -11,26 +11,23 @@ Start by importing the module:
 
     import trottersuzuki as ts
 
-To set up the simulation of a quantum system, we need few lines of code.
+To set up the simulation of a quantum system, we need only a few lines of code.
 First of all, we create the lattice over which the physical system is
-defined. The informations about the discretized space are collected in a
-single object. Say we want a squared lattice of 300x300 nodes, whose
-physical area is 20x20, then we just have to give as input to the
-``Lattice`` class the number of points along an edge and its physical
-length:
+defined. All information about the discretized space is collected in a
+single object. Say we want a squared lattice of 300x300 nodes, with a
+physical area of 20x20, then we have to specify these in the constructor of the ``Lattice`` class:
 
 .. code:: python
 
     grid = ts.Lattice(300, 20.)
 
-``grid`` is the object that defines the geometry of the system, and it
-will be used throughtout the set up. Note that the origin of the lattice
-is at its centre.
+The object ``grid`` defines the geometry of the system and it
+will be used throughout the simulations. Note that the origin of the lattice is at its centre.
 
 The physics of the problem is described by the Hamiltonian. A single
-object is going to store all the informations regarding the Hamiltonian.
+object is going to store all the information regarding the Hamiltonian.
 The module is able to deal with two physical models: Gross-Pitaevskii
-equation at single and two components wave function, namely (in units
+equation of a single or two-component wave function, namely (in units
 :math:`\hbar=1`):
 
 .. raw:: latex
@@ -71,8 +68,8 @@ and
 for the two component wave function.
 
 First we define the object for the external potential :math:`V(x,y)`. A
-general external potential function can be defined by mean of a python
-function, for instance the harmonic potential may be defined:
+general external potential function can be defined by a Python
+function, for instance, the harmonic potential can be defined as follows:
 
 .. code:: python
 
@@ -88,49 +85,47 @@ class and then we initialize it with the function above:
     potential.init_potential(harmonic_potential)  # Initialize it using a python function
 
 Note that the module provides a quick way to define the harmonic
-potential, which is often used. The child class ``HarmonicPotential`` attains this task:
+potential, as it is fequently used:
 
 .. code:: python
 
     omegax = omegay = 1.
     harmonicpotential = ts.HarmonicPotential(grid, omegax, omegay)
 
-We are ready to create the ``Hamiltonian`` object. For the sake of simplicity,
-let's create the Hamiltonian of the harmonic oscillator:
+We are ready to create the ``Hamiltonian`` object. For the sake of simplicity, let us create the Hamiltonian of the harmonic oscillator:
 
 .. code:: python
 
     particle_mass = 1. # Mass of the particle
     hamiltonian = ts.Hamiltonian(grid, potential, particle_mass)  # Create the Hamiltonian object
 
-The quantum state is created by means of the ``State`` class, in the same
-way as we did for the potential. Here we create the ground state of the
+The quantum state is created by the ``State`` class; it resembles the way the potential is defined. Here we create the ground state of the
 harmonic oscillator:
 
 .. code:: python
 
     import numpy as np  # Import the module numpy for the exponential and sqrt functions
+
     def state_wave_function(x,y):  # Wave function
         return np.exp(-0.5*(x**2 + y**2)) / np.sqrt(np.pi)
+
     state = ts.State(grid)  # Create the quantum state
     state.init_state(state_wave_function)  # Initialize the state
 
 The module provides several predefined quantum states as well. In this
-case we could have used the ``GaussianState`` class:
+case, we could have used the ``GaussianState`` class:
 
 .. code:: python
 
     omega = 1.
-    gaussianstate = ts.GaussianState(grid, omega)  # Create a quantum state whose wave function is gaussian like
+    gaussianstate = ts.GaussianState(grid, omega)  # Create a quantum state whose wave function is Gaussian-like
 
-We are left with the creation of the last object to initialize the
-solver. The ``Solver`` class gathers all the objects we defined so far
-and it is used to perform the evolution:
+We are left with the creation of the last object: the ``Solver`` class gathers all the objects we defined so far and it is used to perform the evolution and analyze the expectation values:
 
 .. code:: python
 
     delta_t = 1e-3  # Physical time of a single iteration
-    solver = ts.Solver(grid, state, hamiltonian, delta_t)  # Creation of the solver
+    solver = ts.Solver(grid, state, hamiltonian, delta_t)  # Creating the solver object
 
 Finally we can perform both real-time and imaginary-time evolution using
 the method ``evolve``:
@@ -148,8 +143,8 @@ The classes we have seen so far implement several members useful to
 analyze the system (see the function reference section for a complete
 list).
 
-Expected values
-~~~~~~~~~~~~~~~
+Expectation values
+~~~~~~~~~~~~~~~~~~
 
 The solver class provides members for the energy calculations. For
 instance, the total energy can be calculated using the
@@ -160,7 +155,7 @@ error which depends on the lattice approximation:
 .. code:: python
 
     tot_energy = solver.get_total_energy()
-    print tot_energy
+    print(tot_energy)
 
 
 .. parsed-literal::
@@ -175,7 +170,7 @@ class
 .. code:: python
 
     mean_x = state.get_mean_x()  # Get the expected value of X operator
-    print mean_x
+    print(mean_x)
 
 
 .. parsed-literal::
@@ -192,7 +187,7 @@ The squared norm of the state can be calculated by means of both
 .. code:: python
 
     snorm = state.get_squared_norm()
-    print snorm
+    print(snorm)
 
 
 .. parsed-literal::

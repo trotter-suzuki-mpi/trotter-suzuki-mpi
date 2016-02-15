@@ -24,17 +24,17 @@ The following code block gives a simple example of initializing a state and calc
     solver = Solver(grid, state, hamiltonian, time_of_single_iteration)  # define the solver
 
     # get some expected values from the initial state
-    print "norm: ", solver.get_squared_norm()
-    print "Total energy: ", solver.get_total_energy()
-    print "Kinetic energy: ", solver.get_kinetic_energy()
+    print("norm: ", solver.get_squared_norm())
+    print("Total energy: ", solver.get_total_energy())
+    print("Kinetic energy: ", solver.get_kinetic_energy())
 
     number_of_iterations = 1000
     solver.evolve(number_of_iterations)  # evolve the state of 1000 iterations
 
     # get some expected values from the evolved state
-    print "norm: ", solver.get_squared_norm()
-    print "Total energy: ", solver.get_total_energy()
-    print "Kinetic energy: ", solver.get_kinetic_energy()
+    print("norm: ", solver.get_squared_norm())
+    print("Total energy: ", solver.get_total_energy())
+    print("Kinetic energy: ", solver.get_kinetic_energy())
 
 
 
@@ -58,18 +58,18 @@ Imaginary time evolution to approximate the ground-state energy
     solver = Solver(grid, state, hamiltonian, time_of_single_iteration)  # define the solver
 
     # get some expected values from the initial state
-    print "norm: ", solver.get_squared_norm()
-    print "Total energy: ", solver.get_total_energy()
-    print "Kinetic energy: ", solver.get_kinetic_energy()
+    print("norm: ", solver.get_squared_norm())
+    print("Total energy: ", solver.get_total_energy())
+    print("Kinetic energy: ", solver.get_kinetic_energy())
 
     number_of_iterations = 40000
     imaginary_evolution = true
     solver.evolve(number_of_iterations, imaginary_evolution)      # evolve the state of 40000 iterations
 
     # get some expected values from the evolved state
-    print "norm: ", solver.get_squared_norm()
-    print "Total energy: ", solver.get_total_energy()
-    print "Kinetic energy: ", solver.get_kinetic_energy()
+    print("norm: ", solver.get_squared_norm())
+    print("Total energy: ", solver.get_total_energy())
+    print("Kinetic energy: ", solver.get_kinetic_energy())
 
 
 Imprinting of a vortex in a Bose-Einstein Condensate
