@@ -1370,21 +1370,17 @@ Hamiltonian Classes
       * `Hamiltonian2Component` : Hamiltonian2Component object 
           Hamiltonian of the two-component system to be simulated.
           
-          .. raw:: latex
+          .. math::
 
-             \begin{equation}
              H = \begin{bmatrix} H_1 &  \frac{\Omega}{2} \\ \frac{\Omega}{2} & H_2 \end{bmatrix} 
-             \end{equation}
 
           being
 
-          .. raw:: latex
+          .. math::
 
-             \begin{equation}
              H_1 = \frac{1}{2m_1}(P_x^2 + P_y^2) + V_1(x,y) + g_1|\psi_1(x,y)|^2 + g_{12}|\psi_2(x,y)|^2 + \omega L_z  
-             \end{equation}\begin{equation}
+
              H_2 = \frac{1}{2m_2}(P_x^2 + P_y^2) + V_2(x,y) + g_2|\psi_2(x,y)|^2 + g_{12}|\psi_1(x,y)|^2 + \omega L_z  
-             \end{equation}
 
           and, for the i-th component, :math:`m_i` the particle mass, :math:`V_i(x,y)` the external potential, 
           :math:`g_i` the coupling constant of intra-particle interaction; 

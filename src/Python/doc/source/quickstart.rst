@@ -30,38 +30,32 @@ The module is able to deal with two physical models: Gross-Pitaevskii
 equation of a single or two-component wave function, namely (in units
 :math:`\hbar=1`):
 
-.. raw:: latex
+.. math::
 
-   \begin{equation}
    i \frac{\partial}{\partial t} \psi(t) = H \psi(t)
-   \end{equation}
+
 
 being
 
-.. raw:: latex
+.. math::
 
-   \begin{equation}
    H = \frac{1}{2m}(P_x^2 + P_y^2) + V(x,y) + g|\psi(x,y)|^2 + \omega L_z
-   \end{equation}
 
 and :math:`\psi(t) = \psi_t(x,y)` for the single component wave
 function, or
 
-.. raw:: latex
+.. math::
 
-   \begin{equation}
    H = \begin{bmatrix} H_1 &  \frac{\Omega}{2} \\ \frac{\Omega}{2} & H_2 \end{bmatrix} 
-   \end{equation}
 
 where
 
-.. raw:: latex
+.. math::
 
-   \begin{equation}
    H_1 = \frac{1}{2m_1}(P_x^2 + P_y^2) + V_1(x,y) + g_1|\psi(x,y)_1|^2 + g_{12}|\psi(x,y)_2|^2 + \omega L_z  
-   \end{equation}\begin{equation}
+
    H_2 = \frac{1}{2m_2}(P_x^2 + P_y^2) + V_2(x,y) + g_2|\psi(x,y)_2|^2 + g_{12}|\psi(x,y)_1|^2 + \omega L_z  
-   \end{equation}
+
 
 and
 :math:`\psi(t) = \begin{bmatrix} \psi_1(t) \\ \psi_2(t) \end{bmatrix}`,
@@ -211,11 +205,9 @@ Imprinting
 
 The member ``imprint``, in the ``State`` class, applies the following transformation to the state:
 
-.. raw:: latex
+.. math::
 
-   \begin{equation}
    \psi(x,y) \rightarrow \psi'(x,y) = f(x,y)  \psi(x,y)
-   \end{equation}
 
 being :math:`f(x,y)` a general complex-valued function. This comes in
 handy when we want to imprint, for instance, vortices or solitons:
