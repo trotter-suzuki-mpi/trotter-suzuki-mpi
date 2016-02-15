@@ -1599,6 +1599,12 @@ Solver Class
           >>> solver = ts.Solver(grid, state, hamiltonian, 1e-2)  # Create the solver
           >>> solver.get_total_energy()  # Get the total energy
           1
+          
+   .. py:method:: Solver::update_parameters()
+      :module: trottersuzuki
+
+      Notify the solver if any parameter changed in the Hamiltonian
+
 
 Tools
 =====
