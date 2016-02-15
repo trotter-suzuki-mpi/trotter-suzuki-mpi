@@ -265,6 +265,7 @@ public:
            double delta_t, std::string kernel_type="cpu");
     ~Solver();
     void evolve(int iterations, bool imag_time=false);
+    void update_parameters();
     double get_total_energy(void);
     double get_squared_norm(size_t which=3);
     double get_kinetic_energy(size_t which=3);
@@ -296,6 +297,7 @@ private:
     double tot_intra_species_energy;
     double inter_species_energy;
     double rabi_energy;
+    bool has_parameters_changed;
     bool energy_expected_values_updated;
     void calculate_energy_expected_values(void);
 };
