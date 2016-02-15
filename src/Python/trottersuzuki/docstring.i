@@ -826,6 +826,12 @@ Example
     >>> solver.evolve(1000)  # perform 1000 iteration in real time evolution
 ";
 
+%feature("docstring") Solver::update_parameters "
+
+Notify the solver if any parameter changed in the Hamiltonian
+
+";
+
 %feature("docstring") Solver::Solver "
 
 Construct the Solver object for a single-component system.  

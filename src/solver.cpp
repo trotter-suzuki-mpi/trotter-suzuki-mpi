@@ -35,6 +35,7 @@ Solver::Solver(Lattice *_grid, State *_state, Hamiltonian *_hamiltonian,
     current_evolution_time = 0;
     single_component = true;
     energy_expected_values_updated = false;
+    has_parameters_changed = false;
 }
 
 Solver::Solver(Lattice *_grid, State *state1, State *state2,
@@ -52,6 +53,7 @@ Solver::Solver(Lattice *_grid, State *state1, State *state2,
     current_evolution_time = 0;
     single_component = false;
     energy_expected_values_updated = false;
+    has_parameters_changed = false;
 }
 
 Solver::~Solver() {
@@ -132,7 +134,7 @@ void Solver::init_kernel() {
 }
 
 void Solver::evolve(int iterations, bool _imag_time) {
-    if (_imag_time != imag_time || kernel == NULL) {
+    if (_imag_time != imag_time || kernel == NULL || has_parameters_changed) {
         imag_time = _imag_time;
         if (imag_time) {
             h_a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
@@ -625,4 +627,8 @@ double Solver::get_rabi_energy(void) {
         cout << "The system has only one component\n";
         return 0;
     }
+}
+
+void Solver::update_parameters() {
+    has_parameters_changed = true;
 }

@@ -1,4 +1,10 @@
-Version 1.4: 2016-01-31
+Version 1.5.1: 2016-02-15
+ - New: Updating parameters is possible even after the solver was instantiated. Call the method `update_parameters` of the solver class.
+ - New: Helper functions added to track vortices.
+ - Changed: Since the lattice resolution is the same in either direction, now only one parameter handles it in the corresponding class.
+ - Fixed: The second potential in a two-component Hamiltonian is correctly handled.
+
+Version 1.5: 2016-01-31
  - New: Improved API that allows the user to define and solve problems in physical terms. Classes were introduced for the lattice, the state, the potential, the Hamiltonian, and for the solver.
  - New: Time-dependent potentials are possible.
  - New: CUDA support in the Python interface.

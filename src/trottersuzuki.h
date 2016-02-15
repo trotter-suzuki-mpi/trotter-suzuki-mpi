@@ -413,6 +413,7 @@ public:
            double delta_t, string kernel_type = "cpu");
     ~Solver();
     void evolve(int iterations, bool imag_time = false);  ///< Evolve the state of the system.
+    void update_parameters();  ///< Notify the solver if any parameter changed in the Hamiltonian
     double get_total_energy(void);    ///< Get the total energy of the system.
     double get_squared_norm(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the squared norm of the state (default: total wave-function).
     double get_kinetic_energy(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the kinetic energy of the system.
@@ -445,6 +446,7 @@ private:
     double tot_intra_species_energy;    ///< Total intra-particles interaction energy of the system.
     double inter_species_energy;    ///< Inter-particles interaction energy of the system.
     double rabi_energy;    ///< Rabi energy of the system.
+    bool has_parameters_changed;   ///< Keeps track whether the Hamiltonian parameters were changed
     bool energy_expected_values_updated;    ///< Whether the expectation values are updated or not.
     void calculate_energy_expected_values(void);    ///< Calculate all the expectation values and the state's norm.
 };
