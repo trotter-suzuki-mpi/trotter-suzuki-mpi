@@ -12,7 +12,7 @@ Lattice Class
 
    **Constructors**
    
-   .. py:method:: Lattice(dim=100, length_x=20.0, length_y=20.0, periodic_x_axis=False, periodic_y_axis=False)
+   .. py:method:: Lattice(dim=100, length=20.0, periodic_x_axis=False, periodic_y_axis=False)
 
       Construct the Lattice.
 
