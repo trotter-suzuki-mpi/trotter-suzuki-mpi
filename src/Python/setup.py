@@ -34,10 +34,10 @@ def find_cuda():
     arch = int(platform.architecture()[0][0:2])
     if sys.platform.startswith('win'):
         os.path.join(libdir, "x"+str(arch))
-    if os.path.exists(os.path.join(home, libdir)):
-        cudaconfig['lib'] = libdir
-    elif os.path.exists(os.path.join(home, libdir + "64")):
+    if os.path.exists(os.path.join(home, libdir + "64")):
         cudaconfig['lib'] = libdir + "64"
+    elif os.path.exists(os.path.join(home, libdir)):
+        cudaconfig['lib'] = libdir
     else:
         raise EnvironmentError('The CUDA libraries could not be located')
     return cudaconfig
@@ -92,6 +92,7 @@ if sys.platform.startswith('win') and os.path.exists(win_cuda_dir):
                                          'trottersuzuki/src/cpublock.obj',
                                          'trottersuzuki/src/model.obj',
                                          'trottersuzuki/src/solver.obj',
+                                         'trottersuzuki/src/hybrid.cu.obj',
                                          'trottersuzuki/src/cc2kernel.cu.obj'],
                           define_macros=[('CUDA', None)],
                           library_dirs=[win_cuda_dir+"/lib/x"+str(arch)],
@@ -122,7 +123,8 @@ else:
                           libraries=libraries,
                           )
     if CUDA is not None:
-        ts_module.sources.append('trottersuzuki/src/cc2kernel.cu')
+        ts_module.sources += ['trottersuzuki/src/cc2kernel.cu',
+                              'trottersuzuki/src/hybrid.cu']
         ts_module.define_macros = [('CUDA', None)]
         ts_module.include_dirs.append(CUDA['include'])
         ts_module.library_dirs = [CUDA['lib']]
