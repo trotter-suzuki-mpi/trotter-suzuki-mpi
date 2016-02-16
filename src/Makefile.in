@@ -84,7 +84,7 @@ install: all
 	$(INSTALL) -d $(DESTDIR)$(bindir)
 	$(INSTALL_PROGRAM) -m 0755 trottersuzuki \
 	 $(DESTDIR)$(bindir)
-	$(INSTALL_PROGRAM) -m 0755 trottersuzuki.so \
+	$(INSTALL_PROGRAM) -m 0755 libtrottersuzuki.so \
 	 $(DESTDIR)$(libdir)
 	$(INSTALL_PROGRAM) -m 0644 trottersuzuki.h $(DESTDIR)$(incdir)
 
