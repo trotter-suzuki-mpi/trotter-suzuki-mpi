@@ -1,3 +1,6 @@
+Since version 1.5.1:
+ - Fixed: Python CUDA version works.
+
 Version 1.5.1: 2016-02-15
  - New: Updating parameters is possible even after the solver was instantiated. Call the method `update_parameters` of the solver class.
  - New: Helper functions added to track vortices.

@@ -68,6 +68,7 @@ python:
 	cp ./model.cpp ./Python/trottersuzuki/src/
 	cp ./solver.cpp ./Python/trottersuzuki/src/
 	cp ./cc2kernel.cu ./Python/trottersuzuki/src/
+	cp ./hybrid.cu ./Python/trottersuzuki/src/
 	swig -c++ -python ./Python/trottersuzuki/trottersuzuki.i
 
 python_install: python
@@ -83,7 +84,7 @@ install: all
 	$(INSTALL) -d $(DESTDIR)$(bindir)
 	$(INSTALL_PROGRAM) -m 0755 trottersuzuki \
 	 $(DESTDIR)$(bindir)
-	$(INSTALL_PROGRAM) -m 0755 trottersuzuki.so \
+	$(INSTALL_PROGRAM) -m 0755 libtrottersuzuki.so \
 	 $(DESTDIR)$(libdir)
 	$(INSTALL_PROGRAM) -m 0644 trottersuzuki.h $(DESTDIR)$(incdir)
 
