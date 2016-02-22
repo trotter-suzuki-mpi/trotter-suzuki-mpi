@@ -666,6 +666,7 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     a[0] = _a;
     b[0] = _b;
     norm[0] = _norm;
+    tot_norm = norm[0];
     external_pot_real[0] = _external_pot_real;
     external_pot_imag[0] = _external_pot_imag;
     two_wavefunctions = false;
@@ -771,6 +772,7 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2,
     a = _a;
     b = _b;
     norm = _norm;
+    tot_norm = norm[0] + norm[1];
     external_pot_real[0] = _external_pot_real[0];
     external_pot_imag[0] = _external_pot_imag[0];
     external_pot_real[1] = _external_pot_real[1];
@@ -996,6 +998,23 @@ void CC2Kernel::wait_for_completion() {
         state_index = 1 - state_index;
     }
 
+}
+
+void CC2Kernel::normalization() {
+    if(imag_time && (coupling_const[3] != 0 || coupling_const[4] != 0)) {
+        state_index = 0;
+        double tot_sum_a = calculate_squared_norm(true);
+        state_index = 1;
+        double tot_sum_b = calculate_squared_norm(true);
+        double _norm = sqrt((tot_sum_a + tot_sum_b) * delta_x * delta_y / tot_norm);
+        double inverse_norm = 1. / _norm;
+        cublasStatus_t status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_real[0][sense], 1);
+        status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_imag[0][sense], 1);
+        if(p_real[1] != NULL) {
+            status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_real[1][sense], 1);
+            status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_imag[1][sense], 1);
+        }
+    }
 }
 
 void CC2Kernel::get_sample(size_t dest_stride, size_t x, size_t y,
