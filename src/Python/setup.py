@@ -9,6 +9,7 @@ import sys
 import platform
 win_cuda_dir = ""
 
+
 def find_cuda():
     if 'CUDAHOME' in os.environ:
         home = os.environ['CUDAHOME']
@@ -57,24 +58,26 @@ except AttributeError:
 arch = int(platform.architecture()[0][0:2])
 cmdclass = {}
 
+
 def customize_compiler_for_nvcc(self):
-    '''This is a verbatim copy of the NVCC compiler extension from
+    '''This is an almost  verbatim copy of the NVCC compiler extension from
     https://github.com/rmcgibbo/npcuda-example
     '''
-    self.src_extensions.append('.cu')
-    default_compiler_so = self.compiler_so
-    super = self._compile
+    if not sys.platform.startswith('win'):
+        self.src_extensions.append('.cu')
+        default_compiler_so = self.compiler_so
+        super = self._compile
 
-    def _compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
-        if os.path.splitext(src)[1] == '.cu':
-            self.set_executable('compiler_so', CUDA['nvcc'])
-            postargs = extra_postargs['nvcc']
-        else:
-            postargs = extra_postargs['cc']
+        def _compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
+            if os.path.splitext(src)[1] == '.cu':
+                self.set_executable('compiler_so', CUDA['nvcc'])
+                postargs = extra_postargs['nvcc']
+            else:
+                postargs = extra_postargs['cc']
 
-        super(obj, src, ext, cc_args, postargs, pp_opts)
-        self.compiler_so = default_compiler_so
-    self._compile = _compile
+            super(obj, src, ext, cc_args, postargs, pp_opts)
+            self.compiler_so = default_compiler_so
+        self._compile = _compile
 
 
 # run the customize_compiler
@@ -134,10 +137,10 @@ else:
             extra_args = ts_module.extra_compile_args['cc'][0]
         else:
             extra_args = ""
-        ts_module.extra_compile_args['nvcc']=['-use_fast_math',
-                                              '--ptxas-options=-v', '-c',
-                                              '--compiler-options','-fPIC ' +
-                                              extra_args]
+        ts_module.extra_compile_args['nvcc'] = ['-use_fast_math',
+                                                '--ptxas-options=-v', '-c',
+                                                '--compiler-options',
+                                                '-fPIC ' + extra_args]
     cmdclass = {'build_ext': custom_build_ext}
 
 

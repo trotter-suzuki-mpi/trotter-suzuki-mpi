@@ -438,7 +438,7 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     coupling_const[1] = 0.;
     coupling_const[2] = 0.;
     norm[0] = _norm;
-
+    tot_norm = norm[0];
 #ifdef HAVE_MPI
     cartcomm = grid->cartcomm;
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
@@ -726,7 +726,7 @@ void CPUBlock::rabi_coupling(double var, double delta_t) {
 }
 
 void CPUBlock::normalization() {
-    if(imag_time && (coupling_const[3] != 0 || coupling_const[4] != 0)) {
+    if(imag_time && (coupling_const[1] != 0 || coupling_const[3] != 0 || coupling_const[4] != 0)) {
         //normalization
         int nProcs = 1;
 #ifdef HAVE_MPI

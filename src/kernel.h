@@ -190,7 +190,7 @@ public:
     void run_kernel();							///< Evolve the remaining blocks in the inner part of the tile.
     void wait_for_completion();					///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2 = 0, double * dest_imag2 = 0) const; ///< Copy the wave function from the two buffers pointed by pdev_real and pdev_imag, without halos, to dest_real and dest_imag.
-    void normalization() {};    ///<Normalize the state when performing an imaginary time evolution (only two wave-function evolution).
+    void normalization();    ///<Normalize the state when performing an imaginary time evolution (only two wave-function evolution).
     void rabi_coupling(double var, double delta_t);    ///< Evolution corresponding to the Rabi coupling term of the Hamiltonian (only two wave-function evolution).
     double calculate_squared_norm(bool global = true) const;  ///< Calculate squared norm of the state.
     void update_potential(double *_external_pot_real, double *_external_pot_imag);    ///< Update memory pointed by external_potential_real and external_potential_imag (only non static external potential).
@@ -227,6 +227,7 @@ private:
     double delta_x;						///< Physical length between two neighbour along x axis dots of the lattice.
     double delta_y;						///< Physical length between two neighbour along y axis dots of the lattice.
     double *norm;						///< Squared norm of the wave function.
+    double tot_norm;    ///< Squared norm of the total state.    
     double *coupling_const;     ///< Coupling constant of the density self-interacting term.
     double alpha_x;         ///< Real coupling constant associated to the X*P_y operator, part of the angular momentum.
     double alpha_y;         ///< Real coupling constant associated to the Y*P_x operator, part of the angular momentum.
