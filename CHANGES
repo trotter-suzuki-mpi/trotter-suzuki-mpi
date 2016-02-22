@@ -1,4 +1,6 @@
 Since version 1.5.1:
+ - Fixed: Renormalization in the imaginary time evolution is fixed and simplified.
+ - Fixed: Installing the C++ library works again.
  - Fixed: Python CUDA version works.
 
 Version 1.5.1: 2016-02-15
