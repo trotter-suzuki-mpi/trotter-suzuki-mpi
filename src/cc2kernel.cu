@@ -17,6 +17,7 @@
  */
 
 #undef _GLIBCXX_ATOMIC_BUILTINS
+#include <iostream>
 #include <sstream>
 #include <vector>
 #include <map>
@@ -1001,12 +1002,13 @@ void CC2Kernel::wait_for_completion() {
 }
 
 void CC2Kernel::normalization() {
-    if(imag_time && (coupling_const[3] != 0 || coupling_const[4] != 0)) {
+    if(imag_time && (coupling_const[1] != 0 || coupling_const[3] != 0 || coupling_const[4] != 0)) {
         state_index = 0;
         double tot_sum_a = calculate_squared_norm(true);
         state_index = 1;
         double tot_sum_b = calculate_squared_norm(true);
-        double _norm = sqrt((tot_sum_a + tot_sum_b) * delta_x * delta_y / tot_norm);
+        state_index = 0;
+        double _norm = sqrt((tot_sum_a + tot_sum_b)/tot_norm);
         double inverse_norm = 1. / _norm;
         cublasStatus_t status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_real[0][sense], 1);
         status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_imag[0][sense], 1);

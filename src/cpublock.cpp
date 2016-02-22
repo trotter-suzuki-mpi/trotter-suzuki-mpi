@@ -726,7 +726,7 @@ void CPUBlock::rabi_coupling(double var, double delta_t) {
 }
 
 void CPUBlock::normalization() {
-    if(imag_time && (coupling_const[3] != 0 || coupling_const[4] != 0)) {
+    if(imag_time && (coupling_const[1] != 0 || coupling_const[3] != 0 || coupling_const[4] != 0)) {
         //normalization
         int nProcs = 1;
 #ifdef HAVE_MPI
