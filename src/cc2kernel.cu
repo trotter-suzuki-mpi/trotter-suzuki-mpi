@@ -983,7 +983,7 @@ double CC2Kernel::calculate_squared_norm(bool global) const {
 void CC2Kernel::wait_for_completion() {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
     //normalization
-    if (!two_wavefunctions && imag_time && norm[state_index] != 0) {
+    if (imag_time && norm[state_index] != 0) {
         double tot_sum = calculate_squared_norm(true);
         double inverse_norm = 1. / sqrt(tot_sum / norm[state_index]);
         cublasStatus_t status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_real[state_index][sense], 1);
@@ -1002,7 +1002,7 @@ void CC2Kernel::wait_for_completion() {
 }
 
 void CC2Kernel::normalization() {
-    if(imag_time && (coupling_const[1] != 0 || coupling_const[3] != 0 || coupling_const[4] != 0)) {
+    if(imag_time && (coupling_const[3] != 0 || coupling_const[4] != 0)) {
         state_index = 0;
         double tot_sum_a = calculate_squared_norm(true);
         state_index = 1;
@@ -1016,6 +1016,8 @@ void CC2Kernel::normalization() {
             status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_real[1][sense], 1);
             status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_imag[1][sense], 1);
         }
+        norm[0] = tot_sum_a / (tot_sum_a + tot_sum_b) * tot_norm;
+        norm[1] = tot_sum_b / (tot_sum_a + tot_sum_b) * tot_norm;
     }
 }
 

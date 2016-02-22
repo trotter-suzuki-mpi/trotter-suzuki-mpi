@@ -667,7 +667,7 @@ double CPUBlock::calculate_squared_norm(bool global) const {
 }
 
 void CPUBlock::wait_for_completion() {
-    if (!two_wavefunctions && imag_time && norm[state_index] != 0) {
+    if (imag_time && norm[state_index] != 0) {
         //normalization
         double tot_norm = calculate_squared_norm(true);
         double _norm = sqrt(tot_norm / norm[state_index]);
@@ -726,7 +726,7 @@ void CPUBlock::rabi_coupling(double var, double delta_t) {
 }
 
 void CPUBlock::normalization() {
-    if(imag_time && (coupling_const[1] != 0 || coupling_const[3] != 0 || coupling_const[4] != 0)) {
+    if(imag_time && (coupling_const[3] != 0 || coupling_const[4] != 0)) {
         //normalization
         int nProcs = 1;
 #ifdef HAVE_MPI
@@ -770,7 +770,7 @@ void CPUBlock::normalization() {
                 p_imag[0][sense][j + i * tile_width] /= _norm;
             }
         }
-        //norm[0] *= tot_norm / ((tot_sum_a + tot_sum_b) * delta_x * delta_y);
+        norm[0] = tot_sum_a / (tot_sum_a + tot_sum_b) * tot_norm;
         if(p_real[1] != NULL) {
             for(size_t i = 0; i < tile_height; i++) {
                 for(size_t j = 0; j < tile_width; j++) {
@@ -778,7 +778,7 @@ void CPUBlock::normalization() {
                     p_imag[1][sense][j + i * tile_width] /= _norm;
                 }
             }
-            //norm[1] *= tot_norm / ((tot_sum_a + tot_sum_b) * delta_x * delta_y);
+            norm[1] = tot_sum_b / (tot_sum_a + tot_sum_b) * tot_norm;
         }
         delete[] sums;
     }
