@@ -103,7 +103,7 @@ if sys.platform.startswith('win') and os.path.exists(win_cuda_dir):
                           include_dirs=[numpy_include])
 else:
     if sys.platform.startswith('win'):
-        extra_compile_args = {'cc': ['-openmp', '-DWIN32']}
+        extra_compile_args = ['-openmp', '-DWIN32']
         libraries = None
     elif sys.platform.startswith('darwin') and 'CC' not in os.environ:
         extra_compile_args = {'cc': []}
