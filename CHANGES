@@ -1,4 +1,5 @@
 Since version 1.5.1:
+ - Fixed: GPU kernel correctly renormalizes state in imaginary time evolution.
  - Fixed: Python CUDA version works.
 
 Version 1.5.1: 2016-02-15
