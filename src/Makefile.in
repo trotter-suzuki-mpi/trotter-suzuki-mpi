@@ -47,6 +47,8 @@ all: trottersuzuki lib
 
 lib: $(LIBOBJS)
 	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -shared -o libtrottersuzuki.so $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
+	ar ru libtrottersuzuki.a $^
+	ranlib libtrottersuzuki.a
 
 trottersuzuki: $(OBJS)
 	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o $@ $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
@@ -78,12 +80,14 @@ python_clean:
 	-rm -rf Python/COPYING Python/trottersuzuki/src Python/*.pyc Python/trottersuzuki/*.pyc Python/trottersuzuki/*.h Python/trottersuzuki/*.cpp  Python/trottersuzuki/*.cxx Python/dist Python/trottersuzuki.egg* Python/build Python/trottersuzuki/trottersuzuki.py Python/trottersuzuki/*.so
 
 clean: python_clean
-	-rm -f trottersuzuki libtrottersuzuki.so $(OBJS) 1>/dev/null
+	-rm -f trottersuzuki libtrottersuzuki.a libtrottersuzuki.so $(OBJS) 1>/dev/null
 
 install: all
 	$(INSTALL) -d $(DESTDIR)$(bindir)
 	$(INSTALL_PROGRAM) -m 0755 trottersuzuki \
 	 $(DESTDIR)$(bindir)
+	$(INSTALL_PROGRAM) -m 0755 libtrottersuzuki.a \
+	 $(DESTDIR)$(libdir)
 	$(INSTALL_PROGRAM) -m 0755 libtrottersuzuki.so \
 	 $(DESTDIR)$(libdir)
 	$(INSTALL_PROGRAM) -m 0644 trottersuzuki.h $(DESTDIR)$(incdir)
