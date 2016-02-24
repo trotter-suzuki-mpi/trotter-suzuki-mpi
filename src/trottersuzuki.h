@@ -19,6 +19,7 @@
 #define __TROTTERSUZUKI_H
 
 #include <string>
+#define _USE_MATH_DEFINES
 #include <cfloat>
 #include <complex>
 #if HAVE_CONFIG_H

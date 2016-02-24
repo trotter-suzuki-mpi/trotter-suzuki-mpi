@@ -618,7 +618,7 @@ void CPUBlock::run_kernel_on_halo() {
 #ifndef HAVE_MPI
         #pragma omp parallel for
 #endif
-        for (size_t block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
+        for (int block_start = block_height - 2 * halo_y; block_start < tile_height - block_height; block_start += block_height - 2 * halo_y) {
             process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a[state_index], b[state_index],
                          coupling_const[state_index], coupling_const[2], external_pot_real[state_index], external_pot_imag[state_index], p_real[state_index][sense], p_imag[state_index][sense],
                          p_real[1 - state_index][sense], p_imag[1 - state_index][sense], p_real[state_index][1 - sense], p_imag[state_index][1 - sense], inner, sides, imag_time);
