@@ -86,6 +86,7 @@ public:
                                                               self->p_imag[y * self->grid->dim_x + x] * state_real[y * self->grid->dim_x + x];
                 }
             }
+            self->expected_values_updated = false;
         }
     }
     %extend {
