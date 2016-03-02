@@ -1,4 +1,4 @@
-Version 1.5.2: 2016-02-26
+Version 1.5.2: 2016-03-02
  - New: Static library target to make distributed examples run easier on clusters.
  - Fixed: Windows version compiles again.
  - Fixed: Renormalization in the imaginary time evolution is fixed and simplified.
