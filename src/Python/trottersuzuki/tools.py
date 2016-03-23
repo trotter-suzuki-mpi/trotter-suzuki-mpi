@@ -93,8 +93,8 @@ def vortex_position(grid, state, approx_cloud_radius=0.):
     for i in range(0, side*4):  # Count the number of discontinuity in the phase pattern around the candidate vortex position
         pos1 = coord + position(i, side)
         pos2 = coord + position(i+1, side)
-        if pos1[0] < 0 or pos1[0] > grid.dim_x or pos1[1] < 0 or pos1[1] > grid.dim_x:
-            if pos2[0] < 0 or pos2[0] > grid.dim_x or pos2[1] < 0 or pos2[1] > grid.dim_x:
+        if pos1[0] < 0 or pos1[0] >= grid.dim_x or pos1[1] < 0 or pos1[1] >= grid.dim_x:
+            if pos2[0] < 0 or pos2[0] >= grid.dim_x or pos2[1] < 0 or pos2[1] >= grid.dim_x:
                 break
         phase1 = matrix[pos1[0], pos1[1]]
         phase2 = matrix[pos2[0], pos2[1]]
