@@ -3,7 +3,8 @@ Download and Installation
 *************************
 The entire package for is available from the `Python Package Index <https://pypi.python.org/pypi/trottersuzuki>`_, containing the source code and examples. The documentation is hosted on `Read the Docs <http://trotter-suzuki-mpi.readthedocs.org/>`_.
 
-The latest development version is available on `GitHub <https://github.com/trotter-suzuki-mpi/trotter-suzuki-mpi>`_.
+The latest development version is available on `GitHub <https://github.com/trotter-suzuki-mpi/trotter-suzuki-mpi>`_. 
+Further examples are available in Jupyter `notebooks <http://nbviewer.jupyter.org/github/trotter-suzuki-mpi/notebooks/tree/master/>`_.
 
 Dependencies
 ============
