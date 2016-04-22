@@ -1,3 +1,6 @@
+Version 1.5.3: 2016-04-22
+ - New: `vortex_position` function detects when a vortex is not present.
+
 Version 1.5.2: 2016-03-02
  - New: Static library target to make distributed examples run easier on clusters.
  - Fixed: Windows version compiles again.
