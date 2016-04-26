@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 import numpy as np
 import math
 
@@ -72,20 +73,20 @@ def vortex_position(grid, state, approx_cloud_radius=0.):
         index = int(index)
         side = int(side)
         idx = int(math.fmod(index,4*side))  # position is periodic of period 4*radius
-        quad = idx / side
+        quad = idx // side
         rest = int(math.fmod(idx,side))
         if quad == 0:
-            x = - (side / 2 + 1)
-            y = rest - side / 2
+            x = - (side // 2 + 1)
+            y = rest - side // 2
         if quad == 1:
-            y = (side / 2 + 1)
-            x = rest - side / 2
+            y = (side // 2 + 1)
+            x = rest - side // 2
         if quad == 2:
-            x = (side / 2 + 1)
-            y = - (rest - side / 2)
+            x = (side // 2 + 1)
+            y = - (rest - side // 2)
         if quad == 3:
-            y = - (side / 2 + 1)
-            x = - (rest - side / 2)
+            y = - (side // 2 + 1)
+            x = - (rest - side // 2)
         return np.array([y, x])
         
     side = 8 # must be an even number
