@@ -8,13 +8,13 @@ Key features of the Python interface:
 * Simulation of 2D quantum systems.
 * Fast execution by parallelization: OpenMP and CUDA are supported.
 * Many-body simulations with non-interacting particles.
-* `Gross-Pitaevskii equation <https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb>`_.
+* Solving the Gross-Pitaevskii equation  (e.g., `dark soltions <https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb>`_, `vortex dynamics in Bose-Einstein Condensates <http://nbviewer.jupyter.org/github/trotter-suzuki-mpi/notebooks/blob/master/Vortex%20Dynamics.ipynb>`_).
 * Imaginary time evolution to approximate the ground state.
 * Stationary and time-dependent external potential.
 * NumPy arrays are supported for efficient data exchange.
 * Multi-platform: Linux, OS X, and Windows are supported.
 
-Documentation is available on `Read the Docs <http://trotter-suzuki-mpi.readthedocs.org>`_.
+Documentation is available on `Read the Docs <https://trotter-suzuki-mpi.readthedocs.io/>`_.
 
 Installation
 ------------

@@ -8,15 +8,15 @@ Key features:
   - Simulation of 2D quantum systems.
   - Arbitrary single-body initial state with closed and periodic boundary conditions.
   - Many-body simulations with non-interacting particles.
-  - [Gross-Pitaevskii equation](https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb).
+  - Solving the Gross-Pitaevskii equation (e.g., [dark solitons](https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb), [vortex dynamics in Bose-Einstein Condensates](http://nbviewer.jupyter.org/github/trotter-suzuki-mpi/notebooks/blob/master/Vortex%20Dynamics.ipynb)).
   - Imaginary time evolution to calculate the ground state.
   - Stationary and time-dependent external potential.
   - A command-line interface (CLI) and a C++ application programming interface (API) for flexible use.
-  - A [Python](https://trotter-suzuki-mpi.readthedocs.org) wrapper is provided.
+  - A [Python](https://trotter-suzuki-mpi.readthedocs.io/) wrapper is provided.
   - Cache optimized multi-core, GPU, and hybrid kernels.
   - Near-linear scaling across multiple nodes with computations overlapping communication.
 
-The documentation of the CLI and the C++ interface is available at [trotter-suzuki-mpi.github.io](https://trotter-suzuki-mpi.github.io/). The Python documentation is on [Read the Docs](https://trotter-suzuki-mpi.readthedocs.org).
+The documentation of the CLI and the C++ interface is available at [trotter-suzuki-mpi.github.io](https://trotter-suzuki-mpi.github.io/). The Python documentation is on [Read the Docs](https://trotter-suzuki-mpi.readthedocs.io/).
 
 Copyright and License
 ---------------------

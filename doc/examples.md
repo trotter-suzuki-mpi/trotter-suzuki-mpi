@@ -1,6 +1,6 @@
 Examples
 ========
-The examples below show how to use the C++ API. If you are interested in the Python version, refer to [Read the Docs](https://trotter-suzuki-mpi.readthedocs.org).
+The examples below show how to use the C++ API. If you are interested in the Python version, refer to [Read the Docs](https://trotter-suzuki-mpi.readthedocs.io).
 
 Examples of using the API are included in the source tree. The respective files are in the examples folder.
 

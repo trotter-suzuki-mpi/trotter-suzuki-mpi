@@ -1,6 +1,6 @@
 Download
 ========
-Download the latest stable release [here](https://github.com/trotter_suzuki-mpi/trotter-suzuki-mpi/releases/latest). The development version is on [GitHub](https://github.com/trotter-suzuki-mpi/trotter-suzuki-mpi). If you are interested in the Python version, refer to [Read the Docs](https://trotter-suzuki-mpi.readthedocs.org). If you encounter problems or a bug, please open an [issue on GitHub](https://github.com/trotter-suzuki-mpi/trotter-suzuki-mpi/issues).
+Download the latest stable release [here](https://github.com/trotter_suzuki-mpi/trotter-suzuki-mpi/releases/latest). The development version is on [GitHub](https://github.com/trotter-suzuki-mpi/trotter-suzuki-mpi). If you are interested in the Python version, refer to [Read the Docs](https://trotter-suzuki-mpi.readthedocs.io/). If you encounter problems or a bug, please open an [issue on GitHub](https://github.com/trotter-suzuki-mpi/trotter-suzuki-mpi/issues).
 
 Compilation & Installation
 --------------------------

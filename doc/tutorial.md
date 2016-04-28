@@ -1,7 +1,7 @@
 Tutorial
 ========
 
-This tutorial is about using the command-line interface and the C++ API. If you are interested in the Python version, refer to [Read the Docs](https://trotter-suzuki-mpi.readthedocs.org).
+This tutorial is about using the command-line interface and the C++ API. If you are interested in the Python version, refer to [Read the Docs](https://trotter-suzuki-mpi.readthedocs.io/).
 
 Command-line Interface
 ----------------------
