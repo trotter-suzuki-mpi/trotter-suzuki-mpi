@@ -14,7 +14,7 @@ Key features of the Python interface:
 * NumPy arrays are supported for efficient data exchange.
 * Multi-platform: Linux, OS X, and Windows are supported.
 
-Documentation is available on `Read the Docs <http://trotter-suzuki-mpi.readthedocs.org>`_.
+Documentation is available on `Read the Docs <https://trotter-suzuki-mpi.readthedocs.io/>`_.
 
 Installation
 ------------

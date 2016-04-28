@@ -12,11 +12,11 @@ Key features:
   - Imaginary time evolution to calculate the ground state.
   - Stationary and time-dependent external potential.
   - A command-line interface (CLI) and a C++ application programming interface (API) for flexible use.
-  - A [Python](https://trotter-suzuki-mpi.readthedocs.org) wrapper is provided.
+  - A [Python](https://trotter-suzuki-mpi.readthedocs.io/) wrapper is provided.
   - Cache optimized multi-core, GPU, and hybrid kernels.
   - Near-linear scaling across multiple nodes with computations overlapping communication.
 
-The documentation of the CLI and the C++ interface is available at [trotter-suzuki-mpi.github.io](https://trotter-suzuki-mpi.github.io/). The Python documentation is on [Read the Docs](https://trotter-suzuki-mpi.readthedocs.org).
+The documentation of the CLI and the C++ interface is available at [trotter-suzuki-mpi.github.io](https://trotter-suzuki-mpi.github.io/). The Python documentation is on [Read the Docs](https://trotter-suzuki-mpi.readthedocs.io/).
 
 Copyright and License
 ---------------------
