@@ -8,7 +8,7 @@ Key features:
   - Simulation of 2D quantum systems.
   - Arbitrary single-body initial state with closed and periodic boundary conditions.
   - Many-body simulations with non-interacting particles.
-  - Solving the Gross-Pitaevskii equation (e.g., [dark solitons](https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb), [vortex dynamics in Bose-Einstein Condensates](http://nbviewer.jupyter.org/github/trotter-suzuki-mpi/notebooks/blob/master/Vortex%20Dynamics.ipynb)).
+  - Solving the Gross-Pitaevskii equation (e.g., [dark solitons](https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb), [vortex dynamics in Bose-Einstein Condensates](http://nbviewer.jupyter.org/github/trotter-suzuki-mpi/notebooks/blob/master/Vortex_Dynamics.ipynb)).
   - Imaginary time evolution to calculate the ground state.
   - Stationary and time-dependent external potential.
   - A command-line interface (CLI) and a C++ application programming interface (API) for flexible use.
