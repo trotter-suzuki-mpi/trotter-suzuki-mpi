@@ -240,7 +240,7 @@ double *State::get_particle_density(double *_density) {
     }
     for(int j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; j++) {
         for(int i = grid->inner_start_x - grid->start_x; i < grid->inner_end_x - grid->start_x; i++) {
-            density[j * grid->dim_x + i] = p_real[j * grid->dim_x + i] * p_real[j * grid->dim_x + i] + p_imag[j * grid->dim_x + i] * p_imag[j * grid->dim_x + i];
+            density[j * grid->dim_x + i] = (p_real[j * grid->dim_x + i] * p_real[j * grid->dim_x + i] + p_imag[j * grid->dim_x + i] * p_imag[j * grid->dim_x + i]) * grid->delta_x * grid->delta_y;
         }
     }
     return density;
@@ -420,7 +420,6 @@ void State::calculate_expected_values(void) {
     mean_PxPx = mean_PxPx / norm2;
     mean_PyPy = mean_PyPy / norm2;
     norm2 *= grid->delta_x * grid->delta_y;
-
     expected_values_updated = true;
 }
 
