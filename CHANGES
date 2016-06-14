@@ -1,3 +1,6 @@
+Version 1.5.5: 2016-06-13
+  - Fixed: Particle density is scaled correctly.
+
 Version 1.5.4: 2016-05-10
   - Fixed: `vortex_position` works correctly with Python 3.
 
