@@ -19,6 +19,7 @@
 #include <iostream>
 #include "trottersuzuki.h"
 #include "common.h"
+#include<math.h>
 
 void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound) {
     int inner = (int)ceil((double)length / (double)dim);
@@ -498,7 +499,7 @@ ExponentialState::ExponentialState(Lattice *_grid, int _n_x, int _n_y, double _n
 
 complex<double> ExponentialState::exp_state(double x, double y) {
     double L_x = grid->global_no_halo_dim_x * grid->delta_x;
-    double L_y = grid->global_no_halo_dim_x * grid->delta_y;
+    double L_y = grid->global_no_halo_dim_y * grid->delta_y;
     return sqrt(norm / (L_x * L_y)) * exp(complex<double>(0., phase)) * exp(complex<double>(0., 2 * M_PI * double(n_x) / L_x * x + 2 * M_PI * double(n_y) / L_y * y));
 }
 
@@ -557,7 +558,7 @@ Potential::Potential(Lattice *_grid, char *filename): grid(_grid) {
     for(int y = 0; y < grid->dim_y; y++) {
         for(int x = 0; x < grid->dim_x; x++) {
             input >> tmp;
-            matrix[y * grid->dim_y + x] = tmp;
+            matrix[y * grid->dim_x + x] = tmp;
         }
     }
     input.close();
@@ -647,7 +648,7 @@ double HarmonicPotential::get_value(int x, int y) {
     double idy = (grid->start_y + y) * grid->delta_y + mean_x + 0.5 * grid->delta_y;
     double idx = (grid->start_x + x) * grid->delta_x + mean_y + 0.5 * grid->delta_x;
     double x_c = (grid->global_dim_x - 2.*grid->halo_x * grid->periods[1]) * grid->delta_x * 0.5;
-    double y_c = (grid->global_dim_y - 2.*grid->halo_y * grid->periods[1]) * grid->delta_y * 0.5;
+    double y_c = (grid->global_dim_y - 2.*grid->halo_y * grid->periods[0]) * grid->delta_y * 0.5;
     double x_r = idx - x_c;
     double y_r = idy - y_c;
     return 0.5 * mass * (omegax * omegax * x_r * x_r + omegay * omegay * y_r * y_r);
@@ -676,7 +677,7 @@ Hamiltonian::Hamiltonian(Lattice *_grid, Potential *_potential,
         }
     }
     rot_coord_x = (grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x) * 0.5 + _rot_coord_x / grid->delta_x;
-    rot_coord_y = (grid->global_dim_y - grid->periods[1] * 2 * grid->halo_y) * 0.5 + _rot_coord_y / grid->delta_y;
+    rot_coord_y = (grid->global_dim_y - grid->periods[0] * 2 * grid->halo_y) * 0.5 + _rot_coord_y / grid->delta_y;
     if (_potential == NULL) {
         self_init = true;
         potential = new Potential(grid, const_potential);
