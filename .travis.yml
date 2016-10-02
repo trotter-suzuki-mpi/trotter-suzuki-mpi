@@ -3,4 +3,4 @@ language: cpp
 compiler:
   - gcc
 
-script: ./autogen.sh && ./configure && make
+script: ./autogen.sh
