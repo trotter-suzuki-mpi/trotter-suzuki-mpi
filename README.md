@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/peterwittek/trotter-suzuki-mpi.svg?branch=master)](https://travis-ci.org/peterwittek/trotter-suzuki-mpi)
+
 Massively Parallel Trotter-Suzuki Solver
 ========================================
 
