@@ -338,3 +338,4 @@ class Potential(_Potential):
             idy += delta_y
         
         self.init_potential_matrix(potential)
+        self.potential_matrix = potential
