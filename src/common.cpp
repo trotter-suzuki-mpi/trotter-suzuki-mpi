@@ -82,7 +82,7 @@ void print_complex_matrix(const char * filename, double * matrix_real, double * 
     ofstream out(filename, ios::out | ios::trunc);
     for (size_t i = 0; i < height; ++i) {
         for (size_t j = 0; j < width; ++j) {
-            out << "(" << matrix_real[i * stride + j] << "," << matrix_imag[i * stride + j] << ") ";
+            out << "(" << matrix_real[i * stride + j] << "+" << matrix_imag[i * stride + j] << "j) ";
         }
         out << endl;
     }
@@ -149,15 +149,15 @@ void stamp(Lattice *grid, State *state, string fileprefix) {
     count = 0;
     for (int j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; j++) {
         for (int k = grid->inner_start_x - grid->start_x; k < grid->inner_end_x - grid->start_x - 1; k++) {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)   ", state->p_real[j * grid->dim_x + k], state->p_imag[j * grid->dim_x + k]);
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e+%+.5ej)   ", state->p_real[j * grid->dim_x + k], state->p_imag[j * grid->dim_x + k]);
             count++;
         }
         if(grid->mpi_coords[1] == grid->mpi_dims[1] - 1) {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)\n  ", state->p_real[j * grid->dim_x + (grid->inner_end_x - grid->start_x) - 1], state->p_imag[j * grid->dim_x + (grid->inner_end_x - grid->start_x) - 1]);
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e+%+.5ej)\n  ", state->p_real[j * grid->dim_x + (grid->inner_end_x - grid->start_x) - 1], state->p_imag[j * grid->dim_x + (grid->inner_end_x - grid->start_x) - 1]);
             count++;
         }
         else {
-            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e,%+.5e)   ", state->p_real[j * grid->dim_x + (grid->inner_end_x - grid->start_x) - 1], state->p_imag[j * grid->dim_x + (grid->inner_end_x - grid->start_x) - 1]);
+            sprintf(&data_as_txt[count * chars_per_complex_num], "(%+.5e+%+.5ej)   ", state->p_real[j * grid->dim_x + (grid->inner_end_x - grid->start_x) - 1], state->p_imag[j * grid->dim_x + (grid->inner_end_x - grid->start_x) - 1]);
             count++;
         }
     }
