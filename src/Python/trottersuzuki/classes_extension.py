@@ -70,10 +70,10 @@ class State(_State):
         x_c = self.grid.global_no_halo_dim_x * self.grid.delta_x * 0.5
         y_c = self.grid.global_no_halo_dim_y * self.grid.delta_y * 0.5
         
-        for y in range(0, self.grid.dim_y):
+        for y in range(self.grid.dim_y):
             y_r = idy - y_c
             idx = self.grid.start_x * delta_x + 0.5 * delta_x
-            for x in range(0, self.grid.dim_x):
+            for x in range(self.grid.dim_x):
                 x_r = idx - x_c
                 tmp = state_function(x_r, y_r)
                 real[y, x] = np.real(tmp)
@@ -122,10 +122,10 @@ class State(_State):
         x_c = self.grid.global_no_halo_dim_x * self.grid.delta_x * 0.5
         y_c = self.grid.global_no_halo_dim_y * self.grid.delta_y * 0.5
         idy = self.grid.start_y * delta_y + 0.5 * delta_y
-        for y in range(0, self.grid.dim_y):
+        for y in range(self.grid.dim_y):
             y_r = idy - y_c
             idx = self.grid.start_x * delta_x + 0.5 * delta_x
-            for x in range(0, self.grid.dim_x):
+            for x in range(self.grid.dim_x):
                 x_r = idx - x_c
                 tmp = function(x_r, y_r)
                 real[y, x] = np.real(tmp)
@@ -176,10 +176,10 @@ class GaussianState(_GaussianState):
         x_c = self.grid.global_no_halo_dim_x * self.grid.delta_x * 0.5
         y_c = self.grid.global_no_halo_dim_y * self.grid.delta_y * 0.5
         
-        for y in range(0, self.grid.dim_y):
+        for y in range(self.grid.dim_y):
             y_r = idy - y_c
             idx = self.grid.start_x * delta_x + 0.5 * delta_x
-            for x in range(0, self.grid.dim_x):
+            for x in range(self.grid.dim_x):
                 x_r = idx - x_c
                 tmp = function(x_r, y_r)
                 real[y, x] = np.real(tmp)
@@ -230,10 +230,10 @@ class SinusoidState(_SinusoidState):
         x_c = self.grid.global_no_halo_dim_x * self.grid.delta_x * 0.5
         y_c = self.grid.global_no_halo_dim_y * self.grid.delta_y * 0.5
         
-        for y in range(0, self.grid.dim_y):
+        for y in range(self.grid.dim_y):
             y_r = idy - y_c
             idx = self.grid.start_x * delta_x + 0.5 * delta_x
-            for x in range(0, self.grid.dim_x):
+            for x in range(self.grid.dim_x):
                 x_r = idx - x_c
                 tmp = function(x_r, y_r)
                 real[y, x] = np.real(tmp)
@@ -284,10 +284,10 @@ class ExponentialState(_ExponentialState):
         x_c = self.grid.global_no_halo_dim_x * self.grid.delta_x * 0.5
         y_c = self.grid.global_no_halo_dim_y * self.grid.delta_y * 0.5
         
-        for y in range(0, self.grid.dim_y):
+        for y in range(self.grid.dim_y):
             y_r = idy - y_c
             idx = self.grid.start_x * delta_x + 0.5 * delta_x
-            for x in range(0, self.grid.dim_x):
+            for x in range(self.grid.dim_x):
                 x_r = idx - x_c
                 tmp = function(x_r, y_r)
                 real[y, x] = np.real(tmp)
@@ -328,10 +328,10 @@ class Potential(_Potential):
         x_c = self.grid.global_no_halo_dim_x * self.grid.delta_x * 0.5
         y_c = self.grid.global_no_halo_dim_y * self.grid.delta_y * 0.5
         
-        for y in range(0, self.grid.dim_y):
+        for y in range(self.grid.dim_y):
             y_r = idy - y_c    
             idx = self.grid.start_x * delta_x + 0.5 * delta_x            
-            for x in range(0, self.grid.dim_x):
+            for x in range(self.grid.dim_x):
                 x_r = idx - x_c
                 potential[y, x] = pot_function(x_r, y_r)
                 idx += delta_x
