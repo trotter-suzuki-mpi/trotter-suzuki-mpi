@@ -46,11 +46,17 @@ double const_potential(double x, double y) {
     return 0.;
 }
 
-Lattice::Lattice(int dim, double _length,
-                 bool periodic_x_axis, bool periodic_y_axis,
-                 double angular_velocity): length_x(_length), length_y(_length) {
-    delta_x = length_x / double(dim);
-    delta_y = length_y / double(dim);
+Lattice2D::Lattice2D(int dim, double _length,
+                     bool periodic_x_axis, bool periodic_y_axis,
+                     double angular_velocity): Lattice2D(dim, _length,
+                     dim, _length, periodic_x_axis, periodic_y_axis, angular_velocity)
+{}
+
+Lattice2D::Lattice2D(int _dim_x, double _length_x, int _dim_y, double _length_y,
+                     bool periodic_x_axis, bool periodic_y_axis,
+                     double angular_velocity): length_x(_length_x), length_y(_length_y) {
+    delta_x = length_x / double(_dim_x);
+    delta_y = length_y / double(_dim_y);
     periods[0] = (int) periodic_y_axis;
     periods[1] = (int) periodic_x_axis;
     mpi_dims[0] = mpi_dims[1] = 0;
@@ -68,23 +74,22 @@ Lattice::Lattice(int dim, double _length,
 #endif
     halo_x = (angular_velocity == 0. ? 4 : 8);
     halo_y = (angular_velocity == 0. ? 4 : 8);
-    global_dim_x = dim + periods[1] * 2 * halo_x;
-    global_dim_y = dim + periods[0] * 2 * halo_y;
-    global_no_halo_dim_x = dim;
-    global_no_halo_dim_y = dim;
+    global_dim_x = _dim_x + periods[1] * 2 * halo_x;
+    global_dim_y = _dim_y + periods[0] * 2 * halo_y;
+    global_no_halo_dim_x = _dim_x;
+    global_no_halo_dim_y = _dim_y;
     //set dimension of tiles and offsets
     calculate_borders(mpi_coords[1], mpi_dims[1], &start_x, &end_x,
                       &inner_start_x, &inner_end_x,
-                      dim, halo_x, periods[1]);
+                      _dim_x, halo_x, periods[1]);
     calculate_borders(mpi_coords[0], mpi_dims[0], &start_y, &end_y,
                       &inner_start_y, &inner_end_y,
-                      dim, halo_y, periods[0]);
+                      _dim_y, halo_y, periods[0]);
     dim_x = end_x - start_x;
     dim_y = end_y - start_y;
 }
 
-
-State::State(Lattice *_grid, double *_p_real, double *_p_imag): grid(_grid) {
+State::State(Lattice2D *_grid, double *_p_real, double *_p_imag): grid(_grid) {
     expected_values_updated = false;
     if (_p_real == 0) {
         self_init = true;
@@ -486,7 +491,7 @@ void State::write_to_file(string filename) {
     stamp(grid, this, filename);
 }
 
-ExponentialState::ExponentialState(Lattice *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
+ExponentialState::ExponentialState(Lattice2D *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
     State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase) {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
@@ -507,7 +512,7 @@ complex<double> ExponentialState::exp_state(double x, double y) {
     return sqrt(norm / (L_x * L_y)) * exp(complex<double>(0., phase)) * exp(complex<double>(0., 2 * M_PI * double(n_x) / L_x * x + 2 * M_PI * double(n_y) / L_y * y));
 }
 
-GaussianState::GaussianState(Lattice *_grid, double _omega_x, double _omega_y, double _mean_x, double _mean_y,
+GaussianState::GaussianState(Lattice2D *_grid, double _omega_x, double _omega_y, double _mean_x, double _mean_y,
                              double _norm, double _phase, double *_p_real, double *_p_imag):
     State(_grid, _p_real, _p_imag), mean_x(_mean_x),
     mean_y(_mean_y), omega_x(_omega_x), omega_y(_omega_y), norm(_norm), phase(_phase) {
@@ -533,7 +538,7 @@ complex<double> GaussianState::gauss_state(double x, double y) {
     return complex<double>(sqrt(norm * sqrt(omega_x * omega_y) / M_PI) * exp(-(omega_x * pow(x - mean_x - x_c, 2.0) + omega_y * pow(y - mean_y - y_c, 2.0)) * 0.5), 0.) * exp(complex<double>(0., phase));
 }
 
-SinusoidState::SinusoidState(Lattice *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
+SinusoidState::SinusoidState(Lattice2D *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
     State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase)  {
     complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
@@ -554,7 +559,7 @@ complex<double> SinusoidState::sinusoid_state(double x, double y) {
     return sqrt(norm / (L_x * L_y)) * 2.* exp(complex<double>(0., phase)) * complex<double> (sin(2 * M_PI * double(n_x) / L_x * x) * sin(2 * M_PI * double(n_y) / L_y * y), 0.0);
 }
 
-Potential::Potential(Lattice *_grid, char *filename): grid(_grid) {
+Potential::Potential(Lattice2D *_grid, char *filename): grid(_grid) {
     matrix = new double[grid->dim_y * grid->dim_x];
     self_init = true;
     is_static = true;
@@ -569,7 +574,7 @@ Potential::Potential(Lattice *_grid, char *filename): grid(_grid) {
     input.close();
 }
 
-Potential::Potential(Lattice *_grid, double *_external_pot): grid(_grid) {
+Potential::Potential(Lattice2D *_grid, double *_external_pot): grid(_grid) {
     if (_external_pot == 0) {
         self_init = true;
         matrix = new double[grid->dim_x * grid->dim_y];
@@ -583,7 +588,7 @@ Potential::Potential(Lattice *_grid, double *_external_pot): grid(_grid) {
     static_potential = NULL;
 }
 
-Potential::Potential(Lattice *_grid, double (*potential_fuction)(double x, double y)): grid(_grid) {
+Potential::Potential(Lattice2D *_grid, double (*potential_fuction)(double x, double y)): grid(_grid) {
     is_static = true;
     self_init = false;
     evolving_potential = NULL;
@@ -591,7 +596,7 @@ Potential::Potential(Lattice *_grid, double (*potential_fuction)(double x, doubl
     matrix = NULL;
 }
 
-Potential::Potential(Lattice *_grid, double (*potential_function)(double x, double y, double t), int _t): grid(_grid) {
+Potential::Potential(Lattice2D *_grid, double (*potential_function)(double x, double y, double t), int _t): grid(_grid) {
     is_static = false;
     self_init = false;
     evolving_potential = potential_function;
@@ -639,7 +644,7 @@ Potential::~Potential() {
     }
 }
 
-HarmonicPotential::HarmonicPotential(Lattice *_grid, double _omegax, double _omegay, double _mass, double _mean_x, double _mean_y):
+HarmonicPotential::HarmonicPotential(Lattice2D *_grid, double _omegax, double _omegay, double _mass, double _mean_x, double _mean_y):
     Potential(_grid, const_potential), omegax(_omegax), omegay(_omegay),
     mass(_mass), mean_x(_mean_x), mean_y(_mean_y) {
     is_static = true;
@@ -662,7 +667,7 @@ double HarmonicPotential::get_value(int x, int y) {
 HarmonicPotential::~HarmonicPotential() {
 }
 
-Hamiltonian::Hamiltonian(Lattice *_grid, Potential *_potential,
+Hamiltonian::Hamiltonian(Lattice2D *_grid, Potential *_potential,
                          double _mass, double _coupling_a,
                          double _angular_velocity,
                          double _rot_coord_x, double _rot_coord_y): mass(_mass),
@@ -699,7 +704,7 @@ Hamiltonian::~Hamiltonian() {
     }
 }
 
-Hamiltonian2Component::Hamiltonian2Component(Lattice *_grid,
+Hamiltonian2Component::Hamiltonian2Component(Lattice2D *_grid,
         Potential *_potential,
         Potential *_potential_b,
         double _mass,

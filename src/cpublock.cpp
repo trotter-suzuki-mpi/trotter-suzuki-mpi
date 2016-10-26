@@ -412,7 +412,7 @@ void process_band(bool two_wavefunctions, int offset_tile_x, int offset_tile_y, 
 }
 
 // Class methods
-CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
+CPUBlock::CPUBlock(Lattice2D *grid, State *state, Hamiltonian *hamiltonian,
                    double *_external_pot_real, double *_external_pot_imag,
                    double _a, double _b, double delta_t,
                    double _norm, bool _imag_time):
@@ -486,7 +486,7 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
 #endif
 }
 
-CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
+CPUBlock::CPUBlock(Lattice2D *grid, State *state1, State *state2,
                    Hamiltonian2Component *hamiltonian,
                    double **_external_pot_real, double **_external_pot_imag,
                    double *_a, double *_b, double delta_t,

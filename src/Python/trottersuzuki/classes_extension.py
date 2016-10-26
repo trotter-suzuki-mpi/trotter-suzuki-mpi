@@ -1,12 +1,23 @@
 import numpy as np
-from .trottersuzuki import Lattice as _Lattice
+from .trottersuzuki import Lattice2D as _Lattice2D
 from .trottersuzuki import State as _State
 from .trottersuzuki import GaussianState as _GaussianState
 from .trottersuzuki import SinusoidState as _SinusoidState
 from .trottersuzuki import ExponentialState as _ExponentialState
 from .trottersuzuki import Potential as _Potential
 
-class Lattice(_Lattice):
+class Lattice2D(_Lattice2D):
+
+    def __init__(self, dim_x, length_x, dim_y=None, length_y=None,
+                 periodic_x_axis=False, periodic_y_axis=False,
+                 angular_velocity=0.):
+        if dim_y is None:
+            dim_y = dim_x
+        if length_y is None:
+            length_y = length_x
+        super(Lattice2D, self).__init__(dim_x, length_x, dim_y, length_y,
+                                        periodic_x_axis, periodic_y_axis,
+                                        angular_velocity)
 
     def get_x_axis(self):
         """

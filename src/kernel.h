@@ -56,13 +56,13 @@ void process_band(bool two_wavefunctions, int offset_tile_x, int offset_tile_y, 
 
 class CPUBlock: public ITrotterKernel {
 public:
-    CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
+    CPUBlock(Lattice2D *grid, State *state, Hamiltonian *hamiltonian,
              double *_external_pot_real, double *_external_pot_imag,
              double _a, double _b, double delta_t,
              double _norm, bool _imag_time);    ///< Instantiate the kernel for single wave functions state evolution.
 
 
-    CPUBlock(Lattice *grid, State *state1, State *state2,
+    CPUBlock(Lattice2D *grid, State *state1, State *state2,
              Hamiltonian2Component *hamiltonian,
              double **_external_pot_real, double **_external_pot_imag,
              double *_a, double *_b, double delta_t,
@@ -175,11 +175,11 @@ void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, s
 
 class CC2Kernel: public ITrotterKernel {
 public:
-    CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
+    CC2Kernel(Lattice2D *grid, State *state, Hamiltonian *hamiltonian,
               double *_external_pot_real, double *_external_pot_imag,
               double a, double _b, double delta_t,
               double _norm, bool _imag_time);    ///< Instantiate the kernel for single wave functions state evolution.
-    CC2Kernel(Lattice *grid, State *state1, State *state2,
+    CC2Kernel(Lattice2D *grid, State *state1, State *state2,
               Hamiltonian2Component *hamiltonian,
               double **_external_pot_real, double **_external_pot_imag,
               double *_a, double *_b, double delta_t,
@@ -281,7 +281,7 @@ private:
 
 class HybridKernel: public ITrotterKernel {
 public:
-    HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
+    HybridKernel(Lattice2D *grid, State *state, Hamiltonian *hamiltonian,
                  double *_external_pot_real, double *_external_pot_imag,
                  double a, double b, double delta_t,
                  double _norm, bool _imag_time);    ///< Instantiate the kernel for single wave functions state evolution.

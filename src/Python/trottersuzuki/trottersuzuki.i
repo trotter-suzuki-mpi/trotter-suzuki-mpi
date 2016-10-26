@@ -29,35 +29,22 @@ import_array();
    }
 }
 
-class Lattice {
+class Lattice2D {
 public:
-    Lattice(int dim=100, double length=20.,
-            bool periodic_x_axis=false, bool periodic_y_axis=false, double angular_velocity=0.);
+    Lattice2D(int dim_x, double length_x, int dim_y, double length_y,
+              bool periodic_x_axis=false, bool periodic_y_axis=false, double angular_velocity=0.);
     double length_x, length_y;
     double delta_x, delta_y;
     int dim_x, dim_y;
     int global_no_halo_dim_x, global_no_halo_dim_y;
-    int global_dim_x, global_dim_y;
-    int periods[2];
-
-    int halo_x;
-    int halo_y;
     int start_x, start_y;
-    int end_x, end_y;
-    int inner_start_x, inner_start_y;
-    int inner_end_x, inner_end_y;
-    int mpi_coords[2], mpi_dims[2];
-    int mpi_rank;
-    int mpi_procs;
 };
 
 class State{
 public:
-    double *p_real;
-    double *p_imag;
-    Lattice *grid;
+    Lattice2D *grid;
 
-    State(Lattice *grid, double *p_real=0, double *p_imag=0);
+    State(Lattice2D *grid, double *p_real=0, double *p_imag=0);
     State(const State &obj /**< [in] State object. */);
     ~State();
     %extend {
@@ -124,7 +111,8 @@ public:
     bool expected_values_updated;
 
 protected:
-
+    double *p_real;
+    double *p_imag;
     bool self_init;
     void calculate_expected_values(void);
     double mean_X, mean_XX;
@@ -136,7 +124,7 @@ protected:
 
 class ExponentialState: public State {
 public:
-    ExponentialState(Lattice *_grid, int _n_x=1, int _n_y=1, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
+    ExponentialState(Lattice2D *_grid, int _n_x=1, int _n_y=1, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
 
 private:
     int n_x, n_y;
@@ -146,7 +134,7 @@ private:
 
 class GaussianState: public State {
 public:
-    GaussianState(Lattice *grid, double omega_x, double omega_y = -1., double mean_x = 0, double mean_y = 0, double norm = 1, double phase = 0,
+    GaussianState(Lattice2D *grid, double omega_x, double omega_y = -1., double mean_x = 0, double mean_y = 0, double norm = 1, double phase = 0,
                   double *p_real = 0, double *p_imag = 0);
 
 private:
@@ -161,7 +149,7 @@ private:
 
 class SinusoidState: public State {
 public:
-    SinusoidState(Lattice *_grid, int _n_x=1, int _n_y=1, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
+    SinusoidState(Lattice2D *_grid, int _n_x=1, int _n_y=1, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
 
 private:
     int n_x, n_y;
@@ -171,13 +159,13 @@ private:
 
 class Potential {
 public:
-    Lattice *grid;    ///< Object that defines the lattice structure.
+    Lattice2D *grid;    ///< Object that defines the lattice structure.
     double *matrix;    ///< Matrix storing the potential.
 
-    Potential(Lattice *grid, char *filename);
-    Potential(Lattice *grid, double *external_pot=0);
-    Potential(Lattice *grid, double (*potential_function)(double x, double y));
-    Potential(Lattice *grid, double (*potential_function)(double x, double y, double t), int t=0);
+    Potential(Lattice2D *grid, char *filename);
+    Potential(Lattice2D *grid, double *external_pot=0);
+    Potential(Lattice2D *grid, double (*potential_function)(double x, double y));
+    Potential(Lattice2D *grid, double (*potential_function)(double x, double y, double t), int t=0);
     ~Potential();
     %extend {
         void init_potential_matrix(double* _potential, int _potential_width, int _potential_height) {
@@ -202,7 +190,7 @@ protected:
 class HarmonicPotential: public Potential {
 public:
 
-    HarmonicPotential(Lattice *_grid, double _omegax, double _omegay, double _mass=1., double _mean_x = 0., double _mean_y = 0.);
+    HarmonicPotential(Lattice2D *_grid, double _omegax, double _omegay, double _mass=1., double _mean_x = 0., double _mean_y = 0.);
     ~HarmonicPotential();
     double get_value(int x, int y);
 
@@ -220,14 +208,14 @@ public:
     double angular_velocity;
     double rot_coord_x;
     double rot_coord_y;
-    Hamiltonian(Lattice *_grid, Potential *_potential=0, double _mass=1., double _coupling_a=0.,
+    Hamiltonian(Lattice2D *_grid, Potential *_potential=0, double _mass=1., double _coupling_a=0.,
                 double _angular_velocity=0.,
                 double _rot_coord_x=0, double _rot_coord_y=0);
     ~Hamiltonian();
 
 protected:
     bool self_init;
-    Lattice *grid;
+    Lattice2D *grid;
 };
 
 class Hamiltonian2Component: public Hamiltonian {
@@ -239,7 +227,7 @@ public:
     double omega_i;
     Potential *potential_b;
 
-    Hamiltonian2Component(Lattice *_grid, Potential *_potential=0,
+    Hamiltonian2Component(Lattice2D *_grid, Potential *_potential=0,
                           Potential *_potential_b=0,
                           double _mass=1., double _mass_b=1.,
                           double _coupling_a=0., double coupling_ab=0.,
@@ -253,15 +241,15 @@ public:
 
 class Solver {
 public:
-    Lattice *grid;
+    Lattice2D *grid;
     State *state;
     State *state_b;
     Hamiltonian *hamiltonian;
     double current_evolution_time;
 
-    Solver(Lattice *grid, State *state, Hamiltonian *hamiltonian, double delta_t,
+    Solver(Lattice2D *grid, State *state, Hamiltonian *hamiltonian, double delta_t,
            std::string kernel_type="cpu");
-    Solver(Lattice *grid, State *state1, State *state2,
+    Solver(Lattice2D *grid, State *state1, State *state2,
            Hamiltonian2Component *hamiltonian,
            double delta_t, std::string kernel_type="cpu");
     ~Solver();
