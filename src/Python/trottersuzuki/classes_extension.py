@@ -1,12 +1,12 @@
 import numpy as np
-from .trottersuzuki import Lattice as _Lattice
+from .trottersuzuki import Lattice2D as _Lattice2D
 from .trottersuzuki import State as _State
 from .trottersuzuki import GaussianState as _GaussianState
 from .trottersuzuki import SinusoidState as _SinusoidState
 from .trottersuzuki import ExponentialState as _ExponentialState
 from .trottersuzuki import Potential as _Potential
 
-class Lattice(_Lattice):
+class Lattice2D(_Lattice2D):
 
     def get_x_axis(self):
         """

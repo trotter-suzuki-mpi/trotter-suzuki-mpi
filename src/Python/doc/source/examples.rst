@@ -11,7 +11,7 @@ The following code block gives a simple example of initializing a state and calc
     import numpy as np
     from trottersuzuki import *
 
-    grid = Lattice(256, 15)  # create a 2D lattice
+    grid = Lattice2D(256, 15)  # create a 2D lattice
     
     potential = HarmonicPotential(grid, 1, 1)  # define an symmetric harmonic potential with unit frequecy
     particle_mass = 1.
@@ -45,7 +45,7 @@ Imaginary time evolution to approximate the ground-state energy
     import numpy as np
     from trottersuzuki import *
 
-    grid = Lattice(256, 15)  # create a 2D lattice
+    grid = Lattice2D(256, 15)  # create a 2D lattice
 
     potential = HarmonicPotential(grid, 1, 1)  # define an symmetric harmonic potential with unit frequecy
     particle_mass = 1.
@@ -80,7 +80,7 @@ Imprinting of a vortex in a Bose-Einstein Condensate
     import numpy as np
     import trottersuzuki as ts
 
-    grid = ts.Lattice(256, 15)  # create a 2D lattice
+    grid = ts.Lattice2D(256, 15)  # create a 2D lattice
     
     potential = HarmonicPotential(grid, 1, 1)  # define an symmetric harmonic potential with unit frequecy
     particle_mass = 1.
@@ -111,7 +111,7 @@ This example simulates the evolution of a dark soliton in a Bose-Einstein Conden
     import trottersuzuki as ts
     from matplotlib import pyplot as plt
     
-    grid = ts.Lattice(300, 50.)  # # create a 2D lattice
+    grid = ts.Lattice2D(300, 50.)  # # create a 2D lattice
     
     potential = ts.HarmonicPotential(grid, 1., 1./np.sqrt(2.))  # create an harmonic potential
     coupling = 1.2097e3

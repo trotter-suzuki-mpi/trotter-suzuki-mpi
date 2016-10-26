@@ -196,7 +196,7 @@ int main(int argc, char** argv) {
         return 1; // exit is okay here because an MPI runtime would have aborted in my_abort
     }
     //set lattice
-    Lattice *grid = new Lattice(dim, length_x, length_y);
+    Lattice2D *grid = new Lattice2D(dim, length_x, length_y);
 
     //set hamiltonian
     Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass, coupling_a);

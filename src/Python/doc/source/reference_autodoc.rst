@@ -2,9 +2,9 @@
 Function Reference
 ******************
 
-Lattice Class
-=============
-.. autoclass:: trottersuzuki.Lattice
+Lattice2D Class
+===============
+.. autoclass:: trottersuzuki.Lattice2D
 
 
 State Classes

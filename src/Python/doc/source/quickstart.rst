@@ -19,7 +19,7 @@ physical area of 20x20, then we have to specify these in the constructor of the 
 
 .. code:: python
 
-    grid = ts.Lattice(300, 20.)
+    grid = ts.Lattice2D(300, 20.)
 
 The object ``grid`` defines the geometry of the system and it
 will be used throughout the simulations. Note that the origin of the lattice is at its centre.
