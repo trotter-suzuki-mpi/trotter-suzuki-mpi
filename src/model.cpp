@@ -233,54 +233,58 @@ void State::loadtxt(char *file_name) {
 
 double *State::get_particle_density(double *_density) {
     double *density;
+    int local_no_halo_dim_x = grid->inner_end_x - grid->inner_start_x;
+    int local_no_halo_dim_y = grid->inner_end_y - grid->inner_start_y;
     if (_density == 0) {
-        density = new double[grid->dim_x * grid->dim_y];
+        density = new double[local_no_halo_dim_x * local_no_halo_dim_y];
     }
     else {
         density = _density;
     }
-    for(int j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; j++) {
-        for(int i = grid->inner_start_x - grid->start_x; i < grid->inner_end_x - grid->start_x; i++) {
-            density[j * grid->dim_x + i] = (p_real[j * grid->dim_x + i] * p_real[j * grid->dim_x + i] + p_imag[j * grid->dim_x + i] * p_imag[j * grid->dim_x + i]) * grid->delta_x * grid->delta_y;
+    for(int id_j = 0, j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; ++id_j, ++j) {
+        for(int id_i = 0, i = grid->inner_start_x - grid->start_x; i < grid->inner_end_x - grid->start_x; ++id_i, ++i) {
+            density[id_j * local_no_halo_dim_x + id_i] = (p_real[j * grid->dim_x + i] * p_real[j * grid->dim_x + i] + p_imag[j * grid->dim_x + i] * p_imag[j * grid->dim_x + i]) * grid->delta_x * grid->delta_y;
         }
     }
     return density;
 }
 
 void State::write_particle_density(string fileprefix) {
-    double *density = new double[grid->dim_x * grid->dim_y];
+    double *density = get_particle_density();
     stringstream filename;
     filename << fileprefix << "-density";
-    stamp_matrix(grid, get_particle_density(density), filename.str());
+    stamp_matrix(grid, density, filename.str());
     delete [] density;
 }
 
 double *State::get_phase(double *_phase) {
     double *phase;
+    int local_no_halo_dim_x = grid->inner_end_x - grid->inner_start_x;
+    int local_no_halo_dim_y = grid->inner_end_y - grid->inner_start_y;
     if (_phase == 0) {
-        phase = new double[grid->dim_x * grid->dim_y];
+        phase = new double[local_no_halo_dim_x * local_no_halo_dim_y];
     }
     else {
         phase = _phase;
     }
     double norm;
-    for(int j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; j++) {
-        for(int i = grid->inner_start_x - grid->start_x; i < grid->inner_end_x - grid->start_x; i++) {
+    for(int id_j = 0, j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; ++id_j, ++j) {
+        for(int id_i=0, i = grid->inner_start_x - grid->start_x; i < grid->inner_end_x - grid->start_x; ++id_i, ++i) {
             norm = sqrt(p_real[j * grid->dim_x + i] * p_real[j * grid->dim_x + i] + p_imag[j * grid->dim_x + i] * p_imag[j * grid->dim_x + i]);
             if(norm == 0)
-                phase[j * grid->dim_x + i] = 0;
+                phase[id_j * local_no_halo_dim_x + id_i] = 0;
             else
-                phase[j * grid->dim_x + i] = acos(p_real[j * grid->dim_x + i] / norm) * ((p_imag[j * grid->dim_x + i] >= 0) - (p_imag[j * grid->dim_x + i] < 0));
+                phase[id_j * local_no_halo_dim_x + id_i] = acos(p_real[j * grid->dim_x + i] / norm) * ((p_imag[j * grid->dim_x + i] >= 0) - (p_imag[j * grid->dim_x + i] < 0));
         }
     }
     return phase;
 }
 
 void State::write_phase(string fileprefix) {
-    double *phase = new double[grid->dim_x * grid->dim_y];
+    double *phase = get_phase();
     stringstream filename;
     filename << fileprefix << "-phase";
-    stamp_matrix(grid, get_phase(phase), filename.str());
+    stamp_matrix(grid, phase, filename.str());
     delete [] phase;
 }
 
@@ -507,9 +511,10 @@ GaussianState::GaussianState(Lattice *_grid, double _omega_x, double _omega_y, d
                              double _norm, double _phase, double *_p_real, double *_p_imag):
     State(_grid, _p_real, _p_imag), mean_x(_mean_x),
     mean_y(_mean_y), omega_x(_omega_x), omega_y(_omega_y), norm(_norm), phase(_phase) {
-    if (omega_y == -1.)
+    if (omega_y == -1.) {
         omega_y = omega_x;
-	complex<double> tmp;
+    }
+	  complex<double> tmp;
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
     double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
     for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
