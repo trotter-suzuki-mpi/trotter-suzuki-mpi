@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
     //set lattice
     Lattice *grid = new Lattice(DIM, (double)LENGTH);
     //set initial state
-    State *state = new GaussianState(grid, 1., 0., 0., PARTICLES_NUM);
+    State *state = new GaussianState(grid, 1., 1., 0., 0., PARTICLES_NUM);
     //set hamiltonian
     Potential *potential = new HarmonicPotential(grid, 1., sqrt(2));
     Hamiltonian *hamiltonian = new Hamiltonian(grid, potential, particle_mass, coupling_a);
