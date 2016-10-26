@@ -16,10 +16,6 @@ Imaginary time evolution of a Bose-Einstein Condensate trapped in a harmonic pot
 --------------------------------------------------------------------------------------
 \include groundstate_of_BEC_in_harmonic_pot.cpp
 
-Imaginary time evolution of a Bose-Einstein Condensate with vortexes
---------------------------------------------------------------------
-\include vortexes.cpp
-
 Time evolution of a two-component Bose-Einstein Condensate trapped in a harmonic potential
 ------------------------------------------------------------------------------------------
 \include coupled_GPEs.cpp
