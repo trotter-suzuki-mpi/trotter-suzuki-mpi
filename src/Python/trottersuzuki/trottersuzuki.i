@@ -37,24 +37,12 @@ public:
     double delta_x, delta_y;
     int dim_x, dim_y;
     int global_no_halo_dim_x, global_no_halo_dim_y;
-    int global_dim_x, global_dim_y;
-    int periods[2];
-
-    int halo_x;
-    int halo_y;
     int start_x, start_y;
-    int end_x, end_y;
-    int inner_start_x, inner_start_y;
-    int inner_end_x, inner_end_y;
-    int mpi_coords[2], mpi_dims[2];
-    int mpi_rank;
-    int mpi_procs;
+
 };
 
 class State{
 public:
-    double *p_real;
-    double *p_imag;
     Lattice *grid;
 
     State(Lattice *grid, double *p_real=0, double *p_imag=0);
@@ -124,7 +112,8 @@ public:
     bool expected_values_updated;
 
 protected:
-
+    double *p_real;
+    double *p_imag;
     bool self_init;
     void calculate_expected_values(void);
     double mean_X, mean_XX;
