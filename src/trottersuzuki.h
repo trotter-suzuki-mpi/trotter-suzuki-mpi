@@ -60,6 +60,8 @@ public:
      */
     Lattice2D(int dim, double length,
               bool periodic_x_axis = false, bool periodic_y_axis = false, double angular_velocity = 0.);
+    Lattice2D(int dim_x, double length_x, int dim_y, double length_y,
+              bool periodic_x_axis = false, bool periodic_y_axis = false, double angular_velocity = 0.);
     double length_x, length_y;    ///< Physical length of the lattice's sides.
     double delta_x, delta_y;    ///< Physical distance between two consecutive point of the grid, along the x and y axes.
     int dim_x, dim_y;    ///< Linear dimension of the tile along x and y axes.

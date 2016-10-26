@@ -12,16 +12,20 @@ Lattice2D Class
 
    **Constructors**
    
-   .. py:method:: Lattice2D(dim=100, length=20.0, periodic_x_axis=False, periodic_y_axis=False)
+   .. py:method:: Lattice2D(dim_x, length_x, dim_y=None, length_y=None, periodic_x_axis=False, periodic_y_axis=False)
 
       Construct the Lattice2D.
 
       **Parameters**
       
-      * `dim` : integer,optional (default: 100)
-          Linear dimension of the squared lattice.  
-      * `length` : float,optional (default: 20.)
-          Physical length of the lattice's side.   
+      * `dim_x` : integer
+          Linear dimension of the squared lattice in the x direction.
+      * `length_x` : float
+          Physical length of the lattice's side in the x direction.
+      * `dim_y` : integer,optional (default: equal to dim_x)
+          Linear dimension of the squared lattice in the y direction.
+      * `length_y` : float,optional (default: equal to length_x)
+          Physical length of the lattice's side in the y direction.
       * `periodic_x_axis` : bool,optional (default: False)
           Boundary condition along the x axis (false=closed, true=periodic).  
       * `periodic_y_axis` : bool,optional (default: False) 

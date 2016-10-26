@@ -8,6 +8,17 @@ from .trottersuzuki import Potential as _Potential
 
 class Lattice2D(_Lattice2D):
 
+    def __init__(self, dim_x, length_x, dim_y=None, length_y=None,
+                 periodic_x_axis=False, periodic_y_axis=False,
+                 angular_velocity=0.):
+        if dim_y is None:
+            dim_y = dim_x
+        if length_y is None:
+            length_y = length_x
+        super(Lattice2D, self).__init__(dim_x, length_x, dim_y, length_y,
+                                        periodic_x_axis, periodic_y_axis,
+                                        angular_velocity)
+
     def get_x_axis(self):
         """
         Get the x-axis of the lattice.

@@ -31,14 +31,13 @@ import_array();
 
 class Lattice2D {
 public:
-    Lattice2D(int dim, double length,
+    Lattice2D(int dim_x, double length_x, int dim_y, double length_y,
               bool periodic_x_axis=false, bool periodic_y_axis=false, double angular_velocity=0.);
     double length_x, length_y;
     double delta_x, delta_y;
     int dim_x, dim_y;
     int global_no_halo_dim_x, global_no_halo_dim_y;
     int start_x, start_y;
-
 };
 
 class State{

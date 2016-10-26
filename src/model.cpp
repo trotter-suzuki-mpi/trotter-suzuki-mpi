@@ -48,9 +48,15 @@ double const_potential(double x, double y) {
 
 Lattice2D::Lattice2D(int dim, double _length,
                      bool periodic_x_axis, bool periodic_y_axis,
-                     double angular_velocity): length_x(_length), length_y(_length) {
-    delta_x = length_x / double(dim);
-    delta_y = length_y / double(dim);
+                     double angular_velocity): Lattice2D(dim, _length,
+                     dim, _length, periodic_x_axis, periodic_y_axis, angular_velocity)
+{}
+
+Lattice2D::Lattice2D(int _dim_x, double _length_x, int _dim_y, double _length_y,
+                     bool periodic_x_axis, bool periodic_y_axis,
+                     double angular_velocity): length_x(_length_x), length_y(_length_y) {
+    delta_x = length_x / double(_dim_x);
+    delta_y = length_y / double(_dim_y);
     periods[0] = (int) periodic_y_axis;
     periods[1] = (int) periodic_x_axis;
     mpi_dims[0] = mpi_dims[1] = 0;
@@ -68,21 +74,20 @@ Lattice2D::Lattice2D(int dim, double _length,
 #endif
     halo_x = (angular_velocity == 0. ? 4 : 8);
     halo_y = (angular_velocity == 0. ? 4 : 8);
-    global_dim_x = dim + periods[1] * 2 * halo_x;
-    global_dim_y = dim + periods[0] * 2 * halo_y;
-    global_no_halo_dim_x = dim;
-    global_no_halo_dim_y = dim;
+    global_dim_x = _dim_x + periods[1] * 2 * halo_x;
+    global_dim_y = _dim_y + periods[0] * 2 * halo_y;
+    global_no_halo_dim_x = _dim_x;
+    global_no_halo_dim_y = _dim_y;
     //set dimension of tiles and offsets
     calculate_borders(mpi_coords[1], mpi_dims[1], &start_x, &end_x,
                       &inner_start_x, &inner_end_x,
-                      dim, halo_x, periods[1]);
+                      _dim_x, halo_x, periods[1]);
     calculate_borders(mpi_coords[0], mpi_dims[0], &start_y, &end_y,
                       &inner_start_y, &inner_end_y,
-                      dim, halo_y, periods[0]);
+                      _dim_y, halo_y, periods[0]);
     dim_x = end_x - start_x;
     dim_y = end_y - start_y;
 }
-
 
 State::State(Lattice2D *_grid, double *_p_real, double *_p_imag): grid(_grid) {
     expected_values_updated = false;
