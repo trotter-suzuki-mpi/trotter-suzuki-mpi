@@ -247,7 +247,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> potential = ts.HarmonicPotential(grid, 1., 1.)  # Create an harmonic external potential
     >>> hamiltonian = ts.Hamiltonian(grid, potential)  # Create the Hamiltonian of an harmonic oscillator
 ";
@@ -314,7 +314,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> potential = ts.HarmonicPotential(grid, 1., 1.)  # Create an harmonic external potential
     >>> hamiltonian = ts.Hamiltonian2Component(grid, potential, potential)  # Create the Hamiltonian of an harmonic oscillator for a two-component system
 ";
@@ -370,7 +370,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 10)  # Define the simulation's geometry
     >>> potential = ts.HarmonicPotential(grid, 2., 1.)  # Create an harmonic external potential
     
 ";
@@ -464,10 +464,14 @@ Lattice2D constructor.
 
 Parameters
 ----------
-* `dim` : integer,optional (default: 100)
-    Linear dimension of the squared lattice.  
-* `length` : float,optional (default: 20.)
-    Physical length of the lattice's side.   
+* `dim_x` : integer
+    Linear dimension of the squared lattice in the x direction.
+* `length_x` : float
+    Physical length of the lattice's side in the x direction.
+* `dim_y` : integer,optional (default: equal to to dim_x)
+    Linear dimension of the squared lattice in the y direction.
+* `length_y` : float,optional (default: equal to to length_x)
+    Physical length of the lattice's side in the y direction.
 * `periodic_x_axis` : bool,optional (default: False)
     Boundary condition along the x axis (false=closed, true=periodic).  
 * `periodic_y_axis` : bool,optional (default: False) 
@@ -525,7 +529,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> # Define a constant external potential
     >>> def external_potential_function(x,y):
     >>>     return 1.
@@ -552,7 +556,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> # Define a constant external potential
     >>> def external_potential_function(x,y):
     >>>     return 1.
@@ -578,7 +582,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> # Define a constant external potential
     >>> def external_potential_function(x,y):
     >>>     return 1.
@@ -604,7 +608,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> # Define a constant external potential
     >>> def external_potential_function(x,y):
     >>>     return 1.
@@ -699,7 +703,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
     >>> potential = ts.HarmonicPotential(grid, 1., 1.)  # Create harmonic potential
     >>> hamiltonian = ts.Hamiltonian(grid, potential)  # Create a harmonic oscillator Hamiltonian
@@ -789,7 +793,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
     >>> potential = ts.HarmonicPotential(grid, 1., 1.)  # Create harmonic potential
     >>> hamiltonian = ts.Hamiltonian(grid, potential)  # Create a harmonic oscillator Hamiltonian
@@ -818,7 +822,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
     >>> potential = ts.HarmonicPotential(grid, 1., 1.)  # Create harmonic potential
     >>> hamiltonian = ts.Hamiltonian(grid, potential)  # Create a harmonic oscillator Hamiltonian
@@ -858,7 +862,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
     >>> potential = ts.HarmonicPotential(grid, 1., 1.)  # Create harmonic potential
     >>> hamiltonian = ts.Hamiltonian(grid, potential)  # Create a harmonic oscillator Hamiltonian
@@ -907,7 +911,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> state_1 = ts.GaussianState(grid, 1.)  # Create first-component system's state
     >>> state_2 = ts.GaussianState(grid, 1.)  # Create second-component system's state
     >>> potential = ts.HarmonicPotential(grid, 1., 1.)  # Create harmonic potential
@@ -965,7 +969,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> def wave_function(x,y):  # Define a flat wave function
     >>>     return 1.
     >>> state = ts.State(grid)  # Create the system's state
@@ -1047,7 +1051,7 @@ Notes
 It may be used to copy a quantum state.
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> state = ts.GaussianState(grid, 1.)  # Create the system's state with a gaussian wave function
     >>> state2 = ts.State(state)  # Copy state into state2
 
@@ -1055,7 +1059,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> def wave_function(x,y):  # Define a flat wave function
     >>>     return 1.
     >>> state = ts.State(grid)  # Create the system's state
@@ -1081,7 +1085,7 @@ Notes
 It may be used to copy a quantum state.
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> state = ts.GaussianState(grid, 1.)  # Create the system's state with a gaussian wave function
     >>> state2 = ts.State(state)  # Copy state into state2
 
@@ -1089,7 +1093,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> def wave_function(x,y):  # Define a flat wave function
     >>>     return 1.
     >>> state = ts.State(grid)  # Create the system's state
@@ -1115,7 +1119,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> def vortex(x,y):  # Vortex function
     >>>     z = x + 1j*y
     >>>     angle = np.angle(z)
@@ -1168,7 +1172,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
     >>> state.write_to_file('wave_function.txt')  # Write to a file the wave function
     >>> state2 = ts.State(grid)  # Create a quantum state
@@ -1228,7 +1232,7 @@ Example
 -------
 
     >>> import trottersuzuki as ts  # import the module
-    >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+    >>> grid = ts.Lattice2D(200, 20.)  # Define the simulation's geometry
     >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
     >>> state.write_to_file('wave_function.txt')  # Write to a file the wave function
     >>> state2 = ts.State(grid)  # Create a quantum state

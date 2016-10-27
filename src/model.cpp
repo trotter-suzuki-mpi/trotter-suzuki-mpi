@@ -49,8 +49,8 @@ double const_potential(double x, double y) {
 Lattice2D::Lattice2D(int dim, double _length,
                      bool periodic_x_axis, bool periodic_y_axis,
                      double angular_velocity): Lattice2D(dim, _length,
-                     dim, _length, periodic_x_axis, periodic_y_axis, angular_velocity)
-{}
+                     dim, _length, periodic_x_axis, periodic_y_axis,
+                     angular_velocity) {}
 
 Lattice2D::Lattice2D(int _dim_x, double _length_x, int _dim_y, double _length_y,
                      bool periodic_x_axis, bool periodic_y_axis,
