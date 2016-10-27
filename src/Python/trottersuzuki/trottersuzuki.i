@@ -81,8 +81,8 @@ public:
             double *_density;
             _density = self->get_particle_density();
         end:
-           *de_dim1_out = self->grid->global_no_halo_dim_x;
-           *de_dim2_out = self->grid->global_no_halo_dim_y;
+           *de_dim1_out = self->grid->global_no_halo_dim_y;
+           *de_dim2_out = self->grid->global_no_halo_dim_x;
            *density_out = _density;
 	    }
     }
@@ -91,8 +91,8 @@ public:
             double *_phase;
             _phase = self->get_phase();
         end:
-           *ph_dim1_out = self->grid->global_no_halo_dim_x;
-           *ph_dim2_out = self->grid->global_no_halo_dim_y;
+           *ph_dim1_out = self->grid->global_no_halo_dim_y;
+           *ph_dim2_out = self->grid->global_no_halo_dim_x;
            *phase_out = _phase;
         }
     }
