@@ -20,7 +20,7 @@
 #include "kernel.h"
 #include <iostream>
 
-Solver::Solver(Lattice2D *_grid, State *_state, Hamiltonian *_hamiltonian,
+Solver::Solver(Lattice *_grid, State *_state, Hamiltonian *_hamiltonian,
                double _delta_t, string _kernel_type):
     grid(_grid), state(_state), hamiltonian(_hamiltonian), delta_t(_delta_t),
     kernel_type(_kernel_type) {
@@ -38,7 +38,7 @@ Solver::Solver(Lattice2D *_grid, State *_state, Hamiltonian *_hamiltonian,
     has_parameters_changed = false;
 }
 
-Solver::Solver(Lattice2D *_grid, State *state1, State *state2,
+Solver::Solver(Lattice *_grid, State *state1, State *state2,
                Hamiltonian2Component *_hamiltonian,
                double _delta_t, string _kernel_type):
     grid(_grid), state(state1), state_b(state2), hamiltonian(_hamiltonian), delta_t(_delta_t),

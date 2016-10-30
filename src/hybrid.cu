@@ -19,7 +19,7 @@
 #include "kernel.h"
 
 // Class methods
-HybridKernel::HybridKernel(Lattice2D *grid, State *state, Hamiltonian *hamiltonian,
+HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
                            double *_external_pot_real, double *_external_pot_imag,
                            double _a, double _b, double delta_t,
                            double _norm, bool _imag_time):

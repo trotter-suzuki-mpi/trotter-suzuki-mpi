@@ -635,7 +635,7 @@ void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, s
     CUT_CHECK_ERROR("Kernel error in cc2kernel_wrapper");
 }
 
-CC2Kernel::CC2Kernel(Lattice2D *grid, State *state, Hamiltonian *hamiltonian,
+CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
                      double *_external_pot_real, double *_external_pot_imag,
                      double _a, double _b, double delta_t,
                      double _norm, bool _imag_time):
@@ -742,7 +742,7 @@ CC2Kernel::CC2Kernel(Lattice2D *grid, State *state, Hamiltonian *hamiltonian,
 
 }
 
-CC2Kernel::CC2Kernel(Lattice2D *grid, State *state1, State *state2,
+CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2,
                      Hamiltonian2Component *hamiltonian,
                      double **_external_pot_real, double **_external_pot_imag,
                      double *_a, double *_b, double delta_t,

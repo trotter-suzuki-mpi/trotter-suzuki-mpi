@@ -110,7 +110,7 @@ class State {
 public:
     double *p_real;    ///< Real part of the wave function.
     double *p_imag;    ///< Imaginary part of the wave function.
-    Lattice2D *grid;    ///< Object that defines the lattice structure.
+    Lattice *grid;    ///< Object that defines the lattice structure.
 
     /**
         Construct the state from given matrices if they are provided, otherwise construct a state with null wave function, initializing p_real and p_imag.
@@ -119,13 +119,15 @@ public:
         @param [in] p_real           Pointer to the real part of the wave function.
         @param [in] p_imag           Pointer to the imaginary part of the wave function.
      */
-    State(Lattice2D *grid, double *p_real = 0, double *p_imag = 0);
+    State(Lattice *grid, double *p_real = 0, double *p_imag = 0);
     State(const State &obj /**< [in] State object. */);    ///< Copy constructor: copy the state object.
     ~State();    ///< Destructor.
-    void init_state(complex<double> (*ini_state)(double x, double y) /** Pointer to a wave function */);    ///< Write the wave function from a C++ function to p_real and p_imag matrices.
+    void init_state(complex<double> (*ini_state)(double x) /** Pointer to a wave function */); ///< Write the wave function from a C++ function to p_real and p_imag matrices in 1D.
+    void init_state(complex<double> (*ini_state)(double x, double y) /** Pointer to a wave function */);    ///< Write the wave function from a C++ function to p_real and p_imag matrices in 2D.
     void loadtxt(char *file_name);    ///< Load the wave function from a file to p_real and p_imag matrices.
 
-    void imprint(complex<double> (*function)(double x, double y) /** Pointer to a function */);    ///< Multiply the wave function of the state by the function provided.
+    void imprint(complex<double> (*function)(double x) /** Pointer to a function */);    ///< Multiply the wave function of the state by the function provided in 1D.
+    void imprint(complex<double> (*function)(double x, double y) /** Pointer to a function */);    ///< Multiply the wave function of the state by the function provided in 2D.
     double *get_particle_density(double *density = 0 /** [out] matrix storing the squared norm of the wave function. */);  ///< Return a matrix storing the squared norm of the wave function.
     double *get_phase(double *phase = 0 /** [out] matrix storing the phase of the wave function. */);  ///< Return a matrix storing the phase of the wave function.
     double get_squared_norm(void);    ///< Return the squared norm of the quantum state.
@@ -242,7 +244,7 @@ private:
  */
 class Potential {
 public:
-    Lattice2D *grid;    ///< Object that defines the lattice structure.
+    Lattice *grid;    ///< Object that defines the lattice structure.
     double *matrix;    ///< Matrix storing the potential.
 
     /**
@@ -251,30 +253,31 @@ public:
     	@param [in] grid             Lattice object.
     	@param [in] filename         Name of the file that stores the external potential matrix.
      */
-    Potential(Lattice2D *grid, char *filename);
+    Potential(Lattice *grid, char *filename);
     /**
     	Construct the external potential.
 
     	@param [in] grid             Lattice object.
     	@param [in] external_pot     Pointer to the external potential matrix.
      */
-    Potential(Lattice2D *grid, double *external_pot = 0);
+    Potential(Lattice *grid, double *external_pot = 0);
     /**
     	Construct the external potential.
 
     	@param [in] grid                   Lattice object.
     	@param [in] potential_function     Pointer to the static external potential function.
      */
-    Potential(Lattice2D *grid, double (*potential_function)(double x, double y));
+    Potential(Lattice *grid, double (*potential_function)(double x, double y));
     /**
-    	Construct the external potential.
+    	Construct the 2D time-evolving external potential.
 
     	@param [in] grid                   Lattice object.
     	@param [in] potential_function     Pointer to the time-dependent external potential function.
      */
-    Potential(Lattice2D *grid, double (*potential_function)(double x, double y, double t), int t = 0);
+    Potential(Lattice *grid, double (*potential_function)(double x, double y, double t), int t = 0);
     virtual ~Potential();
-    virtual double get_value(int x, int y);    ///< Get the value at the coordinate (x,y).
+    virtual double get_value(int x); ///< Get the value at the coordinate x in a 1D model.
+    virtual double get_value(int x, int y);    ///< Get the value at the coordinate (x,y) in a 2D model.
     bool update(double t);    ///< Update the potential matrix at time t.
 
 protected:
@@ -335,14 +338,14 @@ public:
     	@param [in] rot_coord_x         X coordinate of the center of rotation.
     	@param [in] rot_coord_y         Y coordinate of the center of rotation.
      */
-    Hamiltonian(Lattice2D *grid, Potential *potential = 0, double mass = 1., double coupling_a = 0.,
+    Hamiltonian(Lattice *grid, Potential *potential = 0, double mass = 1., double coupling_a = 0.,
                 double angular_velocity = 0.,
                 double rot_coord_x = 0, double rot_coord_y = 0);
     ~Hamiltonian();
 
 protected:
     bool self_init;    ///< Whether the potential is initialized in the Hamiltonian constructor or not.
-    Lattice2D *grid;    ///< Lattice object.
+    Lattice *grid;    ///< Lattice object.
 };
 
 /**
@@ -374,7 +377,7 @@ public:
     	@param [in] rot_coord_x         X coordinate of the center of rotation.
     	@param [in] rot_coord_y         Y coordinate of the center of rotation.
      */
-    Hamiltonian2Component(Lattice2D *grid, Potential *potential = 0,
+    Hamiltonian2Component(Lattice *grid, Potential *potential = 0,
                           Potential *potential_b = 0,
                           double mass = 1., double mass_b = 1.,
                           double coupling_a = 0., double coupling_ab = 0.,
@@ -413,7 +416,7 @@ public:
  */
 class Solver {
 public:
-    Lattice2D *grid;    ///< Lattice object.
+    Lattice *grid;    ///< Lattice object.
     State *state;    ///< State of the first component.
     State *state_b;    ///< State of the second component.
     Hamiltonian *hamiltonian;    ///< Hamiltonian of the system; either single component or two components.
@@ -427,7 +430,7 @@ public:
     	@param [in] delta_t             A single evolution iteration, evolves the state for this time.
     	@param [in] kernel_type         Which kernel to use (either cpu or gpu).
      */
-    Solver(Lattice2D *grid, State *state, Hamiltonian *hamiltonian, double delta_t,
+    Solver(Lattice *grid, State *state, Hamiltonian *hamiltonian, double delta_t,
            string kernel_type = "cpu");
     /**
     	Construct the Solver object for a two-component system.
@@ -439,7 +442,7 @@ public:
     	@param [in] delta_t             A single evolution iteration, evolves the state for this time.
     	@param [in] kernel_type         Which kernel to use (either cpu or gpu).
      */
-    Solver(Lattice2D *grid, State *state1, State *state2,
+    Solver(Lattice *grid, State *state1, State *state2,
            Hamiltonian2Component *hamiltonian,
            double delta_t, string kernel_type = "cpu");
     ~Solver();
