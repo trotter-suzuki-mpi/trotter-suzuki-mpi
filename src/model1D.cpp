@@ -21,38 +21,21 @@
 #include "common.h"
 #include<math.h>
 
-void calculate_borders1D(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound) {
-    int inner = (int)ceil((double)length / (double)dim);
-    *inner_start = coord * inner;
-    if(periodic_bound != 0)
-        *start = *inner_start - halo;
-    else
-        *start = ( coord == 0 ? 0 : *inner_start - halo );
-    *end = *inner_start + (inner + halo);
-
-    if (*end > length) {
-        if(periodic_bound != 0)
-            *end = length + halo;
-        else
-            *end = length;
-    }
-    if(periodic_bound != 0)
-        *inner_end = *end - halo;
-    else
-        *inner_end = ( *end == length ? *end : *end - halo );
-}
-
 double const_potential1D(double x ) {
     return 0.;
 }
 
-Lattice1D::Lattice1D(int dim, double _length,
-                 bool periodic_x_axis): length_x(_length) {
-    delta_x = length_x / double(dim);
-    periods[0] = (int) periodic_x_axis;
-    mpi_dims[0] = 0;
+Lattice1D::Lattice1D(int dim, double length, bool periodic_x_axis) {
+    length_x = length;
+    length_y = 0;
+    delta_x = length / double(dim);
+    delta_y = 0;
+    periods[0] = 0;
+    periods[1] = (int) periodic_x_axis;
 #ifdef HAVE_MPI
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_procs);
+    mpi_dims[0] = mpi_procs;
+    mpi_dims[1] = 1;
     MPI_Dims_create(mpi_procs, 2, mpi_dims);  //partition all the processes (the size of MPI_COMM_WORLD's group) into an 2-dimensional topology
     MPI_Cart_create(MPI_COMM_WORLD, 2, mpi_dims, periods, 0, &cartcomm);
     MPI_Comm_rank(cartcomm, &mpi_rank);
@@ -60,22 +43,26 @@ Lattice1D::Lattice1D(int dim, double _length,
 #else
     mpi_procs = 1;
     mpi_rank = 0;
-    mpi_dims[0] = 1;
-    mpi_coords[0] = 0;
+    mpi_dims[0] = mpi_dims[1] = 1;
+    mpi_coords[0] = mpi_coords[1] = 0;
 #endif
-  	halo_x=8;
-    global_dim_x = dim + periods[0] * 2 * halo_x;
+    halo_x = 4;
+    halo_y = 0;
+    global_dim_x = dim + periods[1] * 2 * halo_x;
+    global_dim_y = 1;
     global_no_halo_dim_x = dim;
-    
+    global_no_halo_dim_y = 1;
     //set dimension of tiles and offsets
-    calculate_borders1D(mpi_coords[0], mpi_dims[0], &start_x, &end_x,
+    calculate_borders(mpi_coords[0], mpi_dims[0], &start_x, &end_x,
                       &inner_start_x, &inner_end_x,
-                      dim, halo_x, periods[0]);
+                      dim, halo_x, periods[1]);
     dim_x = end_x - start_x;
-   
+    start_y = 0;
+    end_y = 0;
+    inner_start_y = 0;
+    inner_end_y = 0;
+    dim_y = 1;
 }
-
-
 
 State1D::State1D(Lattice1D *_grid, double *_p_real, double *_p_imag): grid(_grid) {
     expected_values_updated = false;

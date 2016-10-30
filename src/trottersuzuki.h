@@ -42,26 +42,6 @@ class Lattice {
 public:
     int mpi_rank;    ///< Rank of the process in the MPI topology.
     int mpi_procs;    ///< Number of processes in the MPI topology.
-#ifdef HAVE_MPI
-    MPI_Comm cartcomm;    ///< MPI communitaros chart.
-#endif
-};
-
-class Lattice2D: public Lattice {
-public:
-    /**
-        Lattice constructor.
-
-        @param [in] dim              Linear dimension of the squared lattice.
-        @param [in] length           Physical length of the lattice's side along the x axis.
-        @param [in] periodic_x_axis  Boundary condition along the x axis (false=closed, true=periodic).
-        @param [in] periodic_y_axis  Boundary condition along the y axis (false=closed, true=periodic).
-        @param [in] angular_velocity Angular velocity of the frame of reference.
-     */
-    Lattice2D(int dim, double length,
-              bool periodic_x_axis = false, bool periodic_y_axis = false, double angular_velocity = 0.);
-    Lattice2D(int dim_x, double length_x, int dim_y, double length_y,
-              bool periodic_x_axis = false, bool periodic_y_axis = false, double angular_velocity = 0.);
     double length_x, length_y;    ///< Physical length of the lattice's sides.
     double delta_x, delta_y;    ///< Physical distance between two consecutive point of the grid, along the x and y axes.
     int dim_x, dim_y;    ///< Linear dimension of the tile along x and y axes.
@@ -76,6 +56,50 @@ public:
     int inner_start_x, inner_start_y;    ///< Spatial coordinates (not physical) of the first element of the tile, excluding the eventual surrounding halo.
     int inner_end_x, inner_end_y;    ///< Spatial coordinates (not physical) of the last element of the tile, excluding the eventual surrounding halo.
     int mpi_coords[2], mpi_dims[2];    ///< Coordinate of the process in the MPI topology and structure of the MPI topology.
+#ifdef HAVE_MPI
+    MPI_Comm cartcomm;    ///< MPI communitaros chart.
+#endif
+};
+
+class Lattice1D: public Lattice {
+public:
+    /**
+        Lattice constructor.
+
+        @param [in] dim              Linear dimension of the chain lattice.
+        @param [in] length           Physical length of the lattice.
+        @param [in] periodic_x_axis  Boundary condition along the x axis (false=closed, true=periodic).
+
+     */
+    Lattice1D(int dim, double length, bool periodic_x_axis = false);
+};
+
+class Lattice2D: public Lattice {
+public:
+    /**
+        Lattice constructor.
+
+        @param [in] dim              Linear dimension of the squared lattice.
+        @param [in] length           Physical length of the lattice's side
+        @param [in] periodic_x_axis  Boundary condition along the x axis (false=closed, true=periodic).
+        @param [in] periodic_y_axis  Boundary condition along the y axis (false=closed, true=periodic).
+        @param [in] angular_velocity Angular velocity of the frame of reference.
+     */
+    Lattice2D(int dim, double length,
+              bool periodic_x_axis = false, bool periodic_y_axis = false, double angular_velocity = 0.);
+    /**
+        Lattice constructor.
+
+        @param [in] dim_x            Linear dimension in x direction
+        @param [in] length_x         Physical length of the lattice's side along the x axis.
+        @param [in] dim_y            Linear dimension in y direction
+        @param [in] length_y         Physical length of the lattice's side along the y axis.
+        @param [in] periodic_x_axis  Boundary condition along the x axis (false=closed, true=periodic).
+        @param [in] periodic_y_axis  Boundary condition along the y axis (false=closed, true=periodic).
+        @param [in] angular_velocity Angular velocity of the frame of reference.
+     */
+    Lattice2D(int dim_x, double length_x, int dim_y, double length_y,
+              bool periodic_x_axis = false, bool periodic_y_axis = false, double angular_velocity = 0.);
 };
 
 /**
