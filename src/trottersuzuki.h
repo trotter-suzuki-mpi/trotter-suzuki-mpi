@@ -485,6 +485,81 @@ private:
     void calculate_energy_expected_values(void);    ///< Calculate all the expectation values and the state's norm.
 };
 
-double const_potential(double x, double y);    ///< Defines the null potential function.
+/**
+ * \brief This class defines the evolution tasks.
+ */
+class Solver1D {
+public:
+    Lattice1D *grid;    ///< Lattice object.
+    State *state;    ///< State of the first component.
+    State *state_b;    ///< State of the second component.
+    Hamiltonian *hamiltonian;    ///< Hamiltonian of the system; either single component or two components.
+    double current_evolution_time;    ///< Amount of time evolved since the beginning of the evolution.
+    /**
+    	Construct the Solver object for a single-component system.
+
+    	@param [in] grid                Lattice object.
+    	@param [in] state               State of the system.
+    	@param [in] hamiltonian         Hamiltonian of the system.
+    	@param [in] delta_t             A single evolution iteration, evolves the state for this time.
+    	@param [in] kernel_type         Which kernel to use (either cpu or gpu).
+     */
+    Solver1D(Lattice1D *grid, State *state, Hamiltonian *hamiltonian, double delta_t,
+             string kernel_type = "cpu");
+    /**
+    	Construct the Solver object for a two-component system.
+
+    	@param [in] grid                Lattice object.
+    	@param [in] state1              First component's state of the system.
+    	@param [in] state2              Second component's state of the system.
+    	@param [in] hamiltonian         Hamiltonian of the two-component system.
+    	@param [in] delta_t             A single evolution iteration, evolves the state for this time.
+    	@param [in] kernel_type         Which kernel to use (either cpu or gpu).
+     */
+    Solver1D(Lattice1D *grid, State *state1, State *state2,
+           Hamiltonian2Component *hamiltonian,
+           double delta_t, string kernel_type = "cpu");
+    ~Solver1D();
+    void evolve(int iterations, bool imag_time = false);  ///< Evolve the state of the system.
+    void update_parameters();  ///< Notify the solver if any parameter changed in the Hamiltonian
+    double get_total_energy(void);    ///< Get the total energy of the system.
+    double get_squared_norm(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the squared norm of the state (default: total wave-function).
+    double get_kinetic_energy(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the kinetic energy of the system.
+    double get_potential_energy(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the potential energy of the system.
+    double get_rotational_energy(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the rotational energy of the system.
+    double get_intra_species_energy(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the intra-particles interaction energy of the system.
+    double get_inter_species_energy(void);    ///< Get the inter-particles interaction energy of the system.
+    double get_rabi_energy(void);    ///< Get the Rabi energy of the system.
+private:
+    bool imag_time;    ///< Whether the time of evolution is imaginary(true) or real(false).
+    double h_a[2];    ///< Parameters of the evolution operator regarding the kinetic operator of the first-component.
+    double h_b[2];    ///< Parameters of the evolution operator regarding the kinetic operator of the second-component.
+    double **external_pot_real;    ///< Real part of the evolution operator regarding the external potential.
+    double **external_pot_imag;    ///< Imaginary part of the evolution operator regarding the external potential.
+    double delta_t;    ///< A single evolution iteration, evolves the state for this time.
+    double norm2[2];    ///< Squared norms of the two wave function.
+    bool single_component;    ///< Whether the system is single-component(true) or two-components(false).
+    string kernel_type;    ///< Which kernel are being used (cpu or gpu).
+    ITrotterKernel * kernel;    ///< Pointer to the kernel object.
+    void initialize_exp_potential(double time_single_it, int which);    ///< Initialize the evolution operator regarding the external potential.
+    void init_kernel();    ///< Initialize the kernel (cpu or gpu).
+    double total_energy;    ///< Total energy of the system.
+    double kinetic_energy[2];    ///< Kinetic energy for the single components.
+    double tot_kinetic_energy;    ///< Total kinetic energy of the system.
+    double potential_energy[2];    ///< Potential energy for the single components.
+    double tot_potential_energy;    ///< Total potential energy of the system.
+    double rotational_energy[2];    ///< Rotational energy for the single components.
+    double tot_rotational_energy;    ///< Total Rotational energy of the system.
+    double intra_species_energy[2];    ///< Intra-particles interaction energy for the single components.
+    double tot_intra_species_energy;    ///< Total intra-particles interaction energy of the system.
+    double inter_species_energy;    ///< Inter-particles interaction energy of the system.
+    double rabi_energy;    ///< Rabi energy of the system.
+    bool has_parameters_changed;   ///< Keeps track whether the Hamiltonian parameters were changed
+    bool energy_expected_values_updated;    ///< Whether the expectation values are updated or not.
+    void calculate_energy_expected_values(void);    ///< Calculate all the expectation values and the state's norm.
+};
+
+double const_potential(double x);    ///< Defines the null potential function in 1D.
+double const_potential(double x, double y);    ///< Defines the null potential function in 2D.
 
 #endif // __TROTTERSUZUKI_H

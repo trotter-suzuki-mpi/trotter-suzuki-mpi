@@ -35,7 +35,7 @@ MEX_BIN        = @MEX_BIN@
 srcdir	 = @srcdir@
 VPATH	  = @srcdir@
 
-LIBOBJS=common.o cpublock.o solver.o model.o
+LIBOBJS=common.o cpublock.o cpublock1D.o solver.o model.o
 
 ifdef CUDA_LIBS
 	LIBOBJS+=cc2kernel.cu.co hybrid.cu.co
@@ -45,7 +45,7 @@ all: lib
 
 lib: $(LIBOBJS)
 	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -shared -o libtrottersuzuki.so $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
-	ar ru libtrottersuzuki.a $^
+	ar cr libtrottersuzuki.a $^
 	ranlib libtrottersuzuki.a
 
 %.o: %.cpp

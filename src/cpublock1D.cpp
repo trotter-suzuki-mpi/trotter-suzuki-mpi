@@ -16,7 +16,7 @@
  *
  */
 #include "common.h"
-#include "kernel1D.h"
+#include "kernel.h"
 #include <iostream> //
 
 // Helpers
@@ -242,7 +242,7 @@ void process_band(bool two_wavefunctions, int offset_tile_x, size_t tile_width, 
 }
 
 // Class methods
-CPUBlock1D::CPUBlock1D(Lattice1D *grid, State1D *state, Hamiltonian1D *hamiltonian,
+CPUBlock1D::CPUBlock1D(Lattice *grid, State *state, Hamiltonian *hamiltonian,
                    double *_external_pot_real, double *_external_pot_imag,
                    double _a, double _b, double delta_t,
                    double _norm, bool _imag_time):
@@ -306,8 +306,8 @@ CPUBlock1D::CPUBlock1D(Lattice1D *grid, State1D *state, Hamiltonian1D *hamiltoni
 #endif
 }
 
-CPUBlock1D::CPUBlock1D(Lattice1D *grid, State1D *state1, State1D *state2,
-                   Hamiltonian2Component1D *hamiltonian,
+CPUBlock1D::CPUBlock1D(Lattice *grid, State *state1, State *state2,
+                   Hamiltonian2Component *hamiltonian,
                    double **_external_pot_real, double **_external_pot_imag,
                    double *_a, double *_b, double delta_t,
                    double *_norm, bool _imag_time):
@@ -394,17 +394,8 @@ CPUBlock1D::~CPUBlock1D() {
 void CPUBlock1D::run_kernel() {
     // Inner part
     int inner = 1, sides = 0;
-#ifndef HAVE_MPI
-    #pragma omp parallel default(shared)
-#endif
-    {
-#ifndef HAVE_MPI
-        #pragma omp for
-#endif
-            process_band(two_wavefunctions, start_x - rot_coord_x, tile_width, block_width, halo_x, a[state_index], b[state_index],
-                         coupling_const[state_index], coupling_const[2], external_pot_real[state_index], external_pot_imag[state_index], p_real[state_index][sense], p_imag[state_index][sense], p_real[1 - state_index][sense], p_imag[1 - state_index][sense], p_real[state_index][1 - sense], p_imag[state_index][1 - sense], inner, sides, imag_time);
-    }
-
+    process_band(two_wavefunctions, start_x - rot_coord_x, tile_width, block_width, halo_x, a[state_index], b[state_index],
+                 coupling_const[state_index], coupling_const[2], external_pot_real[state_index], external_pot_imag[state_index], p_real[state_index][sense], p_imag[state_index][sense], p_real[1 - state_index][sense], p_imag[1 - state_index][sense], p_real[state_index][1 - sense], p_imag[state_index][1 - sense], inner, sides, imag_time);
     sense = 1 - sense;
 }
 
@@ -499,6 +490,10 @@ void CPUBlock1D::get_sample(size_t dest_stride, size_t x, size_t width, double *
         memcpy2D(dest_real2, dest_stride * sizeof(double), &(p_real[1][sense][ x]), tile_width * sizeof(double), width * sizeof(double),1 );
         memcpy2D(dest_imag2, dest_stride * sizeof(double), &(p_imag[1][sense][ x]), tile_width * sizeof(double), width * sizeof(double),1 );
     }
+}
+
+void CPUBlock1D::get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2, double * dest_imag2) const {
+    get_sample(dest_stride, x, width, dest_real, dest_imag, dest_real2, dest_imag2);
 }
 
 void CPUBlock1D::rabi_coupling(double var, double delta_t) {
@@ -609,4 +604,7 @@ void CPUBlock1D::start_halo_exchange() {
         memcpy2D(&(p_imag[state_index][1 - sense][ tile_width - halo_x]), tile_width * sizeof(double), &(p_imag[state_index][1 - sense][ halo_x]), tile_width * sizeof(double), halo_x * sizeof(double),1 );
     }
 #endif
+}
+
+void CPUBlock1D::finish_halo_exchange() {
 }
