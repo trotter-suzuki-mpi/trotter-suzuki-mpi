@@ -18,7 +18,7 @@ int iterations  = 100;
 The next step is the define the lattice, the state, and the Hamiltonian:
 
 ~~~~~~~~~~~~~~~{.cpp}
-Lattice2D *grid = new Lattice2D(dimension, length);
+Lattice *grid = new Lattice2D(dimension, length);
 State *state = new SinusoidState(grid, 1, 1);
 Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
 ~~~~~~~~~~~~~~~
@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
     double delta_t = 0.01;
     int iterations  = 100;
 
-    Lattice2D *grid = new Lattice2D(dimension, length);
+    Lattice *grid = new Lattice2D(dimension, length);
     State *state = new SinusoidState(grid, 1, 1);
     Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t);
@@ -119,7 +119,7 @@ int main(int argc, char** argv) {
     double delta_t = 0.01;
     int iterations  = 100;
 
-    Lattice2D *grid = new Lattice2D(dimension, length);
+    Lattice *grid = new Lattice2D(dimension, length);
     State *state = new SinusoidState(grid, 1, 1);
     Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t);

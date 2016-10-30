@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
 #endif
 
     //set lattice
-    Lattice *grid = new Lattice(DIM, length);
+    Lattice2D *grid = new Lattice2D(DIM, length);
     //set initial state
     State *state = new GaussianState(grid, 3);
     //set hamiltonian

@@ -217,7 +217,7 @@ Construct the Hamiltonian of a single component system.
 
 Parameters
 ----------
-* `grid` : Lattice2D object 
+* `grid` : Lattice object 
     Define the geometry of the simulation.  
 * `potential` : Potential object 
     Define the external potential of the Hamiltonian (:math:`V`).  
@@ -264,7 +264,7 @@ Construct the Hamiltonian of a two component system.
 
 Parameters
 ----------
-* `grid` : Lattice2D object  
+* `grid` : Lattice object  
     Define the geometry of the simulation.  
 * `potential_1` : Potential object 
     External potential to which the first state is subjected (:math:`V_1`).  
@@ -515,7 +515,7 @@ Construct the external potential.
 
 Parameters
 ----------
-* `grid` : Lattice2D object 
+* `grid` : Lattice object 
     Define the geometry of the simulation.  
 * `filename` :  string,optional
     Name of the file that stores the external potential matrix.  
@@ -544,7 +544,7 @@ Construct the external potential.
 
 Parameters
 ----------
-* `grid` : Lattice2D object 
+* `grid` : Lattice object 
     Define the geometry of the simulation.  
 
 Returns
@@ -570,7 +570,7 @@ Construct the external potential.
 
 Parameters
 ----------
-* `grid` : Lattice2D object 
+* `grid` : Lattice object 
     Define the geometry of the simulation. 
   
 Returns
@@ -596,7 +596,7 @@ Construct the external potential.
 
 Parameters
 ----------
-* `grid` : Lattice2D object 
+* `grid` : Lattice object 
     Define the geometry of the simulation.  
 
 Returns
@@ -842,7 +842,7 @@ Construct the Solver object for a single-component system.
 
 Parameters
 ----------
-* `grid` : Lattice2D object  
+* `grid` : Lattice object  
     Define the geometry of the simulation.  
 * `state` : State object 
     State of the system.  
@@ -889,7 +889,7 @@ Construct the Solver object for a two-component system.
 
 Parameters
 ----------
-* `grid` : Lattice2D object  
+* `grid` : Lattice object  
     Define the geometry of the simulation.
 * `state1` : State object
     First component's state of the system.  
@@ -1038,7 +1038,7 @@ Create a quantum state.
 
 Parameters
 ----------
-* `grid` : Lattice2D object  
+* `grid` : Lattice object  
     Define the geometry of the simulation.
 
 Returns
@@ -1072,7 +1072,7 @@ Create a quantum state.
 
 Parameters
 ----------
-* `grid` : Lattice2D object  
+* `grid` : Lattice object  
     Define the geometry of the simulation.
 
 Returns

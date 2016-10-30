@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
 #endif
     //set lattice
-    Lattice *grid = new Lattice(DIM, length, true, true);
+    Lattice2D *grid = new Lattice2D(DIM, length, true, true);
     //set initial state
     State *state = new ExponentialState(grid, 1, 0);
     //set hamiltonian

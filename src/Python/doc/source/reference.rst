@@ -117,7 +117,7 @@ State Classes
 
       **Parameters**
 
-      * `grid` : Lattice2D object  
+      * `grid` : Lattice object  
           Define the geometry of the simulation.
 
       **Returns**
@@ -1168,7 +1168,7 @@ Potential Classes
 
       **Parameters**
       
-      * `grid` : Lattice2D object 
+      * `grid` : Lattice object 
           Define the geometry of the simulation.  
 
       **Returns**
@@ -1295,7 +1295,7 @@ Hamiltonian Classes
 
       **Parameters**
 
-      * `grid` : Lattice2D object 
+      * `grid` : Lattice object 
           Define the geometry of the simulation.  
       * `potential` : Potential object 
           Define the external potential of the Hamiltonian (:math:`V`).  
@@ -1342,7 +1342,7 @@ Hamiltonian Classes
 
       **Parameters**
 
-      * `grid` : Lattice2D object  
+      * `grid` : Lattice object  
           Define the geometry of the simulation.  
       * `potential_1` : Potential object 
           External potential to which the first state is subjected (:math:`V_1`).  
@@ -1414,7 +1414,7 @@ Solver Class
 
       **Parameters**
 
-      * `grid` : Lattice2D object  
+      * `grid` : Lattice object  
           Define the geometry of the simulation.  
       * `state` : State object 
           State of the system.  
@@ -1446,7 +1446,7 @@ Solver Class
 
       **Parameters**
 
-      * `grid` : Lattice2D object  
+      * `grid` : Lattice object  
           Define the geometry of the simulation.
       * `state1` : State object
           First component's state of the system.  
@@ -1614,7 +1614,7 @@ Tools
     
     **Parameters**
     
-    * `grid` : Lattice2D object
+    * `grid` : Lattice object
         Define the geometry of the simulation.
     * `state` : State object
         System's state.

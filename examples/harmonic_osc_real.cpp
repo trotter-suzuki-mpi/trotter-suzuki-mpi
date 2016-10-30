@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 #endif
 
     //set lattice
-    Lattice *grid = new Lattice(DIM, length, false, false, angular_velocity);
+    Lattice2D *grid = new Lattice2D(DIM, length, false, false, angular_velocity);
     //set initial state
     State *state = new State(grid);
     state->init_state(gauss_ini_state);
