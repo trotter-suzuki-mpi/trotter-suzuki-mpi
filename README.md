@@ -11,7 +11,7 @@ Key features:
   - Solving the Gross-Pitaevskii equation (e.g., [dark solitons](https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb), [vortex dynamics in Bose-Einstein Condensates](http://nbviewer.jupyter.org/github/trotter-suzuki-mpi/notebooks/blob/master/Vortex_Dynamics.ipynb)).
   - Imaginary time evolution to calculate the ground state.
   - Stationary and time-dependent external potential.
-  - A command-line interface (CLI) and a C++ application programming interface (API) for flexible use.
+  - C++ application programming interface (API).
   - A [Python](https://trotter-suzuki-mpi.readthedocs.io/) wrapper is provided.
   - Cache optimized multi-core, GPU, and hybrid kernels.
   - Near-linear scaling across multiple nodes with computations overlapping communication.

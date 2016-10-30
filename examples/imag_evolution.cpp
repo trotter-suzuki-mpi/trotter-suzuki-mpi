@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
 #endif
 
     //set lattice
-    Lattice *grid = new Lattice(DIM, length, true, true);
+    Lattice2D *grid = new Lattice2D(DIM, length, true, true);
     //set initial state
     State *state = new State(grid);
     state->init_state(super_position_two_exp_state);

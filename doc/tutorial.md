@@ -1,60 +1,7 @@
 Tutorial
 ========
 
-This tutorial is about using the command-line interface and the C++ API. If you are interested in the Python version, refer to [Read the Docs](https://trotter-suzuki-mpi.readthedocs.io/).
-
-Command-line Interface
-----------------------
-The command-line interface is severely limited in functionality. For instance, only static external potential and single-component Hamiltonians are supported. Most functionality related to the solution of various flavours of the Gross-Pitaevskii equation is also inaccessible. It is primarily useful to study the evolution of states with the linear Schrödinger equation. For anything more complicated, please use the C++ API or the Python interface.
-
-Usage: `trottersuzuki [OPTIONS] -n filename`
-
-The file specified contains the complex matrix describing the initial state in the position picture.
-
-Arguments:
-
-    -m NUMBER     Particle mass
-    -c NUMBER     Coupling constant of the self-interacting term (default: 0)
-    -d NUMBER     Matrix dimension (default: 640)
-    -l NUMBER     Physical dimension of the square lattice's edge (default: 640)
-    -t NUMBER     Single time step (default: 0.01)
-    -i NUMBER     Number of iterations (default: 1000)
-    -g            Imaginary time evolution to evolve towards the ground state
-    -k NUMBER     Kernel type (default: 0):
-                    0: CPU, cache-optimized
-                    2: GPU
-                    3: Hybrid CPU-GPU (experimental)                    
-    -s NUMBER     Snapshots are taken at every NUMBER of iterations.
-                    Zero means no snapshots. Default: 0.
-    -n FILENAME   The initial state.
-    -p FILENAME   Name of file that stores the potential operator
-                  (in coordinate representation)
-
-Examples:
-
-For using all cores of the CPU kernel with OpenMP parallelization starting on some initial state of size 640x640 in psi0.dat and taking snapshots at every ten iterations, type:
-
-    trottersuzuki -i 100 -d 640 -s 10 -n psi0.dat
-
-
-For a hundred iterations with a GPU, enter:
-
-    trotter -k 2 -i 100 -d 640 -s 10 -n psi0.dat
-
-To run it on a cluster, you must compile the code with MPI. In this case, OpenMP parallelization is disabled in the CPU kernel. Hence the total number of MPI processes must match your number of cores per node multiplied by the total number of nodes. Say, with an eight core CPU in four nodes, you would type
-
-    mpirun -np 32 trotter -i 100 -d 640 -s 10 -n psi0.dat
-
-
-Naturally, if the system is distributed, MPI must be told of a host file.
-
-The hybrid kernel is experimental. It splits the work between the GPU and the CPU. It uses one MPI thread per GPU, and uses OpenMP to use parallelism on the CPU. It can be faster than the GPU kernel alone, especially if the GPU is consumer-grade. The kernel is especially efficient if the matrix does not fit the GPU memory. For instance, given twelve physical cores in a single node with two Tesla C2050 GPUs, a 14,000x14,000 would not fit the GPU memory. The following command would calculate the part that does not fit the device memory on the CPU:
-
-    OMP_NUM_THREADS=6 mpirun -np 2 build/trotter -k 3 -i 100 -d 14000 -n psi0.dat
-
-Application Programming Interface
----------------------------------
-The command-line interface is restricted in what it can do and the full capabalities of the library are unleashed through its C++ API. Here we give an introduction to the features.
+This tutorial is about using the C++ API. If you are interested in the Python version, refer to [Read the Docs](https://trotter-suzuki-mpi.readthedocs.io/).
 
 **Multicore computations**
 
@@ -71,7 +18,7 @@ int iterations  = 100;
 The next step is the define the lattice, the state, and the Hamiltonian:
 
 ~~~~~~~~~~~~~~~{.cpp}
-Lattice2D *grid = new Lattice2D(dimension, length);
+Lattice *grid = new Lattice2D(dimension, length);
 State *state = new SinusoidState(grid, 1, 1);
 Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
 ~~~~~~~~~~~~~~~
@@ -119,7 +66,7 @@ int main(int argc, char** argv) {
     double delta_t = 0.01;
     int iterations  = 100;
 
-    Lattice2D *grid = new Lattice2D(dimension, length);
+    Lattice *grid = new Lattice2D(dimension, length);
     State *state = new SinusoidState(grid, 1, 1);
     Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t);
@@ -152,7 +99,7 @@ If the library was compiled with CUDA support, it is enough to change a single l
      Solver *solver = new Solver(grid, state, hamiltonian, delta_t, "gpu");
 ~~~~~~~~~~~~~~~
 
-The compilation is the same as above.
+The compilation is the same as above. For using multiple GPUs, compile the code with MPI and launch one process for each GPU.
 
 **Distributed version**
 
@@ -172,7 +119,7 @@ int main(int argc, char** argv) {
     double delta_t = 0.01;
     int iterations  = 100;
 
-    Lattice2D *grid = new Lattice2D(dimension, length);
+    Lattice *grid = new Lattice2D(dimension, length);
     State *state = new SinusoidState(grid, 1, 1);
     Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
     Solver *solver = new Solver(grid, state, hamiltonian, delta_t);
@@ -202,4 +149,4 @@ mpic++ -I/PATH/TO/TROTTERSUZUKI/HEADER -L/PATH/TO/TROTTERSUZUKI/LIBRARY simple_e
 
 Keep in mind that the library itself has to be compiled with MPI to make it work.
 
-The same caveats apply for execution as for the command-line interface. The MPI compilation disables OpenMP multicore execution in the CPU kernel, therefore you must launch a process for each CPU core you want use.
+The MPI compilation disables OpenMP multicore execution in the CPU kernel, therefore you must launch a process for each CPU core you want use.

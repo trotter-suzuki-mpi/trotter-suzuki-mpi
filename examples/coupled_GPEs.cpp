@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
 #endif
     //set lattice
-    Lattice *grid = new Lattice(DIM, length);
+    Lattice2D *grid = new Lattice2D(DIM, length);
     //set initial state
     State *state1 = new GaussianState(grid, 1, 1, 0., 0., PARTICLES_NUM);
     State *state2 = new GaussianState(grid, 1, 1, 0., 0., PARTICLES_NUM, M_PI/2.);
