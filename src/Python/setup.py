@@ -116,6 +116,7 @@ else:
             libraries = ['gomp']
     sources_files = ['trottersuzuki/src/common.cpp',
                      'trottersuzuki/src/cpublock.cpp',
+                     'trottersuzuki/src/cpublock1D.cpp',
                      'trottersuzuki/src/model.cpp',
                      'trottersuzuki/src/solver.cpp',
                      'trottersuzuki/trottersuzuki_wrap.cxx']

@@ -62,6 +62,7 @@ python:
 	cp ./trottersuzuki.h ./Python/trottersuzuki/src/
 	cp ./common.cpp ./Python/trottersuzuki/src/
 	cp ./cpublock.cpp ./Python/trottersuzuki/src/
+	cp ./cpublock1D.cpp ./Python/trottersuzuki/src/
 	cp ./model.cpp ./Python/trottersuzuki/src/
 	cp ./solver.cpp ./Python/trottersuzuki/src/
 	cp ./cc2kernel.cu ./Python/trottersuzuki/src/
