@@ -41,17 +41,12 @@ ifdef CUDA_LIBS
 	LIBOBJS+=cc2kernel.cu.co hybrid.cu.co
 endif
 
-OBJS=$(LIBOBJS) main.o
-
-all: trottersuzuki lib
+all: lib
 
 lib: $(LIBOBJS)
 	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -shared -o libtrottersuzuki.so $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
 	ar ru libtrottersuzuki.a $^
 	ranlib libtrottersuzuki.a
-
-trottersuzuki: $(OBJS)
-	$(CXX) $(DEFS) $(CXXFLAGS) $(CUDA_LDFLAGS) ${MPI_LIBDIR} -o $@ $^ $(LIBS) $(CUDA_LIBS) ${MPI_LIBS}
 
 %.o: %.cpp
 	$(CXX) $(DEFS) $(CXXFLAGS) ${MPI_INC} -iquote$(srcdir) -iquote.. -o $@ -c $(srcdir)/$<
@@ -80,12 +75,10 @@ python_clean:
 	-rm -rf Python/COPYING Python/trottersuzuki/src Python/*.pyc Python/trottersuzuki/*.pyc Python/trottersuzuki/*.h Python/trottersuzuki/*.cpp  Python/trottersuzuki/*.cxx Python/dist Python/trottersuzuki.egg* Python/build Python/trottersuzuki/trottersuzuki.py Python/trottersuzuki/*.so
 
 clean: python_clean
-	-rm -f trottersuzuki libtrottersuzuki.a libtrottersuzuki.so $(OBJS) 1>/dev/null
+	-rm -f libtrottersuzuki.a libtrottersuzuki.so $(LIBOBJS) 1>/dev/null
 
 install: all
 	$(INSTALL) -d $(DESTDIR)$(bindir)
-	$(INSTALL_PROGRAM) -m 0755 trottersuzuki \
-	 $(DESTDIR)$(bindir)
 	$(INSTALL_PROGRAM) -m 0755 libtrottersuzuki.a \
 	 $(DESTDIR)$(libdir)
 	$(INSTALL_PROGRAM) -m 0755 libtrottersuzuki.so \
@@ -93,7 +86,9 @@ install: all
 	$(INSTALL_PROGRAM) -m 0644 trottersuzuki.h $(DESTDIR)$(incdir)
 
 uninstall:
-	-rm $(DESTDIR)$(bindir)/trottersuzuki &>/dev/null
+	-rm $(DESTDIR)$(libdir)/libtrottersuzuki.a &>/dev/null
+	-rm $(DESTDIR)$(libdir)/libtrottersuzuki.so &>/dev/null
+	-rm $(DESTDIR)$(incdir)/trottersuzuki.h &>/dev/null
 
 Makefile: Makefile.in ../config.status
 	cd .. && ./config.status $@

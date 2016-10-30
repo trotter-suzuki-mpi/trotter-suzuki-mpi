@@ -24,7 +24,7 @@ clean:
 	$(MAKE) -C examples $@
 	$(MAKE) -C test $@
 
-trottersuzuki install uninstall lib python python_clean python_install:
+install uninstall lib python python_clean python_install:
 	$(MAKE) -C src $@
 
 example:
