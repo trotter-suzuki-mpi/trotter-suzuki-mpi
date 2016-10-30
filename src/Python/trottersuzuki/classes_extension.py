@@ -74,6 +74,12 @@ class State(_State):
         """
         real = np.zeros((self.grid.dim_y, self.grid.dim_x))
         imag = np.zeros((self.grid.dim_y, self.grid.dim_x))
+        try:
+            state_function(0)
+            def _state_function(x, y):
+                return state_function(x)
+        except TypeError:
+            _state_function = state_function
 
         delta_x = self.grid.delta_x
         delta_y = self.grid.delta_y
@@ -86,7 +92,7 @@ class State(_State):
             idx = self.grid.start_x * delta_x + 0.5 * delta_x
             for x in range(self.grid.dim_x):
                 x_r = idx - x_c
-                tmp = state_function(x_r, y_r)
+                tmp = _state_function(x_r, y_r)
                 real[y, x] = np.real(tmp)
                 imag[y, x] = np.imag(tmp)
                 idx += delta_x
@@ -331,6 +337,13 @@ class Potential(_Potential):
             >>> potential.init_potential(external_potential_function)  # Initialize the external potential
 
         """
+        try:
+            pot_function(0)
+            def _pot_function(x, y):
+                return pot_function(x)
+        except TypeError:
+            _pot_function = pot_function
+
         potential = np.zeros((self.grid.dim_y, self.grid.dim_x))
 
         delta_x = self.grid.delta_x
@@ -344,7 +357,7 @@ class Potential(_Potential):
             idx = self.grid.start_x * delta_x + 0.5 * delta_x
             for x in range(self.grid.dim_x):
                 x_r = idx - x_c
-                potential[y, x] = pot_function(x_r, y_r)
+                potential[y, x] = _pot_function(x_r, y_r)
                 idx += delta_x
             idy += delta_y
 
