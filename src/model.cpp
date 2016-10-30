@@ -21,29 +21,51 @@
 #include "common.h"
 #include<math.h>
 
-void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound) {
-    int inner = (int)ceil((double)length / (double)dim);
-    *inner_start = coord * inner;
-    if(periodic_bound != 0)
-        *start = *inner_start - halo;
-    else
-        *start = ( coord == 0 ? 0 : *inner_start - halo );
-    *end = *inner_start + (inner + halo);
-
-    if (*end > length) {
-        if(periodic_bound != 0)
-            *end = length + halo;
-        else
-            *end = length;
-    }
-    if(periodic_bound != 0)
-        *inner_end = *end - halo;
-    else
-        *inner_end = ( *end == length ? *end : *end - halo );
+double const_potential(double x) {
+    return 0.;
 }
 
 double const_potential(double x, double y) {
     return 0.;
+}
+
+Lattice1D::Lattice1D(int dim, double length, bool periodic_x_axis) {
+    length_x = length;
+    length_y = 0;
+    delta_x = length / double(dim);
+    delta_y = 1.0;
+    periods[0] = 0;
+    periods[1] = (int) periodic_x_axis;
+#ifdef HAVE_MPI
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_procs);
+    mpi_dims[0] = mpi_procs;
+    mpi_dims[1] = 1;
+    MPI_Dims_create(mpi_procs, 2, mpi_dims);  //partition all the processes (the size of MPI_COMM_WORLD's group) into an 2-dimensional topology
+    MPI_Cart_create(MPI_COMM_WORLD, 2, mpi_dims, periods, 0, &cartcomm);
+    MPI_Comm_rank(cartcomm, &mpi_rank);
+    MPI_Cart_coords(cartcomm, mpi_rank, 2, mpi_coords);
+#else
+    mpi_procs = 1;
+    mpi_rank = 0;
+    mpi_dims[0] = mpi_dims[1] = 1;
+    mpi_coords[0] = mpi_coords[1] = 0;
+#endif
+    halo_x = 4;
+    halo_y = 0;
+    global_dim_x = dim + periods[1] * 2 * halo_x;
+    global_dim_y = 1;
+    global_no_halo_dim_x = dim;
+    global_no_halo_dim_y = 1;
+    //set dimension of tiles and offsets
+    calculate_borders(mpi_coords[0], mpi_dims[0], &start_x, &end_x,
+                      &inner_start_x, &inner_end_x,
+                      dim, halo_x, periods[1]);
+    dim_x = end_x - start_x;
+    start_y = 0;
+    end_y = 1;
+    inner_start_y = 0;
+    inner_end_y = 1;
+    dim_y = 1;
 }
 
 Lattice2D::Lattice2D(int dim, double _length,
@@ -54,7 +76,9 @@ Lattice2D::Lattice2D(int dim, double _length,
 
 Lattice2D::Lattice2D(int _dim_x, double _length_x, int _dim_y, double _length_y,
                      bool periodic_x_axis, bool periodic_y_axis,
-                     double angular_velocity): length_x(_length_x), length_y(_length_y) {
+                     double angular_velocity) {
+    length_x = _length_x;
+    length_y = _length_y;
     delta_x = length_x / double(_dim_x);
     delta_y = length_y / double(_dim_y);
     periods[0] = (int) periodic_y_axis;
@@ -89,7 +113,7 @@ Lattice2D::Lattice2D(int _dim_x, double _length_x, int _dim_y, double _length_y,
     dim_y = end_y - start_y;
 }
 
-State::State(Lattice2D *_grid, double *_p_real, double *_p_imag): grid(_grid) {
+State::State(Lattice *_grid, double *_p_real, double *_p_imag): grid(_grid) {
     expected_values_updated = false;
     if (_p_real == 0) {
         self_init = true;
@@ -134,6 +158,18 @@ State::~State() {
     }
 }
 
+void State::imprint(complex<double> (*function)(double x)) {
+    double delta_x = grid->delta_x;
+    double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
+    double idx = grid->start_x * delta_x + 0.5 * delta_x;
+    for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
+        complex<double> tmp = function(idx - x_c);
+        double tmp_p_real = p_real[x];
+        p_real[x] = tmp_p_real * real(tmp) - p_imag[x] * imag(tmp);
+        p_imag[x] = tmp_p_real * imag(tmp) + p_imag[x] * real(tmp);
+    }
+}
+
 void State::imprint(complex<double> (*function)(double x, double y)) {
     double delta_x = grid->delta_x, delta_y = grid->delta_y;
     double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
@@ -147,6 +183,18 @@ void State::imprint(complex<double> (*function)(double x, double y)) {
             p_real[y * grid->dim_x + x] = tmp_p_real * real(tmp) - p_imag[y * grid->dim_x + x] * imag(tmp);
             p_imag[y * grid->dim_x + x] = tmp_p_real * imag(tmp) + p_imag[y * grid->dim_x + x] * real(tmp);
         }
+    }
+}
+
+void State::init_state(complex<double> (*ini_state)(double x)) {
+    complex<double> tmp;
+    double delta_x = grid->delta_x;
+    double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
+    double idx = grid->start_x * delta_x + 0.5 * delta_x;
+    for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
+        tmp = ini_state(idx - x_c);
+        p_real[x] = real(tmp);
+        p_imag[x] = imag(tmp);
     }
 }
 
@@ -559,7 +607,7 @@ complex<double> SinusoidState::sinusoid_state(double x, double y) {
     return sqrt(norm / (L_x * L_y)) * 2.* exp(complex<double>(0., phase)) * complex<double> (sin(2 * M_PI * double(n_x) / L_x * x) * sin(2 * M_PI * double(n_y) / L_y * y), 0.0);
 }
 
-Potential::Potential(Lattice2D *_grid, char *filename): grid(_grid) {
+Potential::Potential(Lattice *_grid, char *filename): grid(_grid) {
     matrix = new double[grid->dim_y * grid->dim_x];
     self_init = true;
     is_static = true;
@@ -574,7 +622,7 @@ Potential::Potential(Lattice2D *_grid, char *filename): grid(_grid) {
     input.close();
 }
 
-Potential::Potential(Lattice2D *_grid, double *_external_pot): grid(_grid) {
+Potential::Potential(Lattice *_grid, double *_external_pot): grid(_grid) {
     if (_external_pot == 0) {
         self_init = true;
         matrix = new double[grid->dim_x * grid->dim_y];
@@ -588,7 +636,7 @@ Potential::Potential(Lattice2D *_grid, double *_external_pot): grid(_grid) {
     static_potential = NULL;
 }
 
-Potential::Potential(Lattice2D *_grid, double (*potential_fuction)(double x, double y)): grid(_grid) {
+Potential::Potential(Lattice *_grid, double (*potential_fuction)(double x, double y)): grid(_grid) {
     is_static = true;
     self_init = false;
     evolving_potential = NULL;
@@ -596,12 +644,16 @@ Potential::Potential(Lattice2D *_grid, double (*potential_fuction)(double x, dou
     matrix = NULL;
 }
 
-Potential::Potential(Lattice2D *_grid, double (*potential_function)(double x, double y, double t), int _t): grid(_grid) {
+Potential::Potential(Lattice *_grid, double (*potential_function)(double x, double y, double t), int _t): grid(_grid) {
     is_static = false;
     self_init = false;
     evolving_potential = potential_function;
     static_potential = NULL;
     matrix = NULL;
+}
+
+double Potential::get_value(int x) {
+    return get_value(x, 0);
 }
 
 double Potential::get_value(int x, int y) {
@@ -667,14 +719,14 @@ double HarmonicPotential::get_value(int x, int y) {
 HarmonicPotential::~HarmonicPotential() {
 }
 
-Hamiltonian::Hamiltonian(Lattice2D *_grid, Potential *_potential,
+Hamiltonian::Hamiltonian(Lattice *_grid, Potential *_potential,
                          double _mass, double _coupling_a,
                          double _angular_velocity,
                          double _rot_coord_x, double _rot_coord_y): mass(_mass),
     coupling_a(_coupling_a), angular_velocity(_angular_velocity), grid(_grid) {
     if (angular_velocity != 0.) {
         if (grid->periods[0] != 0 || grid->periods[1] != 0) {
-            cout << "Boundary conditions must be closed for rotating frame of refernce\n";
+            cout << "Boundary conditions must be closed for rotating frame of reference\n";
             return;
         }
         if (grid->mpi_procs == 1) {
@@ -704,7 +756,7 @@ Hamiltonian::~Hamiltonian() {
     }
 }
 
-Hamiltonian2Component::Hamiltonian2Component(Lattice2D *_grid,
+Hamiltonian2Component::Hamiltonian2Component(Lattice *_grid,
         Potential *_potential,
         Potential *_potential_b,
         double _mass,

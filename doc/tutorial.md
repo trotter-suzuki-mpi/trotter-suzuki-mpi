@@ -165,9 +165,7 @@ There is very little modification required in the code to make it work with MPI.
 #include "trottersuzuki.h"
 
 int main(int argc, char** argv) {
-#ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
-#endif  
     double particle_mass = 1.;
     int dimension = 500.;
     double length = double(dimension);
@@ -191,9 +189,7 @@ int main(int argc, char** argv) {
     delete hamiltonian;
     delete state;
     delete grid;
-#ifdef HAVE_MPI
     MPI_Finalize();
-#endif
     return 0;
 }
 ~~~~~~~~~~~~~~~
