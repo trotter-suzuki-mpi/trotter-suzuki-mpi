@@ -32,7 +32,8 @@ MPI_LIBS       = @MPI_LIBS@
 # VPATH-related substitution variables
 srcdir	 = ./../src
 
-LIBOBJS=$(srcdir)/common.o $(srcdir)/cpublock.o $(srcdir)/solver.o  $(srcdir)/model.o
+CXXFLAGS+=-L$(srcdir)/
+LIBS=-ltrottersuzuki
 ifdef CUDA_LIBS
 	LIBOBJS+=$(srcdir)/cc2kernel.cu.co $(srcdir)/hybrid.cu.co
 endif

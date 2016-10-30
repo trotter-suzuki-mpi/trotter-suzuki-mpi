@@ -137,6 +137,90 @@ private:
 #endif
 };
 
+/**
+ * \brief This class defines the CPU kernel.
+ *
+ * This kernel provides real time and imaginary time evolution of a quantum state, using CPUs.
+ * It implements a solver for a single or two wave functions, whose evolution is governed by nonlinear Schrodinger equation (Gross Pitaevskii equation). The Hamiltonian of the physical system includes:
+ *  - time-dependent external potential
+ *  - rotating system of reference
+ *  - intra species interaction
+ *  - extra species interaction
+ *  - Rabi coupling
+ */
+
+class CPUBlock1D: public ITrotterKernel {
+public:
+    CPUBlock1D(Lattice *grid, State *state, Hamiltonian *hamiltonian,
+             double *_external_pot_real, double *_external_pot_imag,
+             double _a, double _b, double delta_t,
+             double _norm, bool _imag_time);    ///< Instantiate the kernel for single wave functions state evolution.
+
+
+    CPUBlock1D(Lattice *grid, State *state1, State *state2,
+             Hamiltonian2Component *hamiltonian,
+             double **_external_pot_real, double **_external_pot_imag,
+             double *_a, double *_b, double delta_t,
+             double *_norm, bool _imag_time);    ///< Instantiate the kernel for two wave functions state evolution.
+
+    ~CPUBlock1D();
+    void run_kernel_on_halo();          ///< Evolve blocks of wave function at the edge of the tile. This comprises the halos.
+    void run_kernel();              ///< Evolve the remaining blocks in the inner part of the tile.
+    void wait_for_completion();         ///< Synchronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution in the case of single wave-function evolution.
+    void get_sample(size_t dest_stride, size_t x,  size_t width,  double * dest_real, double * dest_imag, double * dest_real2 = 0, double * dest_imag2 = 0) const; ///< Copy the wave function from the two buffers pointed by p_real and p_imag, without halos, to dest_real and dest_imag.
+    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2 = 0, double * dest_imag2 = 0) const; ///< Copy the wave function from the two buffers pointed by p_real and p_imag, without halos, to dest_real and dest_imag.    
+    void normalization();    ///<Normalize the state when performing an imaginary time evolution (only two wave-function evolution).
+    void rabi_coupling(double var, double delta_t);    ///< Evolution corresponding to the Rabi coupling term of the Hamiltonian (only two wave-function evolution).
+    double calculate_squared_norm(bool global = true) const;  ///< Calculate squared norm of the state.
+    void update_potential(double *_external_pot_real, double *_external_pot_imag);    ///< Update memory pointed by external_potential_real and external_potential_imag (only non static external potential).
+
+    bool runs_in_place() const {
+        return false;
+    }
+    /// Get kernel name.
+    string get_name() const {
+        return "CPU";
+    };
+
+    void start_halo_exchange();         ///< Start vertical halos exchange.
+    void finish_halo_exchange();        ///< Start horizontal halos exchange.
+
+private:
+    double *p_real[2][2];       ///< Array of two pointers that point to two buffers used to store the real part of the wave function at i-th time step and (i+1)-th time step.
+    double *p_imag[2][2];       ///< Array of two pointers that point to two buffers used to store the imaginary part of the wave function at i-th time step and (i+1)-th time step.
+    double *external_pot_real[2];   ///< Points to the matrix representation (real entries) of the operator given by the exponential of external potential.
+    double *external_pot_imag[2];   ///< Points to the matrix representation (immaginary entries) of the operator given by the exponential of external potential.
+    double *a;            ///< Diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
+    double *b;            ///< Off diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
+    double delta_x;         ///< Physical length between two neighbour along x axis dots of the lattice.
+    double *norm;         ///< Squared norm of the single wave functions.
+    double tot_norm;    ///< Squared norm of the total state.
+    double *coupling_const;     ///< Coupling constant of the density self-interacting term.
+    int sense;            ///< Takes values 0 or 1 and tells which of the two buffers pointed by p_real and p_imag is used to calculate the next time step.
+    int state_index;    ///< Takes values 0 or 1 and tells which wave function is pointed by p_real and p_imag, and is being evolved.
+    size_t halo_x;          ///< Thickness of the vertical halos (number of lattice's dots).
+    size_t tile_width;        ///< Width of the tile (number of lattice's dots).
+    bool imag_time;         ///< True: imaginary time evolution; False: real time evolution.
+    static const size_t block_width = BLOCK_WIDTH_CACHE;      ///< Width of the lattice block which is cached (number of lattice's dots).
+    bool two_wavefunctions;    ///< Flag parameter to distinguish whether the kernel is evolving a two-wave-function or a single-wave-function
+
+
+    int rot_coord_x;        ///< X axis coordinate of the center of rotation.
+    int start_x;          ///< X axis coordinate of the first dot of the processed tile.
+    int end_x;            ///< X axis coordinate of the last dot of the processed tile.
+    int inner_start_x;        ///< X axis coordinate of the first dot of the processed tile, which is not in the halo.
+    int inner_end_x;        ///< X axis coordinate of the last dot of the processed tile, which is not in the halo.
+    int *periods;         ///< Two dimensional array which takes entries 0 or 1. 1: periodic boundary condition along the corresponding axis; 0: closed boundary condition along the corresponding axis.
+#ifdef HAVE_MPI
+    MPI_Comm cartcomm;        ///< Ensemble of processes communicating the halos and evolving the tiles.
+    int neighbors[4];       ///< Array that stores the processes' rank neighbour of the current process.
+    MPI_Request req[8];       ///< Variable to manage MPI communication.
+    MPI_Status statuses[8];     ///< Variable to manage MPI communication.
+    MPI_Datatype horizontalBorder;  ///< Datatype for the horizontal halos.
+    MPI_Datatype verticalBorder;  ///< Datatype for the vertical halos.
+#endif
+};
+
 #ifdef CUDA
 
 //#define DISABLE_FMA
