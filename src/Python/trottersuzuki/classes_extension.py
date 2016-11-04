@@ -1,10 +1,29 @@
 import numpy as np
+from .trottersuzuki import Lattice1D as _Lattice1D
 from .trottersuzuki import Lattice2D as _Lattice2D
 from .trottersuzuki import State as _State
 from .trottersuzuki import GaussianState as _GaussianState
 from .trottersuzuki import SinusoidState as _SinusoidState
 from .trottersuzuki import ExponentialState as _ExponentialState
 from .trottersuzuki import Potential as _Potential
+
+
+class Lattice1D(_Lattice1D):
+
+    def get_x_axis(self):
+        """
+        Get the x-axis of the lattice.
+
+        Returns
+        -------
+        * `x_axis` : numpy array
+            X-axis of the lattice
+        """
+        x_axis = np.arange(self.global_no_halo_dim_x) - self.global_no_halo_dim_x * 0.5 + 0.5
+        x_axis *= self.delta_x
+
+        return x_axis
+
 
 class Lattice2D(_Lattice2D):
 
