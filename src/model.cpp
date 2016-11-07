@@ -70,11 +70,19 @@ Lattice1D::Lattice1D(int dim, double length, bool periodic_x_axis) {
 
 Lattice2D::Lattice2D(int dim, double _length,
                      bool periodic_x_axis, bool periodic_y_axis,
-                     double angular_velocity): Lattice2D(dim, _length,
-                     dim, _length, periodic_x_axis, periodic_y_axis,
-                     angular_velocity) {}
+                     double angular_velocity) {
+    init(dim, _length, dim, _length, periodic_x_axis, periodic_y_axis,
+         angular_velocity);
+}
 
 Lattice2D::Lattice2D(int _dim_x, double _length_x, int _dim_y, double _length_y,
+                     bool periodic_x_axis, bool periodic_y_axis,
+                     double angular_velocity) {
+    init(_dim_x, _length_x, _dim_y, _length_y, periodic_x_axis, periodic_y_axis,
+         angular_velocity);
+}
+
+void Lattice2D::init(int _dim_x, double _length_x, int _dim_y, double _length_y,
                      bool periodic_x_axis, bool periodic_y_axis,
                      double angular_velocity) {
     length_x = _length_x;

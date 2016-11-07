@@ -4,7 +4,7 @@ The module is a massively parallel implementation of the Trotter-Suzuki approxim
 
 Key features of the Python interface:
 
-* Simulation of 2D quantum systems.
+* Simulation of 1D and 2D quantum systems.
 * Fast execution by parallelization: OpenMP and CUDA are supported.
 * Many-body simulations with non-interacting particles.
 * Solving the Gross-Pitaevskii equation  (e.g., `dark solitons <https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb>`_, `vortex dynamics in Bose-Einstein Condensates <http://nbviewer.jupyter.org/github/trotter-suzuki-mpi/notebooks/blob/master/Vortex_Dynamics.ipynb>`_).
@@ -22,7 +22,7 @@ Trotter-Suzuki-MPI is distributed in the hope that it will be useful, but WITHOU
 
 Acknowledgement
 ---------------
-The `original high-performance kernels <https://bitbucket.org/zzzoom/trottersuzuki>`_ were developed by Carlos Bederián. The distributed extension was carried out while `Peter Wittek <http://peterwittek.com/>`_ was visiting the `Department of Computer Applications in Science \& Engineering <http://www.bsc.es/computer-applications>`_ at the `Barcelona Supercomputing Center <http://www.bsc.es/>`_, funded by the "Access to BSC Facilities" project of the `HPC-Europe2 <http://www.hpc-europa.org/>`_ programme (contract no. 228398). Generalizing the capabilities of kernels was carried out by Luca Calderaro while visiting the `Quantum Information Theory Group <https://www.icfo.eu/research/group_details.php?id=19>`_ at `ICFO-The Institute of Photonic Sciences <https://www.icfo.eu/>`_, sponsored by the `Erasmus+ <http://ec.europa.eu/programmes/erasmus-plus/index_en.htm>`_ programme. Further computational resources were granted by the `Spanish Supercomputing Network <https://www.bsc.es/marenostrum-support-services/res>`_ (FY-2015-2-0023) and the `Swedish National Infrastructure for Computing <http://www.snic.se/>`_ (SNIC 2015/1-162 and 2016/1-320), and a hardware grant by `Nvidia <https://www.nvidia.com/>`_. `Pietro Massignan <http://users.icfo.es/Pietro.Massignan/>`_ has contributed to the project with extensive testing and suggestions of new features.
+The `original high-performance kernels <https://bitbucket.org/zzzoom/trottersuzuki>`_ were developed by Carlos Bederián. The distributed extension was carried out while `Peter Wittek <http://peterwittek.com/>`_ was visiting the `Department of Computer Applications in Science \& Engineering <http://www.bsc.es/computer-applications>`_ at the `Barcelona Supercomputing Center <http://www.bsc.es/>`_, funded by the "Access to BSC Facilities" project of the `HPC-Europe2 <http://www.hpc-europa.org/>`_ programme (contract no. 228398). Generalizing the capabilities of kernels was carried out by Luca Calderaro while visiting the `Quantum Information Theory Group <https://www.icfo.eu/research/group_details.php?id=19>`_ at `ICFO-The Institute of Photonic Sciences <https://www.icfo.eu/>`_, sponsored by the `Erasmus+ <http://ec.europa.eu/programmes/erasmus-plus/index_en.htm>`_ programme. Further computational resources were granted by the `Spanish Supercomputing Network <https://www.bsc.es/RES>`_ (FY-2015-2-0023 and FI-2016-3-0042) and the `Swedish National Infrastructure for Computing <http://www.snic.se/>`_ (SNIC 2015/1-162 and 2016/1-320), and a hardware grant by `Nvidia <https://www.nvidia.com/>`_. `Pietro Massignan <http://users.icfo.es/Pietro.Massignan/>`_ has contributed to the project with extensive testing and suggestions of new features.
 
 Citations
 ---------

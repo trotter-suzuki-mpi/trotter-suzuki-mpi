@@ -5,7 +5,7 @@ The Trotter-Suzuki approximation leads to an efficient algorithm for simulating 
 
 Key features:
 
-  - Simulation of 2D quantum systems.
+  - Simulation of 1D and 2D quantum systems.
   - Arbitrary single-body initial state with closed and periodic boundary conditions.
   - Many-body simulations with non-interacting particles.
   - Solving the Gross-Pitaevskii equation (e.g., [dark solitons](https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb), [vortex dynamics in Bose-Einstein Condensates](http://nbviewer.jupyter.org/github/trotter-suzuki-mpi/notebooks/blob/master/Vortex_Dynamics.ipynb)).
@@ -16,7 +16,7 @@ Key features:
   - Cache optimized multi-core, GPU, and hybrid kernels.
   - Near-linear scaling across multiple nodes with computations overlapping communication.
 
-The documentation of the CLI and the C++ interface is available at [trotter-suzuki-mpi.github.io](https://trotter-suzuki-mpi.github.io/). The Python documentation is on [Read the Docs](https://trotter-suzuki-mpi.readthedocs.io/).
+The documentation of the C++ interface is available at [trotter-suzuki-mpi.github.io](https://trotter-suzuki-mpi.github.io/). The Python documentation is on [Read the Docs](https://trotter-suzuki-mpi.readthedocs.io/).
 
 Copyright and License
 ---------------------
@@ -26,7 +26,7 @@ Trotter-Suzuki-MPI is distributed in the hope that it will be useful, but WITHOU
 
 Acknowledgement
 ---------------
-The [original high-performance kernels](https://bitbucket.org/zzzoom/trottersuzuki) were developed by Carlos Bederián. The distributed extension was carried out while [Peter Wittek](http://peterwittek.com/) was visiting the [Department of Computer Applications in Science \& Engineering](http://www.bsc.es/computer-applications) at the [Barcelona Supercomputing Center](http://www.bsc.es/), funded by the "Access to BSC Facilities" project of the [HPC-Europe2](http://www.hpc-europa.org/) programme (contract no. 228398). Generalizing the capabilities of kernels was carried out by Luca Calderaro while visiting the [Quantum Information Theory Group](https://www.icfo.eu/research/group_details.php?id=19) at [ICFO-The Institute of Photonic Sciences](https://www.icfo.eu/), sponsored by the [Erasmus+](http://ec.europa.eu/programmes/erasmus-plus/index_en.htm) programme. Further computational resources were granted by the [Spanish Supercomputing Network](https://www.bsc.es/marenostrum-support-services/res) (FY-2015-2-0023) and the [Swedish National Infrastructure for Computing](http://www.snic.se/) (SNIC 2015/1-162 and 2016/1-320), and a hardware donation by [Nvidia](https://www.nvidia.com/). [Pietro Massignan](http://users.icfo.es/Pietro.Massignan/) has contributed to the project with extensive testing and suggestions of new features.
+The [original high-performance kernels](https://bitbucket.org/zzzoom/trottersuzuki) were developed by Carlos Bederián. The distributed extension was carried out while [Peter Wittek](http://peterwittek.com/) was visiting the [Department of Computer Applications in Science \& Engineering](http://www.bsc.es/computer-applications) at the [Barcelona Supercomputing Center](http://www.bsc.es/), funded by the "Access to BSC Facilities" project of the [HPC-Europe2](http://www.hpc-europa.org/) programme (contract no. 228398). Generalizing the capabilities of kernels was carried out by Luca Calderaro while visiting the [Quantum Information Theory Group](https://www.icfo.eu/research/group_details.php?id=19) at [ICFO-The Institute of Photonic Sciences](https://www.icfo.eu/), sponsored by the [Erasmus+](http://ec.europa.eu/programmes/erasmus-plus/index_en.htm) programme. Further computational resources were granted by the [Spanish Supercomputing Network](https://www.bsc.es/RES) (FY-2015-2-0023 and FI-2016-3-0042) and the [Swedish National Infrastructure for Computing](http://www.snic.se/) (SNIC 2015/1-162 and 2016/1-320), and a hardware donation by [Nvidia](https://www.nvidia.com/). [Pietro Massignan](http://users.icfo.es/Pietro.Massignan/) has contributed to the project with extensive testing and suggestions of new features.
 
 References
 ----------
