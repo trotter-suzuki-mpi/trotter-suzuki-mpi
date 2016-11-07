@@ -2,6 +2,75 @@
 Function Reference
 ******************
 
+Lattice1D Class
+===============
+.. py:class:: Lattice1D
+   :module: trottersuzuki
+
+   This class defines the lattice structure over which the state and potential
+   matrices are defined.
+
+   **Constructors**
+
+   .. py:method:: Lattice2D(dim_x, length_x, periodic_x_axis=False)
+
+      Construct the Lattice2D.
+
+      **Parameters**
+
+      * `dim_x` : integer
+          Linear dimension of the squared lattice in the x direction.
+      * `length_x` : float
+          Physical length of the lattice's side in the x direction.
+      * `periodic_x_axis` : bool,optional (default: False)
+          Boundary condition along the x axis (false=closed, true=periodic).
+
+      **Returns**
+
+      * `Lattice1D` : Lattice1D object
+          Define the geometry of the simulation.
+
+      **Notes**
+
+      The lattice created is squared.
+
+      **Example**
+
+
+          >>> import trottersuzuki as ts  # import the module
+          >>> # Generate a 200-point Lattice1D with physical dimensions of 30
+          >>> # and closed boundary conditions.
+          >>> grid = ts.Lattice1D(200, 30.)
+
+   **Members**
+
+   .. py:method:: get_x_axis()
+      :module: trottersuzuki
+
+      Get the x-axis of the lattice.
+
+      **Returns**
+
+      * `x_axis` : numpy array
+          X-axis of the lattice
+
+   **Attributes**
+
+   .. py:attribute:: length_x
+      :module: trottersuzuki
+
+      Physical length of the lattice along the X-axis.
+
+   .. py:attribute:: dim_x
+      :module: trottersuzuki
+
+      Number of dots of the lattice along the X-axis.
+
+   .. py:attribute:: delta_x
+      :module: trottersuzuki
+
+      Resolution of the lattice along the X-axis: ratio between `lenth_x` and `dim_x`.
+
 Lattice2D Class
 ===============
 .. py:class:: Lattice2D
@@ -11,13 +80,13 @@ Lattice2D Class
    matrices are defined.
 
    **Constructors**
-   
+
    .. py:method:: Lattice2D(dim_x, length_x, dim_y=None, length_y=None, periodic_x_axis=False, periodic_y_axis=False)
 
       Construct the Lattice2D.
 
       **Parameters**
-      
+
       * `dim_x` : integer
           Linear dimension of the squared lattice in the x direction.
       * `length_x` : float
@@ -27,13 +96,13 @@ Lattice2D Class
       * `length_y` : float,optional (default: equal to length_x)
           Physical length of the lattice's side in the y direction.
       * `periodic_x_axis` : bool,optional (default: False)
-          Boundary condition along the x axis (false=closed, true=periodic).  
-      * `periodic_y_axis` : bool,optional (default: False) 
+          Boundary condition along the x axis (false=closed, true=periodic).
+      * `periodic_y_axis` : bool,optional (default: False)
           Boundary condition along the y axis (false=closed, true=periodic).
 
       **Returns**
 
-      * `Lattice2D` : Lattice2D object 
+      * `Lattice2D` : Lattice2D object
           Define the geometry of the simulation.
 
       **Notes**
@@ -54,7 +123,7 @@ Lattice2D Class
       :module: trottersuzuki
 
       Get the x-axis of the lattice.
-        
+
       **Returns**
 
       * `x_axis` : numpy array
@@ -62,44 +131,44 @@ Lattice2D Class
 
    .. py:method:: get_y_axis()
       :module: trottersuzuki
-      
+
       Get the y-axis of the lattice.
-        
+
       **Returns**
 
       * `y_axis` : numpy array
           Y-axis of the lattice
 
    **Attributes**
-   
+
    .. py:attribute:: length_x
       :module: trottersuzuki
-      
+
       Physical length of the lattice along the X-axis.
-      
+
    .. py:attribute:: length_y
       :module: trottersuzuki
-      
+
       Physical length of the lattice along the Y-axis.
-      
+
    .. py:attribute:: dim_x
       :module: trottersuzuki
-      
+
       Number of dots of the lattice along the X-axis.
 
    .. py:attribute:: dim_y
       :module: trottersuzuki
-      
+
       Number of dots of the lattice along the Y-axis.
 
    .. py:attribute:: delta_x
       :module: trottersuzuki
-      
+
       Resolution of the lattice along the X-axis: ratio between `lenth_x` and `dim_x`.
 
    .. py:attribute:: delta_y
       :module: trottersuzuki
-      
+
       Resolution of the lattice along the y-axis: ratio between `lenth_y` and `dim_y`.
 
 State Classes
@@ -112,12 +181,12 @@ State Classes
    **Constructors**
 
    .. py:method:: State(grid)
-      
-      Create a quantum state.  
+
+      Create a quantum state.
 
       **Parameters**
 
-      * `grid` : Lattice object  
+      * `grid` : Lattice object
           Define the geometry of the simulation.
 
       **Returns**
@@ -135,14 +204,14 @@ State Classes
           >>> state.ini_state(wave_function)  # Initialize the wave function of the state
 
    .. py:method:: State(state)
-   
+
       Copy a quantum state.
-      
+
       **Parameters**
 
-      * `state` : State object  
+      * `state` : State object
           Quantum state to be copied
-      
+
       **Returns**
 
       * `state` : State object
@@ -154,12 +223,12 @@ State Classes
           >>> grid = ts.Lattice2D()  # Define the simulation's geometry
           >>> state = ts.GaussianState(grid, 1.)  # Create the system's state with a gaussian wave function
           >>> state2 = ts.State(state)  # Copy state into state2
-   
+
    **Members**
-   
+
    .. py:method:: State.init_state(state_function):
       :module: trottersuzuki
-      
+
       Initialize the wave function of the state using a function.
 
       **Parameters**
@@ -179,28 +248,28 @@ State Classes
          >>>     return 1.
          >>> state = ts.State(grid)  # Create the system's state
          >>> state.ini_state(wave_function)  # Initialize the wave function of the state
-   
+
    .. py:method:: State.imprint(function)
       :module: trottersuzuki
-      
+
         Multiply the wave function of the state by the function provided.
-        
+
         **Parameters**
 
         * `function` : python function
             Function to be printed on the state.
-        
+
         **Notes**
 
-        Useful, for instance, to imprint solitons and vortices on a condensate. 
+        Useful, for instance, to imprint solitons and vortices on a condensate.
         Generally, it performs a transformation of the state whose wave function becomes:
-        
+
         .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
-        
-        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.        
-        
+
+        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.
+
         **Example**
-        
+
             >>> import trottersuzuki as ts  # import the module
             >>> grid = ts.Lattice2D()  # Define the simulation's geometry
             >>> def vortex(x,y):  # Vortex function
@@ -209,11 +278,11 @@ State Classes
             >>>     return np.exp(1j * angle)
             >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
             >>> state.imprint(vortex)  # Imprint a vortex on the state
-         
+
    .. py:method:: State.get_mean_px()
       :module: trottersuzuki
 
-      Return the expected value of the :math:`P_x` operator.  
+      Return the expected value of the :math:`P_x` operator.
 
       **Returns**
 
@@ -235,7 +304,7 @@ State Classes
    .. py:method:: State.get_mean_py()
       :module: trottersuzuki
 
-      Return the expected value of the :math:`P_y` operator.  
+      Return the expected value of the :math:`P_y` operator.
 
       **Returns**
 
@@ -245,22 +314,22 @@ State Classes
    .. py:method:: State.get_mean_pypy()
       :module: trottersuzuki
 
-      Return the expected value of the :math:`P_y^2` operator.  
+      Return the expected value of the :math:`P_y^2` operator.
 
       **Returns**
 
       * `mean_pypy` : float
-            Expected value of the :math:`P_y^2` operator. 
+            Expected value of the :math:`P_y^2` operator.
 
    .. py:method:: State.get_mean_x()
       :module: trottersuzuki
 
-      Return the expected value of the :math:`X` operator.  
+      Return the expected value of the :math:`X` operator.
 
       **Returns**
 
       * `mean_x` : float
-            Expected value of the :math:`X` operator. 
+            Expected value of the :math:`X` operator.
 
    .. py:method:: State.get_mean_xx()
       :module: trottersuzuki
@@ -270,7 +339,7 @@ State Classes
       **Returns**
 
       * `mean_xx` : float
-            Expected value of the :math:`X^2` operator.   
+            Expected value of the :math:`X^2` operator.
 
 
    .. py:method:: State.get_mean_y()
@@ -279,7 +348,7 @@ State Classes
       Return the expected value of the :math:`Y` operator.
 
       **Returns**
-      
+
       * `mean_y` : float
             Expected value of the :math:`Y` operator.
 
@@ -289,7 +358,7 @@ State Classes
       Return the expected value of the :math:`Y^2` operator.
 
       **Returns**
-      
+
       * `mean_yy` : float
             Expected value of the :math:`Y^2` operator.
 
@@ -299,9 +368,9 @@ State Classes
       Return a matrix storing the squared norm of the wave function.
 
       **Returns**
-      
+
       * `particle_density` : numpy matrix
-          Particle density of the state :math:`|\psi(x,y)|^2` 
+          Particle density of the state :math:`|\psi(x,y)|^2`
 
 
    .. py:method:: State.get_phase()
@@ -327,7 +396,7 @@ State Classes
 
    .. py:method:: State.loadtxt(file_name)
       :module: trottersuzuki
-      
+
       Load the wave function from a file.
 
       **Parameters**
@@ -350,30 +419,30 @@ State Classes
       Write to a file the particle density matrix of the wave function.
 
       **Parameters**
-      
+
       * `file_name` : string
-          Name of the file. 
+          Name of the file.
 
    .. py:method:: State.write_phase(file_name)
       :module: trottersuzuki
 
-      Write to a file the wave function.  
+      Write to a file the wave function.
 
       **Parameters**
-      
+
       * `file_name` : string
-            Name of the file to be written. 
+            Name of the file to be written.
 
 
    .. py:method:: State.write_to_file(file_name)
       :module: trottersuzuki
 
-      Write to a file the wave function.  
+      Write to a file the wave function.
 
       **Parameters**
 
       * `file_name` : string
-            Name of the file to be written. 
+            Name of the file to be written.
 
       **Example**
 
@@ -396,37 +465,37 @@ State Classes
 
    .. py:method:: ExponentialState(grid, n_x=1, n_y=1, norm=1, phase=0)
       :module: trottersuzuki
-      
+
       Construct the quantum state with exponential like wave function.
 
       **Parameters**
 
-      * `grid` : Lattice2D object 
-          Defines the geometry of the simulation.  
+      * `grid` : Lattice2D object
+          Defines the geometry of the simulation.
       * `n_x` : integer,optional (default: 1)
-          First quantum number.  
+          First quantum number.
       * `n_y` : integer,optional (default: 1)
-          Second quantum number.  
+          Second quantum number.
       * `norm` : float,optional (default: 1)
-          Squared norm of the quantum state.  
+          Squared norm of the quantum state.
       * `phase` : float,optional (default: 0)
-          Relative phase of the wave function. 
+          Relative phase of the wave function.
 
       **Returns**
 
-      * `ExponentialState` : State object. 
+      * `ExponentialState` : State object.
           Quantum state with exponential like wave function. The wave function is give by:\n
-          
+
           .. math:: \psi(x,y) = \sqrt{N}/L \mathrm{e}^{i 2 \pi (n_x x + n_y y) / L} \mathrm{e}^{i \phi}
-          
-          being :math:`N` the norm of the state, :math:`L` 
-          the length of the lattice edge, :math:`n_x` and :math:`n_y` the quantum numbers 
+
+          being :math:`N` the norm of the state, :math:`L`
+          the length of the lattice edge, :math:`n_x` and :math:`n_y` the quantum numbers
           and :math:`\phi` the relative phase.
 
       **Notes**
 
-      The geometry of the simulation has to have periodic boundary condition 
-      to use Exponential state as initial state of a real time evolution. 
+      The geometry of the simulation has to have periodic boundary condition
+      to use Exponential state as initial state of a real time evolution.
       Indeed, the wave function is not null at the edges of the space.
 
       **Example**
@@ -439,25 +508,25 @@ State Classes
 
    .. py:method:: ExponentialState.imprint(function)
       :module: trottersuzuki
-      
+
         Multiply the wave function of the state by the function provided.
-        
+
         **Parameters**
 
         * `function` : python function
             Function to be printed on the state.
-        
+
         **Notes**
 
-        Useful, for instance, to imprint solitons and vortices on a condensate. 
+        Useful, for instance, to imprint solitons and vortices on a condensate.
         Generally, it performs a transformation of the state whose wave function becomes:
-        
+
         .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
-        
-        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.        
-        
+
+        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.
+
         **Example**
-        
+
             >>> import trottersuzuki as ts  # import the module
             >>> grid = ts.Lattice2D()  # Define the simulation's geometry
             >>> def vortex(x,y):  # Vortex function
@@ -470,7 +539,7 @@ State Classes
    .. py:method:: ExponentialState.get_mean_px()
       :module: trottersuzuki
 
-      Return the expected value of the :math:`P_x` operator.  
+      Return the expected value of the :math:`P_x` operator.
 
       **Returns**
 
@@ -492,7 +561,7 @@ State Classes
    .. py:method:: ExponentialState.get_mean_py()
       :module: trottersuzuki
 
-      Return the expected value of the :math:`P_y` operator.  
+      Return the expected value of the :math:`P_y` operator.
 
       **Returns**
 
@@ -502,22 +571,22 @@ State Classes
    .. py:method:: ExponentialState.get_mean_pypy()
       :module: trottersuzuki
 
-      Return the expected value of the :math:`P_y^2` operator.  
+      Return the expected value of the :math:`P_y^2` operator.
 
       **Returns**
 
       * `mean_pypy` : float
-            Expected value of the :math:`P_y^2` operator. 
+            Expected value of the :math:`P_y^2` operator.
 
    .. py:method:: ExponentialState.get_mean_x()
       :module: trottersuzuki
 
-      Return the expected value of the :math:`X` operator.  
+      Return the expected value of the :math:`X` operator.
 
       **Returns**
 
       * `mean_x` : float
-            Expected value of the :math:`X` operator. 
+            Expected value of the :math:`X` operator.
 
    .. py:method:: ExponentialState.get_mean_xx()
       :module: trottersuzuki
@@ -527,7 +596,7 @@ State Classes
       **Returns**
 
       * `mean_xx` : float
-            Expected value of the :math:`X^2` operator.   
+            Expected value of the :math:`X^2` operator.
 
 
    .. py:method:: ExponentialState.get_mean_y()
@@ -536,7 +605,7 @@ State Classes
       Return the expected value of the :math:`Y` operator.
 
       **Returns**
-      
+
       * `mean_y` : float
             Expected value of the :math:`Y` operator.
 
@@ -546,7 +615,7 @@ State Classes
       Return the expected value of the :math:`Y^2` operator.
 
       **Returns**
-      
+
       * `mean_yy` : float
             Expected value of the :math:`Y^2` operator.
 
@@ -556,9 +625,9 @@ State Classes
       Return a matrix storing the squared norm of the wave function.
 
       **Returns**
-      
+
       * `particle_density` : numpy matrix
-          Particle density of the state :math:`|\psi(x,y)|^2` 
+          Particle density of the state :math:`|\psi(x,y)|^2`
 
 
    .. py:method:: ExponentialState.get_phase()
@@ -584,7 +653,7 @@ State Classes
 
    .. py:method:: ExponentialState.loadtxt(file_name)
       :module: trottersuzuki
-      
+
       Load the wave function from a file.
 
       **Parameters**
@@ -607,30 +676,30 @@ State Classes
       Write to a file the particle density matrix of the wave function.
 
       **Parameters**
-      
+
       * `file_name` : string
-          Name of the file. 
+          Name of the file.
 
    .. py:method:: ExponentialState.write_phase(file_name)
       :module: trottersuzuki
 
-      Write to a file the wave function.  
+      Write to a file the wave function.
 
       **Parameters**
-      
+
       * `file_name` : string
-            Name of the file to be written. 
+            Name of the file to be written.
 
 
    .. py:method:: ExponentialState.write_to_file(file_name)
       :module: trottersuzuki
 
-      Write to a file the wave function.  
+      Write to a file the wave function.
 
       **Parameters**
 
       * `file_name` : string
-            Name of the file to be written. 
+            Name of the file to be written.
 
       **Example**
 
@@ -651,42 +720,42 @@ State Classes
    This class is a child of State class.
 
    **Constructors**
-   
+
    .. py:method:: GaussianState(grid, omega_x, omega_y=omega_x, mean_x=0, mean_y=0, norm=1, phase=0)
 
-      Construct the quantum state with gaussian like wave function.  
+      Construct the quantum state with gaussian like wave function.
 
       **Parameters**
 
-      * `grid` : Lattice2D object 
-          Defines the geometry of the simulation.  
+      * `grid` : Lattice2D object
+          Defines the geometry of the simulation.
       * `omega_x` : float
-          Inverse of the variance along x-axis.  
-      * `omega_y` : float, optional (default: omega_x) 
+          Inverse of the variance along x-axis.
+      * `omega_y` : float, optional (default: omega_x)
           Inverse of the variance along y-axis.
       * `mean_x` : float, optional (default: 0)
-          X coordinate of the gaussian function's peak.  
+          X coordinate of the gaussian function's peak.
       * `mean_y` : float, optional (default: 0)
-          Y coordinate of the gaussian function's peak.  
-      * `norm` : float, optional (default: 1) 
-          Squared norm of the state.  
-      * `phase` : float, optional (default: 0) 
-          Relative phase of the wave function. 
+          Y coordinate of the gaussian function's peak.
+      * `norm` : float, optional (default: 1)
+          Squared norm of the state.
+      * `phase` : float, optional (default: 0)
+          Relative phase of the wave function.
 
       **Returns**
 
-      * `GaussianState` : State object. 
+      * `GaussianState` : State object.
           Quantum state with gaussian like wave function. The wave function is given by:\n
-          
+
           .. math:: \psi(x,y) = (N/\pi)^{1/2} (\omega_x \omega_y)^{1/4} \mathrm{e}^{-(\omega_x(x-\mu_x)^2 + \omega_y(y-\mu_y)^2)/2} \mathrm{e}^{i \phi}
-          
-          being :math:`N` the norm of the state, :math:`\omega_x` and :math:`\omega_y` 
+
+          being :math:`N` the norm of the state, :math:`\omega_x` and :math:`\omega_y`
           the inverse of the variances, :math:`\mu_x` and :math:`\mu_y` the coordinates of the
           function's peak and :math:`\phi` the relative phase.
 
       **Notes**
 
-      The physical dimensions of the Lattice2D have to be enough to ensure that 
+      The physical dimensions of the Lattice2D have to be enough to ensure that
       the wave function is almost zero at the edges.
 
       **Example**
@@ -699,25 +768,25 @@ State Classes
 
    .. py:method:: GaussianState.imprint(function)
       :module: trottersuzuki
-      
+
         Multiply the wave function of the state by the function provided.
-        
+
         **Parameters**
 
         * `function` : python function
             Function to be printed on the state.
-        
+
         **Notes**
 
-        Useful, for instance, to imprint solitons and vortices on a condensate. 
+        Useful, for instance, to imprint solitons and vortices on a condensate.
         Generally, it performs a transformation of the state whose wave function becomes:
-        
+
         .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
-        
-        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.        
-        
+
+        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.
+
         **Example**
-        
+
             >>> import trottersuzuki as ts  # import the module
             >>> grid = ts.Lattice2D()  # Define the simulation's geometry
             >>> def vortex(x,y):  # Vortex function
@@ -730,7 +799,7 @@ State Classes
    .. py:method:: GaussianState.get_mean_px()
       :module: trottersuzuki
 
-      Return the expected value of the :math:`P_x` operator.  
+      Return the expected value of the :math:`P_x` operator.
 
       **Returns**
 
@@ -752,7 +821,7 @@ State Classes
    .. py:method:: GaussianState.get_mean_py()
       :module: trottersuzuki
 
-      Return the expected value of the :math:`P_y` operator.  
+      Return the expected value of the :math:`P_y` operator.
 
       **Returns**
 
@@ -762,22 +831,22 @@ State Classes
    .. py:method:: GaussianState.get_mean_pypy()
       :module: trottersuzuki
 
-      Return the expected value of the :math:`P_y^2` operator.  
+      Return the expected value of the :math:`P_y^2` operator.
 
       **Returns**
 
       * `mean_pypy` : float
-            Expected value of the :math:`P_y^2` operator. 
+            Expected value of the :math:`P_y^2` operator.
 
    .. py:method:: GaussianState.get_mean_x()
       :module: trottersuzuki
 
-      Return the expected value of the :math:`X` operator.  
+      Return the expected value of the :math:`X` operator.
 
       **Returns**
 
       * `mean_x` : float
-            Expected value of the :math:`X` operator. 
+            Expected value of the :math:`X` operator.
 
    .. py:method:: GaussianState.get_mean_xx()
       :module: trottersuzuki
@@ -787,7 +856,7 @@ State Classes
       **Returns**
 
       * `mean_xx` : float
-            Expected value of the :math:`X^2` operator.   
+            Expected value of the :math:`X^2` operator.
 
 
    .. py:method:: GaussianState.get_mean_y()
@@ -796,7 +865,7 @@ State Classes
       Return the expected value of the :math:`Y` operator.
 
       **Returns**
-      
+
       * `mean_y` : float
             Expected value of the :math:`Y` operator.
 
@@ -806,7 +875,7 @@ State Classes
       Return the expected value of the :math:`Y^2` operator.
 
       **Returns**
-      
+
       * `mean_yy` : float
             Expected value of the :math:`Y^2` operator.
 
@@ -816,9 +885,9 @@ State Classes
       Return a matrix storing the squared norm of the wave function.
 
       **Returns**
-      
+
       * `particle_density` : numpy matrix
-          Particle density of the state :math:`|\psi(x,y)|^2` 
+          Particle density of the state :math:`|\psi(x,y)|^2`
 
 
    .. py:method:: GaussianState.get_phase()
@@ -844,7 +913,7 @@ State Classes
 
    .. py:method:: GaussianState.loadtxt(file_name)
       :module: trottersuzuki
-      
+
       Load the wave function from a file.
 
       **Parameters**
@@ -867,30 +936,30 @@ State Classes
       Write to a file the particle density matrix of the wave function.
 
       **Parameters**
-      
+
       * `file_name` : string
-          Name of the file. 
+          Name of the file.
 
    .. py:method:: GaussianState.write_phase(file_name)
       :module: trottersuzuki
 
-      Write to a file the wave function.  
+      Write to a file the wave function.
 
       **Parameters**
-      
+
       * `file_name` : string
-            Name of the file to be written. 
+            Name of the file to be written.
 
 
    .. py:method:: GaussianState.write_to_file(file_name)
       :module: trottersuzuki
 
-      Write to a file the wave function.  
+      Write to a file the wave function.
 
       **Parameters**
 
       * `file_name` : string
-            Name of the file to be written. 
+            Name of the file to be written.
 
       **Example**
 
@@ -910,33 +979,33 @@ State Classes
    This class is a child of State class.
 
    **Constructors**
-   
+
    .. py:method:: SinusoidState(grid, n_x=1, n_y=1, norm=1, phase=0)
-   
-      Construct the quantum state with sinusoidal like wave function.  
+
+      Construct the quantum state with sinusoidal like wave function.
 
       **Parameters**
 
-      * `grid` : Lattice2D object  
-          Define the geometry of the simulation.  
-      * `n_x` : integer, optional (default: 1) 
-          First quantum number.  
-      * `n_y` : integer, optional (default: 1)  
-          Second quantum number.  
-      * `norm` : float, optional (default: 1)  
-          Squared norm of the quantum state.  
-      * `phase` : float, optional (default: 1) 
+      * `grid` : Lattice2D object
+          Define the geometry of the simulation.
+      * `n_x` : integer, optional (default: 1)
+          First quantum number.
+      * `n_y` : integer, optional (default: 1)
+          Second quantum number.
+      * `norm` : float, optional (default: 1)
+          Squared norm of the quantum state.
+      * `phase` : float, optional (default: 1)
           Relative phase of the wave function.
 
       **Returns**
 
-      * `SinusoidState` : State object. 
+      * `SinusoidState` : State object.
           Quantum state with sinusoidal like wave function. The wave function is given by:
-          
+
           .. math:: \psi(x,y) = 2\sqrt{N}/L \sin(2\pi n_x x / L) \sin(2\pi n_y y / L) \mathrm{e}^{(i \phi)}
-          
-          being :math:`N` the norm of the state, :math:`L` 
-          the length of the lattice edge, :math:`n_x` and :math:`n_y` the quantum numbers 
+
+          being :math:`N` the norm of the state, :math:`L`
+          the length of the lattice edge, :math:`n_x` and :math:`n_y` the quantum numbers
           and :math:`\phi` the relative phase.
 
       **Example**
@@ -949,25 +1018,25 @@ State Classes
 
    .. py:method:: SinusoidState.imprint(function)
       :module: trottersuzuki
-      
+
         Multiply the wave function of the state by the function provided.
-        
+
         **Parameters**
 
         * `function` : python function
             Function to be printed on the state.
-        
+
         **Notes**
 
-        Useful, for instance, to imprint solitons and vortices on a condensate. 
+        Useful, for instance, to imprint solitons and vortices on a condensate.
         Generally, it performs a transformation of the state whose wave function becomes:
-        
+
         .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
-        
-        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.        
-        
+
+        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.
+
         **Example**
-        
+
             >>> import trottersuzuki as ts  # import the module
             >>> grid = ts.Lattice2D()  # Define the simulation's geometry
             >>> def vortex(x,y):  # Vortex function
@@ -976,11 +1045,11 @@ State Classes
             >>>     return np.exp(1j * angle)
             >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
             >>> state.imprint(vortex)  # Imprint a vortex on the state
- 
+
    .. py:method:: SinusoidState.get_mean_px()
       :module: trottersuzuki
 
-      Return the expected value of the :math:`P_x` operator.  
+      Return the expected value of the :math:`P_x` operator.
 
       **Returns**
 
@@ -1002,7 +1071,7 @@ State Classes
    .. py:method:: SinusoidState.get_mean_py()
       :module: trottersuzuki
 
-      Return the expected value of the :math:`P_y` operator.  
+      Return the expected value of the :math:`P_y` operator.
 
       **Returns**
 
@@ -1012,22 +1081,22 @@ State Classes
    .. py:method:: SinusoidState.get_mean_pypy()
       :module: trottersuzuki
 
-      Return the expected value of the :math:`P_y^2` operator.  
+      Return the expected value of the :math:`P_y^2` operator.
 
       **Returns**
 
       * `mean_pypy` : float
-            Expected value of the :math:`P_y^2` operator. 
+            Expected value of the :math:`P_y^2` operator.
 
    .. py:method:: SinusoidState.get_mean_x()
       :module: trottersuzuki
 
-      Return the expected value of the :math:`X` operator.  
+      Return the expected value of the :math:`X` operator.
 
       **Returns**
 
       * `mean_x` : float
-            Expected value of the :math:`X` operator. 
+            Expected value of the :math:`X` operator.
 
    .. py:method:: SinusoidState.get_mean_xx()
       :module: trottersuzuki
@@ -1037,7 +1106,7 @@ State Classes
       **Returns**
 
       * `mean_xx` : float
-            Expected value of the :math:`X^2` operator.   
+            Expected value of the :math:`X^2` operator.
 
 
    .. py:method:: SinusoidState.get_mean_y()
@@ -1046,7 +1115,7 @@ State Classes
       Return the expected value of the :math:`Y` operator.
 
       **Returns**
-      
+
       * `mean_y` : float
             Expected value of the :math:`Y` operator.
 
@@ -1056,7 +1125,7 @@ State Classes
       Return the expected value of the :math:`Y^2` operator.
 
       **Returns**
-      
+
       * `mean_yy` : float
             Expected value of the :math:`Y^2` operator.
 
@@ -1066,9 +1135,9 @@ State Classes
       Return a matrix storing the squared norm of the wave function.
 
       **Returns**
-      
+
       * `particle_density` : numpy matrix
-          Particle density of the state :math:`|\psi(x,y)|^2` 
+          Particle density of the state :math:`|\psi(x,y)|^2`
 
 
    .. py:method:: SinusoidState.get_phase()
@@ -1094,7 +1163,7 @@ State Classes
 
    .. py:method:: SinusoidState.loadtxt(file_name)
       :module: trottersuzuki
-      
+
       Load the wave function from a file.
 
       **Parameters**
@@ -1117,30 +1186,30 @@ State Classes
       Write to a file the particle density matrix of the wave function.
 
       **Parameters**
-      
+
       * `file_name` : string
-          Name of the file. 
+          Name of the file.
 
    .. py:method:: SinusoidState.write_phase(file_name)
       :module: trottersuzuki
 
-      Write to a file the wave function.  
+      Write to a file the wave function.
 
       **Parameters**
-      
+
       * `file_name` : string
-            Name of the file to be written. 
+            Name of the file to be written.
 
 
    .. py:method:: SinusoidState.write_to_file(file_name)
       :module: trottersuzuki
 
-      Write to a file the wave function.  
+      Write to a file the wave function.
 
       **Parameters**
 
       * `file_name` : string
-            Name of the file to be written. 
+            Name of the file to be written.
 
       **Example**
 
@@ -1164,16 +1233,16 @@ Potential Classes
 
    .. py:method:: Potential(grid)
 
-      Construct the external potential.  
+      Construct the external potential.
 
       **Parameters**
-      
-      * `grid` : Lattice object 
-          Define the geometry of the simulation.  
+
+      * `grid` : Lattice object
+          Define the geometry of the simulation.
 
       **Returns**
 
-      * `Potential` : Potential object 
+      * `Potential` : Potential object
           Create external potential.
 
       **Example**
@@ -1191,10 +1260,10 @@ Potential Classes
    .. py:method:: Potential.init_potential(potential_function)
       :module: trottersuzuki
 
-      Initialize the external potential.  
+      Initialize the external potential.
 
       **Parameters**
-      
+
       * `potential_function` : python function
          Define the external potential function.
 
@@ -1214,7 +1283,7 @@ Potential Classes
       Get the value at the lattice's coordinate (x,y).
 
       **Returns**
-      
+
       * `value` : float
           Value of the external potential.
 
@@ -1227,29 +1296,29 @@ Potential Classes
    This class is a child of Potential class.
 
    **Constructors**
-   
+
    .. py:method:: HarmonicPotential(grid, omegax, omegay, mass=1., mean_x=0., mean_y=0.)`
 
-      Construct the harmonic external potential.  
+      Construct the harmonic external potential.
 
       **Parameters**
 
-      * `grid` : Lattice2D object  
-          Define the geometry of the simulation.  
+      * `grid` : Lattice2D object
+          Define the geometry of the simulation.
       * `omegax` : float
-          Frequency along x-axis.  
-      * `omegay` : float 
-          Frequency along y-axis.  
-      * `mass` : float,optional (default: 1.) 
-          Mass of the particle.  
-      * `mean_x` : float,optional (default: 0.) 
-          Minimum of the potential along x axis.  
-      * `mean_y` : float,optional (default: 0.) 
-          Minimum of the potential along y axis.  
+          Frequency along x-axis.
+      * `omegay` : float
+          Frequency along y-axis.
+      * `mass` : float,optional (default: 1.)
+          Mass of the particle.
+      * `mean_x` : float,optional (default: 0.)
+          Minimum of the potential along x axis.
+      * `mean_y` : float,optional (default: 0.)
+          Minimum of the potential along y axis.
 
       **Returns**
-      
-      * `HarmonicPotential` : Potential object 
+
+      * `HarmonicPotential` : Potential object
           Harmonic external potential.
 
       **Notes**
@@ -1274,7 +1343,7 @@ Potential Classes
       Get the value at the lattice's coordinate (x,y).
 
       **Returns**
-      
+
       * `value` : float
           Value of the external potential.
 
@@ -1288,37 +1357,37 @@ Hamiltonian Classes
    This class defines the Hamiltonian of a single component system.
 
    **Constructors**
-   
+
    .. py:method:: Hamiltonian(grid, potential=0, mass=1., coupling=0., angular_velocity=0., rot_coord_x=0, rot_coord_y=0)
 
-      Construct the Hamiltonian of a single component system.  
+      Construct the Hamiltonian of a single component system.
 
       **Parameters**
 
-      * `grid` : Lattice object 
-          Define the geometry of the simulation.  
-      * `potential` : Potential object 
-          Define the external potential of the Hamiltonian (:math:`V`).  
-      * `mass` : float,optional (default: 1.) 
-          Mass of the particle (:math:`m`).  
-      * `coupling` : float,optional (default: 0.) 
-          Coupling constant of intra-particle interaction (:math:`g`).  
-      * `angular_velocity` : float,optional (default: 0.) 
-          The frame of reference rotates with this angular velocity (:math:`\omega`).  
-      * `rot_coord_x` : float,optional (default: 0.) 
-          X coordinate of the center of rotation.  
+      * `grid` : Lattice object
+          Define the geometry of the simulation.
+      * `potential` : Potential object
+          Define the external potential of the Hamiltonian (:math:`V`).
+      * `mass` : float,optional (default: 1.)
+          Mass of the particle (:math:`m`).
+      * `coupling` : float,optional (default: 0.)
+          Coupling constant of intra-particle interaction (:math:`g`).
+      * `angular_velocity` : float,optional (default: 0.)
+          The frame of reference rotates with this angular velocity (:math:`\omega`).
+      * `rot_coord_x` : float,optional (default: 0.)
+          X coordinate of the center of rotation.
       * `rot_coord_y` : float,optional (default: 0.)
           Y coordinate of the center of rotation.
 
       **Returns**
-      
+
       * `Hamiltonian` : Hamiltonian object
-          Hamiltonian of the system to be simulated: 
-          
+          Hamiltonian of the system to be simulated:
+
           .. math:: H(x,y) = \frac{1}{2m}(P_x^2 + P_y^2)  + V(x,y) + g |\psi(x,y)|^2 + \omega L_z
-          
-          being :math:`m` the particle mass, :math:`V(x,y)` the external potential, 
-          :math:`g` the coupling constant of intra-particle interaction, :math:`\omega` 
+
+          being :math:`m` the particle mass, :math:`V(x,y)` the external potential,
+          :math:`g` the coupling constant of intra-particle interaction, :math:`\omega`
           the angular velocity of the frame of reference and :math:`L_z` the angular momentum operator along the z-axis.
 
       **Example**
@@ -1338,60 +1407,60 @@ Hamiltonian Classes
 
    .. py:method:: Hamiltonian2Component(grid, potential_1=0, potential_2=0, mass_1=1., mass_2=1., coupling_1=0., coupling_12=0., coupling_2=0., omega_r=0, omega_i=0, angular_velocity=0., rot_coord_x=0, rot_coord_y=0)
 
-      Construct the Hamiltonian of a two component system.  
+      Construct the Hamiltonian of a two component system.
 
       **Parameters**
 
-      * `grid` : Lattice object  
-          Define the geometry of the simulation.  
-      * `potential_1` : Potential object 
-          External potential to which the first state is subjected (:math:`V_1`).  
-      * `potential_2` : Potential object 
-          External potential to which the second state is subjected (:math:`V_2`).  
-      * `mass_1` : float,optional (default: 1.) 
-          Mass of the first-component's particles (:math:`m_1`).  
-      * `mass_2` : float,optional (default: 1.) 
-          Mass of the second-component's particles (:math:`m_2`).  
-      * `coupling_1` : float,optional (default: 0.) 
-          Coupling constant of intra-particle interaction for the first component (:math:`g_1`).  
-      * `coupling_12` : float,optional (default: 0.) 
-          Coupling constant of inter-particle interaction between the two components (:math:`g_{12}`).  
-      * `coupling_2` : float,optional (default: 0.) 
-          Coupling constant of intra-particle interaction for the second component (:math:`g_2`).  
-      * `omega_r` : float,optional (default: 0.) 
-          Real part of the Rabi coupling (:math:`\mathrm{Re}(\Omega)`).  
-      * `omega_i` : float,optional (default: 0.) 
-          Imaginary part of the Rabi coupling (:math:`\mathrm{Im}(\Omega)`).  
-      * `angular_velocity` : float,optional (default: 0.) 
-          The frame of reference rotates with this angular velocity (:math:`\omega`).  
-      * `rot_coord_x` : float,optional (default: 0.) 
-          X coordinate of the center of rotation.  
-      * `rot_coord_y` : float,optional (default: 0.) 
-          Y coordinate of the center of rotation.  
+      * `grid` : Lattice object
+          Define the geometry of the simulation.
+      * `potential_1` : Potential object
+          External potential to which the first state is subjected (:math:`V_1`).
+      * `potential_2` : Potential object
+          External potential to which the second state is subjected (:math:`V_2`).
+      * `mass_1` : float,optional (default: 1.)
+          Mass of the first-component's particles (:math:`m_1`).
+      * `mass_2` : float,optional (default: 1.)
+          Mass of the second-component's particles (:math:`m_2`).
+      * `coupling_1` : float,optional (default: 0.)
+          Coupling constant of intra-particle interaction for the first component (:math:`g_1`).
+      * `coupling_12` : float,optional (default: 0.)
+          Coupling constant of inter-particle interaction between the two components (:math:`g_{12}`).
+      * `coupling_2` : float,optional (default: 0.)
+          Coupling constant of intra-particle interaction for the second component (:math:`g_2`).
+      * `omega_r` : float,optional (default: 0.)
+          Real part of the Rabi coupling (:math:`\mathrm{Re}(\Omega)`).
+      * `omega_i` : float,optional (default: 0.)
+          Imaginary part of the Rabi coupling (:math:`\mathrm{Im}(\Omega)`).
+      * `angular_velocity` : float,optional (default: 0.)
+          The frame of reference rotates with this angular velocity (:math:`\omega`).
+      * `rot_coord_x` : float,optional (default: 0.)
+          X coordinate of the center of rotation.
+      * `rot_coord_y` : float,optional (default: 0.)
+          Y coordinate of the center of rotation.
 
       **Returns**
 
-      * `Hamiltonian2Component` : Hamiltonian2Component object 
+      * `Hamiltonian2Component` : Hamiltonian2Component object
           Hamiltonian of the two-component system to be simulated.
-          
+
           .. math::
 
-             H = \begin{bmatrix} H_1 &  \frac{\Omega}{2} \\ \frac{\Omega}{2} & H_2 \end{bmatrix} 
+             H = \begin{bmatrix} H_1 &  \frac{\Omega}{2} \\ \frac{\Omega}{2} & H_2 \end{bmatrix}
 
           being
 
           .. math::
 
-             H_1 = \frac{1}{2m_1}(P_x^2 + P_y^2) + V_1(x,y) + g_1|\psi_1(x,y)|^2 + g_{12}|\psi_2(x,y)|^2 + \omega L_z  
+             H_1 = \frac{1}{2m_1}(P_x^2 + P_y^2) + V_1(x,y) + g_1|\psi_1(x,y)|^2 + g_{12}|\psi_2(x,y)|^2 + \omega L_z
 
-             H_2 = \frac{1}{2m_2}(P_x^2 + P_y^2) + V_2(x,y) + g_2|\psi_2(x,y)|^2 + g_{12}|\psi_1(x,y)|^2 + \omega L_z  
+             H_2 = \frac{1}{2m_2}(P_x^2 + P_y^2) + V_2(x,y) + g_2|\psi_2(x,y)|^2 + g_{12}|\psi_1(x,y)|^2 + \omega L_z
 
-          and, for the i-th component, :math:`m_i` the particle mass, :math:`V_i(x,y)` the external potential, 
-          :math:`g_i` the coupling constant of intra-particle interaction; 
-          :math:`g_{12}` the coupling constant of inter-particle interaction 
-          :math:`\omega` the angular velocity of the frame of reference, :math:`L_z` the angular momentum operator along the z-axis 
+          and, for the i-th component, :math:`m_i` the particle mass, :math:`V_i(x,y)` the external potential,
+          :math:`g_i` the coupling constant of intra-particle interaction;
+          :math:`g_{12}` the coupling constant of inter-particle interaction
+          :math:`\omega` the angular velocity of the frame of reference, :math:`L_z` the angular momentum operator along the z-axis
           and :math:`\Omega` the Rabi coupling.
-      
+
       **Example**
 
           >>> import trottersuzuki as ts  # import the module
@@ -1410,26 +1479,26 @@ Solver Class
 
    .. py:method:: Solver(grid, state, hamiltonian, delta_t, kernel_type="cpu")
 
-      Construct the Solver object for a single-component system.  
+      Construct the Solver object for a single-component system.
 
       **Parameters**
 
-      * `grid` : Lattice object  
-          Define the geometry of the simulation.  
-      * `state` : State object 
-          State of the system.  
-      * `hamiltonian` : Hamiltonian object 
-          Hamiltonian of the system.  
-      * `delta_t` : float 
-          A single evolution iteration, evolves the state for this time.  
-      * `kernel_type` : string,optional (default: 'cpu') 
-          Which kernel to use (either cpu or gpu).  
+      * `grid` : Lattice object
+          Define the geometry of the simulation.
+      * `state` : State object
+          State of the system.
+      * `hamiltonian` : Hamiltonian object
+          Hamiltonian of the system.
+      * `delta_t` : float
+          A single evolution iteration, evolves the state for this time.
+      * `kernel_type` : string,optional (default: 'cpu')
+          Which kernel to use (either cpu or gpu).
 
       **Returns**
 
-      * `Solver` : Solver object  
+      * `Solver` : Solver object
           Solver object for the simulation of a single-component system.
-          
+
       **Example**
 
           >>> import trottersuzuki as ts  # import the module
@@ -1442,26 +1511,26 @@ Solver Class
 
    .. py:method:: Solver(grid, state1, state2, hamiltonian, delta_t, kernel_type="cpu")
 
-      Construct the Solver object for a two-component system.  
+      Construct the Solver object for a two-component system.
 
       **Parameters**
 
-      * `grid` : Lattice object  
+      * `grid` : Lattice object
           Define the geometry of the simulation.
       * `state1` : State object
-          First component's state of the system.  
-      * `state2` : State object 
-          Second component's state of the system.  
+          First component's state of the system.
+      * `state2` : State object
+          Second component's state of the system.
       * `hamiltonian` : Hamiltonian object
-          Hamiltonian of the two-component system.  
+          Hamiltonian of the two-component system.
       * `delta_t` : float
-          A single evolution iteration, evolves the state for this time.  
-      * `kernel_type` : string,optional (default: 'cpu') 
-          Which kernel to use (either cpu or gpu).  
+          A single evolution iteration, evolves the state for this time.
+      * `kernel_type` : string,optional (default: 'cpu')
+          Which kernel to use (either cpu or gpu).
 
       **Returns**
 
-      * `Solver` : Solver object  
+      * `Solver` : Solver object
           Solver object for the simulation of a two-component system.
 
       **Example**
@@ -1483,13 +1552,13 @@ Solver Class
 
       **Parameters**
 
-      * `iterations` : integer 
+      * `iterations` : integer
           Number of iterations.
-      * `imag_time` : bool,optional (default: False)  
-          Whether to perform imaginary time evolution (True) or real time evolution (False).    
+      * `imag_time` : bool,optional (default: False)
+          Whether to perform imaginary time evolution (True) or real time evolution (False).
 
       **Notes**
-      
+
       The norm of the state is preserved both in real-time and in imaginary-time evolution.
 
       **Example**
@@ -1505,23 +1574,23 @@ Solver Class
    .. py:method:: Solver.get_inter_species_energy()
       :module: trottersuzuki
 
-      Get the inter-particles interaction energy of the system.  
+      Get the inter-particles interaction energy of the system.
 
       **Returns**
-      
+
       * `get_inter_species_energy` : float
-          Inter-particles interaction energy of the system. 
+          Inter-particles interaction energy of the system.
 
 
    .. py:method:: Solver.get_intra_species_energy(which=3)
       :module: trottersuzuki
 
-      Get the intra-particles interaction energy of the system.  
+      Get the intra-particles interaction energy of the system.
 
       **Parameters**
 
       * `which` : integer,optional (default: 3)
-          Which intra-particles interaction energy to return: total system (default, which=3), first component (which=1), second component (which=2). 
+          Which intra-particles interaction energy to return: total system (default, which=3), first component (which=1), second component (which=2).
 
 
    .. py:method:: Solver.get_kinetic_energy(which=3)
@@ -1532,18 +1601,18 @@ Solver Class
       **Parameters**
 
       * `which` : integer,optional (default: 3)
-          Which kinetic energy to return: total system (default, which=3), first component (which=1), second component (which=2). 
+          Which kinetic energy to return: total system (default, which=3), first component (which=1), second component (which=2).
 
 
    .. py:method:: Solver.get_potential_energy(which=3)
       :module: trottersuzuki
 
-      Get the potential energy of the system.  
+      Get the potential energy of the system.
 
       **Parameters**
 
       * `which` : integer,optional (default: 3)
-          Which potential energy to return: total system (default, which=3), first component (which=1), second component (which=2). 
+          Which potential energy to return: total system (default, which=3), first component (which=1), second component (which=2).
 
 
    .. py:method:: Solver.get_rabi_energy()
@@ -1554,7 +1623,7 @@ Solver Class
       **Returns**
 
       * `get_rabi_energy` : float
-          Rabi energy of the system.  
+          Rabi energy of the system.
 
 
    .. py:method:: Solver.get_rotational_energy(which=3)
@@ -1565,7 +1634,7 @@ Solver Class
       **Parameters**
 
       * `which` : integer,optional (default: 3)
-          Which rotational energy to return: total system (default, which=3), first component (which=1), second component (which=2). 
+          Which rotational energy to return: total system (default, which=3), first component (which=1), second component (which=2).
 
 
    .. py:method:: Solver.get_squared_norm(which=3)
@@ -1576,7 +1645,7 @@ Solver Class
       **Parameters**
 
       * `which` : integer,optional (default: 3)
-          Which squared state norm to return: total system (default, which=3), first component (which=1), second component (which=2). 
+          Which squared state norm to return: total system (default, which=3), first component (which=1), second component (which=2).
 
 
    .. py:method:: Solver.get_total_energy()
@@ -1587,7 +1656,7 @@ Solver Class
       **Returns**
 
       * `get_total_energy` : float
-          Total energy of the system.  
+          Total energy of the system.
 
       **Example**
 
@@ -1599,7 +1668,7 @@ Solver Class
           >>> solver = ts.Solver(grid, state, hamiltonian, 1e-2)  # Create the solver
           >>> solver.get_total_energy()  # Get the total energy
           1
-          
+
    .. py:method:: Solver::update_parameters()
       :module: trottersuzuki
 
@@ -1611,9 +1680,9 @@ Tools
 .. py:method:: vortex_position(grid, state, approx_cloud_radius=0.)
 
     Get the position of a single vortex in the quantum state.
-    
+
     **Parameters**
-    
+
     * `grid` : Lattice object
         Define the geometry of the simulation.
     * `state` : State object
@@ -1621,18 +1690,18 @@ Tools
     * `approx_cloud_radius` : float, optional
         Radius of the circle, centered at the Lattice2D's origin, where the vortex core
         is expected to be. Need for a better accuracy.
-    
+
     **Returns**
 
     * `coords` : numpy array
         Coordinates of the vortex core's position (coords[0]: x coordinate; coords[1]: y coordinate).
-    
+
     **Notes**
 
     Only one vortex must be present in the state.
-    
+
     **Example**
-    
+
         >>> import trottersuzuki as ts  # import the module
         >>> import numpy as np
         >>> grid = ts.Lattice2D()  # Define the simulation's geometry
@@ -1644,4 +1713,4 @@ Tools
         >>> state.imprint(vortex)  # Imprint the vortex on the state
         >>> ts.vortex_position(grid, state)
         array([  8.88178420e-16,   8.88178420e-16])
-    
+
