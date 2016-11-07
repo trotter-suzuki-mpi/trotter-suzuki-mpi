@@ -1,3 +1,10 @@
+Since 1.5.5"
+  - New: One-dimensional topology through the class `Lattice1D`.
+  - Changed: The two dimensional topology is now defined through the class `Lattice2D`.
+  - Changed: The command-line interface was removed.
+  - Changed: Python interface simplifed and made more consistent.
+  - Fixed: Different resolution and physical size across different axes is possible.
+
 Version 1.5.5: 2016-06-13
   - Fixed: Particle density is scaled correctly.
 

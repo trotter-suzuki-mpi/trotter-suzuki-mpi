@@ -32,9 +32,6 @@
     <ClInclude Include="..\..\cpublock.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\getopt.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\hybrid.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -44,7 +41,7 @@
     <ClInclude Include="..\..\trottersuzuki.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\unistd.h">
+    <ClInclude Include="..\unistd.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -53,12 +50,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\cpublock.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\getopt.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\trotter.cpp">
