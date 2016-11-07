@@ -41,9 +41,6 @@
     <ClInclude Include="..\..\trottersuzuki.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\unistd.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\common.cpp">

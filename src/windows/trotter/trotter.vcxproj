@@ -87,7 +87,6 @@
     <ClInclude Include="..\..\hybrid.h" />
     <ClInclude Include="..\..\kernel.h" />
     <ClInclude Include="..\..\trottersuzuki.h" />
-    <ClInclude Include="..\unistd.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\common.cpp" />

@@ -100,6 +100,9 @@ public:
      */
     Lattice2D(int dim_x, double length_x, int dim_y, double length_y,
               bool periodic_x_axis = false, bool periodic_y_axis = false, double angular_velocity = 0.);
+private:
+    void init(int dim_x, double length_x, int dim_y, double length_y,
+              bool periodic_x_axis = false, bool periodic_y_axis = false, double angular_velocity = 0.);
 };
 
 /**
