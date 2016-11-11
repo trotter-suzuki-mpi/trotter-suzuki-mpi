@@ -6,6 +6,7 @@ from .trottersuzuki import GaussianState as _GaussianState
 from .trottersuzuki import SinusoidState as _SinusoidState
 from .trottersuzuki import ExponentialState as _ExponentialState
 from .trottersuzuki import Potential as _Potential
+from .trottersuzuki import Solver as _Solver
 
 
 class Lattice1D(_Lattice1D):
@@ -333,6 +334,7 @@ class ExponentialState(_ExponentialState):
 
         self.imprint_matrix(real, imag)
 
+
 class Potential(_Potential):
 
     def init_potential(self, pot_function):
@@ -361,7 +363,14 @@ class Potential(_Potential):
             def _pot_function(x, y):
                 return pot_function(x)
         except TypeError:
-            _pot_function = pot_function
+            try:
+                pot_function(0, 0 ,0)
+                def _pot_function(x, y):
+                    return pot_function(x, y, 0)
+                self.updated_potential_matrix = True
+                self.pot_function = pot_function
+            except TypeError:
+                _pot_function = pot_function
 
         potential = np.zeros((self.grid.dim_y, self.grid.dim_x))
 
@@ -382,3 +391,35 @@ class Potential(_Potential):
 
         self.init_potential_matrix(potential)
         self.potential_matrix = potential
+
+    def update(self, t):
+        delta_x = self.grid.delta_x
+        delta_y = self.grid.delta_y
+        idy = self.grid.start_y * delta_y + 0.5 * delta_y
+        x_c = self.grid.global_no_halo_dim_x * self.grid.delta_x * 0.5
+        y_c = self.grid.global_no_halo_dim_y * self.grid.delta_y * 0.5
+
+        for y in range(self.grid.dim_y):
+            y_r = idy - y_c
+            idx = self.grid.start_x * delta_x + 0.5 * delta_x
+            for x in range(self.grid.dim_x):
+                x_r = idx - x_c
+                self.potential_matrix[y, x] = self.pot_function(x_r, y_r, t)
+                idx += delta_x
+            idy += delta_y
+        self.init_potential_matrix(self.potential_matrix)
+        self.updated_potential_matrix = True
+
+
+class Solver(_Solver):
+
+    def evolve(self, iterations, imag_time=False):
+        if not self.hamiltonian.potential.updated_potential_matrix or \
+                imag_time:
+            super(Solver, self).evolve(iterations, imag_time=imag_time)
+            return
+        for _ in range(iterations-1):
+            self.hamiltonian.potential.update(self.current_evolution_time)
+            super(Solver, self).evolve(-1, imag_time=imag_time)
+        self.hamiltonian.potential.update(self.current_evolution_time)
+        super(Solver, self).evolve(1, imag_time=imag_time)

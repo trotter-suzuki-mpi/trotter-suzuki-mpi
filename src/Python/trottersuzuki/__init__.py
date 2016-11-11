@@ -6,9 +6,9 @@ decomposition for simulation of quantum systems
 """
 
 from .trottersuzuki import HarmonicPotential, \
-                           Hamiltonian, Hamiltonian2Component, Solver
+                           Hamiltonian, Hamiltonian2Component
 from .classes_extension import Lattice1D, Lattice2D, State, GaussianState, \
-    SinusoidState, ExponentialState, Potential
+    SinusoidState, ExponentialState, Potential, Solver
 from .tools import vortex_position
 
 __all__ = ['Lattice1D', 'Lattice2D', 'State', 'ExponentialState',

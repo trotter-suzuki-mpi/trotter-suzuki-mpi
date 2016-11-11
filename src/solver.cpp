@@ -175,6 +175,11 @@ void Solver::evolve(int iterations, bool _imag_time) {
         kernel->rabi_coupling(var, delta_t);
     }
     var = 1.;
+    bool soft_update = false;
+    if (iterations < 0) {
+        iterations = -iterations;
+        soft_update = true;
+    }
     // Main loop
     for (int i = 0; i < iterations; i++) {
         if (i > 0 && hamiltonian->potential->update(current_evolution_time)) {
@@ -216,12 +221,14 @@ void Solver::evolve(int iterations, bool _imag_time) {
         }
         current_evolution_time += delta_t;
     }
-    if (single_component) {
-        kernel->get_sample(grid->dim_x, 0, 0, grid->dim_x, grid->dim_y, state->p_real, state->p_imag);
-    }
-    else {
-        kernel->get_sample(grid->dim_x, 0, 0, grid->dim_x, grid->dim_y, state->p_real, state->p_imag, state_b->p_real, state_b->p_imag);
-        state_b->expected_values_updated = false;
+    if (!soft_update) {
+        if (single_component) {
+            kernel->get_sample(grid->dim_x, 0, 0, grid->dim_x, grid->dim_y, state->p_real, state->p_imag);
+        }
+        else {
+            kernel->get_sample(grid->dim_x, 0, 0, grid->dim_x, grid->dim_y, state->p_real, state->p_imag, state_b->p_real, state_b->p_imag);
+            state_b->expected_values_updated = false;
+        }
     }
     state->expected_values_updated = false;
     energy_expected_values_updated = false;

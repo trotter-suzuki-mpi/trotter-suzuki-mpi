@@ -640,6 +640,7 @@ Potential::Potential(Lattice *_grid, double *_external_pot): grid(_grid) {
     }
     self_init = false;
     is_static = true;
+    updated_potential_matrix = false;
     evolving_potential = NULL;
     static_potential = NULL;
 }
@@ -647,6 +648,7 @@ Potential::Potential(Lattice *_grid, double *_external_pot): grid(_grid) {
 Potential::Potential(Lattice *_grid, double (*potential_fuction)(double x, double y)): grid(_grid) {
     is_static = true;
     self_init = false;
+    updated_potential_matrix = false;
     evolving_potential = NULL;
     static_potential = potential_fuction;
     matrix = NULL;
@@ -655,6 +657,7 @@ Potential::Potential(Lattice *_grid, double (*potential_fuction)(double x, doubl
 Potential::Potential(Lattice *_grid, double (*potential_function)(double x, double y, double t), int _t): grid(_grid) {
     is_static = false;
     self_init = false;
+    updated_potential_matrix = false;
     evolving_potential = potential_function;
     static_potential = NULL;
     matrix = NULL;
@@ -693,6 +696,8 @@ bool Potential::update(double t) {
                 }
             }
         }
+        return true;
+    } else if (updated_potential_matrix) {
         return true;
     }
     return false;
