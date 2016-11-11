@@ -188,7 +188,7 @@ public:
     }
     virtual double get_value(int x, int y);
     bool update(double t);
-
+    bool updated_potential_matrix;
 protected:
     double current_evolution_time;
     double (*static_potential)(double x, double y);

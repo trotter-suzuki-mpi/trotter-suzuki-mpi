@@ -282,7 +282,7 @@ public:
     virtual double get_value(int x); ///< Get the value at the coordinate x in a 1D model.
     virtual double get_value(int x, int y);    ///< Get the value at the coordinate (x,y) in a 2D model.
     bool update(double t);    ///< Update the potential matrix at time t.
-
+    bool updated_potential_matrix;
 protected:
     double current_evolution_time;    ///< Amount of time evolved since the beginning of the evolution.
     double (*static_potential)(double x, double y);    ///< Function of the static external potential.
