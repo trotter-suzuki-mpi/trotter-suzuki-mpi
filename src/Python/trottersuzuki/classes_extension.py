@@ -67,6 +67,7 @@ class Lattice2D(_Lattice2D):
 
         return y_axis
 
+
 class State(_State):
 
     def init_state(self, state_function):
@@ -96,6 +97,7 @@ class State(_State):
         imag = np.zeros((self.grid.dim_y, self.grid.dim_x))
         try:
             state_function(0)
+
             def _state_function(x, y):
                 return state_function(x)
         except TypeError:
@@ -172,6 +174,7 @@ class State(_State):
 
         self.imprint_matrix(real, imag)
 
+
 class GaussianState(_GaussianState):
 
     def imprint(self, function):
@@ -226,6 +229,7 @@ class GaussianState(_GaussianState):
 
         self.imprint_matrix(real, imag)
 
+
 class SinusoidState(_SinusoidState):
 
     def imprint(self, function):
@@ -279,6 +283,7 @@ class SinusoidState(_SinusoidState):
             idy += delta_y
 
         self.imprint_matrix(real, imag)
+
 
 class ExponentialState(_ExponentialState):
 
@@ -360,11 +365,13 @@ class Potential(_Potential):
         """
         try:
             pot_function(0)
+
             def _pot_function(x, y):
                 return pot_function(x)
         except TypeError:
             try:
-                pot_function(0, 0 ,0)
+                pot_function(0, 0, 0)
+
                 def _pot_function(x, y):
                     return pot_function(x, y, 0)
                 self.updated_potential_matrix = True
@@ -416,10 +423,10 @@ class Solver(_Solver):
     def evolve(self, iterations, imag_time=False):
         if not self.hamiltonian.potential.updated_potential_matrix or \
                 imag_time:
-            super(Solver, self).evolve(iterations, imag_time=imag_time)
+            super(Solver, self).evolve(iterations, imag_time)
             return
         for _ in range(iterations-1):
             self.hamiltonian.potential.update(self.current_evolution_time)
-            super(Solver, self).evolve(-1, imag_time=imag_time)
+            super(Solver, self).evolve(-1, imag_time)
         self.hamiltonian.potential.update(self.current_evolution_time)
-        super(Solver, self).evolve(1, imag_time=imag_time)
+        super(Solver, self).evolve(1, imag_time)
