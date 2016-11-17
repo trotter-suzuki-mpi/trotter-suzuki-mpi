@@ -142,6 +142,7 @@ public:
     double get_mean_pxpx(void);    ///< Return the expected value of the P_x^2 operator.
     double get_mean_py(void);    ///< Return the expected value of the P_y operator.
     double get_mean_pypy(void);    ///< Return the expected value of the P_y^2 operator.
+    double get_mean_angular_momentum(void);    ///< Return the expected value of the L_z operator.
     void write_to_file(string fileprefix /** [in] prefix name of the file */);    ///< Write to a file the wave function.
     void write_particle_density(string fileprefix /** [in] prefix name of the file */);    ///< Write to a file the squared norm of the wave function.
     void write_phase(string fileprefix /** [in] prefix name of the file */);    ///< Write to a file the phase of the wave function.
@@ -154,6 +155,7 @@ protected:
     double mean_Y, mean_YY;    ///< Expected values of the Y and Y^2 operators.
     double mean_Px, mean_PxPx;    ///< Expected values of the P_x and P_x^2 operators.
     double mean_Py, mean_PyPy;    ///< Expected values of the P_y and P_y^2 operators.
+    double mean_angular_momentum;    ///< Expected value of the L_z operator.
     double norm2;    ///< Squared norm of the state.
 };
 

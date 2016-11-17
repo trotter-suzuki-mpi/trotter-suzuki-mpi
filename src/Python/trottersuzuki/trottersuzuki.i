@@ -115,6 +115,7 @@ public:
     double get_mean_pxpx(void);
     double get_mean_py(void);
     double get_mean_pypy(void);
+    double get_mean_angular_momentum(void);
     void write_to_file(std::string fileprefix /** [in] prefix name of the file */);
     void write_particle_density(std::string fileprefix /** [in] prefix name of the file */);
     void write_phase(std::string fileprefix /** [in] prefix name of the file */);
@@ -129,6 +130,7 @@ protected:
     double mean_Y, mean_YY;
     double mean_Px, mean_PxPx;
     double mean_Py, mean_PyPy;
+    double mean_angular_momentum;
     double norm2;
 };
 

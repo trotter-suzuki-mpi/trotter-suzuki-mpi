@@ -1219,6 +1219,16 @@ Returns
       Expected value of the :math:`P_y^2` operator. 
 ";
 
+%feature("docstring") State::get_mean_angular_momentum "
+
+Return the expected value of the :math:`L_z^2` operator.  
+
+Returns
+-------
+* `mean_angular_momentum` : float
+      Expected value of the :math:`L_z^2` operator. 
+";
+
 %feature("docstring") State::write_to_file "
 
 Write to a file the wave function.  
