@@ -111,8 +111,8 @@ void print_complex_matrix(const char * filename, double * matrix_real, double * 
     out.close();
 }
 
-void print_matrix(const char * filename, double * matrix, size_t stride, size_t width, size_t height) {
-    ofstream out(filename, ios::out | ios::trunc);
+void print_matrix(string filename, double * matrix, size_t stride, size_t width, size_t height) {
+    ofstream out(filename.c_str(), ios::out | ios::trunc);
     for (size_t i = 0; i < height; ++i) {
         for (size_t j = 0; j < width; ++j) {
             out << matrix[i * stride + j] << " ";
