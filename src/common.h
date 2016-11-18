@@ -20,6 +20,7 @@
 #define __COMMON_H
 #include "trottersuzuki.h"
 
+void print_matrix(string filename, double * matrix, size_t stride, size_t width, size_t height);
 void stamp(Lattice *grid, State *state, string fileprefix);
 void stamp_matrix(Lattice *grid, double *matrix, string filename);
 

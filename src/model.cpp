@@ -314,7 +314,9 @@ void State::write_particle_density(string fileprefix) {
     double *density = get_particle_density();
     stringstream filename;
     filename << fileprefix << "-density";
-    stamp_matrix(grid, density, filename.str());
+    int local_no_halo_dim_x = grid->inner_end_x - grid->inner_start_x;
+    int local_no_halo_dim_y = grid->inner_end_y - grid->inner_start_y;
+    print_matrix(filename.str(), density, local_no_halo_dim_x, local_no_halo_dim_x, local_no_halo_dim_y);
     delete [] density;
 }
 
@@ -345,7 +347,9 @@ void State::write_phase(string fileprefix) {
     double *phase = get_phase();
     stringstream filename;
     filename << fileprefix << "-phase";
-    stamp_matrix(grid, phase, filename.str());
+    int local_no_halo_dim_x = grid->inner_end_x - grid->inner_start_x;
+    int local_no_halo_dim_y = grid->inner_end_y - grid->inner_start_y;
+    print_matrix(filename.str(), phase, local_no_halo_dim_x, local_no_halo_dim_x, local_no_halo_dim_y);
     delete [] phase;
 }
 
