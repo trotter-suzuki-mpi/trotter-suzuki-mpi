@@ -139,7 +139,7 @@ HybridKernel::HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian
 #endif
 }
 
-void HybridKernel::update_potential(double *_external_pot_real, double *_external_pot_imag) {
+void HybridKernel::update_potential(double *_external_pot_real, double *_external_pot_imag, int which) {
     external_pot_real = _external_pot_real;
     external_pot_imag = _external_pot_imag;
     CUDA_SAFE_CALL(cudaMemcpy2D(dev_external_pot_real, gpu_tile_width * sizeof(double), &(external_pot_real[gpu_start_y * tile_width + gpu_start_x]), tile_width * sizeof(double), gpu_tile_width * sizeof(double), gpu_tile_height, cudaMemcpyHostToDevice));

@@ -863,11 +863,11 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2,
 
 }
 
-void CC2Kernel::update_potential(double *_external_pot_real, double *_external_pot_imag) {
-    external_pot_real[0] = _external_pot_real;
-    external_pot_imag[0] = _external_pot_imag;
-    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_real[0], external_pot_real[0], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_imag[0], external_pot_imag[0], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+void CC2Kernel::update_potential(double *_external_pot_real, double *_external_pot_imag, int which) {
+    external_pot_real[which] = _external_pot_real;
+    external_pot_imag[which] = _external_pot_imag;
+    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_real[which], external_pot_real[which], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(dev_external_pot_imag[which], external_pot_imag[which], tile_width * tile_height * sizeof(double), cudaMemcpyHostToDevice));
 }
 
 

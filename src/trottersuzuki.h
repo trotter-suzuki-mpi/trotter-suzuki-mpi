@@ -409,7 +409,7 @@ public:
     virtual double calculate_squared_norm(bool global = true) const = 0;  ///< Calculate the squared norm of the wave function.
     virtual bool runs_in_place() const = 0;
     virtual string get_name() const = 0;				///< Get kernel name.
-    virtual void update_potential(double *_external_pot_real, double *_external_pot_imag) = 0;    ///< Update the evolution matrix, regarding the external potential, at time t.
+    virtual void update_potential(double *_external_pot_real, double *_external_pot_imag, int which) = 0;    ///< Update the evolution matrix, regarding the external potential, at time t.
 
     virtual void start_halo_exchange() = 0;					///< Exchange halos between processes.
     virtual void finish_halo_exchange() = 0;				///< Exchange halos between processes.

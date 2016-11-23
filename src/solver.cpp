@@ -193,12 +193,12 @@ void Solver::evolve(int iterations, bool _imag_time) {
     for (int i = 0; i < iterations; i++) {
         if (i > 0 && hamiltonian->potential->update(current_evolution_time)) {
             initialize_exp_potential(delta_t, 0);
-            kernel->update_potential(external_pot_real[0], external_pot_imag[0]);
+            kernel->update_potential(external_pot_real[0], external_pot_imag[0], 0);
         }
         if (!single_component && i > 0) {
             if (static_cast<Hamiltonian2Component*>(hamiltonian)->potential_b->update(current_evolution_time)) {
                 initialize_exp_potential(delta_t, 1);
-                kernel->update_potential(external_pot_real[1], external_pot_imag[1]);
+                kernel->update_potential(external_pot_real[1], external_pot_imag[1], 1);
             }
         }
         //first wave function

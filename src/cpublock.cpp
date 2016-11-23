@@ -563,9 +563,9 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
 #endif
 }
 
-void CPUBlock::update_potential(double *_external_pot_real, double *_external_pot_imag) {
-    external_pot_real[0] = _external_pot_real;
-    external_pot_imag[0] = _external_pot_imag;
+void CPUBlock::update_potential(double *_external_pot_real, double *_external_pot_imag, int which) {
+    external_pot_real[which] = _external_pot_real;
+    external_pot_imag[which] = _external_pot_imag;
 }
 
 CPUBlock::~CPUBlock() {
