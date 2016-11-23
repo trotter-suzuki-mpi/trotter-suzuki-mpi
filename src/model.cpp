@@ -715,21 +715,23 @@ double Potential::get_value(int x, int y) {
 }
 
 bool Potential::update(double t) {
-    current_evolution_time = t;
-    if (!is_static) {
-        if (matrix != NULL) {
-            double delta_x = grid->delta_x, delta_y = grid->delta_y;
-            double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
-            for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-                idx = grid->start_x * delta_x + 0.5 * delta_x;
-                for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
-                    matrix[y * grid->dim_x + x] = evolving_potential(idx, idy, t);
+    if (current_evolution_time != t) {
+        current_evolution_time = t;
+        if (!is_static) {
+            if (matrix != NULL) {
+                double delta_x = grid->delta_x, delta_y = grid->delta_y;
+                double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
+                for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
+                    idx = grid->start_x * delta_x + 0.5 * delta_x;
+                    for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
+                        matrix[y * grid->dim_x + x] = evolving_potential(idx, idy, t);
+                    }
                 }
             }
+            return true;
+        } else if (updated_potential_matrix) {
+            return true;
         }
-        return true;
-    } else if (updated_potential_matrix) {
-        return true;
     }
     return false;
 }
