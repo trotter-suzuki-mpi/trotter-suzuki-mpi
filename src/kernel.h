@@ -76,7 +76,7 @@ public:
     void normalization();    ///<Normalize the state when performing an imaginary time evolution (only two wave-function evolution).
     void rabi_coupling(double var, double delta_t);    ///< Evolution corresponding to the Rabi coupling term of the Hamiltonian (only two wave-function evolution).
     double calculate_squared_norm(bool global = true) const;  ///< Calculate squared norm of the state.
-    void update_potential(double *_external_pot_real, double *_external_pot_imag);    ///< Update memory pointed by external_potential_real and external_potential_imag (only non static external potential).
+    void update_potential(double *_external_pot_real, double *_external_pot_imag, int which);    ///< Update memory pointed by external_potential_real and external_potential_imag (only non static external potential).
 
     bool runs_in_place() const {
         return false;
@@ -172,7 +172,7 @@ public:
     void normalization();    ///<Normalize the state when performing an imaginary time evolution (only two wave-function evolution).
     void rabi_coupling(double var, double delta_t);    ///< Evolution corresponding to the Rabi coupling term of the Hamiltonian (only two wave-function evolution).
     double calculate_squared_norm(bool global = true) const;  ///< Calculate squared norm of the state.
-    void update_potential(double *_external_pot_real, double *_external_pot_imag);    ///< Update memory pointed by external_potential_real and external_potential_imag (only non static external potential).
+    void update_potential(double *_external_pot_real, double *_external_pot_imag, int which);    ///< Update memory pointed by external_potential_real and external_potential_imag (only non static external potential).
 
     bool runs_in_place() const {
         return false;
@@ -277,7 +277,7 @@ public:
     void normalization();    ///<Normalize the state when performing an imaginary time evolution (only two wave-function evolution).
     void rabi_coupling(double var, double delta_t);    ///< Evolution corresponding to the Rabi coupling term of the Hamiltonian (only two wave-function evolution).
     double calculate_squared_norm(bool global = true) const;  ///< Calculate squared norm of the state.
-    void update_potential(double *_external_pot_real, double *_external_pot_imag);    ///< Update memory pointed by external_potential_real and external_potential_imag (only non static external potential).
+    void update_potential(double *_external_pot_real, double *_external_pot_imag, int which);    ///< Update memory pointed by external_potential_real and external_potential_imag (only non static external potential).
 
     bool runs_in_place() const {
         return false;
@@ -377,7 +377,7 @@ public:
     void normalization() {};    ///<Normalize the state when performing an imaginary time evolution (only two wave-function evolution).
     void rabi_coupling(double var, double delta_t) {};    ///< Evolution corresponding to the Rabi coupling term of the Hamiltonian (only two wave-function evolution).
     double calculate_squared_norm(bool global = true) const;  ///< Calculate squared norm of the state.
-    void update_potential(double *_external_pot_real, double *_external_pot_imag);    ///< Update memory pointed by external_potential_real and external_potential_imag (only non static external potential).
+    void update_potential(double *_external_pot_real, double *_external_pot_imag, int which);    ///< Update memory pointed by external_potential_real and external_potential_imag (only non static external potential).
 
     bool runs_in_place() const {
         return false;
