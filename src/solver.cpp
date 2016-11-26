@@ -75,14 +75,11 @@ void Solver::initialize_exp_potential(double delta_t, int which) {
     {
         complex<double> tmp;
         double ptmp;
-        double idy = grid->start_y * grid->delta_y, idx;
 #ifndef HAVE_MPI
         #pragma omp for
 #endif
         for (int y = 0; y < grid->dim_y; y++) {
-            idy += grid->delta_y;
-            idx = grid->start_x * grid->delta_x;
-            for (int x = 0; x < grid->dim_x; x++, idx += grid->delta_x) {
+            for (int x = 0; x < grid->dim_x; x++) {
                 if (which == 0) {
                     ptmp = hamiltonian->potential->get_value(x, y);
                 } else {
@@ -190,7 +187,7 @@ void Solver::evolve(int iterations, bool _imag_time) {
         soft_update = true;
     }
     // Main loop
-    for (int i = 0; i < iterations; i++) {
+    for (int i = 0; i < iterations; ++i) {
         if (i > 0 && hamiltonian->potential->update(current_evolution_time)) {
             initialize_exp_potential(delta_t, 0);
             kernel->update_potential(external_pot_real[0], external_pot_imag[0], 0);

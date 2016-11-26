@@ -167,11 +167,10 @@ State::~State() {
 }
 
 void State::imprint(complex<double> (*function)(double x)) {
-    double delta_x = grid->delta_x;
-    double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
-    double idx = grid->start_x * delta_x + 0.5 * delta_x;
-    for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
-        complex<double> tmp = function(idx - x_c);
+    double x_r = 0;
+    for (int x = 0; x < grid->dim_x; x++) {
+        center_coordinates(grid, x, &x_r);
+        complex<double> tmp = function(x_r);
         double tmp_p_real = p_real[x];
         p_real[x] = tmp_p_real * real(tmp) - p_imag[x] * imag(tmp);
         p_imag[x] = tmp_p_real * imag(tmp) + p_imag[x] * real(tmp);
@@ -179,14 +178,11 @@ void State::imprint(complex<double> (*function)(double x)) {
 }
 
 void State::imprint(complex<double> (*function)(double x, double y)) {
-    double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
-    double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
-    double y_c = grid->global_no_halo_dim_y * grid->delta_y * 0.5;
-    for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x + 0.5 * delta_x;
-        for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
-            complex<double> tmp = function(idx - x_c, idy - y_c);
+    double x_r=0.0, y_r=0.0;
+    for (int y = 0; y < grid->dim_y; y++) {
+        for (int x = 0; x < grid->dim_x; x++) {
+            center_coordinates(grid, x, y, &x_r, &y_r);
+            complex<double> tmp = function(x_r, y_r);
             double tmp_p_real = p_real[y * grid->dim_x + x];
             p_real[y * grid->dim_x + x] = tmp_p_real * real(tmp) - p_imag[y * grid->dim_x + x] * imag(tmp);
             p_imag[y * grid->dim_x + x] = tmp_p_real * imag(tmp) + p_imag[y * grid->dim_x + x] * real(tmp);
@@ -196,11 +192,10 @@ void State::imprint(complex<double> (*function)(double x, double y)) {
 
 void State::init_state(complex<double> (*ini_state)(double x)) {
     complex<double> tmp;
-    double delta_x = grid->delta_x;
-    double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
-    double idx = grid->start_x * delta_x + 0.5 * delta_x;
-    for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
-        tmp = ini_state(idx - x_c);
+    double x_r = 0;
+    for (int x = 0; x < grid->dim_x; x++) {
+        center_coordinates(grid, x, &x_r);
+        tmp = ini_state(x_r);
         p_real[x] = real(tmp);
         p_imag[x] = imag(tmp);
     }
@@ -208,14 +203,11 @@ void State::init_state(complex<double> (*ini_state)(double x)) {
 
 void State::init_state(complex<double> (*ini_state)(double x, double y)) {
     complex<double> tmp;
-    double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
-    double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
-    double y_c = grid->global_no_halo_dim_y * grid->delta_y * 0.5;
-    for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x + 0.5 * delta_x;
-        for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
-            tmp = ini_state(idx - x_c, idy - y_c);
+    double x_r=0.0, y_r=0.0;
+    for (int y = 0; y < grid->dim_y; y++) {
+        for (int x = 0; x < grid->dim_x; x++) {
+            center_coordinates(grid, x, y, &x_r, &y_r);
+            tmp = ini_state(x_r, y_r);
             p_real[y * grid->dim_x + x] = real(tmp);
             p_imag[y * grid->dim_x + x] = imag(tmp);
         }
@@ -607,12 +599,11 @@ GaussianState::GaussianState(Lattice2D *_grid, double _omega_x, double _omega_y,
         omega_y = omega_x;
     }
 	  complex<double> tmp;
-    double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
-    for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x + 0.5 * delta_x;
-        for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
-            tmp = gauss_state(idx, idy);
+    double x_r=0, y_r=0;
+    for (int y = 0; y < grid->dim_y; y++) {
+        for (int x = 0; x < grid->dim_x; x++) {
+            center_coordinates(grid, x, y, &x_r, &y_r);
+            tmp = gauss_state(x_r, y_r);
             p_real[y * grid->dim_x + x] = real(tmp);
             p_imag[y * grid->dim_x + x] = imag(tmp);
         }
@@ -620,9 +611,7 @@ GaussianState::GaussianState(Lattice2D *_grid, double _omega_x, double _omega_y,
 }
 
 complex<double> GaussianState::gauss_state(double x, double y) {
-    double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
-    double y_c = grid->global_no_halo_dim_y * grid->delta_y * 0.5;
-    return complex<double>(sqrt(norm * sqrt(omega_x * omega_y) / M_PI) * exp(-(omega_x * pow(x - mean_x - x_c, 2.0) + omega_y * pow(y - mean_y - y_c, 2.0)) * 0.5), 0.) * exp(complex<double>(0., phase));
+    return complex<double>(sqrt(norm * sqrt(omega_x * omega_y) / M_PI) * exp(-(omega_x * pow(x - mean_x, 2.0) + omega_y * pow(y - mean_y, 2.0)) * 0.5), 0.) * exp(complex<double>(0., phase));
 }
 
 SinusoidState::SinusoidState(Lattice2D *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
@@ -701,15 +690,14 @@ double Potential::get_value(int x) {
 double Potential::get_value(int x, int y) {
     if (matrix != NULL) {
         return matrix[y * grid->dim_x + x];
-    }
-    else {
-        double idy = grid->start_y * grid->delta_y + y * grid->delta_y + 0.5 * grid->delta_y;
-        double idx = grid->start_x * grid->delta_x + x * grid->delta_x + 0.5 * grid->delta_x;
+    } else {
+        double x_r=0, y_r=0;
+        center_coordinates(grid, x, y, &x_r, &y_r);
         if (is_static) {
-            return static_potential(idx, idy);
+            return static_potential(x_r, y_r);
         }
         else {
-            return evolving_potential(idx, idy, current_evolution_time);
+            return evolving_potential(x_r, y_r, current_evolution_time);
         }
     }
 }
@@ -717,19 +705,7 @@ double Potential::get_value(int x, int y) {
 bool Potential::update(double t) {
     if (current_evolution_time != t) {
         current_evolution_time = t;
-        if (!is_static) {
-            if (matrix != NULL) {
-                double delta_x = grid->delta_x, delta_y = grid->delta_y;
-                double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
-                for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-                    idx = grid->start_x * delta_x + 0.5 * delta_x;
-                    for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
-                        matrix[y * grid->dim_x + x] = evolving_potential(idx, idy, t);
-                    }
-                }
-            }
-            return true;
-        } else if (updated_potential_matrix) {
+        if (!is_static || updated_potential_matrix) {
             return true;
         }
     }
