@@ -15,6 +15,8 @@ import_array();
 %apply (double* IN_ARRAY2, int DIM1, int DIM2) {(double* state_real, int state_real_width, int state_real_height)}
 %apply (double* IN_ARRAY2, int DIM1, int DIM2) {(double* state_imag, int state_imag_width, int state_imag_height)}
 %apply (double* IN_ARRAY2, int DIM1, int DIM2) {(double* _potential, int _potential_width, int _potential_height)}
+%apply (double* IN_ARRAY1, int DIM1) {(double* exp_pot_real, int exp_pot_real_length)}
+%apply (double* IN_ARRAY1, int DIM1) {(double* exp_pot_imag, int exp_pot_imag_length)}
 %apply (double* INPLACE_ARRAY2, int DIM1, int DIM2) {(double* p_real, int p_r_width, int p_r_height)}
 %apply (double* INPLACE_ARRAY2, int DIM1, int DIM2) {(double* p_imag, int p_i_width, int p_i_height)}
 %apply (double** ARGOUTVIEWM_ARRAY2, int* DIM1, int* DIM2) {(double **density_out, int *de_dim1_out, int *de_dim2_out)}
@@ -275,6 +277,8 @@ public:
     double get_intra_species_energy(size_t which=3);
     double get_inter_species_energy(void);
     double get_rabi_energy(void);
+    void set_exp_potential(double *exp_pot_real, int exp_pot_real_length, double *exp_pot_imag,
+                           int exp_pot_imag_length, int which);
 private:
     bool imag_time;
     double h_a[2];

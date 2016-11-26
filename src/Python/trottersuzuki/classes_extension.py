@@ -297,16 +297,34 @@ class Potential(_Potential):
 
         self.init_potential_matrix(self.potential_matrix)
 
-    def update(self, t):
+    def exponential_update(self, delta_t, t):
+        exp_potential_matrix = np.zeros((self.grid.dim_y, self.grid.dim_x),
+                                        dtype=np.complex128)
         for y in range(self.grid.dim_y):
             for x in range(self.grid.dim_x):
-                self.potential_matrix[y, x] = \
-                    self.pot_function(*center_coordinates(self.grid, x, y))
-        self.init_potential_matrix(self.potential_matrix)
-        self.updated_potential_matrix = True
-
+                exp_potential_matrix[y, x] = \
+                    np.exp(-1j*delta_t*self.pot_function(*center_coordinates(self.grid, x, y), t))
+        return exp_potential_matrix
 
 class Solver(_Solver):
+
+    def __init__(self, Lattice, State, Hamiltonian, delta_t, Potential=None,
+                 State2=None, Potential2=None, kernel_type="cpu",):
+        if State2 is None:
+            super(Solver, self).__init__(Lattice, State, Hamiltonian,
+                                            delta_t, kernel_type)
+        else:
+            super(Solver, self).__init__(Lattice, State, State2,
+                                            Hamiltonian, delta_t,
+                                            kernel_type)
+        self.delta_t = delta_t
+        self.potential = Potential
+        if State2 is not None and Potential2 is None:
+            self.potential2 = Potential
+        elif State2 is not None:
+            self.potential2 = Potential2
+        else:
+            self.potential2 = None
 
     def evolve(self, iterations, imag_time=False):
         if not self.hamiltonian.potential.updated_potential_matrix or \
@@ -314,7 +332,9 @@ class Solver(_Solver):
             super(Solver, self).evolve(iterations, imag_time)
             return
         for _ in range(iterations-1):
-            self.hamiltonian.potential.update(self.current_evolution_time)
+            exp_pot = self.potential.exponential_update(self.delta_t, self.current_evolution_time)
+            super(Solver, self).set_exp_potential(np.ravel(exp_pot.real), np.ravel(exp_pot.imag), 0)
             super(Solver, self).evolve(-1, imag_time)
-        self.hamiltonian.potential.update(self.current_evolution_time)
+        exp_pot = self.potential.exponential_update(self.delta_t, self.current_evolution_time)
+        super(Solver, self).set_exp_potential(np.ravel(exp_pot.real), np.ravel(exp_pot.imag), 0)
         super(Solver, self).evolve(1, imag_time)
