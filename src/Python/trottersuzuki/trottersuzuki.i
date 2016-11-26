@@ -91,8 +91,8 @@ public:
             double *_density;
             _density = self->get_particle_density();
         end:
-           *de_dim1_out = self->grid->global_no_halo_dim_y;
-           *de_dim2_out = self->grid->global_no_halo_dim_x;
+           *de_dim1_out = self->grid->inner_end_y - self->grid->inner_start_y;
+           *de_dim2_out = self->grid->inner_end_x - self->grid->inner_start_x;
            *density_out = _density;
 	    }
     }
