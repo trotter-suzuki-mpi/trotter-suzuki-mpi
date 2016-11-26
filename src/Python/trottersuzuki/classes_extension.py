@@ -7,6 +7,7 @@ from .trottersuzuki import SinusoidState as _SinusoidState
 from .trottersuzuki import ExponentialState as _ExponentialState
 from .trottersuzuki import Potential as _Potential
 from .trottersuzuki import Solver as _Solver
+from .tools import center_coordinates, imprint
 
 
 class Lattice1D(_Lattice1D):
@@ -87,40 +88,28 @@ class State(_State):
         -------
 
             >>> import trottersuzuki as ts  # import the module
-            >>> grid = ts.Lattice()  # Define the simulation's geometry
+            >>> grid = ts.Lattice2D()  # Define the simulation's geometry
             >>> def wave_function(x,y):  # Define a flat wave function
             >>>     return 1.
             >>> state = ts.State(grid)  # Create the system's state
             >>> state.ini_state(wave_function)  # Initialize the wave function of the state
         """
-        real = np.zeros((self.grid.dim_y, self.grid.dim_x))
-        imag = np.zeros((self.grid.dim_y, self.grid.dim_x))
         try:
             state_function(0)
 
-            def _state_function(x, y):
+            def function(x, y):
                 return state_function(x)
         except TypeError:
-            _state_function = state_function
+            function = state_function
 
-        delta_x = self.grid.delta_x
-        delta_y = self.grid.delta_y
-        idy = self.grid.start_y * delta_y + 0.5 * delta_y
-        x_c = self.grid.global_no_halo_dim_x * self.grid.delta_x * 0.5
-        y_c = self.grid.global_no_halo_dim_y * self.grid.delta_y * 0.5
+        state = np.zeros((self.grid.dim_y, self.grid.dim_x),
+                         dtype=np.complex128)
 
         for y in range(self.grid.dim_y):
-            y_r = idy - y_c
-            idx = self.grid.start_x * delta_x + 0.5 * delta_x
             for x in range(self.grid.dim_x):
-                x_r = idx - x_c
-                tmp = _state_function(x_r, y_r)
-                real[y, x] = np.real(tmp)
-                imag[y, x] = np.imag(tmp)
-                idx += delta_x
-            idy += delta_y
+                state[y, x] = function(*center_coordinates(self.grid, x, y))
 
-        self.init_state_matrix(real, imag)
+        self.init_state_matrix(state.real, state.imag)
 
     def imprint(self, function):
         """
@@ -144,7 +133,7 @@ class State(_State):
         -------
 
             >>> import trottersuzuki as ts  # import the module
-            >>> grid = ts.Lattice()  # Define the simulation's geometry
+            >>> grid = ts.Lattice2D()  # Define the simulation's geometry
             >>> def vortex(x,y):  # Vortex function
             >>>     z = x + 1j*y
             >>>     angle = np.angle(z)
@@ -152,27 +141,7 @@ class State(_State):
             >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
             >>> state.imprint(vortex)  # Imprint a vortex on the state
         """
-        real = np.zeros((self.grid.dim_y, self.grid.dim_x))
-        imag = np.zeros((self.grid.dim_y, self.grid.dim_x))
-
-        delta_x = self.grid.delta_x
-        delta_y = self.grid.delta_y
-
-        x_c = self.grid.global_no_halo_dim_x * self.grid.delta_x * 0.5
-        y_c = self.grid.global_no_halo_dim_y * self.grid.delta_y * 0.5
-        idy = self.grid.start_y * delta_y + 0.5 * delta_y
-        for y in range(self.grid.dim_y):
-            y_r = idy - y_c
-            idx = self.grid.start_x * delta_x + 0.5 * delta_x
-            for x in range(self.grid.dim_x):
-                x_r = idx - x_c
-                tmp = function(x_r, y_r)
-                real[y, x] = np.real(tmp)
-                imag[y, x] = np.imag(tmp)
-                idx += delta_x
-            idy += delta_y
-
-        self.imprint_matrix(real, imag)
+        imprint(self, function)
 
 
 class GaussianState(_GaussianState):
@@ -199,7 +168,7 @@ class GaussianState(_GaussianState):
         -------
 
             >>> import trottersuzuki as ts  # import the module
-            >>> grid = ts.Lattice()  # Define the simulation's geometry
+            >>> grid = ts.Lattice2D()  # Define the simulation's geometry
             >>> def vortex(x,y):  # Vortex function
             >>>     z = x + 1j*y
             >>>     angle = np.angle(z)
@@ -207,27 +176,7 @@ class GaussianState(_GaussianState):
             >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
             >>> state.imprint(vortex)  # Imprint a vortex on the state
         """
-        real = np.zeros((self.grid.dim_y, self.grid.dim_x))
-        imag = np.zeros((self.grid.dim_y, self.grid.dim_x))
-
-        delta_x = self.grid.delta_x
-        delta_y = self.grid.delta_y
-        idy = self.grid.start_y * delta_y + 0.5 * delta_y
-        x_c = self.grid.global_no_halo_dim_x * self.grid.delta_x * 0.5
-        y_c = self.grid.global_no_halo_dim_y * self.grid.delta_y * 0.5
-
-        for y in range(self.grid.dim_y):
-            y_r = idy - y_c
-            idx = self.grid.start_x * delta_x + 0.5 * delta_x
-            for x in range(self.grid.dim_x):
-                x_r = idx - x_c
-                tmp = function(x_r, y_r)
-                real[y, x] = np.real(tmp)
-                imag[y, x] = np.imag(tmp)
-                idx += delta_x
-            idy += delta_y
-
-        self.imprint_matrix(real, imag)
+        imprint(self, function)
 
 
 class SinusoidState(_SinusoidState):
@@ -254,7 +203,7 @@ class SinusoidState(_SinusoidState):
         -------
 
             >>> import trottersuzuki as ts  # import the module
-            >>> grid = ts.Lattice()  # Define the simulation's geometry
+            >>> grid = ts.Lattice2D()  # Define the simulation's geometry
             >>> def vortex(x,y):  # Vortex function
             >>>     z = x + 1j*y
             >>>     angle = np.angle(z)
@@ -262,27 +211,7 @@ class SinusoidState(_SinusoidState):
             >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
             >>> state.imprint(vortex)  # Imprint a vortex on the state
         """
-        real = np.zeros((self.grid.dim_y, self.grid.dim_x))
-        imag = np.zeros((self.grid.dim_y, self.grid.dim_x))
-
-        delta_x = self.grid.delta_x
-        delta_y = self.grid.delta_y
-        idy = self.grid.start_y * delta_y + 0.5 * delta_y
-        x_c = self.grid.global_no_halo_dim_x * self.grid.delta_x * 0.5
-        y_c = self.grid.global_no_halo_dim_y * self.grid.delta_y * 0.5
-
-        for y in range(self.grid.dim_y):
-            y_r = idy - y_c
-            idx = self.grid.start_x * delta_x + 0.5 * delta_x
-            for x in range(self.grid.dim_x):
-                x_r = idx - x_c
-                tmp = function(x_r, y_r)
-                real[y, x] = np.real(tmp)
-                imag[y, x] = np.imag(tmp)
-                idx += delta_x
-            idy += delta_y
-
-        self.imprint_matrix(real, imag)
+        imprint(self, function)
 
 
 class ExponentialState(_ExponentialState):
@@ -309,7 +238,7 @@ class ExponentialState(_ExponentialState):
         -------
 
             >>> import trottersuzuki as ts  # import the module
-            >>> grid = ts.Lattice()  # Define the simulation's geometry
+            >>> grid = ts.Lattice2D()  # Define the simulation's geometry
             >>> def vortex(x,y):  # Vortex function
             >>>     z = x + 1j*y
             >>>     angle = np.angle(z)
@@ -317,27 +246,7 @@ class ExponentialState(_ExponentialState):
             >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
             >>> state.imprint(vortex)  # Imprint a vortex on the state
         """
-        real = np.zeros((self.grid.dim_y, self.grid.dim_x))
-        imag = np.zeros((self.grid.dim_y, self.grid.dim_x))
-
-        delta_x = self.grid.delta_x
-        delta_y = self.grid.delta_y
-        idy = self.grid.start_y * delta_y + 0.5 * delta_y
-        x_c = self.grid.global_no_halo_dim_x * self.grid.delta_x * 0.5
-        y_c = self.grid.global_no_halo_dim_y * self.grid.delta_y * 0.5
-
-        for y in range(self.grid.dim_y):
-            y_r = idy - y_c
-            idx = self.grid.start_x * delta_x + 0.5 * delta_x
-            for x in range(self.grid.dim_x):
-                x_r = idx - x_c
-                tmp = function(x_r, y_r)
-                real[y, x] = np.real(tmp)
-                imag[y, x] = np.imag(tmp)
-                idx += delta_x
-            idy += delta_y
-
-        self.imprint_matrix(real, imag)
+        imprint(self, function)
 
 
 class Potential(_Potential):
@@ -355,7 +264,7 @@ class Potential(_Potential):
         -------
 
             >>> import trottersuzuki as ts  # import the module
-            >>> grid = ts.Lattice()  # Define the simulation's geometry
+            >>> grid = ts.Lattice2D()  # Define the simulation's geometry
             >>> # Define a constant external potential
             >>> def external_potential_function(x,y):
             >>>     return 1.
@@ -379,41 +288,20 @@ class Potential(_Potential):
             except TypeError:
                 _pot_function = pot_function
 
-        potential = np.zeros((self.grid.dim_y, self.grid.dim_x))
-
-        delta_x = self.grid.delta_x
-        delta_y = self.grid.delta_y
-        idy = self.grid.start_y * delta_y + 0.5 * delta_y
-        x_c = self.grid.global_no_halo_dim_x * self.grid.delta_x * 0.5
-        y_c = self.grid.global_no_halo_dim_y * self.grid.delta_y * 0.5
+        self.potential_matrix = np.zeros((self.grid.dim_y, self.grid.dim_x))
 
         for y in range(self.grid.dim_y):
-            y_r = idy - y_c
-            idx = self.grid.start_x * delta_x + 0.5 * delta_x
             for x in range(self.grid.dim_x):
-                x_r = idx - x_c
-                potential[y, x] = _pot_function(x_r, y_r)
-                idx += delta_x
-            idy += delta_y
+                self.potential_matrix[y, x] = \
+                    _pot_function(*center_coordinates(self.grid, x, y))
 
-        self.init_potential_matrix(potential)
-        self.potential_matrix = potential
+        self.init_potential_matrix(self.potential_matrix)
 
     def update(self, t):
-        delta_x = self.grid.delta_x
-        delta_y = self.grid.delta_y
-        idy = self.grid.start_y * delta_y + 0.5 * delta_y
-        x_c = self.grid.global_no_halo_dim_x * self.grid.delta_x * 0.5
-        y_c = self.grid.global_no_halo_dim_y * self.grid.delta_y * 0.5
-
         for y in range(self.grid.dim_y):
-            y_r = idy - y_c
-            idx = self.grid.start_x * delta_x + 0.5 * delta_x
             for x in range(self.grid.dim_x):
-                x_r = idx - x_c
-                self.potential_matrix[y, x] = self.pot_function(x_r, y_r, t)
-                idx += delta_x
-            idy += delta_y
+                self.potential_matrix[y, x] = \
+                    self.pot_function(*center_coordinates(self.grid, x, y))
         self.init_potential_matrix(self.potential_matrix)
         self.updated_potential_matrix = True
 

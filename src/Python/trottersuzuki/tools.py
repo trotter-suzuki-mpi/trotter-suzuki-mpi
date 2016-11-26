@@ -2,10 +2,69 @@ from __future__ import print_function, division
 import numpy as np
 import math
 
+
+def center_coordinates(grid, x, y):
+        idy = grid.start_y * grid.delta_y + 0.5 * grid.delta_y + \
+            y * grid.delta_y
+        x_c = grid.global_no_halo_dim_x * grid.delta_x * 0.5
+        y_c = grid.global_no_halo_dim_y * grid.delta_y * 0.5
+        idx = grid.start_x * grid.delta_x + 0.5 * grid.delta_x + \
+            x * grid.delta_x
+        return idx - x_c, idy - y_c
+
+
+def imprint(state, function):
+        """
+        Multiply the wave function of the state by the function provided.
+
+        Parameters
+        ----------
+        * `function` : python function
+            Function to be printed on the state.
+
+        Notes
+        -----
+        Useful, for instance, to imprint solitons and vortices on a condensate.
+        Generally, it performs a transformation of the state whose wave function becomes
+
+        .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
+
+        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.
+
+        Example
+        -------
+
+            >>> import trottersuzuki as ts  # import the module
+            >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+            >>> def vortex(x,y):  # Vortex function
+            >>>     z = x + 1j*y
+            >>>     angle = np.angle(z)
+            >>>     return np.exp(1j * angle)
+            >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
+            >>> state.imprint(vortex)  # Imprint a vortex on the state
+        """
+        try:
+            function(0)
+
+            def _function(x, y):
+                return function(x)
+        except TypeError:
+            _function = function
+
+        matrix = np.zeros((state.grid.dim_y, state.grid.dim_x),
+                          dtype=np.complex128)
+
+        for y in range(state.grid.dim_y):
+            for x in range(state.grid.dim_x):
+                matrix[y, x] = _function(*center_coordinates(state.grid, x, y))
+
+        state.imprint_matrix(matrix.real, matrix.imag)
+
+
 def vortex_position(grid, state, approx_cloud_radius=0.):
     """
     Get the position of a single vortex in the quantum state.
-    
+
     Parameters
     ----------
     * `grid` : Lattice object
@@ -13,24 +72,25 @@ def vortex_position(grid, state, approx_cloud_radius=0.):
     * `state` : State object
         System's state.
     * `approx_cloud_radius` : float, optional
-        Radius of the circle, centered at the Lattice's origin, where the vortex core
-        is expected to be.
-    
+        Radius of the circle, centered at the Lattice's origin, where the
+        vortex core is expected to be.
+
     Returns
     -------
     * `coords` numpy array
-        Coordinates of the vortex core's position (coords[0]: x coordinate; coords[1]: y coordinate).
-    
+        Coordinates of the vortex core's position (coords[0]: x coordinate;
+        coords[1]: y coordinate).
+
     Notes
     -----
     Only one vortex must be present in the state.
-    
+
     Example
     -------
-    
+
         >>> import trottersuzuki as ts  # import the module
         >>> import numpy as np
-        >>> grid = ts.Lattice()  # Define the simulation's geometry
+        >>> grid = ts.Lattice2D()  # Define the simulation's geometry
         >>> state = ts.GaussianState(grid, 1.)  # Create a state with gaussian wave function
         >>> def vortex_a(x, y):  # Define the vortex to be imprinted
         >>>     z = x + 1j*y
@@ -39,7 +99,7 @@ def vortex_position(grid, state, approx_cloud_radius=0.):
         >>> state.imprint(vortex)  # Imprint the vortex on the state
         >>> ts.vortex_position(grid, state)
         array([  8.88178420e-16,   8.88178420e-16])
-    
+
     """
     if approx_cloud_radius == 0.:
         approx_cloud_radius = np.sqrt(2) * grid.length_x
@@ -48,9 +108,10 @@ def vortex_position(grid, state, approx_cloud_radius=0.):
     matrix = state.get_phase()
     # calculate norm gradient matrix
     norm_grad = np.zeros((grid.dim_x, grid.dim_y))
-    for idy in range(1,grid.dim_y-1):
-        for idx in range(1,grid.dim_x-1):
-            if ((idx-grid.dim_x*0.5)**2 + (idy-grid.dim_y*0.5)**2) < approx_cloud_radius**2/delta_x**2:
+    for idy in range(1, grid.dim_y-1):
+        for idx in range(1, grid.dim_x-1):
+            if (idx-grid.dim_x*0.5)**2 + (idy-grid.dim_y*0.5)**2 < \
+                     approx_cloud_radius**2/delta_x**2:
                 up = matrix[idy+1, idx]
                 dw = matrix[idy-1, idx]
                 rg = matrix[idy, idx+1]
@@ -64,17 +125,19 @@ def vortex_position(grid, state, approx_cloud_radius=0.):
                 grad_x = (rg-lf)/(2.*delta_x)
                 grad_y = (up-dw)/(2.*delta_y)
                 norm_grad[idy, idx] = np.sqrt(grad_x**2 + grad_y**2)
-    
+
     max_norm = np.nanmax(norm_grad)  # Find max value in norm_grad
-    coord = np.transpose(np.where(norm_grad==max_norm))[0]
-    
-    # Check that the phase has a single discontinuity around the candidate vortex position
+    coord = np.transpose(np.where(norm_grad == max_norm))[0]
+
+    # Check that the phase has a single discontinuity around the candidate
+    # vortex position
     def position(index, side):
         index = int(index)
         side = int(side)
-        idx = int(math.fmod(index,4*side))  # position is periodic of period 4*radius
+        # position is periodic of period 4*radius
+        idx = int(math.fmod(index, 4*side))
         quad = idx // side
-        rest = int(math.fmod(idx,side))
+        rest = int(math.fmod(idx, side))
         if quad == 0:
             x = - (side // 2 + 1)
             y = rest - side // 2
@@ -88,34 +151,39 @@ def vortex_position(grid, state, approx_cloud_radius=0.):
             y = - (side // 2 + 1)
             x = - (rest - side // 2)
         return np.array([y, x])
-        
-    side = 8 # must be an even number
+
+    side = 8  # must be an even number
     vortex = 0
-    for i in range(0, side*4):  # Count the number of discontinuity in the phase pattern around the candidate vortex position
+    # Count the number of discontinuity in the phase pattern around the
+    # candidate vortex position
+    for i in range(side*4):
         pos1 = coord + position(i, side)
         pos2 = coord + position(i+1, side)
-        if pos1[0] < 0 or pos1[0] >= grid.dim_x or pos1[1] < 0 or pos1[1] >= grid.dim_x:
-            if pos2[0] < 0 or pos2[0] >= grid.dim_x or pos2[1] < 0 or pos2[1] >= grid.dim_x:
+        if pos1[0] < 0 or pos1[0] >= grid.dim_x or pos1[1] < 0 or \
+                pos1[1] >= grid.dim_x:
+            if pos2[0] < 0 or pos2[0] >= grid.dim_x or pos2[1] < 0 or \
+                    pos2[1] >= grid.dim_x:
                 break
         phase1 = matrix[pos1[0], pos1[1]]
         phase2 = matrix[pos2[0], pos2[1]]
-        if np.abs(phase1 - phase2) >= np.pi * 1.7: 
+        if np.abs(phase1 - phase2) >= np.pi * 1.7:
             vortex += 1
-    
-    if vortex != 1:  # around the vortex there must be a single discontinuity in the phase
+
+    # Around the vortex there must be a single discontinuity in the phase
+    if vortex != 1:
         return np.array([np.nan, np.nan])
-    
+
     coord_x = []
     coord_y = []
-    for idy in range(1,grid.dim_y-1):
-        for idx in range(1,grid.dim_x-1):
+    for idy in range(1, grid.dim_y-1):
+        for idx in range(1, grid.dim_x-1):
             if norm_grad[idy, idx] >= max_norm*0.9:
                 coord_x.append((idx + 0.5) * delta_x - 0.5 * grid.length_x)
                 coord_y.append((idy + 0.5) * delta_y - 0.5 * grid.length_y)
-                
+
     coords = np.zeros(2)
-    for i in range(0, len(coord_x)):
+    for i in range(len(coord_x)):
         coords[1] += coord_y[i] / float(len(coord_x))
         coords[0] += coord_x[i] / float(len(coord_x))
-        
+
     return coords
