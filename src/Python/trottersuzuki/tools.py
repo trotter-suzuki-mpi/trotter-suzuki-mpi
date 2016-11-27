@@ -4,12 +4,18 @@ import math
 
 
 def center_coordinates(grid, x, y):
-    idy = grid.start_y * grid.delta_y + 0.5 * grid.delta_y + \
-        y * grid.delta_y
+    idy = grid.start_y * grid.delta_y + 0.5 * grid.delta_y + y * grid.delta_y
     x_c = grid.global_no_halo_dim_x * grid.delta_x * 0.5
     y_c = grid.global_no_halo_dim_y * grid.delta_y * 0.5
-    idx = grid.start_x * grid.delta_x + 0.5 * grid.delta_x + \
-        x * grid.delta_x
+    idx = grid.start_x * grid.delta_x + 0.5 * grid.delta_x + x * grid.delta_x
+    if idx - x_c < -grid.length_x*0.5:
+        idx += grid.length_x
+    if idx - x_c > grid.length_x*0.5:
+        idx -= grid.length_x
+    if idy - y_c < -grid.length_y*0.5:
+        idy += grid.length_y
+    if idy - y_c > grid.length_y*0.5:
+        idy -= grid.length_y
     return idx - x_c, idy - y_c
 
 
