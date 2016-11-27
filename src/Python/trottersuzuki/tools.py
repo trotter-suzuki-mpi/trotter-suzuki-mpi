@@ -4,13 +4,13 @@ import math
 
 
 def center_coordinates(grid, x, y):
-        idy = grid.start_y * grid.delta_y + 0.5 * grid.delta_y + \
-            y * grid.delta_y
-        x_c = grid.global_no_halo_dim_x * grid.delta_x * 0.5
-        y_c = grid.global_no_halo_dim_y * grid.delta_y * 0.5
-        idx = grid.start_x * grid.delta_x + 0.5 * grid.delta_x + \
-            x * grid.delta_x
-        return idx - x_c, idy - y_c
+    idy = grid.start_y * grid.delta_y + 0.5 * grid.delta_y + \
+        y * grid.delta_y
+    x_c = grid.global_no_halo_dim_x * grid.delta_x * 0.5
+    y_c = grid.global_no_halo_dim_y * grid.delta_y * 0.5
+    idx = grid.start_x * grid.delta_x + 0.5 * grid.delta_x + \
+        x * grid.delta_x
+    return idx - x_c, idy - y_c
 
 
 def imprint(state, function):

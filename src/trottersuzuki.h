@@ -461,6 +461,8 @@ public:
     double get_intra_species_energy(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the intra-particles interaction energy of the system.
     double get_inter_species_energy(void);    ///< Get the inter-particles interaction energy of the system.
     double get_rabi_energy(void);    ///< Get the Rabi energy of the system.
+    void set_exp_potential(double *real, int real_length, double *imag,
+                           int imag_length, int which); ///< Set exponential potential directly from Python
 private:
     bool imag_time;    ///< Whether the time of evolution is imaginary(true) or real(false).
     double h_a[2];    ///< Parameters of the evolution operator regarding the kinetic operator of the first-component.
@@ -488,6 +490,7 @@ private:
     bool has_parameters_changed;   ///< Keeps track whether the Hamiltonian parameters were changed
     bool energy_expected_values_updated;    ///< Whether the expectation values are updated or not.
     void calculate_energy_expected_values(void);    ///< Calculate all the expectation values and the state's norm.
+    bool is_python;
 };
 
 double const_potential(double x);    ///< Defines the null potential function in 1D.
