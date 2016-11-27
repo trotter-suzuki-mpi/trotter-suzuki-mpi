@@ -19,6 +19,7 @@
 #include "common.h"
 #include "kernel.h"
 #include <iostream>
+#include <cstring>
 
 Solver::Solver(Lattice *_grid, State *_state, Hamiltonian *_hamiltonian,
                double _delta_t, string _kernel_type):
@@ -26,13 +27,11 @@ Solver::Solver(Lattice *_grid, State *_state, Hamiltonian *_hamiltonian,
     kernel_type(_kernel_type) {
     external_pot_real = new double* [2];
     external_pot_imag = new double* [2];
-    external_pot_real[0] = NULL;
-    external_pot_imag[0] = NULL;
+    external_pot_real[0] = new double[grid->dim_x * grid->dim_y];
+    external_pot_imag[0] = new double[grid->dim_x * grid->dim_y];
     external_pot_real[1] = NULL;
     external_pot_imag[1] = NULL;
     is_python = false;
-    self_initialized_exp_potential[0] = false;
-    self_initialized_exp_potential[1] = false;
     state_b = NULL;
     kernel = NULL;
     current_evolution_time = 0;
@@ -48,13 +47,11 @@ Solver::Solver(Lattice *_grid, State *state1, State *state2,
     kernel_type(_kernel_type) {
     external_pot_real = new double* [2];
     external_pot_imag = new double* [2];
-    external_pot_real[0] = NULL;
-    external_pot_imag[0] = NULL;
-    external_pot_real[1] = NULL;
-    external_pot_imag[1] = NULL;
+    external_pot_real[0] = new double[grid->dim_x * grid->dim_y];
+    external_pot_imag[0] = new double[grid->dim_x * grid->dim_y];
+    external_pot_real[1] = new double[grid->dim_x * grid->dim_y];
+    external_pot_imag[1] = new double[grid->dim_x * grid->dim_y];
     is_python = false;
-    self_initialized_exp_potential[0] = false;
-    self_initialized_exp_potential[1] = false;
     kernel = NULL;
     current_evolution_time = 0;
     single_component = false;
@@ -63,14 +60,10 @@ Solver::Solver(Lattice *_grid, State *state1, State *state2,
 }
 
 Solver::~Solver() {
-    if (self_initialized_exp_potential[0]) {
-        delete [] external_pot_real[0];
-        delete [] external_pot_imag[0];
-    }
-    if (self_initialized_exp_potential[1]) {    
-        delete [] external_pot_real[1];
-        delete [] external_pot_imag[1];
-    }
+    delete [] external_pot_real[0];
+    delete [] external_pot_imag[0];
+    delete [] external_pot_real[1];
+    delete [] external_pot_imag[1];
     delete [] external_pot_real;
     delete [] external_pot_imag;
     if (kernel != NULL) {
@@ -79,11 +72,6 @@ Solver::~Solver() {
 }
 
 void Solver::initialize_exp_potential(double delta_t, int which) {
-    if (external_pot_real[which] == NULL) {
-        self_initialized_exp_potential[which] = true;
-        external_pot_real[which] = new double[grid->dim_x * grid->dim_y];
-        external_pot_imag[which] = new double[grid->dim_x * grid->dim_y];
-    }
 #ifndef HAVE_MPI
     #pragma omp parallel default(shared)
 #endif
@@ -115,13 +103,8 @@ void Solver::initialize_exp_potential(double delta_t, int which) {
 void Solver::set_exp_potential(double *real, int real_length, double *imag,
                                int imag_length, int which) {
     is_python = true;
-    if (external_pot_real[which] != NULL and self_initialized_exp_potential[which]) {
-        delete [] external_pot_real[which];
-        delete [] external_pot_imag[which];
-        self_initialized_exp_potential[which] = false;
-    }
-    external_pot_real[which] = real;
-    external_pot_imag[which] = imag;
+    memcpy(external_pot_real[which], real, sizeof(double)*real_length);
+    memcpy(external_pot_imag[which], imag, sizeof(double)*imag_length);
 }
 
 void Solver::init_kernel() {
@@ -192,7 +175,9 @@ void Solver::evolve(int iterations, bool _imag_time) {
         else {
             h_a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
             h_b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-            initialize_exp_potential(delta_t, 0);
+            if (!is_python) {
+                initialize_exp_potential(delta_t, 0);
+            }
             if (!single_component) {
                 h_a[1] = cos(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_x));
                 h_b[1] = sin(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_x));
@@ -204,7 +189,8 @@ void Solver::evolve(int iterations, bool _imag_time) {
     }
     // Main loop
     double var = 0.5;
-    if (!single_component) {
+    if ((!is_python && !single_component)||
+            (is_python && current_evolution_time == 0 && !single_component)) {
         kernel->rabi_coupling(var, delta_t);
     }
     var = 1.;
@@ -212,10 +198,6 @@ void Solver::evolve(int iterations, bool _imag_time) {
     if (iterations < 0) {
         iterations = -iterations;
         soft_update = true;
-    }
-    if ((!is_python && !single_component)||
-            (is_python && current_evolution_time == 0)) {
-        kernel->rabi_coupling(var, delta_t);
     }
     // Main loop
     for (int i = 0; i < iterations; ++i) {

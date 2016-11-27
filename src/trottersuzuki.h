@@ -490,7 +490,6 @@ private:
     bool has_parameters_changed;   ///< Keeps track whether the Hamiltonian parameters were changed
     bool energy_expected_values_updated;    ///< Whether the expectation values are updated or not.
     void calculate_energy_expected_values(void);    ///< Calculate all the expectation values and the state's norm.
-    bool self_initialized_exp_potential[2];
     bool is_python;
 };
 
