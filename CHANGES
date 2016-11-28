@@ -1,5 +1,6 @@
-Since 1.5.5"
+Since 1.5.5:
   - New: One-dimensional topology through the class `Lattice1D`.
+  - New: The coordinate transformation and scaling is exposed via the function `center_coordinates`.
   - Changed: The two dimensional topology is now defined through the class `Lattice2D`.
   - Changed: The command-line interface was removed.
   - Changed: Python interface simplifed and made more consistent.
