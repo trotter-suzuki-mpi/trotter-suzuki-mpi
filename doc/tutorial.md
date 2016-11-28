@@ -23,6 +23,8 @@ State *state = new SinusoidState(grid, 1, 1);
 Hamiltonian *hamiltonian = new Hamiltonian(grid, NULL, particle_mass);
 ~~~~~~~~~~~~~~~
 
+Note that the state is centered around the origin and scaled according to the grid. The centering and scaling function is exposed to the user via the function `center_coordinates`.
+
 With these objects representing the physics of the problem, we can initialize the solver:
 
 ~~~~~~~~~~~~~~~{.cpp}

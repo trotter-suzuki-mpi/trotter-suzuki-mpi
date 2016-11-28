@@ -22,7 +22,7 @@ physical area of 20x20, then we have to specify these in the constructor of the 
     grid = ts.Lattice2D(300, 20.)
 
 The object ``grid`` defines the geometry of the system and it
-will be used throughout the simulations. Note that the origin of the lattice is at its centre.
+will be used throughout the simulations. Note that the origin of the lattice is at its centre and the lattice points are scaled to the physical locations. The actual transformation is exposed to the user via the function `center_coordinates`.
 
 The physics of the problem is described by the Hamiltonian. A single
 object is going to store all the information regarding the Hamiltonian.
@@ -46,15 +46,15 @@ function, or
 
 .. math::
 
-   H = \begin{bmatrix} H_1 &  \frac{\Omega}{2} \\ \frac{\Omega}{2} & H_2 \end{bmatrix} 
+   H = \begin{bmatrix} H_1 &  \frac{\Omega}{2} \\ \frac{\Omega}{2} & H_2 \end{bmatrix}
 
 where
 
 .. math::
 
-   H_1 = \frac{1}{2m_1}(P_x^2 + P_y^2) + V_1(x,y) + g_1|\psi(x,y)_1|^2 + g_{12}|\psi(x,y)_2|^2 + \omega L_z  
+   H_1 = \frac{1}{2m_1}(P_x^2 + P_y^2) + V_1(x,y) + g_1|\psi(x,y)_1|^2 + g_{12}|\psi(x,y)_2|^2 + \omega L_z
 
-   H_2 = \frac{1}{2m_2}(P_x^2 + P_y^2) + V_2(x,y) + g_2|\psi(x,y)_2|^2 + g_{12}|\psi(x,y)_1|^2 + \omega L_z  
+   H_2 = \frac{1}{2m_2}(P_x^2 + P_y^2) + V_2(x,y) + g_2|\psi(x,y)_2|^2 + g_{12}|\psi(x,y)_1|^2 + \omega L_z
 
 
 and
@@ -218,7 +218,7 @@ handy when we want to imprint, for instance, vortices or solitons:
         z = x + 1j*y
         angle = np.angle(z)
         return np.exp(1j * angle)
-    
+
     state.imprint(vortex)  # Imprint the vortex on the state
 
 File Input and Output
