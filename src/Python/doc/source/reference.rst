@@ -1677,6 +1677,21 @@ Solver Class
 
 Tools
 =====
+.. py:method:: center_coordinates(grid, x, y=None):
+
+    Center and scale the coordinates of the grid to physical locations.
+
+    **Parameters**
+
+    * `grid`: Lattice object
+        Defines the topology.
+    * `x`: int.
+        Grid point.
+    * `y`: int, optional.
+        Grid point, 2D case.
+    Get the position of a single vortex in the quantum state.
+
+
 .. py:method:: vortex_position(grid, state, approx_cloud_radius=0.)
 
     Get the position of a single vortex in the quantum state.
@@ -1713,4 +1728,3 @@ Tools
         >>> state.imprint(vortex)  # Imprint the vortex on the state
         >>> ts.vortex_position(grid, state)
         array([  8.88178420e-16,   8.88178420e-16])
-

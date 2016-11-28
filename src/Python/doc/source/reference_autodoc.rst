@@ -43,3 +43,8 @@ Solver Class
 ===================
 .. autoclass:: trottersuzuki.Solver
    :members: evolve, get_total_energy, get_squared_norm, get_kinetic_energy, get_potential_energy, get_rotational_energy, get_intra_species_energy, get_inter_species_energy, get_rabi_energy
+
+Tools
+=====
+.. autofunction:: trottersuzuki.center_coordinates
+.. autofunction:: trottersuzuki.vortex_position

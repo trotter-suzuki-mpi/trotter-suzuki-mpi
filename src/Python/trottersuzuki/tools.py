@@ -3,8 +3,23 @@ import numpy as np
 import math
 
 
-def center_coordinates(grid, x, y):
-    idy = grid.start_y * grid.delta_y + 0.5 * grid.delta_y + y * grid.delta_y
+def center_coordinates(grid, x, y=None):
+    """Center and scale the coordinates of the grid to physical locations.
+
+    Parameters
+    ----------
+    * `grid`: Lattice object
+        Defines the topology.
+    * `x`: int.
+        Grid point.
+    * `y`: int.
+        Grid point, 2D case.
+    """
+    if y is None:
+        _y = 0
+    else:
+        _y = y
+    idy = grid.start_y * grid.delta_y + 0.5 * grid.delta_y + _y * grid.delta_y
     x_c = grid.global_no_halo_dim_x * grid.delta_x * 0.5
     y_c = grid.global_no_halo_dim_y * grid.delta_y * 0.5
     idx = grid.start_x * grid.delta_x + 0.5 * grid.delta_x + x * grid.delta_x
@@ -16,7 +31,10 @@ def center_coordinates(grid, x, y):
         idy += grid.length_y
     if idy - y_c > grid.length_y*0.5:
         idy -= grid.length_y
-    return idx - x_c, idy - y_c
+    if y is None:
+        return idx - x_c
+    else:
+        return idx - x_c, idy - y_c
 
 
 def imprint(state, function):
