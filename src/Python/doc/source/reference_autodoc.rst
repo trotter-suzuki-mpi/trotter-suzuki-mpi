@@ -47,4 +47,4 @@ Solver Class
 Tools
 =====
 .. autofunction:: trottersuzuki.center_coordinates
-.. autofunction:: trottersuzuki.vortex_position
+.. autofunction:: trottersuzuki.get_vortex_position

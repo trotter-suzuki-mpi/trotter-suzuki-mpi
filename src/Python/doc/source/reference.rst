@@ -1692,7 +1692,7 @@ Tools
     Get the position of a single vortex in the quantum state.
 
 
-.. py:method:: vortex_position(grid, state, approx_cloud_radius=0.)
+.. py:method:: get_vortex_position(grid, state, approx_cloud_radius=0.)
 
     Get the position of a single vortex in the quantum state.
 
@@ -1726,5 +1726,5 @@ Tools
         >>>     angle = np.angle(z)
         >>>     return np.exp(1j * angle)
         >>> state.imprint(vortex)  # Imprint the vortex on the state
-        >>> ts.vortex_position(grid, state)
+        >>> ts.get_vortex_position(grid, state)
         array([  8.88178420e-16,   8.88178420e-16])
