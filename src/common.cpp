@@ -23,32 +23,32 @@
 #include "common.h"
 
 void center_coordinates(Lattice *grid, int x_in, double *x_out) {
-    double idx = grid->start_x * grid->delta_x + 0.5 * grid->delta_x + x_in*grid->delta_x;
+    double idx = grid->start_x * grid->delta_x + 0.5 * grid->delta_x + x_in * grid->delta_x;
     double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
-    if (idx - x_c < -grid->length_x*0.5) {
+    if (idx - x_c < -grid->length_x * 0.5) {
         idx += grid->length_x;
     }
-    if (idx - x_c > grid->length_x*0.5) {
+    if (idx - x_c > grid->length_x * 0.5) {
         idx -= grid->length_x;
     }
     *x_out = idx - x_c;
 }
 
 void center_coordinates(Lattice *grid, int x_in, int y_in, double *x_out, double *y_out) {
-    double idy = grid->start_y * grid->delta_y + 0.5 * grid->delta_y + y_in*grid->delta_y;
-    double idx = grid->start_x * grid->delta_x + 0.5 * grid->delta_x + x_in*grid->delta_x;
+    double idy = grid->start_y * grid->delta_y + 0.5 * grid->delta_y + y_in * grid->delta_y;
+    double idx = grid->start_x * grid->delta_x + 0.5 * grid->delta_x + x_in * grid->delta_x;
     double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
     double y_c = grid->global_no_halo_dim_y * grid->delta_y * 0.5;
-    if (idx - x_c < -grid->length_x*0.5) {
+    if (idx - x_c < -grid->length_x * 0.5) {
         idx += grid->length_x;
     }
-    if (idx - x_c > grid->length_x*0.5) {
+    if (idx - x_c > grid->length_x * 0.5) {
         idx -= grid->length_x;
     }
-    if (idy - y_c < -grid->length_y*0.5) {
+    if (idy - y_c < -grid->length_y * 0.5) {
         idy += grid->length_y;
     }
-    if (idy - y_c > grid->length_y*0.5) {
+    if (idy - y_c > grid->length_y * 0.5) {
         idy -= grid->length_y;
     }
     *x_out = idx - x_c;

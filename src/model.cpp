@@ -178,7 +178,7 @@ void State::imprint(complex<double> (*function)(double x)) {
 }
 
 void State::imprint(complex<double> (*function)(double x, double y)) {
-    double x_r=0.0, y_r=0.0;
+    double x_r = 0.0, y_r = 0.0;
     for (int y = 0; y < grid->dim_y; y++) {
         for (int x = 0; x < grid->dim_x; x++) {
             center_coordinates(grid, x, y, &x_r, &y_r);
@@ -203,7 +203,7 @@ void State::init_state(complex<double> (*ini_state)(double x)) {
 
 void State::init_state(complex<double> (*ini_state)(double x, double y)) {
     complex<double> tmp;
-    double x_r=0.0, y_r=0.0;
+    double x_r = 0.0, y_r = 0.0;
     for (int y = 0; y < grid->dim_y; y++) {
         for (int x = 0; x < grid->dim_x; x++) {
             center_coordinates(grid, x, y, &x_r, &y_r);
@@ -324,7 +324,7 @@ double *State::get_phase(double *_phase) {
     }
     double norm;
     for(int id_j = 0, j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; ++id_j, ++j) {
-        for(int id_i=0, i = grid->inner_start_x - grid->start_x; i < grid->inner_end_x - grid->start_x; ++id_i, ++i) {
+        for(int id_i = 0, i = grid->inner_start_x - grid->start_x; i < grid->inner_end_x - grid->start_x; ++id_i, ++i) {
             norm = sqrt(p_real[j * grid->dim_x + i] * p_real[j * grid->dim_x + i] + p_imag[j * grid->dim_x + i] * p_imag[j * grid->dim_x + i]);
             if(norm == 0)
                 phase[id_j * local_no_halo_dim_x + id_i] = 0;
@@ -419,7 +419,7 @@ void State::calculate_expected_values(void) {
                 sum_pxpx_mean += real(conj(psi_center) * (const_1 * psi_right_right + const_2 * psi_right + const_2 * psi_left + const_1 * psi_left_left + const_3 * psi_center));
                 sum_pypy_mean += real(conj(psi_center) * (const_1 * psi_down_down + const_2 * psi_down + const_2 * psi_up + const_1 * psi_up_up + const_3 * psi_center));
                 sum_angular_momentum += imag(conj(psi_center) * (rot_x * (derivate1_4 * psi_right + derivate1_3 * psi_center + derivate1_2 * psi_left + derivate1_1 * psi_left_left)
-                                                + rot_y * (derivate1_4 * psi_up + derivate1_3 * psi_center + derivate1_2 * psi_down + derivate1_1 * psi_down_down)));
+                                             + rot_y * (derivate1_4 * psi_up + derivate1_3 * psi_center + derivate1_2 * psi_down + derivate1_1 * psi_down_down)));
             }
             ++x;
         }
@@ -573,11 +573,12 @@ void State::write_to_file(string filename) {
 ExponentialState::ExponentialState(Lattice2D *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
     State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase) {
     complex<double> tmp;
-    double x_r=0, y_r=0;
-    for (int y = 0; y < grid->dim_y; y++) {
-        for (int x = 0; x < grid->dim_x; x++) {
-        	center_coordinates(grid, x, y, &x_r, &y_r);
-            tmp = exp_state(x_r, y_r);
+    double delta_x = grid->delta_x, delta_y = grid->delta_y;
+    double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
+    for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
+        idx = grid->start_x * delta_x + 0.5 * delta_x;
+        for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
+            tmp = exp_state(idx, idy);
             p_real[y * grid->dim_x + x] = real(tmp);
             p_imag[y * grid->dim_x + x] = imag(tmp);
         }
@@ -585,11 +586,9 @@ ExponentialState::ExponentialState(Lattice2D *_grid, int _n_x, int _n_y, double 
 }
 
 complex<double> ExponentialState::exp_state(double x, double y) {
-    double Lx = grid->length_x;
-    double Ly = grid->length_y;
-    double const_x = 2 * M_PI * double(n_x) / Lx;
-    double const_y = 2 * M_PI * double(n_y) / Ly;
-    return sqrt(norm / (Lx * Ly)) * exp(complex<double>(0., phase)) * exp(complex<double>(0., const_x * x + const_y * y));
+    double L_x = grid->global_no_halo_dim_x * grid->delta_x;
+    double L_y = grid->global_no_halo_dim_y * grid->delta_y;
+    return sqrt(norm / (L_x * L_y)) * exp(complex<double>(0., phase)) * exp(complex<double>(0., 2 * M_PI * double(n_x) / L_x * x + 2 * M_PI * double(n_y) / L_y * y));
 }
 
 GaussianState::GaussianState(Lattice2D *_grid, double _omega_x, double _omega_y, double _mean_x, double _mean_y,
@@ -599,8 +598,8 @@ GaussianState::GaussianState(Lattice2D *_grid, double _omega_x, double _omega_y,
     if (omega_y == -1.) {
         omega_y = omega_x;
     }
-	complex<double> tmp;
-    double x_r=0, y_r=0;
+    complex<double> tmp;
+    double x_r = 0, y_r = 0;
     for (int y = 0; y < grid->dim_y; y++) {
         for (int x = 0; x < grid->dim_x; x++) {
             center_coordinates(grid, x, y, &x_r, &y_r);
@@ -618,11 +617,12 @@ complex<double> GaussianState::gauss_state(double x, double y) {
 SinusoidState::SinusoidState(Lattice2D *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
     State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase)  {
     complex<double> tmp;
-    double x_r=0, y_r=0;
-    for (int y = 0; y < grid->dim_y; y++) {
-        for (int x = 0; x < grid->dim_x; x++) {
-        	center_coordinates(grid, x, y, &x_r, &y_r);
-            tmp = sinusoid_state(x_r, y_r);
+    double delta_x = grid->delta_x, delta_y = grid->delta_y;
+    double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
+    for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
+        idx = grid->start_x * delta_x + 0.5 * delta_x;
+        for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
+            tmp = sinusoid_state(idx, idy);
             p_real[y * grid->dim_x + x] = real(tmp);
             p_imag[y * grid->dim_x + x] = imag(tmp);
         }
@@ -630,11 +630,9 @@ SinusoidState::SinusoidState(Lattice2D *_grid, int _n_x, int _n_y, double _norm,
 }
 
 complex<double> SinusoidState::sinusoid_state(double x, double y) {
-	double Lx = grid->length_x;
-	double Ly = grid->length_y;
-	double const_x = 2 * M_PI * double(n_x) / Lx;
-	double const_y = 2 * M_PI * double(n_y) / Ly;
-    return sqrt(norm / (Lx * Ly)) * 2.* exp(complex<double>(0., phase)) * complex<double> (sin(const_x * x) * sin(const_y * y), 0.0);
+    double L_x = grid->global_no_halo_dim_x * grid->delta_x;
+    double L_y = grid->global_no_halo_dim_y * grid->delta_y;
+    return sqrt(norm / (L_x * L_y)) * 2.* exp(complex<double>(0., phase)) * complex<double> (sin(2 * M_PI * double(n_x) / L_x * x) * sin(2 * M_PI * double(n_y) / L_y * y), 0.0);
 }
 
 Potential::Potential(Lattice *_grid, char *filename): grid(_grid) {
@@ -692,8 +690,9 @@ double Potential::get_value(int x) {
 double Potential::get_value(int x, int y) {
     if (matrix != NULL) {
         return matrix[y * grid->dim_x + x];
-    } else {
-        double x_r=0, y_r=0;
+    }
+    else {
+        double x_r = 0, y_r = 0;
         center_coordinates(grid, x, y, &x_r, &y_r);
         if (is_static) {
             return static_potential(x_r, y_r);
@@ -731,8 +730,12 @@ HarmonicPotential::HarmonicPotential(Lattice2D *_grid, double _omegax, double _o
 }
 
 double HarmonicPotential::get_value(int x, int y) {
-    double x_r = 0, y_r = 0;
-    center_coordinates(grid, x, y, &x_r, &y_r);
+    double idy = (grid->start_y + y) * grid->delta_y + mean_x + 0.5 * grid->delta_y;
+    double idx = (grid->start_x + x) * grid->delta_x + mean_y + 0.5 * grid->delta_x;
+    double x_c = (grid->global_dim_x - 2.*grid->halo_x * grid->periods[1]) * grid->delta_x * 0.5;
+    double y_c = (grid->global_dim_y - 2.*grid->halo_y * grid->periods[0]) * grid->delta_y * 0.5;
+    double x_r = idx - x_c;
+    double y_r = idy - y_c;
     return 0.5 * mass * (omegax * omegax * x_r * x_r + omegay * omegay * y_r * y_r);
 }
 

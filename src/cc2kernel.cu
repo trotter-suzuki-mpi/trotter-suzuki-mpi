@@ -902,7 +902,8 @@ CC2Kernel::~CC2Kernel() {
         CUDA_SAFE_CALL(cudaFree(pdev_imag[1][1]));
         CUDA_SAFE_CALL(cudaFree(dev_external_pot_real[1]));
         CUDA_SAFE_CALL(cudaFree(dev_external_pot_imag[1]));
-    } else {
+    }
+    else {
         delete [] a;
         delete [] b;
         delete [] norm;
@@ -1008,7 +1009,7 @@ void CC2Kernel::normalization() {
         state_index = 1;
         double tot_sum_b = calculate_squared_norm(true);
         state_index = 0;
-        double _norm = sqrt((tot_sum_a + tot_sum_b)/tot_norm);
+        double _norm = sqrt((tot_sum_a + tot_sum_b) / tot_norm);
         double inverse_norm = 1. / _norm;
         cublasStatus_t status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_real[0][sense], 1);
         status = cublasDscal(handle, tile_width * tile_height, &inverse_norm, pdev_imag[0][sense], 1);
