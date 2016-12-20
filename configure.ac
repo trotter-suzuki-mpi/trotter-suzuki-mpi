@@ -82,7 +82,14 @@ if test x"$with_cuda" != x"no" ; then
   AC_CHECK_PROG(NVCC_CHECK,nvcc,yes,no,$CUDA_PATH/bin)
   if test x"$NVCC_CHECK" = x"yes" ; then
      cuda_enabled=yes
-     CUDA_CFLAGS="-I$CUDA_PATH/include -use_fast_math -ccbin ${CXX} -Xptxas "-v" -Xcompiler \"${CXXFLAGS}\""
+     AC_ARG_WITH([gpu-architecture],
+                  [  --with-gpu-architecture=version    specify GPU architecture [default=sm_35]])
+     if test x"$with_gpu_architecture" != x"" ; then
+        CUDA_ARCH=$with_gpu_architecture
+     else
+        CUDA_ARCH=sm_35
+     fi
+     CUDA_CFLAGS="-I$CUDA_PATH/include --gpu-architecture=${CUDA_ARCH} -use_fast_math -ccbin ${CXX} -Xptxas "-v" -Xcompiler \"${CXXFLAGS}\""
      CXXFLAGS="${CXXFLAGS} -I$CUDA_PATH/include"
      CUDA_LIBS="-lcudart -lcublas"
      if test -e "$CUDA_PATH/lib$SUFFIX"; then
