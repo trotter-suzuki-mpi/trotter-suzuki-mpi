@@ -8,7 +8,7 @@ import os
 import sys
 import platform
 win_cuda_dir = ""
-
+gpu_architecture = "sm_35"
 
 def find_cuda():
     if 'CUDAHOME' in os.environ:
@@ -139,6 +139,8 @@ else:
         else:
             extra_args = ""
         ts_module.extra_compile_args['nvcc'] = ['-use_fast_math',
+                                                '--gpu-architecture',
+                                                gpu_architecture,
                                                 '--ptxas-options=-v', '-c',
                                                 '--compiler-options',
                                                 '-fPIC ' + extra_args]
