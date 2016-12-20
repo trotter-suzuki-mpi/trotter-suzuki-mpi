@@ -113,18 +113,10 @@ void Solver::init_kernel() {
     }
     if (kernel_type == "cpu") {
         if (single_component) {
-            if (grid->length_y == 0) {
-                kernel = new CPUBlock1D(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_t, norm2[0], imag_time);
-            } else {
-                kernel = new CPUBlock(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_t, norm2[0], imag_time);
-            }
+            kernel = new CPUBlock(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_t, norm2[0], imag_time);
         }
         else {
-            if (grid->length_y == 0) {
-                kernel = new CPUBlock1D(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm2, imag_time);
-            } else {
-                kernel = new CPUBlock(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm2, imag_time);
-            }
+            kernel = new CPUBlock(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm2, imag_time);
         }
     }
     else if (kernel_type == "gpu") {

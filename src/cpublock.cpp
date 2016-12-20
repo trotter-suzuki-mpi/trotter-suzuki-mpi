@@ -304,34 +304,50 @@ void rabi_coupling_imaginary(size_t stride, size_t width, size_t height, double 
 
 void full_step(bool two_wavefunctions, size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double a, double b, double coupling_a, double coupling_b,
                size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * real, double * imag) {
-    block_kernel_vertical  (0u, stride, width, height, a, b, real, imag);
+    if (height > 1 ) {
+        block_kernel_vertical  (0u, stride, width, height, a, b, real, imag);
+    }
     block_kernel_horizontal(0u, stride, width, height, a, b, real, imag);
-    block_kernel_vertical  (1u, stride, width, height, a, b, real, imag);
+    if (height > 1 ) {
+        block_kernel_vertical  (1u, stride, width, height, a, b, real, imag);
+    }
     block_kernel_horizontal(1u, stride, width, height, a, b, real, imag);
     block_kernel_potential (two_wavefunctions, stride, width, height, a, b, coupling_a, coupling_b, tile_width, external_pot_real, external_pot_imag, pb_real, pb_imag, real, imag);
     if (alpha_x != 0. && alpha_y != 0.) {
         block_kernel_rotation  (stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
     }
     block_kernel_horizontal(1u, stride, width, height, a, b, real, imag);
-    block_kernel_vertical  (1u, stride, width, height, a, b, real, imag);
+    if (height > 1 ) {
+        block_kernel_vertical  (1u, stride, width, height, a, b, real, imag);
+    }
     block_kernel_horizontal(0u, stride, width, height, a, b, real, imag);
-    block_kernel_vertical  (0u, stride, width, height, a, b, real, imag);
+    if (height > 1 ) {
+        block_kernel_vertical  (0u, stride, width, height, a, b, real, imag);
+    }
 }
 
 void full_step_imaginary(bool two_wavefunctions, size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double a, double b, double coupling_a, double coupling_b,
                          size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * real, double * imag) {
-    block_kernel_vertical_imaginary  (0u, stride, width, height, a, b, real, imag);
+    if (height > 1 ) {
+        block_kernel_vertical_imaginary  (0u, stride, width, height, a, b, real, imag);
+    }
     block_kernel_horizontal_imaginary(0u, stride, width, height, a, b, real, imag);
-    block_kernel_vertical_imaginary  (1u, stride, width, height, a, b, real, imag);
+    if (height > 1 ) {
+        block_kernel_vertical_imaginary  (1u, stride, width, height, a, b, real, imag);
+    }
     block_kernel_horizontal_imaginary(1u, stride, width, height, a, b, real, imag);
     block_kernel_potential_imaginary (two_wavefunctions, stride, width, height, a, b, coupling_a, coupling_b, tile_width, external_pot_real, external_pot_imag, pb_real, pb_imag, real, imag);
     if (alpha_x != 0. && alpha_y != 0.) {
         block_kernel_rotation_imaginary  (stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
     }
     block_kernel_horizontal_imaginary(1u, stride, width, height, a, b, real, imag);
-    block_kernel_vertical_imaginary  (1u, stride, width, height, a, b, real, imag);
+    if (height > 1 ) {
+        block_kernel_vertical_imaginary  (1u, stride, width, height, a, b, real, imag);
+    }
     block_kernel_horizontal_imaginary(0u, stride, width, height, a, b, real, imag);
-    block_kernel_vertical_imaginary  (0u, stride, width, height, a, b, real, imag);
+    if (height > 1 ) {
+        block_kernel_vertical_imaginary  (0u, stride, width, height, a, b, real, imag);
+    }
 }
 
 void process_sides(bool two_wavefunctions, int offset_tile_x, int offset_tile_y, double alpha_x, double alpha_y, size_t tile_width, size_t block_width, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height,
@@ -444,7 +460,11 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
 #endif
-
+    if (halo_y == 0) {
+        block_height = 1;
+    } else {
+        block_height = BLOCK_HEIGHT_CACHE;
+    }
     start_x = grid->start_x;
     end_x = grid->end_x;
     inner_start_x = grid->inner_start_x;
@@ -519,6 +539,11 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
     MPI_Cart_shift(cartcomm, 0, 1, &neighbors[UP], &neighbors[DOWN]);
     MPI_Cart_shift(cartcomm, 1, 1, &neighbors[LEFT], &neighbors[RIGHT]);
 #endif
+    if (halo_y == 0) {
+        block_height = 1;
+    } else {
+        block_height = BLOCK_HEIGHT_CACHE;
+    }
 
     start_x = grid->start_x;
     end_x = grid->end_x;
@@ -584,19 +609,43 @@ CPUBlock::~CPUBlock() {
 void CPUBlock::run_kernel() {
     // Inner part
     int inner = 1, sides = 0;
+    if (halo_y == 0) {
+        process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y,
+                     alpha_x, alpha_y, tile_width, block_width, block_height,
+                     halo_x, 0, block_height, halo_y, block_height - 2 * halo_y,
+                     a[state_index], b[state_index],
+                     coupling_const[state_index], coupling_const[2],
+                     external_pot_real[state_index], external_pot_imag[state_index],
+                     p_real[state_index][sense], p_imag[state_index][sense],
+                     p_real[1 - state_index][sense], p_imag[1 - state_index][sense],
+                     p_real[state_index][1 - sense], p_imag[state_index][1 - sense],
+                     inner, sides, imag_time);
+
+    } else {
 #ifndef HAVE_MPI
-    #pragma omp parallel default(shared)
+        #pragma omp parallel default(shared)
 #endif
-    {
+        {
 #ifndef HAVE_MPI
-        #pragma omp for
+            #pragma omp for
 #endif
-        for (int block_start = block_height - 2 * halo_y; block_start < int(tile_height - block_height); block_start += block_height - 2 * halo_y) {
-            process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y, alpha_x, alpha_y, tile_width, block_width, block_height, halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y, a[state_index], b[state_index],
-                         coupling_const[state_index], coupling_const[2], external_pot_real[state_index], external_pot_imag[state_index], p_real[state_index][sense], p_imag[state_index][sense], p_real[1 - state_index][sense], p_imag[1 - state_index][sense], p_real[state_index][1 - sense], p_imag[state_index][1 - sense], inner, sides, imag_time);
+            for (int block_start = block_height - 2 * halo_y;
+                 block_start < int(tile_height - block_height);
+                 block_start += block_height - 2 * halo_y) {
+
+                process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y,
+                             alpha_x, alpha_y, tile_width, block_width, block_height,
+                             halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y,
+                             a[state_index], b[state_index],
+                             coupling_const[state_index], coupling_const[2],
+                             external_pot_real[state_index], external_pot_imag[state_index],
+                             p_real[state_index][sense], p_imag[state_index][sense],
+                             p_real[1 - state_index][sense], p_imag[1 - state_index][sense],
+                             p_real[state_index][1 - sense], p_imag[state_index][1 - sense],
+                             inner, sides, imag_time);
+            }
         }
     }
-
     sense = 1 - sense;
 }
 
