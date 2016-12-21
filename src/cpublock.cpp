@@ -154,7 +154,7 @@ void block_kernel_rotation(size_t stride, size_t width, size_t height, int offse
 
     double tmp_r, tmp_i;
 
-    for (size_t j = 0, y = offset_y; j < height; ++j, ++y) {
+    for (int j = 0, y = offset_y; j < height; ++j, ++y) {
         double alpha_yy = - 0.5 * alpha_y * y;
         double a = cos(alpha_yy), b = sin(alpha_yy);
         for (size_t i = 0, idx = j * stride, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
@@ -173,7 +173,7 @@ void block_kernel_rotation(size_t stride, size_t width, size_t height, int offse
         }
     }
 
-    for (size_t i = 0, x = offset_x; i < width; ++i, ++x) {
+    for (int i = 0, x = offset_x; i < width; ++i, ++x) {
         double alpha_xx = alpha_x * x;
         double a = cos(alpha_xx), b = sin(alpha_xx);
         for (size_t j = 0, idx = i, peer = stride + idx; j < height - 1; j += 2, idx += 2 * stride, peer += 2 * stride) {
@@ -192,7 +192,7 @@ void block_kernel_rotation(size_t stride, size_t width, size_t height, int offse
         }
     }
 
-    for (size_t j = 0, y = offset_y; j < height; ++j, ++y) {
+    for (int j = 0, y = offset_y; j < height; ++j, ++y) {
         double alpha_yy = - 0.5 * alpha_y * y;
         double a = cos(alpha_yy), b = sin(alpha_yy);
         for (size_t i = 0, idx = j * stride, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
@@ -215,8 +215,7 @@ void block_kernel_rotation(size_t stride, size_t width, size_t height, int offse
 void block_kernel_rotation_imaginary(size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double * p_real, double * p_imag) {
 
     double tmp_r, tmp_i;
-
-    for (size_t j = 0, y = offset_y; j < height; ++j, ++y) {
+    for (int j = 0, y = offset_y; j < height; ++j, ++y) {
         double alpha_yy = - 0.5 * alpha_y * y;
         double a = cosh(alpha_yy), b = sinh(alpha_yy);
         for (size_t i = 0, idx = j * stride, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
@@ -235,7 +234,7 @@ void block_kernel_rotation_imaginary(size_t stride, size_t width, size_t height,
         }
     }
 
-    for (size_t i = 0, x = offset_x; i < width; ++i, ++x) {
+    for (int i = 0, x = offset_x; i < width; ++i, ++x) {
         double alpha_xx = alpha_x * x;
         double a = cosh(alpha_xx), b = sinh(alpha_xx);
         for (size_t j = 0, idx = i, peer = stride + idx; j < height - 1; j += 2, idx += 2 * stride, peer += 2 * stride) {
@@ -254,7 +253,7 @@ void block_kernel_rotation_imaginary(size_t stride, size_t width, size_t height,
         }
     }
 
-    for (size_t j = 0, y = offset_y; j < height; ++j, ++y) {
+    for (int j = 0, y = offset_y; j < height; ++j, ++y) {
         double alpha_yy = - 0.5 * alpha_y * y;
         double a = cosh(alpha_yy), b = sinh(alpha_yy);
         for (size_t i = 0, idx = j * stride, peer = idx + 1; i < width - 1; i += 2, idx += 2, peer += 2) {
@@ -338,7 +337,7 @@ void full_step_imaginary(bool two_wavefunctions, size_t stride, size_t width, si
     block_kernel_horizontal_imaginary(1u, stride, width, height, a, b, real, imag);
     block_kernel_potential_imaginary (two_wavefunctions, stride, width, height, a, b, coupling_a, coupling_b, tile_width, external_pot_real, external_pot_imag, pb_real, pb_imag, real, imag);
     if (alpha_x != 0. && alpha_y != 0.) {
-        block_kernel_rotation_imaginary  (stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
+        block_kernel_rotation_imaginary(stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
     }
     block_kernel_horizontal_imaginary(1u, stride, width, height, a, b, real, imag);
     if (height > 1 ) {
