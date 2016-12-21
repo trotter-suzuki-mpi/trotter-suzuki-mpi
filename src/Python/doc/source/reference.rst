@@ -1477,41 +1477,10 @@ Solver Class
 
    **Constructors**
 
-   .. py:method:: Solver(grid, state, hamiltonian, delta_t, kernel_type="cpu")
+   .. py:method:: Solver(grid, state1, hamiltonian, delta_t, Potential=None,
+                         State2=None, Potential2=None, kernel_type="cpu")
 
-      Construct the Solver object for a single-component system.
-
-      **Parameters**
-
-      * `grid` : Lattice object
-          Define the geometry of the simulation.
-      * `state` : State object
-          State of the system.
-      * `hamiltonian` : Hamiltonian object
-          Hamiltonian of the system.
-      * `delta_t` : float
-          A single evolution iteration, evolves the state for this time.
-      * `kernel_type` : string,optional (default: 'cpu')
-          Which kernel to use (either cpu or gpu).
-
-      **Returns**
-
-      * `Solver` : Solver object
-          Solver object for the simulation of a single-component system.
-
-      **Example**
-
-          >>> import trottersuzuki as ts  # import the module
-          >>> grid = ts.Lattice2D()  # Define the simulation's geometry
-          >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
-          >>> potential = ts.HarmonicPotential(grid, 1., 1.)  # Create harmonic potential
-          >>> hamiltonian = ts.Hamiltonian(grid, potential)  # Create a harmonic oscillator Hamiltonian
-          >>> solver = ts.Solver(grid, state, hamiltonian, 1e-2)  # Create the solver
-
-
-   .. py:method:: Solver(grid, state1, state2, hamiltonian, delta_t, kernel_type="cpu")
-
-      Construct the Solver object for a two-component system.
+      Construct the Solver object. Potential is only to be passed if it is time-evolving.
 
       **Parameters**
 
@@ -1519,13 +1488,17 @@ Solver Class
           Define the geometry of the simulation.
       * `state1` : State object
           First component's state of the system.
-      * `state2` : State object
-          Second component's state of the system.
       * `hamiltonian` : Hamiltonian object
           Hamiltonian of the two-component system.
       * `delta_t` : float
           A single evolution iteration, evolves the state for this time.
-      * `kernel_type` : string,optional (default: 'cpu')
+      *  `Potential`: Potential object, optional.
+          Time-evolving potential in component one.
+      * `state2` : State object, optional.
+          Second component's state of the system.
+      *  `Potential2`: Potential object, optional.
+          Time-evolving potential in component two.
+      * `kernel_type` : str, optional (default: 'cpu')
           Which kernel to use (either cpu or gpu).
 
       **Returns**
@@ -1541,7 +1514,7 @@ Solver Class
           >>> state_2 = ts.GaussianState(grid, 1.)  # Create second-component system's state
           >>> potential = ts.HarmonicPotential(grid, 1., 1.)  # Create harmonic potential
           >>> hamiltonian = ts.Hamiltonian2Component(grid, potential, potential)  # Create an harmonic oscillator Hamiltonian
-          >>> solver = ts.Solver(grid, state_1, state_2, hamiltonian, 1e-2)  # Create the solver
+          >>> solver = ts.Solver(grid, state_1, hamiltonian, 1e-2, State2=state_2)  # Create the solver
 
    **Members**
 

@@ -4,8 +4,6 @@ Function Reference
 
 Lattice Classes
 ===============
-.. autoclass:: trottersuzuki.Lattice
-
 .. autoclass:: trottersuzuki.Lattice1D
 
 .. autoclass:: trottersuzuki.Lattice2D
