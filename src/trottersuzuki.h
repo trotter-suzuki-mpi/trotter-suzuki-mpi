@@ -31,13 +31,6 @@
 
 using namespace std;
 
-/**
- * \brief This class defines the lattice structure over which the state and potential matrices are defined.
- *
- * As to single-process execution, the lattice is a single tile which can be surrounded by a halo, in the case of periodic boundary conditions.
- * As to multi-process execution, the lattice is divided in smaller lattices, dubbed tiles, one for each process. Each of the tiles is surrounded by a halo.
- */
-
 class Lattice {
 public:
     int mpi_rank;    ///< Rank of the process in the MPI topology.
@@ -61,6 +54,12 @@ public:
 #endif
 };
 
+/**
+ * \brief This class defines the 1D lattice structure over which the state and potential are defined.
+ *
+ * As to single-process execution, the lattice is a single tile which can be surrounded by a halo, in the case of periodic boundary conditions.
+ * As to multi-process execution, the lattice is divided in smaller lattices, dubbed tiles, one for each process. Each of the tiles is surrounded by a halo.
+ */
 class Lattice1D: public Lattice {
 public:
     /**
@@ -74,6 +73,12 @@ public:
     Lattice1D(int dim, double length, bool periodic_x_axis = false);
 };
 
+/**
+ * \brief This class defines the 2D lattice structure over which the state and potential matrices are defined.
+ *
+ * As to single-process execution, the lattice is a single tile which can be surrounded by a halo, in the case of periodic boundary conditions.
+ * As to multi-process execution, the lattice is divided in smaller lattices, dubbed tiles, one for each process. Each of the tiles is surrounded by a halo.
+ */
 class Lattice2D: public Lattice {
 public:
     /**
