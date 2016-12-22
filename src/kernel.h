@@ -132,6 +132,7 @@ private:
     int inner_end_x;        ///< X axis coordinate of the last dot of the processed tile, which is not in the halo.
     int inner_end_y;        ///< Y axis coordinate of the last dot of the processed tile, which is not in the halo.
     int *periods;         ///< Two dimensional array which takes entries 0 or 1. 1: periodic boundary condition along the corresponding axis; 0: closed boundary condition along the corresponding axis.
+    string coordinate_system;  ///< Type of the coordinate system used.
 #ifdef HAVE_MPI
     MPI_Comm cartcomm;        ///< Ensemble of processes communicating the halos and evolving the tiles.
     int neighbors[4];       ///< Array that stores the processes' rank neighbour of the current process.
