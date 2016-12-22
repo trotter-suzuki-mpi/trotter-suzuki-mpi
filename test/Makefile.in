@@ -33,12 +33,12 @@ TEST_LIBS      = @TEST_LIBS@
 # VPATH-related substitution variables
 srcdir	 = ./../src
 
-LIBOBJS=$(srcdir)/common.o $(srcdir)/cpublock.o $(srcdir)/solver.o $(srcdir)/model.o
+LIBOBJS=$(srcdir)/common.o $(srcdir)/cpukernel.o $(srcdir)/cpueuclidean.o $(srcdir)/solver.o $(srcdir)/model.o
 
 TEST_OBJS=$(LIBOBJS) unittest.o kerneltest.o
 
 ifdef CUDA_LIBS
-	LIBOBJS+=$(srcdir)/cc2kernel.cu.co
+	LIBOBJS+=$(srcdir)/gpueuclidean.cu.co $(srcdir)/gpukernel.cu.co
 endif
 
 all: check
