@@ -36,6 +36,7 @@ Lattice1D::Lattice1D(int dim, double length, bool periodic_x_axis) {
     delta_y = 1.0;
     periods[0] = 0;
     periods[1] = (int) periodic_x_axis;
+    coordinate_system = "Cartesian";
 #ifdef HAVE_MPI
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_procs);
     mpi_dims[0] = mpi_procs;
@@ -70,27 +71,34 @@ Lattice1D::Lattice1D(int dim, double length, bool periodic_x_axis) {
 
 Lattice2D::Lattice2D(int dim, double _length,
                      bool periodic_x_axis, bool periodic_y_axis,
-                     double angular_velocity) {
+                     double angular_velocity, string coordinate_system) {
     init(dim, _length, dim, _length, periodic_x_axis, periodic_y_axis,
-         angular_velocity);
+         angular_velocity, coordinate_system);
 }
 
 Lattice2D::Lattice2D(int _dim_x, double _length_x, int _dim_y, double _length_y,
                      bool periodic_x_axis, bool periodic_y_axis,
-                     double angular_velocity) {
+                     double angular_velocity, string coordinate_system) {
     init(_dim_x, _length_x, _dim_y, _length_y, periodic_x_axis, periodic_y_axis,
-         angular_velocity);
+         angular_velocity, coordinate_system);
 }
 
 void Lattice2D::init(int _dim_x, double _length_x, int _dim_y, double _length_y,
                      bool periodic_x_axis, bool periodic_y_axis,
-                     double angular_velocity) {
+                     double angular_velocity, string _coordinate_system) {
     length_x = _length_x;
     length_y = _length_y;
     delta_x = length_x / double(_dim_x);
     delta_y = length_y / double(_dim_y);
     periods[0] = (int) periodic_y_axis;
     periods[1] = (int) periodic_x_axis;
+    if (_coordinate_system != "Cartesian" ||
+        _coordinate_system != "Cylindrical") {
+    	my_abort("The coordinate system you have chosen is not implemented.");
+    }
+    else {
+    	coordinate_system = _coordinate_system;
+    }
     mpi_dims[0] = mpi_dims[1] = 0;
 #ifdef HAVE_MPI
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_procs);

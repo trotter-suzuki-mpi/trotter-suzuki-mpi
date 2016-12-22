@@ -41,6 +41,7 @@ public:
     int global_no_halo_dim_x, global_no_halo_dim_y;    ///< Linear dimension of the lattice, excluding the eventual surrounding halo, along x and y axes.
     int global_dim_x, global_dim_y;    ///< Linear dimension of the lattice, comprising the eventual surrounding halo, along x and y axes.
     int periods[2];    ///< Whether the grid is periodic in any of the directions.
+    string coordinate_system;	///< Type of the coordinate system used.
 
     // Computational topology
     int halo_x, halo_y;    ///< Halo length along the x and y halos.
@@ -84,30 +85,35 @@ public:
     /**
         Lattice constructor.
 
-        @param [in] dim              Linear dimension of the squared lattice.
-        @param [in] length           Physical length of the lattice's side
-        @param [in] periodic_x_axis  Boundary condition along the x axis (false=closed, true=periodic).
-        @param [in] periodic_y_axis  Boundary condition along the y axis (false=closed, true=periodic).
-        @param [in] angular_velocity Angular velocity of the frame of reference.
+        @param [in] dim               Linear dimension of the squared lattice.
+        @param [in] length            Physical length of the lattice's side
+        @param [in] periodic_x_axis   Boundary condition along the x axis (false=closed, true=periodic).
+        @param [in] periodic_y_axis   Boundary condition along the y axis (false=closed, true=periodic).
+        @param [in] angular_velocity  Angular velocity of the frame of reference.
+        @param [in] coordinate_system Type of the coordinate system used.
      */
     Lattice2D(int dim, double length,
-              bool periodic_x_axis = false, bool periodic_y_axis = false, double angular_velocity = 0.);
+              bool periodic_x_axis = false, bool periodic_y_axis = false,
+              double angular_velocity = 0., string coordinate_system = "Cartesian");
     /**
         Lattice constructor.
 
-        @param [in] dim_x            Linear dimension in x direction
-        @param [in] length_x         Physical length of the lattice's side along the x axis.
-        @param [in] dim_y            Linear dimension in y direction
-        @param [in] length_y         Physical length of the lattice's side along the y axis.
-        @param [in] periodic_x_axis  Boundary condition along the x axis (false=closed, true=periodic).
-        @param [in] periodic_y_axis  Boundary condition along the y axis (false=closed, true=periodic).
-        @param [in] angular_velocity Angular velocity of the frame of reference.
+        @param [in] dim_x             Linear dimension in x direction
+        @param [in] length_x          Physical length of the lattice's side along the x axis.
+        @param [in] dim_y             Linear dimension in y direction
+        @param [in] length_y          Physical length of the lattice's side along the y axis.
+        @param [in] periodic_x_axis   Boundary condition along the x axis (false=closed, true=periodic).
+        @param [in] periodic_y_axis   Boundary condition along the y axis (false=closed, true=periodic).
+        @param [in] angular_velocity  Angular velocity of the frame of reference.
+        @param [in] coordinate_system Type of the coordinate system used.
      */
     Lattice2D(int dim_x, double length_x, int dim_y, double length_y,
-              bool periodic_x_axis = false, bool periodic_y_axis = false, double angular_velocity = 0.);
+              bool periodic_x_axis = false, bool periodic_y_axis = false,
+              double angular_velocity = 0., string coordinate_system = "Cartesian");
 private:
     void init(int dim_x, double length_x, int dim_y, double length_y,
-              bool periodic_x_axis = false, bool periodic_y_axis = false, double angular_velocity = 0.);
+              bool periodic_x_axis = false, bool periodic_y_axis = false,
+              double angular_velocity = 0., string coordinate_system = "Cartesian");
 };
 
 /**
