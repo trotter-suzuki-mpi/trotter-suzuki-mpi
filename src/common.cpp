@@ -22,7 +22,7 @@
 #include "trottersuzuki.h"
 #include "common.h"
 
-void center_coordinates(Lattice *grid, int x_in, double *x_out) {
+void map_lattice_to_coordinate_space(Lattice *grid, int x_in, double *x_out) {
     double idx = grid->start_x * grid->delta_x + 0.5 * grid->delta_x + x_in * grid->delta_x;
     double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
     if (idx - x_c < -grid->length_x * 0.5) {
@@ -34,7 +34,7 @@ void center_coordinates(Lattice *grid, int x_in, double *x_out) {
     *x_out = idx - x_c;
 }
 
-void center_coordinates(Lattice *grid, int x_in, int y_in, double *x_out, double *y_out) {
+void map_lattice_to_coordinate_space(Lattice *grid, int x_in, int y_in, double *x_out, double *y_out) {
 	if (grid->coordinate_system == "Cartesian") {
 		double idy = grid->start_y * grid->delta_y + 0.5 * grid->delta_y + y_in * grid->delta_y;
 		double idx = grid->start_x * grid->delta_x + 0.5 * grid->delta_x + x_in * grid->delta_x;

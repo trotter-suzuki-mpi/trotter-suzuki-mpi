@@ -504,6 +504,6 @@ private:
 
 double const_potential(double x);    ///< Defines the null potential function in 1D.
 double const_potential(double x, double y);    ///< Defines the null potential function in 2D.
-void center_coordinates(Lattice *grid, int x_in, double *x_out);  ///< Centers the coordinates in 1D.
-void center_coordinates(Lattice *grid, int x_in, int y_in, double *x_out, double *y_out); ///< Centers the coordinates in 2D.
+void map_lattice_to_coordinate_space(Lattice *grid, int x_in, double *x_out);  ///< Centers the coordinates in 1D.
+void map_lattice_to_coordinate_space(Lattice *grid, int x_in, int y_in, double *x_out, double *y_out); ///< Centers the coordinates in 2D.
 #endif // __TROTTERSUZUKI_H

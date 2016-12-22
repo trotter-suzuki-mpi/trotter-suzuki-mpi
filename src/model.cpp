@@ -179,7 +179,7 @@ State::~State() {
 void State::imprint(complex<double> (*function)(double x)) {
     double x_r = 0;
     for (int x = 0; x < grid->dim_x; x++) {
-        center_coordinates(grid, x, &x_r);
+        map_lattice_to_coordinate_space(grid, x, &x_r);
         complex<double> tmp = function(x_r);
         double tmp_p_real = p_real[x];
         p_real[x] = tmp_p_real * real(tmp) - p_imag[x] * imag(tmp);
@@ -191,7 +191,7 @@ void State::imprint(complex<double> (*function)(double x, double y)) {
     double x_r = 0.0, y_r = 0.0;
     for (int y = 0; y < grid->dim_y; y++) {
         for (int x = 0; x < grid->dim_x; x++) {
-            center_coordinates(grid, x, y, &x_r, &y_r);
+            map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
             complex<double> tmp = function(x_r, y_r);
             double tmp_p_real = p_real[y * grid->dim_x + x];
             p_real[y * grid->dim_x + x] = tmp_p_real * real(tmp) - p_imag[y * grid->dim_x + x] * imag(tmp);
@@ -204,7 +204,7 @@ void State::init_state(complex<double> (*ini_state)(double x)) {
     complex<double> tmp;
     double x_r = 0;
     for (int x = 0; x < grid->dim_x; x++) {
-        center_coordinates(grid, x, &x_r);
+        map_lattice_to_coordinate_space(grid, x, &x_r);
         tmp = ini_state(x_r);
         p_real[x] = real(tmp);
         p_imag[x] = imag(tmp);
@@ -216,7 +216,7 @@ void State::init_state(complex<double> (*ini_state)(double x, double y)) {
     double x_r = 0.0, y_r = 0.0;
     for (int y = 0; y < grid->dim_y; y++) {
         for (int x = 0; x < grid->dim_x; x++) {
-            center_coordinates(grid, x, y, &x_r, &y_r);
+            map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
             tmp = ini_state(x_r, y_r);
             p_real[y * grid->dim_x + x] = real(tmp);
             p_imag[y * grid->dim_x + x] = imag(tmp);
@@ -612,7 +612,7 @@ GaussianState::GaussianState(Lattice2D *_grid, double _omega_x, double _omega_y,
     double x_r = 0, y_r = 0;
     for (int y = 0; y < grid->dim_y; y++) {
         for (int x = 0; x < grid->dim_x; x++) {
-            center_coordinates(grid, x, y, &x_r, &y_r);
+            map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
             tmp = gauss_state(x_r, y_r);
             p_real[y * grid->dim_x + x] = real(tmp);
             p_imag[y * grid->dim_x + x] = imag(tmp);
@@ -703,7 +703,7 @@ double Potential::get_value(int x, int y) {
     }
     else {
         double x_r = 0, y_r = 0;
-        center_coordinates(grid, x, y, &x_r, &y_r);
+        map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
         if (is_static) {
             return static_potential(x_r, y_r);
         }
