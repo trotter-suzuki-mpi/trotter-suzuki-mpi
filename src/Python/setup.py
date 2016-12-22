@@ -95,7 +95,6 @@ if sys.platform.startswith('win') and os.path.exists(win_cuda_dir):
                                          'trottersuzuki/src/cpublock.obj',
                                          'trottersuzuki/src/model.obj',
                                          'trottersuzuki/src/solver.obj',
-                                         'trottersuzuki/src/hybrid.cu.obj',
                                          'trottersuzuki/src/cc2kernel.cu.obj'],
                           define_macros=[('CUDA', None)],
                           library_dirs=[win_cuda_dir+"/lib/x"+str(arch)],
@@ -126,8 +125,7 @@ else:
                           libraries=libraries,
                           )
     if CUDA is not None:
-        ts_module.sources += ['trottersuzuki/src/cc2kernel.cu',
-                              'trottersuzuki/src/hybrid.cu']
+        ts_module.sources += ['trottersuzuki/src/cc2kernel.cu']
         ts_module.define_macros = [('CUDA', None)]
         ts_module.include_dirs.append(CUDA['include'])
         ts_module.library_dirs = [CUDA['lib']]

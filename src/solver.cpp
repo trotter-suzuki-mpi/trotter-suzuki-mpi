@@ -120,8 +120,7 @@ void Solver::init_kernel() {
         else {
             kernel = new CPUBlock(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm2, imag_time);
         }
-    }
-    else if (kernel_type == "gpu") {
+    } else if (kernel_type == "gpu") {
 #ifdef CUDA
         if (hamiltonian->angular_velocity != 0) {
             my_abort("The GPU kernel does not work with nonzero angular velocity.");
@@ -135,18 +134,7 @@ void Solver::init_kernel() {
 #else
         my_abort("Compiled without CUDA");
 #endif
-    }
-    else if (!single_component) {
-        my_abort("Two-component Hamiltonians only work with the CPU and GPU kernels!");
-    }
-    else if (kernel_type == "hybrid") {
-#ifdef CUDA
-        kernel = new HybridKernel(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_t, norm2[0], imag_time);
-#else
-        my_abort("Compiled without CUDA");
-#endif
-    }
-    else {
+    } else {
         my_abort("Unknown kernel");
     }
 }

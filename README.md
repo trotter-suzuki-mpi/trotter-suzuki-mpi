@@ -13,7 +13,7 @@ Key features:
   - Stationary and time-dependent external potential.
   - C++ application programming interface (API).
   - A [Python](https://trotter-suzuki-mpi.readthedocs.io/) wrapper is provided.
-  - Cache optimized multi-core, GPU, and hybrid kernels.
+  - Cache optimized multi-core and GPU kernels.
   - Near-linear scaling across multiple nodes with computations overlapping communication.
 
 The documentation of the C++ interface is available at [trotter-suzuki-mpi.github.io](https://trotter-suzuki-mpi.github.io/). The Python documentation is on [Read the Docs](https://trotter-suzuki-mpi.readthedocs.io/).

@@ -157,22 +157,6 @@ private:
 
 #define STRIDE_Y 16
 
-#define CUDA_SAFE_CALL(call) \
-  if ((call) != cudaSuccess) { \
-      cudaError_t err = cudaGetLastError(); \
-      stringstream sstm; \
-      sstm << "CUDA error calling \""#call"\", code is " << err; \
-      my_abort(sstm.str()); }
-
-void setDevice(int commRank
-#ifdef HAVE_MPI
-               , MPI_Comm cartcomm
-#endif
-              );
-
-void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, double a, double b, double coupling_a, double alpha_x, double alpha_y, const double * __restrict__ dev_external_pot_real, const double * __restrict__ dev_external_pot_imag, const double * __restrict__ pdev_real, const double * __restrict__ pdev_imag, double * __restrict__ pdev2_real, double * __restrict__ pdev2_imag, int inner, int horizontal, int vertical, bool imag_time);
-
-
 /**
  * \brief This class defines the GPU kernel.
  *
@@ -277,103 +261,6 @@ private:
     double *top_imag_receive;			///< Point to the buffer used to receive the real top horizontal halo from the corresponding neighbour.
     double *top_imag_send;				///< Point to the buffer used to send the real bottom horizontal halo to the corresponding neighbour.
 
-};
-
-/**
- * \brief This class defines the Hybrid kernel.
- *
- * This kernel provides real time and imaginary time evolution exploiting GPUs and CPUs.
- * It implements a solver for a single wave function, whose evolution is governed by linear Schrodinger equation. The Hamiltonian of the physical system includes:
- *  - static external potential
- */
-
-class HybridKernel: public ITrotterKernel {
-public:
-    HybridKernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
-                 double *_external_pot_real, double *_external_pot_imag,
-                 double a, double b, double delta_t,
-                 double _norm, bool _imag_time);    ///< Instantiate the kernel for single wave functions state evolution.
-    ~HybridKernel();
-    void run_kernel_on_halo();					///< Evolve blocks of wave function at the edge of the tile. This comprises the halos.
-    void run_kernel();							///< Evolve the remaining blocks in the inner part of the tile.
-    void wait_for_completion();					///< Sincronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution.
-    void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2 = 0, double * dest_imag2 = 0) const; ///< Copy the wave function from the two buffers pointed by pdev_real and pdev_imag, without halos, to dest_real and dest_imag.
-    void normalization() {};    ///<Normalize the state when performing an imaginary time evolution (only two wave-function evolution).
-    void rabi_coupling(double var, double delta_t) {};    ///< Evolution corresponding to the Rabi coupling term of the Hamiltonian (only two wave-function evolution).
-    double calculate_squared_norm(bool global = true) const;  ///< Calculate squared norm of the state.
-    void update_potential(double *_external_pot_real, double *_external_pot_imag, int which);    ///< Update memory pointed by external_potential_real and external_potential_imag (only non static external potential).
-
-    bool runs_in_place() const {
-        return false;
-    }
-    /// Get kernel name.
-    string get_name() const {
-        stringstream name;
-        name << "Hybrid";
-#ifdef _OPENMP
-        name << "-OpenMP-" << omp_get_max_threads();
-#endif
-        return name.str();
-    };
-
-    void start_halo_exchange();				///< Start vertical halos exchange (between Hosts).
-    void finish_halo_exchange();			///< Start horizontal halos exchange (between Hosts).
-
-private:
-    dim3 numBlocks;							///< Number of blocks exploited in the lattice.
-    dim3 threadsPerBlock;					///< Number of lattice dots in a block.
-    cudaStream_t stream;					///< Stream of sequential instructions performing evolution and communication on the Device lattice part.
-
-    bool imag_time;							///< True: imaginary time evolution; False: real time evolution.
-    double *p_real[2];						///< Array of two pointers that point to two buffers used to store the real part of the wave function at i-th time step and (i+1)-th time step (Host part).
-    double *p_imag[2];						///< Array of two pointers that point to two buffers used to store the imaginary part of the wave function at i-th time step and (i+1)-th time step (Host part).
-    double *pdev_real[2];					///< Array of two pointers that point to two buffers used to store the real part of the wave function at i-th time step and (i+1)-th time step (Device part).
-    double *pdev_imag[2];					///< Array of two pointers that point to two buffers used to store the imaginary part of the wave function at i-th time step and (i+1)-th time step (Device part).
-    double *external_pot_real;				///< Points to the matrix representation (real entries) of the operator given by the exponential of external potential (Host part).
-    double *external_pot_imag;				///< Points to the matrix representation (immaginary entries) of the operator given by the exponential of external potential (Host part).
-    double *dev_external_pot_real;			///< Points to the matrix representation (real entries) of the operator given by the exponential of external potential (Device part).
-    double *dev_external_pot_imag;			///< Points to the matrix representation (imaginary entries) of the operator given by the exponential of external potential (Device part).
-    double *a;								///< Diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
-    double *b;								///< Off diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
-    double *coupling_const;     ///< Coupling constant of the density self-interacting term.
-    double alpha_x;         ///< Real coupling constant associated to the X*P_y operator, part of the angular momentum.
-    double alpha_y;         ///< Real coupling constant associated to the Y*P_x operator, part of the angular momentum.
-    int state_index;    ///< Takes values 0 or 1 and tells which wave function is pointed by p_real and p_imag, and is being evolved.
-    double delta_x;							///< Physical length between two neighbour along x axis dots of the lattice.
-    double delta_y;							///< Physical length between two neighbour along y axis dots of the lattice.
-    double *norm;							///< Squared norm of the wave function.
-    int sense;								///< Takes values 0 or 1 and tells which of the two buffers pointed by p_real and p_imag is used to calculate the next time step.
-    bool two_wavefunctions;    ///< Flag parameter to distinguish whether the kernel is evolving a two-wave-function or a single-wave-function
-    size_t halo_x;							///< Thickness of the vertical halos (number of lattice's dots).
-    size_t halo_y;							///< Thickness of the horizontal halos (number of lattice's dots).
-    size_t tile_width;						///< Width of the tile (number of lattice's dots).
-    size_t tile_height;						///< Height of the tile (number of lattice's dots).
-    static const size_t block_width = BLOCK_WIDTH_CACHE;		///< Width of the lattice block which is cached (number of lattice's dots).
-    static const size_t block_height = BLOCK_HEIGHT_CACHE;	///< Height of the lattice block which is cached (number of lattice's dots).
-    size_t gpu_tile_width;					///< Tile width processes by Device.
-    size_t gpu_tile_height;					///< Tile height processes by Device.
-    size_t gpu_start_x;						///< X axis coordinate of the first dot of the processed tile in Device.
-    size_t gpu_start_y;						///< Y axis coordinate of the first dot of the processed tile in Device.
-    size_t n_bands_on_cpu;					///< Number of blocks in a column in Device's tile.
-
-    int neighbors[4];						///< Array that stores the processes' rank neighbour of the current process.
-    int start_x;							///< X axis coordinate of the first dot of the processed tile.
-    int start_y;							///< Y axis coordinate of the first dot of the processed tile.
-    int end_x;								///< X axis coordinate of the last dot of the processed tile.
-    int end_y;								///< Y axis coordinate of the last dot of the processed tile.
-    int inner_start_x;						///< X axis coordinate of the first dot of the processed tile, which is not in the halo.
-    int inner_start_y;						///< Y axis coordinate of the first dot of the processed tile, which is not in the halo.
-    int inner_end_x;						///< X axis coordinate of the last dot of the processed tile, which is not in the halo.
-    int inner_end_y;						///< Y axis coordinate of the last dot of the processed tile, which is not in the halo.
-    int *periods;							///< Two dimensional array which takes entries 0 or 1. 1: periodic boundary condition along the corresponding axis; 0: closed boundary condition along the corresponding axis.
-
-#ifdef HAVE_MPI
-    MPI_Comm cartcomm;						///< Ensemble of processes communicating the halos and evolving the tiles.
-    MPI_Request req[8];						///< Variable to manage MPI communication (between Hosts).
-    MPI_Status statuses[8];					///< Variable to manage MPI communication (between Hosts).
-    MPI_Datatype horizontalBorder;			///< Datatype for the horizontal halos (Host halos).
-    MPI_Datatype verticalBorder;			///< Datatype for the vertical halos (Host halos).
-#endif
 };
 
 #endif // CUDA

@@ -244,8 +244,4 @@ void CpuKernelTest::setUp() {
 void GpuKernelTest::setUp() {
     this->kernel_type = "gpu";
 }
-
-void HybridKernelTest::setUp() {
-    this->kernel_type = "hybrid";
-}
 #endif

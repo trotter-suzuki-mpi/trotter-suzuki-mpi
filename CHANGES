@@ -1,3 +1,6 @@
+Since 1.6.1:
+  - Changed: Hybrid kernel removed.
+
 Version 1.6.1: 2016-12-21
   - New: One-dimensional topology through the class `Lattice1D`.
   - New: The coordinate transformation and scaling is exposed via the function `center_coordinates`.

@@ -78,13 +78,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="..\..\cc2kernel.cu" />
-    <None Include="..\..\hybrid.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\cc2kernel.h" />
     <ClInclude Include="..\..\common.h" />
-    <ClInclude Include="..\..\cpublock.h" />
-    <ClInclude Include="..\..\hybrid.h" />
     <ClInclude Include="..\..\kernel.h" />
     <ClInclude Include="..\..\trottersuzuki.h" />
   </ItemGroup>

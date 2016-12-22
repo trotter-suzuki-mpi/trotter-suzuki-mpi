@@ -18,21 +18,9 @@
     <None Include="..\..\cc2kernel.cu">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="..\..\hybrid.cu">
-      <Filter>Source Files</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\cc2kernel.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\cpublock.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\hybrid.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\kernel.h">

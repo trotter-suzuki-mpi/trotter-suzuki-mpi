@@ -32,6 +32,13 @@
       sstm << errorMessage <<"\n The error is " << cudaGetErrorString( err); \
       my_abort(sstm.str());  }}
 
+#define CUDA_SAFE_CALL(call) \
+  if ((call) != cudaSuccess) { \
+      cudaError_t err = cudaGetLastError(); \
+      stringstream sstm; \
+      sstm << "CUDA error calling \""#call"\", code is " << err; \
+      my_abort(sstm.str()); }
+
 /** Check and initialize a device attached to a node
  *  @param commRank - the MPI rank of this process
  *  @param commSize - the size of MPI comm world
@@ -624,15 +631,6 @@ __global__ void gpu_rabi_coupling_imag(size_t width, size_t height,
         pb_real[idx] = cc * pb_real[idx] + cs_r * real + cs_i * imag;
         pb_imag[idx] = cc * pb_imag[idx] - cs_i * real + cs_r * imag;
     }
-}
-
-// Wrapper function for the hybrid kernel
-void cc2kernel_wrapper(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y, dim3 numBlocks, dim3 threadsPerBlock, cudaStream_t stream, double a, double b, double coupling_a, double alpha_x, double alpha_y, const double * __restrict__ dev_external_pot_real, const double * __restrict__ dev_external_pot_imag, const double * __restrict__ pdev_real, const double * __restrict__ pdev_imag, double * __restrict__ pdev2_real, double * __restrict__ pdev2_imag, int inner, int horizontal, int vertical, bool imag_time) {
-    if(imag_time)
-        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream>>>(tile_width, tile_height, offset_x, offset_y, halo_x, halo_y, a, b, coupling_a, alpha_x, alpha_y, dev_external_pot_real, dev_external_pot_imag, pdev_real, pdev_imag, pdev2_real, pdev2_imag, inner, horizontal, vertical);
-    else
-        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream>>>(tile_width, tile_height, offset_x, offset_y, halo_x, halo_y, a, b, coupling_a, alpha_x, alpha_y, dev_external_pot_real, dev_external_pot_imag, pdev_real, pdev_imag, pdev2_real, pdev2_imag, inner, horizontal, vertical);
-    CUT_CHECK_ERROR("Kernel error in cc2kernel_wrapper");
 }
 
 CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,

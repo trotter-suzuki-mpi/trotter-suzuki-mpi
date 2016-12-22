@@ -38,7 +38,7 @@ LIBOBJS=$(srcdir)/common.o $(srcdir)/cpublock.o $(srcdir)/solver.o $(srcdir)/mod
 TEST_OBJS=$(LIBOBJS) unittest.o kerneltest.o
 
 ifdef CUDA_LIBS
-	LIBOBJS+=$(srcdir)/cc2kernel.cu.co $(srcdir)/hybrid.cu.co
+	LIBOBJS+=$(srcdir)/cc2kernel.cu.co
 endif
 
 all: check
