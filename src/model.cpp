@@ -86,19 +86,21 @@ Lattice2D::Lattice2D(int _dim_x, double _length_x, int _dim_y, double _length_y,
 void Lattice2D::init(int _dim_x, double _length_x, int _dim_y, double _length_y,
                      bool periodic_x_axis, bool periodic_y_axis,
                      double angular_velocity, string _coordinate_system) {
-    length_x = _length_x;
+	if (_coordinate_system != "Cartesian" &&
+		_coordinate_system != "Cylindrical") {
+		my_abort("The coordinate system you have chosen is not implemented.");
+	}
+	if (_coordinate_system == "Cylindrical" &&
+		periodic_x_axis == true) {
+		my_abort("You cannot choose periodic boundary on the radial axis.");
+	}
+	length_x = _length_x;
     length_y = _length_y;
     delta_x = length_x / double(_dim_x);
     delta_y = length_y / double(_dim_y);
+    coordinate_system = _coordinate_system;
     periods[0] = (int) periodic_y_axis;
-    periods[1] = (int) periodic_x_axis;
-    if (_coordinate_system != "Cartesian" ||
-        _coordinate_system != "Cylindrical") {
-    	my_abort("The coordinate system you have chosen is not implemented.");
-    }
-    else {
-    	coordinate_system = _coordinate_system;
-    }
+	periods[1] = (int) periodic_x_axis;
     mpi_dims[0] = mpi_dims[1] = 0;
 #ifdef HAVE_MPI
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_procs);
