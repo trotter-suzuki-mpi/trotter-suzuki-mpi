@@ -470,8 +470,6 @@ public:
                            int imag_length, int which); ///< Set exponential potential directly from Python
 private:
     bool imag_time;    ///< Whether the time of evolution is imaginary(true) or real(false).
-    double h_a[2];    ///< Parameters of the evolution operator regarding the kinetic operator of the first-component.
-    double h_b[2];    ///< Parameters of the evolution operator regarding the kinetic operator of the second-component.
     double **external_pot_real;    ///< Real part of the evolution operator regarding the external potential.
     double **external_pot_imag;    ///< Imaginary part of the evolution operator regarding the external potential.
     double delta_t;    ///< A single evolution iteration, evolves the state for this time.

@@ -147,8 +147,7 @@ void process_band(bool two_wavefunctions, int offset_tile_x, int offset_tile_y, 
 // Class methods
 CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
                    double *_external_pot_real, double *_external_pot_imag,
-                   double _a, double _b, double delta_t,
-                   double _norm, bool _imag_time):
+                   double delta_t, double _norm, bool _imag_time):
     sense(0),
     state_index(0),
     imag_time(_imag_time) {
@@ -161,12 +160,18 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     rot_coord_y = hamiltonian->rot_coord_y;
     alpha_x = hamiltonian->angular_velocity * delta_t * grid->delta_x / (2 * grid->delta_y);
     alpha_y = hamiltonian->angular_velocity * delta_t * grid->delta_y / (2 * grid->delta_x);
-    a = new double [1];
-    b = new double [1];
     coupling_const = new double [3];
     norm = new double [1];
-    a[0] = _a;
-    b[0] = _b;
+    a = new double [1];
+	b = new double [1];
+    if (imag_time) {
+    	a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+    	b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+    }
+    else {
+    	a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+    	b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+    }
     coupling_const[0] = hamiltonian->coupling_a * delta_t;
     coupling_const[1] = 0.;
     coupling_const[2] = 0.;
@@ -227,8 +232,7 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
 CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
                    Hamiltonian2Component *hamiltonian,
                    double **_external_pot_real, double **_external_pot_imag,
-                   double *_a, double *_b, double delta_t,
-                   double *_norm, bool _imag_time):
+                   double delta_t, double *_norm, bool _imag_time):
     sense(0),
     state_index(0),
     imag_time(_imag_time) {
@@ -240,8 +244,20 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
     alpha_y = hamiltonian->angular_velocity * delta_t * grid->delta_y / (2 * grid->delta_x),
     rot_coord_x = hamiltonian->rot_coord_x;
     rot_coord_y = hamiltonian->rot_coord_y;
-    a = _a;                                       //coupling 3, 4???
-    b = _b;
+    a = new double [2];
+	b = new double [2];
+    if (imag_time) {
+    	a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+    	a[1] = cosh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+		b[1] = sinh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+	}
+	else {
+		a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		a[1] = cos(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+		b[1] = sin(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+	}
     norm = _norm;
     tot_norm = norm[0] + norm[1];
     coupling_const = new double[5];

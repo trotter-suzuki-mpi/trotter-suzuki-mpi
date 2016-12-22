@@ -633,8 +633,7 @@ __global__ void gpu_rabi_coupling_imag(size_t width, size_t height,
 
 CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
                      double *_external_pot_real, double *_external_pot_imag,
-                     double _a, double _b, double delta_t,
-                     double _norm, bool _imag_time):
+                     double delta_t, double _norm, bool _imag_time):
     threadsPerBlock(BLOCK_X, STRIDE_Y),
     sense(0),
     state_index(0),
@@ -658,10 +657,16 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     coupling_const[2] = 0.;
 
     a = new double [1];
-    b = new double [1];
+	b = new double [1];
+	if (imag_time) {
+		a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+	}
+	else {
+		a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+	}
     norm = new double [1];
-    a[0] = _a;
-    b[0] = _b;
     norm[0] = _norm;
     tot_norm = norm[0];
     external_pot_real[0] = _external_pot_real;
@@ -741,8 +746,7 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
 CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2,
                      Hamiltonian2Component *hamiltonian,
                      double **_external_pot_real, double **_external_pot_imag,
-                     double *_a, double *_b, double delta_t,
-                     double *_norm, bool _imag_time):
+                     double delta_t, double *_norm, bool _imag_time):
     threadsPerBlock(BLOCK_X, STRIDE_Y),
     sense(0),
     state_index(0),
@@ -766,8 +770,20 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2,
     coupling_const[2] = delta_t * hamiltonian->coupling_ab;
     coupling_const[3] = 0.5 * hamiltonian->omega_r;
     coupling_const[4] = 0.5 * hamiltonian->omega_i;
-    a = _a;
-    b = _b;
+    a = new double [2];
+	b = new double [2];
+    if (imag_time) {
+    	a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+    	a[1] = cosh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+		b[1] = sinh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+	}
+	else {
+		a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		a[1] = cos(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+		b[1] = sin(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+	}
     norm = _norm;
     tot_norm = norm[0] + norm[1];
     external_pot_real[0] = _external_pot_real[0];

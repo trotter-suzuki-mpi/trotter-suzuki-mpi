@@ -115,10 +115,10 @@ void Solver::init_kernel() {
     }
     if (kernel_type == "cpu") {
         if (single_component) {
-            kernel = new CPUBlock(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_t, norm2[0], imag_time);
+            kernel = new CPUBlock(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], delta_t, norm2[0], imag_time);
         }
         else {
-            kernel = new CPUBlock(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm2, imag_time);
+            kernel = new CPUBlock(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), external_pot_real, external_pot_imag, delta_t, norm2, imag_time);
         }
     } else if (kernel_type == "gpu") {
 #ifdef CUDA
@@ -126,10 +126,10 @@ void Solver::init_kernel() {
             my_abort("The GPU kernel does not work with nonzero angular velocity.");
         }
         if (single_component) {
-            kernel = new CC2Kernel(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], h_a[0], h_b[0], delta_t, norm2[0], imag_time);
+            kernel = new CC2Kernel(grid, state, hamiltonian, external_pot_real[0], external_pot_imag[0], delta_t, norm2[0], imag_time);
         }
         else {
-            kernel = new CC2Kernel(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), external_pot_real, external_pot_imag, h_a, h_b, delta_t, norm2, imag_time);
+            kernel = new CC2Kernel(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), external_pot_real, external_pot_imag, delta_t, norm2, imag_time);
         }
 #else
         my_abort("Compiled without CUDA");
@@ -143,26 +143,18 @@ void Solver::evolve(int iterations, bool _imag_time) {
     if (_imag_time != imag_time || kernel == NULL || has_parameters_changed) {
         imag_time = _imag_time;
         if (imag_time) {
-            h_a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-            h_b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
             initialize_exp_potential(delta_t, 0);
             norm2[0] = state->get_squared_norm();
             if (!single_component) {
-                h_a[1] = cosh(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_x));
-                h_b[1] = sinh(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_x));
                 initialize_exp_potential(delta_t, 1);
                 norm2[1] = state_b->get_squared_norm();
             }
         }
         else {
-            h_a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-            h_b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
             if (!is_python) {
                 initialize_exp_potential(delta_t, 0);
             }
             if (!single_component) {
-                h_a[1] = cos(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_x));
-                h_b[1] = sin(delta_t / (4. * static_cast<Hamiltonian2Component*>(hamiltonian)->mass_b * grid->delta_x * grid->delta_x));
                 initialize_exp_potential(delta_t, 1);
             }
         }
