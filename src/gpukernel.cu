@@ -124,7 +124,6 @@ void setDevice(int commRank
 }
 
 //REAL TIME functions
-
 template<int BLOCK_WIDTH, int BLOCK_HEIGHT, int BACKWARDS>
 inline __device__ void gpu_kernel_vertical(double a, double b, int tile_height, double &cell_r, double &cell_i, int kx, int ky, int py, double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH]) {
     double peer_r;
@@ -149,7 +148,6 @@ inline __device__ void gpu_kernel_vertical(double a, double b, int tile_height, 
 #endif
     }
 }
-
 
 template<int BLOCK_WIDTH, int BLOCK_HEIGHT, int BACKWARDS>
 static  inline __device__ void gpu_kernel_horizontal(double a, double b,  int tile_width, double &cell_r, double &cell_i, int kx, int ky, int px, double rl[BLOCK_HEIGHT][BLOCK_WIDTH], double im[BLOCK_HEIGHT][BLOCK_WIDTH]) {

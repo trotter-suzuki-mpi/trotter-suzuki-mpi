@@ -92,10 +92,12 @@ if sys.platform.startswith('win') and os.path.exists(win_cuda_dir):
     ts_module = Extension('_trottersuzuki_wrap',
                           sources=['trottersuzuki/trottersuzuki_wrap.cxx'],
                           extra_objects=['trottersuzuki/src/common.obj',
-                                         'trottersuzuki/src/cpublock.obj',
+                                         'trottersuzuki/src/cpukernel.obj',
+                                         'trottersuzuki/src/cpueuclidean.obj',
+                                         'trottersuzuki/src/gpukernel.obj',
+                                         'trottersuzuki/src/gpueuclidean.obj',
                                          'trottersuzuki/src/model.obj',
-                                         'trottersuzuki/src/solver.obj',
-                                         'trottersuzuki/src/cc2kernel.cu.obj'],
+                                         'trottersuzuki/src/solver.obj'],
                           define_macros=[('CUDA', None)],
                           library_dirs=[win_cuda_dir+"/lib/x"+str(arch)],
                           libraries=['cudart', 'cublas'],
@@ -114,7 +116,8 @@ else:
         else:
             libraries = ['gomp']
     sources_files = ['trottersuzuki/src/common.cpp',
-                     'trottersuzuki/src/cpublock.cpp',
+                     'trottersuzuki/src/cpukernel.cpp',
+                     'trottersuzuki/src/cpueuclidean.cpp',
                      'trottersuzuki/src/model.cpp',
                      'trottersuzuki/src/solver.cpp',
                      'trottersuzuki/trottersuzuki_wrap.cxx']
@@ -125,7 +128,8 @@ else:
                           libraries=libraries,
                           )
     if CUDA is not None:
-        ts_module.sources += ['trottersuzuki/src/cc2kernel.cu']
+        ts_module.sources += ['trottersuzuki/src/gpukernel.cu',
+                              'trottersuzuki/src/gpueuclidean.cu']
         ts_module.define_macros = [('CUDA', None)]
         ts_module.include_dirs.append(CUDA['include'])
         ts_module.library_dirs = [CUDA['lib']]

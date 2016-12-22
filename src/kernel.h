@@ -37,19 +37,18 @@
 #define BLOCK_WIDTH_CACHE 128u
 #define BLOCK_HEIGHT_CACHE 128u
 
-void process_band(bool two_wavefunctions, int offset_tile_x,
-                  int offset_tile_y, double alpha_x, double alpha_y,
-                  size_t tile_width, size_t block_width, size_t block_height,
-                  size_t halo_x, size_t read_y, size_t read_height,
-                  size_t write_offset, size_t write_height,
-                  double a, double b, double coupling_a, double coupling_b,
-                  const double *external_pot_real,
-                  const double *external_pot_imag,
-                  const double * p_real, const double * p_imag,
-                  const double * pb_real, const double * pb_imag,
-                  double * next_real, double * next_imag,
-                  int inner, int sides, bool imag_time);
-
+/** Functions defining Euclidean geometry
+ */
+void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
+void block_kernel_vertical_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
+void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
+void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
+void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width, size_t height, double a, double b, double coupling_a, double coupling_b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag);
+void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, size_t width, size_t height, double a, double b, double coupling_a, double coupling_b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag);
+void block_kernel_rotation(size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double * p_real, double * p_imag);
+void block_kernel_rotation_imaginary(size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double * p_real, double * p_imag);
+void rabi_coupling_real(size_t stride, size_t width, size_t height, double cc, double cs_r, double cs_i, double *p_real, double *p_imag, double *pb_real, double *pb_imag);
+void rabi_coupling_imaginary(size_t stride, size_t width, size_t height, double cc, double cs_r, double cs_i, double *p_real, double *p_imag, double *pb_real, double *pb_imag);
 /**
  * \brief This class defines the CPU kernel.
  *

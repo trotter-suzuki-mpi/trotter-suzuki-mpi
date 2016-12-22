@@ -35,10 +35,10 @@ MEX_BIN        = @MEX_BIN@
 srcdir	 = @srcdir@
 VPATH	  = @srcdir@
 
-LIBOBJS=common.o cpublock.o solver.o model.o
+LIBOBJS=common.o cpukernel.o cpueuclidean.o solver.o model.o
 
 ifdef CUDA_LIBS
-	LIBOBJS+=cc2kernel.cu.co
+	LIBOBJS+=gpueuclidean.cu.co gpukernel.cu.co
 endif
 
 all: lib
@@ -61,10 +61,12 @@ python:
 	cp ./kernel.h ./Python/trottersuzuki/src/
 	cp ./trottersuzuki.h ./Python/trottersuzuki/src/
 	cp ./common.cpp ./Python/trottersuzuki/src/
-	cp ./cpublock.cpp ./Python/trottersuzuki/src/
+	cp ./cpukernel.cpp ./Python/trottersuzuki/src/
+	cp ./cpueuclidean.cpp ./Python/trottersuzuki/src/
+	cp ./gpukernel.cu ./Python/trottersuzuki/src/
+	cp ./gpueuclidean.cu ./Python/trottersuzuki/src/
 	cp ./model.cpp ./Python/trottersuzuki/src/
 	cp ./solver.cpp ./Python/trottersuzuki/src/
-	cp ./cc2kernel.cu ./Python/trottersuzuki/src/
 	swig -c++ -python ./Python/trottersuzuki/trottersuzuki.i
 
 python_install: python
