@@ -193,6 +193,38 @@ void block_kernel_rotation(size_t stride, size_t width, size_t height, int offse
     }
 }
 
+//radial kinetic term
+void block_kernel_radial_kinetic(size_t stride, size_t width, size_t height,
+		                         int offset_x, double _kin_radial,
+		                         double * p_real, double * p_imag) {
+
+    double tmp_r, tmp_i;
+
+    for (int i = 0, x = offset_x; i < width - 1; i += 2, x += 2) {
+    	double kin_radial = 0.5 * _kin_radial / x;
+		double a = cosh(kin_radial), b = sinh(kin_radial);
+		for (size_t j = 0, idx = i, peer = idx + 1; j < height; j += 1, idx += stride, peer += stride) {
+			tmp_r = p_real[idx], tmp_i = p_imag[idx];
+			p_real[idx] = a * p_real[idx] + b * p_imag[peer];
+			p_imag[idx] = a * p_imag[idx] - b * p_real[peer];
+			p_real[peer] = a * p_real[peer] - b * tmp_i;
+			p_imag[peer] = a * p_imag[peer] + b * tmp_r;
+		}
+    }
+
+    for (int i = 1, x = offset_x + 1; i < width; i += 2, x += 2) {
+		double kin_radial = 0.5 * _kin_radial / x;
+		double a = cosh(kin_radial), b = sinh(kin_radial);
+		for (size_t j = 0, idx = i, peer = idx + 1; j < height; j += 1, idx += stride, peer += stride) {
+			tmp_r = p_real[idx], tmp_i = p_imag[idx];
+			p_real[idx] = a * p_real[idx] + b * p_imag[peer];
+			p_imag[idx] = a * p_imag[idx] - b * p_real[peer];
+			p_real[peer] = a * p_real[peer] - b * tmp_i;
+			p_imag[peer] = a * p_imag[peer] + b * tmp_r;
+		}
+	}
+}
+
 void block_kernel_rotation_imaginary(size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double * p_real, double * p_imag) {
 
     double tmp_r, tmp_i;
