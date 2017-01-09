@@ -583,12 +583,11 @@ void State::write_to_file(string filename) {
 ExponentialState::ExponentialState(Lattice2D *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
     State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase) {
     complex<double> tmp;
-    double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
-    for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x + 0.5 * delta_x;
-        for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
-            tmp = exp_state(idx, idy);
+    double x_r = 0, y_r = 0;
+    for (int y = 0; y < grid->dim_y; y++) {
+        for (int x = 0; x < grid->dim_x; x++) {
+        	map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
+            tmp = exp_state(x_r, y_r);
             p_real[y * grid->dim_x + x] = real(tmp);
             p_imag[y * grid->dim_x + x] = imag(tmp);
         }
@@ -627,12 +626,11 @@ complex<double> GaussianState::gauss_state(double x, double y) {
 SinusoidState::SinusoidState(Lattice2D *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
     State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase)  {
     complex<double> tmp;
-    double delta_x = grid->delta_x, delta_y = grid->delta_y;
-    double idy = grid->start_y * delta_y + 0.5 * delta_y, idx;
-    for (int y = 0; y < grid->dim_y; y++, idy += delta_y) {
-        idx = grid->start_x * delta_x + 0.5 * delta_x;
-        for (int x = 0; x < grid->dim_x; x++, idx += delta_x) {
-            tmp = sinusoid_state(idx, idy);
+    double x_r = 0, y_r = 0;
+    for (int y = 0; y < grid->dim_y; y++) {
+        for (int x = 0; x < grid->dim_x; x++) {
+        	map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
+        	tmp = sinusoid_state(x_r, y_r);
             p_real[y * grid->dim_x + x] = real(tmp);
             p_imag[y * grid->dim_x + x] = imag(tmp);
         }
@@ -740,12 +738,10 @@ HarmonicPotential::HarmonicPotential(Lattice2D *_grid, double _omegax, double _o
 }
 
 double HarmonicPotential::get_value(int x, int y) {
-    double idy = (grid->start_y + y) * grid->delta_y + mean_x + 0.5 * grid->delta_y;
-    double idx = (grid->start_x + x) * grid->delta_x + mean_y + 0.5 * grid->delta_x;
-    double x_c = (grid->global_dim_x - 2.*grid->halo_x * grid->periods[1]) * grid->delta_x * 0.5;
-    double y_c = (grid->global_dim_y - 2.*grid->halo_y * grid->periods[0]) * grid->delta_y * 0.5;
-    double x_r = idx - x_c;
-    double y_r = idy - y_c;
+    double x_r = 0, y_r = 0;
+	map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
+	x_r -= mean_x;
+	y_r -= mean_y;
     return 0.5 * mass * (omegax * omegax * x_r * x_r + omegay * omegay * y_r * y_r);
 }
 
