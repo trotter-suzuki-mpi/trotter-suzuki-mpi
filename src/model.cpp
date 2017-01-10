@@ -508,6 +508,25 @@ void State::calculate_expected_values(void) {
     expected_values_updated = true;
 }
 
+double State::get_expected_value(string _operator) {
+	if(!expected_values_updated)
+	        calculate_expected_values();
+
+	if (_operator == "L_z") {return mean_angular_momentum;}
+	else if (_operator == "X") {return mean_X;}
+	else if (_operator == "X^2") {return mean_XX;}
+	else if (_operator == "Y")   {return mean_Y;}
+	else if (_operator == "Y^2") {return mean_YY;}
+	else if (_operator == "P_x") {return mean_Px;}
+	else if (_operator == "P_x^2") {return mean_PxPx;}
+	else if (_operator == "P_y") {return mean_Py;}
+	else if (_operator == "P_y^2") {return mean_PyPy;}
+	else {
+		std::cout << "The expected value of the operator " << _operator << " is not calculated.\n"
+				  << "Available operators are: L_z, X, X^2, Y, Y^2, P_x, P_x^2, P_y, P_y^2.\n";
+	}
+}
+
 double State::get_mean_x(void) {
     if(!expected_values_updated)
         calculate_expected_values();

@@ -144,6 +144,7 @@ public:
     void imprint(complex<double> (*function)(double x, double y) /** Pointer to a function */);    ///< Multiply the wave function of the state by the function provided in 2D.
     double *get_particle_density(double *density = 0 /** [out] matrix storing the squared norm of the wave function. */);  ///< Return a matrix storing the squared norm of the wave function.
     double *get_phase(double *phase = 0 /** [out] matrix storing the phase of the wave function. */);  ///< Return a matrix storing the phase of the wave function.
+    double get_expected_value(string _operator);    ///< Return the expected value of the operator, given as argument.
     double get_squared_norm(void);    ///< Return the squared norm of the quantum state.
     double get_mean_x(void);    ///< Return the expected value of the X operator.
     double get_mean_xx(void);    ///< Return the expected value of the X^2 operator.
@@ -154,6 +155,7 @@ public:
     double get_mean_py(void);    ///< Return the expected value of the P_y operator.
     double get_mean_pypy(void);    ///< Return the expected value of the P_y^2 operator.
     double get_mean_angular_momentum(void);    ///< Return the expected value of the L_z operator.
+
     void write_to_file(string fileprefix /** [in] prefix name of the file */);    ///< Write to a file the wave function.
     void write_particle_density(string fileprefix /** [in] prefix name of the file */);    ///< Write to a file the squared norm of the wave function.
     void write_phase(string fileprefix /** [in] prefix name of the file */);    ///< Write to a file the phase of the wave function.
@@ -463,7 +465,7 @@ public:
            double delta_t, string kernel_type = "cpu");
     ~Solver();
     void evolve(int iterations, bool imag_time = false);  ///< Evolve the state of the system.
-    void update_parameters();  ///< Notify the solver if any parameter changed in the Hamiltonian
+    void update_parameters();  ///< Notify the solver if any parameter changed in the Hamiltonian.
     double get_total_energy(void);    ///< Get the total energy of the system.
     double get_squared_norm(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the squared norm of the state (default: total wave-function).
     double get_kinetic_energy(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the kinetic energy of the system.
