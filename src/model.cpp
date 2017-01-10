@@ -362,9 +362,8 @@ void State::calculate_expected_values(void) {
     int end_halo_y = grid->end_y - grid->inner_end_y;
     int tile_width = grid->end_x - grid->start_x;
 
-    double grid_center_x = grid->length_x * 0.5 - grid->delta_x * 0.5;
-    double grid_center_y = grid->length_y * 0.5 - grid->delta_y * 0.5;
 
+    double x, y;
     double sum_norm2 = 0.;
     double sum_x_mean = 0, sum_xx_mean = 0, sum_y_mean = 0, sum_yy_mean = 0;
     double sum_px_mean = 0, sum_pxpx_mean = 0, sum_py_mean = 0,
@@ -373,35 +372,31 @@ void State::calculate_expected_values(void) {
            param_py = 1. / grid->delta_y;
     double sum_angular_momentum = 0;
 
-    double cost_rot_x = grid->delta_y / grid->delta_x;
-    double cost_rot_y = grid->delta_x / grid->delta_y;
-    double rot_coord_x = (grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x) * 0.5;
-    double rot_coord_y = (grid->global_dim_y - grid->periods[0] * 2 * grid->halo_y) * 0.5;
-
     complex<double> const_1 = -1. / 12., const_2 = 4. / 3., const_3 = -2.5;
     complex<double> derivate1_1 = 1. / 6., derivate1_2 = - 1., derivate1_3 = 0.5, derivate1_4 = 1. / 3.;
-    int count1 = 0, count2 = 0;
+
 #ifndef HAVE_MPI
-    #pragma omp parallel for reduction(+:sum_norm2,sum_x_mean,sum_y_mean,sum_xx_mean,sum_yy_mean,sum_px_mean,sum_py_mean,sum_pxpx_mean,sum_pypy_mean,sum_angular_momentum)
+    #pragma omp parallel for reduction(+:sum_norm2,sum_x_mean,sum_y_mean,sum_xx_mean,sum_yy_mean,sum_px_mean,sum_py_mean,sum_pxpx_mean,sum_pypy_mean,sum_angular_momentum) private(x,y)
 #endif
-    for (int i = grid->inner_start_y - grid->start_y; i < grid->inner_end_y - grid->start_y; ++i) {
-        int y = grid->inner_start_y + i - (grid->inner_start_y - grid->start_y);
+    for (int i = ini_halo_y; i < grid->inner_end_y - grid->start_y; ++i) {
         complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
         complex<double> psi_up_up, psi_down_down, psi_left_left, psi_right_right;
-        complex<double> rot_x, rot_y;
-        int x = grid->inner_start_x;
-        for (int j = grid->inner_start_x - grid->start_x; j < grid->inner_end_x - grid->start_x; ++j) {
 
+        for (int j = ini_halo_x; j < grid->inner_end_x - grid->start_x; ++j) {
             psi_center = complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
-            sum_norm2 += real(conj(psi_center) * psi_center);
-            sum_x_mean += real(conj(psi_center) * psi_center * complex<double>(grid->delta_x * x - grid_center_x, 0.));
-            sum_y_mean += real(conj(psi_center) * psi_center * complex<double>(grid->delta_y * y - grid_center_y, 0.));
-            sum_xx_mean += real(conj(psi_center) * psi_center * complex<double>(grid->delta_x * x - grid_center_x, 0.) * complex<double>(grid->delta_x * x - grid_center_x, 0.));
-            sum_yy_mean += real(conj(psi_center) * psi_center * complex<double>(grid->delta_y * y - grid_center_y, 0.) * complex<double>(grid->delta_y * y - grid_center_y, 0.));
+            map_lattice_to_coordinate_space(grid, j, i, &x, &y);
+			complex<double> x_r = x;
+			complex<double> y_r = y;
 
-            if (i - (grid->inner_start_y - grid->start_y) >= (ini_halo_y == 0) * 2 &&
+            sum_norm2 += real(conj(psi_center) * psi_center);
+            sum_x_mean += real(conj(psi_center) * psi_center * x_r);
+            sum_y_mean += real(conj(psi_center) * psi_center * y_r);
+            sum_xx_mean += real(conj(psi_center) * psi_center * x_r * x_r);
+            sum_yy_mean += real(conj(psi_center) * psi_center * y_r * y_r);
+
+            if (i - (ini_halo_y) >= (ini_halo_y == 0) * 2 &&
                     i < grid->inner_end_y - grid->start_y - (end_halo_y == 0) * 2 &&
-                    j - (grid->inner_start_x - grid->start_x) >= (ini_halo_x == 0) * 2 &&
+                    j - (ini_halo_x) >= (ini_halo_x == 0) * 2 &&
                     j < grid->inner_end_x - grid->start_x - (end_halo_x == 0) * 2) {
 
                 psi_up = complex<double> (p_real[(i - 1) * tile_width + j],
@@ -421,17 +416,14 @@ void State::calculate_expected_values(void) {
                 psi_left_left = complex<double> (p_real[i * tile_width + j - 2],
                                                  p_imag[i * tile_width + j - 2]);
 
-                rot_x = complex<double>(-cost_rot_x * (y - rot_coord_y) - cost_rot_x * 0.5, 0.);
-                rot_y = complex<double>(-cost_rot_y * (x - rot_coord_x) - cost_rot_y * 0.5, 0.);
 
                 sum_px_mean += imag(conj(psi_center) * (derivate1_4 * psi_right + derivate1_3 * psi_center + derivate1_2 * psi_left + derivate1_1 * psi_left_left));
                 sum_py_mean += imag(conj(psi_center) * (derivate1_4 * psi_up + derivate1_3 * psi_center + derivate1_2 * psi_down + derivate1_1 * psi_down_down));
                 sum_pxpx_mean += real(conj(psi_center) * (const_1 * psi_right_right + const_2 * psi_right + const_2 * psi_left + const_1 * psi_left_left + const_3 * psi_center));
                 sum_pypy_mean += real(conj(psi_center) * (const_1 * psi_down_down + const_2 * psi_down + const_2 * psi_up + const_1 * psi_up_up + const_3 * psi_center));
-                sum_angular_momentum += imag(conj(psi_center) * (rot_x * (derivate1_4 * psi_right + derivate1_3 * psi_center + derivate1_2 * psi_left + derivate1_1 * psi_left_left)
-                                             + rot_y * (derivate1_4 * psi_up + derivate1_3 * psi_center + derivate1_2 * psi_down + derivate1_1 * psi_down_down)));
+                sum_angular_momentum += imag(conj(psi_center) * (y_r / grid->delta_x * (derivate1_4 * psi_right + derivate1_3 * psi_center + derivate1_2 * psi_left + derivate1_1 * psi_left_left)
+                                             + x_r / grid->delta_y * (derivate1_4 * psi_up + derivate1_3 * psi_center + derivate1_2 * psi_down + derivate1_1 * psi_down_down)));
             }
-            ++x;
         }
     }
     norm2 = sum_norm2;

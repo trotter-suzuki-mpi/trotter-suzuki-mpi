@@ -252,10 +252,11 @@ void Solver::calculate_energy_expected_values(void) {
     int end_halo_y = grid->end_y - grid->inner_end_y;
     int tile_width = grid->end_x - grid->start_x;
 
-
+    double x, y;
     Potential *potential, *potential_b = NULL;
     double coupling, coupling_b = 0, coupling_ab;
     double mass, mass_b;
+    double angular_velocity = hamiltonian->angular_velocity;
     complex<double> omega;
 
     potential = hamiltonian->potential;
@@ -275,8 +276,8 @@ void Solver::calculate_energy_expected_values(void) {
     if (!single_component)
         cost_E_b = complex<double> (-1. / (2. * mass_b));
 
-    double cost_rot_x = hamiltonian->angular_velocity * grid->delta_y / grid->delta_x;
-    double cost_rot_y = hamiltonian->angular_velocity * grid->delta_x / grid->delta_y;
+    double cost_rot_x = angular_velocity * grid->delta_y / grid->delta_x;
+    double cost_rot_y = angular_velocity * grid->delta_x / grid->delta_y;
 
     complex<double> const_1 = -1. / 12., const_2 = 4. / 3., const_3 = -2.5;
     complex<double> derivate1_1 = 1. / 6., derivate1_2 = - 1., derivate1_3 = 0.5, derivate1_4 = 1. / 3.;
@@ -293,20 +294,22 @@ void Solver::calculate_energy_expected_values(void) {
     sum_potential_energy_1,\
     sum_intra_species_energy_1,\
     sum_kinetic_energy_1,\
-    sum_rotational_energy_1)
+    sum_rotational_energy_1) private(x,y)
 #endif
     for (int i = grid->inner_start_y - grid->start_y; i < grid->inner_end_y - grid->start_y; ++i) {
-    int y = grid->inner_start_y + i - (grid->inner_start_y - grid->start_y);
         complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
         complex<double> psi_up_b, psi_down_b, psi_center_b, psi_left_b, psi_right_b;
         complex<double> rot_y, rot_x;
         complex<double> psi_up_up, psi_down_down, psi_left_left, psi_right_right;
         complex<double> psi_up_up_b, psi_down_down_b, psi_left_left_b, psi_right_right_b;
-        int x = grid->inner_start_x;
-        for (int j = grid->inner_start_x - grid->start_x; j < grid->inner_end_x - grid->start_x; ++j) {
 
+        for (int j = grid->inner_start_x - grid->start_x; j < grid->inner_end_x - grid->start_x; ++j) {
             psi_center = complex<double> (state->p_real[i * tile_width + j],
                                           state->p_imag[i * tile_width + j]);
+            map_lattice_to_coordinate_space(grid, j, i, &x, &y);
+			complex<double> x_r = x;
+			complex<double> y_r = y;
+
             sum_norm2_0 += real(conj(psi_center) * psi_center);
             sum_potential_energy_0 += real(conj(psi_center) * psi_center * complex<double> (potential->get_value(j, i), 0.));
             sum_intra_species_energy_0 += real(conj(psi_center) * psi_center * psi_center * conj(psi_center) * complex<double> (0.5 * coupling, 0.));
@@ -346,14 +349,14 @@ void Solver::calculate_energy_expected_values(void) {
                 psi_left_left = complex<double> (state->p_real[i * tile_width + j - 2],
                                                  state->p_imag[i * tile_width + j - 2]);
 
-                rot_x = complex<double>(0., 1. * cost_rot_x * (y - hamiltonian->rot_coord_y) + cost_rot_x * 0.5);
-                rot_y = complex<double>(0., 1. * cost_rot_y * (x - hamiltonian->rot_coord_x) + cost_rot_y * 0.5);
+                rot_x = y_r * complex<double>(0., angular_velocity / grid->delta_x);
+                rot_y = x_r * complex<double>(0., angular_velocity / grid->delta_y);
 
                 sum_kinetic_energy_0 += real(conj(psi_center) * cost_E * (
-                                                 complex<double> (1. / (grid->delta_x * grid->delta_x), 0.) *
-                                                 (const_1 * psi_right_right + const_2 * psi_right + const_2 * psi_left + const_1 * psi_left_left + const_3 * psi_center) +
-                                                 complex<double> (1. / (grid->delta_y * grid->delta_y), 0.) *
-                                                 (const_1 * psi_down_down + const_2 * psi_down + const_2 * psi_up + const_1 * psi_up_up + const_3 * psi_center)));
+											 complex<double> (1. / (grid->delta_x * grid->delta_x), 0.) *
+											 (const_1 * psi_right_right + const_2 * psi_right + const_2 * psi_left + const_1 * psi_left_left + const_3 * psi_center) +
+											 complex<double> (1. / (grid->delta_y * grid->delta_y), 0.) *
+											 (const_1 * psi_down_down + const_2 * psi_down + const_2 * psi_up + const_1 * psi_up_up + const_3 * psi_center)));
                 sum_rotational_energy_0 += real(conj(psi_center) * (rot_y * (derivate1_4 * psi_up + derivate1_3 * psi_center + derivate1_2 * psi_down + derivate1_1 * psi_down_down)
                                                 + rot_x * (derivate1_4 * psi_right + derivate1_3 * psi_center + derivate1_2 * psi_left + derivate1_1 * psi_left_left)));
 
@@ -384,7 +387,6 @@ void Solver::calculate_energy_expected_values(void) {
                                                     + rot_x * (derivate1_4 * psi_right + derivate1_3 * psi_center + derivate1_2 * psi_left + derivate1_1 * psi_left_left)));
                 }
             }
-            ++x;
         }
     }
     norm2[0] = sum_norm2_0;
