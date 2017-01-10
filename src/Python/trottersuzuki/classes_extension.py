@@ -7,7 +7,7 @@ from .trottersuzuki import SinusoidState as _SinusoidState
 from .trottersuzuki import ExponentialState as _ExponentialState
 from .trottersuzuki import Potential as _Potential
 from .trottersuzuki import Solver as _Solver
-from .tools import center_coordinates, imprint
+from .tools import map_lattice_to_coordinate_space, imprint
 
 
 class Lattice1D(_Lattice1D):
@@ -31,14 +31,14 @@ class Lattice2D(_Lattice2D):
 
     def __init__(self, dim_x, length_x, dim_y=None, length_y=None,
                  periodic_x_axis=False, periodic_y_axis=False,
-                 angular_velocity=0.):
+                 angular_velocity=0., coordinate_system = 'Cartesian'):
         if dim_y is None:
             dim_y = dim_x
         if length_y is None:
             length_y = length_x
         super(Lattice2D, self).__init__(dim_x, length_x, dim_y, length_y,
                                         periodic_x_axis, periodic_y_axis,
-                                        angular_velocity)
+                                        angular_velocity, coordinate_system)
 
     def get_x_axis(self):
         """
@@ -107,7 +107,7 @@ class State(_State):
 
         for y in range(self.grid.dim_y):
             for x in range(self.grid.dim_x):
-                state[y, x] = function(*center_coordinates(self.grid, x, y))
+                state[y, x] = function(*map_lattice_to_coordinate_space(self.grid, x, y))
 
         self.init_state_matrix(state.real, state.imag)
 
@@ -296,7 +296,7 @@ class Potential(_Potential):
         for y in range(self.grid.dim_y):
             for x in range(self.grid.dim_x):
                 self.potential_matrix[y, x] = \
-                    _pot_function(*center_coordinates(self.grid, x, y))
+                    _pot_function(*map_lattice_to_coordinate_space(self.grid, x, y))
 
         self.init_potential_matrix(self.potential_matrix)
 
@@ -304,7 +304,7 @@ class Potential(_Potential):
         for y in range(self.grid.dim_y):
             for x in range(self.grid.dim_x):
                 self.exp_potential_matrix[y, x] = \
-                    np.exp(-1j*delta_t*self.pot_function(*center_coordinates(self.grid, x, y), t))
+                    np.exp(-1j*delta_t*self.pot_function(map_lattice_to_coordinate_space(self.grid, x, y), t))
         return self.exp_potential_matrix
 
 class Solver(_Solver):

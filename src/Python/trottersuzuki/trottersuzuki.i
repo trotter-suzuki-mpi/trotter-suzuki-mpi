@@ -8,6 +8,7 @@
 
 %include "numpy.i"
 
+
 %init %{
 import_array();
 %}
@@ -21,6 +22,8 @@ import_array();
 %apply (double* INPLACE_ARRAY2, int DIM1, int DIM2) {(double* p_imag, int p_i_width, int p_i_height)}
 %apply (double** ARGOUTVIEWM_ARRAY2, int* DIM1, int* DIM2) {(double **density_out, int *de_dim1_out, int *de_dim2_out)}
 %apply (double** ARGOUTVIEWM_ARRAY2, int* DIM1, int* DIM2) {(double **phase_out, int *ph_dim1_out, int *ph_dim2_out)}
+%apply const std::string& {std::string* coordinate_system};
+%apply const std::string& {std::string* _operator};
 
 %exception Solver::init_kernel {
    try {
@@ -38,6 +41,7 @@ public:
     int dim_x, dim_y;
     int global_no_halo_dim_x, global_no_halo_dim_y;
     int start_x, start_y;
+    std::string coordinate_system;
 };
 
 class Lattice1D: public Lattice {
@@ -49,7 +53,8 @@ public:
 class Lattice2D: public Lattice {
 public:
     Lattice2D(int dim_x, double length_x, int dim_y, double length_y,
-              bool periodic_x_axis=false, bool periodic_y_axis=false, double angular_velocity=0.);
+              bool periodic_x_axis=false, bool periodic_y_axis=false, 
+              double angular_velocity=0., std::string coordinate_system = "Cartesian");
 };
 
 class State{
@@ -108,6 +113,7 @@ public:
            *phase_out = _phase;
         }
     }
+    double get_expected_value(std::string _operator);
     double get_squared_norm(void);
     double get_mean_x(void);
     double get_mean_xx(void);
@@ -281,8 +287,6 @@ public:
                            int exp_pot_imag_length, int which);
 private:
     bool imag_time;
-    double h_a[2];
-    double h_b[2];
     double **external_pot_real;
     double **external_pot_imag;
     double delta_t;
