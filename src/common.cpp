@@ -59,7 +59,7 @@ void map_lattice_to_coordinate_space(Lattice *grid, int x_in, int y_in, double *
 	// By convention the radial axis is the x axis.
 	if (grid->coordinate_system == "Cylindrical") {
 		double idy = grid->start_y * grid->delta_y + 0.5 * grid->delta_y + y_in * grid->delta_y;
-		double idx = grid->start_x * grid->delta_x + 0.5 * grid->delta_x + x_in * grid->delta_x;
+		double idx = grid->start_x * grid->delta_x + x_in * grid->delta_x - 0.5 * grid->delta_x;
 		double y_c = grid->global_no_halo_dim_y * grid->delta_y * 0.5;
 		if (idy - y_c < -grid->length_y * 0.5) {
 			idy += grid->length_y;
