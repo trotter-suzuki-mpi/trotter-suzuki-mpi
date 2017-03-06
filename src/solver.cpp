@@ -85,9 +85,15 @@ void Solver::initialize_exp_potential(double delta_t, int which) {
             for (int x = 0; x < grid->dim_x; ++x) {
                 if (which == 0) {
                     ptmp = hamiltonian->potential->get_value(x, y);
+                    if (grid->coordinate_system == "Cylindrical") {
+                    	ptmp += hamiltonian->azimutal_potential(x, state->angular_momentum);
+                    }
                 }
                 else {
                     ptmp = static_cast<Hamiltonian2Component*>(hamiltonian)->potential_b->get_value(x, y);
+                    if (grid->coordinate_system == "Cylindrical") {
+                    	ptmp += static_cast<Hamiltonian2Component*>(hamiltonian)->azimutal_potential_b(x, state_b->angular_momentum);
+                    }
                 }
                 if (imag_time) {
                     tmp = exp(complex<double> (-delta_t * ptmp, 0.));
@@ -315,6 +321,9 @@ void Solver::calculate_energy_expected_values(void) {
 
             sum_norm2_0 += real(conj(psi_center) * psi_center);
             sum_potential_energy_0 += real(conj(psi_center) * psi_center * complex<double> (potential->get_value(j, i), 0.));
+            if (grid->coordinate_system == "Cylindrical") {
+            	sum_potential_energy_0 += real(conj(psi_center) * psi_center * complex<double> (hamiltonian->azimutal_potential(j, state->angular_momentum), 0.));
+            }
             sum_intra_species_energy_0 += real(conj(psi_center) * psi_center * psi_center * conj(psi_center) * complex<double> (0.5 * coupling, 0.));
 
             if (!single_component) {
@@ -323,6 +332,9 @@ void Solver::calculate_energy_expected_values(void) {
 
                 sum_norm2_1 += real(conj(psi_center_b) * psi_center_b);
                 sum_potential_energy_1 += real(conj(psi_center_b) * psi_center_b * complex<double> (potential_b->get_value(j, i), 0.));
+                if (grid->coordinate_system == "Cylindrical") {
+					sum_potential_energy_0 += real(conj(psi_center_b) * psi_center_b * complex<double> (static_cast<Hamiltonian2Component*>(hamiltonian)->azimutal_potential_b(j, state_b->angular_momentum), 0.));
+				}
                 sum_intra_species_energy_1 += real(conj(psi_center_b) * psi_center_b * psi_center_b * conj(psi_center_b) * complex<double> (0.5 * coupling_b, 0.));
                 sum_inter_species_energy += real(conj(psi_center) * psi_center * conj(psi_center) * psi_center *
                                                  conj(psi_center_b) * psi_center_b * conj(psi_center_b) * psi_center_b * complex<double> (coupling_ab));
@@ -384,9 +396,9 @@ void Solver::calculate_energy_expected_values(void) {
                     sum_kinetic_energy_1 += real(cost_E_b * conj(psi_center_b) *
                     							 ((const_1 * psi_right_right_b + const_2 * psi_right_b + const_2 * psi_left_b + const_1 * psi_left_left_b + const_3 * psi_center_b) / (delta_x * delta_x) +
                                                   (const_1 * psi_down_down_b + const_2 * psi_down_b + const_2 * psi_up_b + const_1 * psi_up_up_b + const_3 * psi_center_b) / (delta_y * delta_y)));
-                    if (grid->coordinate_system == "Cylindrical") {
-						sum_kinetic_energy_1 += real(cost_E_b * conj(psi_center_b) * (derivate1_4 * psi_right_b + derivate1_3 * psi_center_b + derivate1_2 * psi_left_b + derivate1_1 * psi_left_left_b)) / (x * delta_x);
-					}
+                    //if (grid->coordinate_system == "Cylindrical") {
+                    //	sum_kinetic_energy_1 += real(cost_E_b * conj(psi_center_b) * (derivate1_4 * psi_right_b + derivate1_3 * psi_center_b + derivate1_2 * psi_left_b + derivate1_1 * psi_left_left_b)) / (x * delta_x);
+                    //}
                     sum_rotational_energy_1 += real(conj(psi_center_b) * (rot_y * (derivate1_4 * psi_up_b + derivate1_3 * psi_center_b + derivate1_2 * psi_down_b + derivate1_1 * psi_down_down_b)
                                                     + rot_x * (derivate1_4 * psi_right_b + derivate1_3 * psi_center_b + derivate1_2 * psi_left_b + derivate1_1 * psi_left_left_b)));
                 }

@@ -125,15 +125,17 @@ public:
     double *p_real;    ///< Real part of the wave function.
     double *p_imag;    ///< Imaginary part of the wave function.
     Lattice *grid;    ///< Object that defines the lattice structure.
+    int angular_momentum;   ///< Angular momentum when Cylindrical coordinates are used.
 
     /**
         Construct the state from given matrices if they are provided, otherwise construct a state with null wave function, initializing p_real and p_imag.
 
         @param [in] grid             Lattice object.
+        @param [in] angular_momentum Angular momentum (only for Cylindrical coordinates).
         @param [in] p_real           Pointer to the real part of the wave function.
         @param [in] p_imag           Pointer to the imaginary part of the wave function.
      */
-    State(Lattice *grid, double *p_real = 0, double *p_imag = 0);
+    State(Lattice *grid, int angular_momentum = 0, double *p_real = 0, double *p_imag = 0);
     State(const State &obj /**< [in] State object. */);    ///< Copy constructor: copy the state object.
     ~State();    ///< Destructor.
     void init_state(complex<double> (*ini_state)(double x) /** Pointer to a wave function */); ///< Write the wave function from a C++ function to p_real and p_imag matrices in 1D.
@@ -215,11 +217,12 @@ public:
         @param [in] mean_y           Y coordinate of the gaussian function's center.
         @param [in] norm             Squared norm of the state.
         @param [in] phase            Relative phase of the wave function.
+        @param [in] angular_momentum Angular momentum (only for Cylindrical coordinates).
         @param [in] p_real           Pointer to the real part of the wave function.
         @param [in] p_imag           Pointer to the imaginary part of the wave function.
      */
     GaussianState(Lattice2D *grid, double omega_x, double omega_y = -1., double mean_x = 0, double mean_y = 0, double norm = 1, double phase = 0,
-                  double *p_real = 0, double *p_imag = 0);
+    		      int _angular_momentum = 0, double *p_real = 0, double *p_imag = 0);
 
 private:
     double mean_x;    ///< X coordinate of the gaussian function's center.
@@ -344,6 +347,7 @@ public:
     double angular_velocity;    ///< The frame of reference rotates with this angular velocity.
     double rot_coord_x;    ///< X coordinate of the center of rotation.
     double rot_coord_y;    ///< Y coordinate of the center of rotation.
+    double azimutal_potential(double x, int angular_momentum);
 
     /**
     	Construct the Hamiltonian of a single component system.
@@ -377,6 +381,7 @@ public:
     double omega_r;    ///< Real part of the Rabi coupling.
     double omega_i;    ///< Imaginary part of the Rabi coupling.
     Potential *potential_b;    ///< External potential for the second component.
+    double azimutal_potential_b(double x, int angular_momentum);
 
     /**
     	Construct the Hamiltonian of a two component system.
