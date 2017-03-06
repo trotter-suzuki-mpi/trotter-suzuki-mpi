@@ -43,8 +43,8 @@ void block_kernel_vertical(size_t start_offset, size_t stride, size_t width, siz
 void block_kernel_vertical_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
 void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
 void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
-void block_kernel_radial_kinetic(size_t stride, size_t width, size_t height, int offset_x, double _kin_radial, double * p_real, double * p_imag);
-void block_kernel_radial_kinetic_imaginary(size_t stride, size_t width, size_t height, int offset_x, double _kin_radial, double * p_real, double * p_imag);
+void block_kernel_radial_kinetic(size_t stride, size_t width, size_t height, double offset_x, double _kin_radial, double * p_real, double * p_imag);
+void block_kernel_radial_kinetic_imaginary(size_t stride, size_t width, size_t height, double offset_x, double _kin_radial, double * p_real, double * p_imag);
 void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width, size_t height, double a, double b, double coupling_a, double coupling_b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag);
 void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, size_t width, size_t height, double a, double b, double coupling_a, double coupling_b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag);
 void block_kernel_rotation(size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double * p_real, double * p_imag);
@@ -124,8 +124,8 @@ private:
 
     double alpha_x;         ///< Real coupling constant associated to the X*P_y operator, part of the angular momentum.
     double alpha_y;         ///< Real coupling constant associated to the Y*P_x operator, part of the angular momentum.
-    int rot_coord_x;        ///< X axis coordinate of the center of rotation.
-    int rot_coord_y;        ///< Y axis coordinate of the center of rotation.
+    double rot_coord_x;        ///< X axis coordinate of the center of rotation.
+    double rot_coord_y;        ///< Y axis coordinate of the center of rotation.
     int start_x;          ///< X axis coordinate of the first dot of the processed tile.
     int start_y;          ///< Y axis coordinate of the first dot of the processed tile.
     int end_x;            ///< X axis coordinate of the last dot of the processed tile.
