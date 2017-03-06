@@ -96,7 +96,7 @@ void Lattice2D::init(int _dim_x, double _length_x, int _dim_y, double _length_y,
 	}
 	length_x = _length_x;
     length_y = _length_y;
-    delta_x = length_x / double(_dim_x);
+    delta_x = length_x / (double(_dim_x);
     delta_y = length_y / double(_dim_y);
     coordinate_system = _coordinate_system;
     periods[0] = (int) periodic_y_axis;
@@ -131,7 +131,7 @@ void Lattice2D::init(int _dim_x, double _length_x, int _dim_y, double _length_y,
     dim_y = end_y - start_y;
 }
 
-State::State(Lattice *_grid, double *_p_real, double *_p_imag): grid(_grid) {
+State::State(Lattice *_grid, int _angular_momentum, double *_p_real, double *_p_imag): grid(_grid), angular_momentum(_angular_momentum){
     expected_values_updated = false;
     if (_p_real == 0) {
         self_init = true;
@@ -158,7 +158,7 @@ State::State(Lattice *_grid, double *_p_real, double *_p_imag): grid(_grid) {
 State::State(const State &obj): grid(obj.grid), expected_values_updated(obj.expected_values_updated), self_init(obj.self_init),
     mean_X(obj.mean_X), mean_XX(obj.mean_XX), mean_Y(obj.mean_Y), mean_YY(obj.mean_YY),
     mean_Px(obj.mean_Px), mean_PxPx(obj.mean_PxPx), mean_Py(obj.mean_Py), mean_PyPy(obj.mean_PyPy),
-    norm2(obj.norm2) {
+    norm2(obj.norm2), angular_momentum(obj.angular_momentum){
     p_real = new double[grid->dim_x * grid->dim_y];
     p_imag = new double[grid->dim_x * grid->dim_y];
     for (int y = 0; y < grid->dim_y; y++) {
@@ -592,7 +592,8 @@ void State::write_to_file(string filename) {
 }
 
 ExponentialState::ExponentialState(Lattice2D *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
-    State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase) {
+    State(_grid, 0, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase) {
+	angular_momentum = 0;
     complex<double> tmp;
     double x_r = 0, y_r = 0;
     for (int y = 0; y < grid->dim_y; y++) {
@@ -612,8 +613,8 @@ complex<double> ExponentialState::exp_state(double x, double y) {
 }
 
 GaussianState::GaussianState(Lattice2D *_grid, double _omega_x, double _omega_y, double _mean_x, double _mean_y,
-                             double _norm, double _phase, double *_p_real, double *_p_imag):
-    State(_grid, _p_real, _p_imag), mean_x(_mean_x),
+                             double _norm, double _phase, int _angular_momentum, double *_p_real, double *_p_imag):
+    State(_grid, _angular_momentum,_p_real, _p_imag), mean_x(_mean_x),
     mean_y(_mean_y), omega_x(_omega_x), omega_y(_omega_y), norm(_norm), phase(_phase) {
     if (omega_y == -1.) {
         omega_y = omega_x;
@@ -635,7 +636,8 @@ complex<double> GaussianState::gauss_state(double x, double y) {
 }
 
 SinusoidState::SinusoidState(Lattice2D *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
-    State(_grid, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase)  {
+    State(_grid, 0,_p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase)  {
+	angular_momentum = 0;
     complex<double> tmp;
     double x_r = 0, y_r = 0;
     for (int y = 0; y < grid->dim_y; y++) {
@@ -778,7 +780,12 @@ Hamiltonian::Hamiltonian(Lattice *_grid, Potential *_potential,
             return;
         }
     }
-    rot_coord_x = (grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x) * 0.5 + _rot_coord_x / grid->delta_x;
+    if (grid->coordinate_system == "Cylindrical") {
+    	rot_coord_x = 0.5;
+    }
+    else {
+    	rot_coord_x = (grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x) * 0.5 + _rot_coord_x / grid->delta_x;
+    }
     rot_coord_y = (grid->global_dim_y - grid->periods[0] * 2 * grid->halo_y) * 0.5 + _rot_coord_y / grid->delta_y;
     if (_potential == NULL) {
         self_init = true;
@@ -788,6 +795,12 @@ Hamiltonian::Hamiltonian(Lattice *_grid, Potential *_potential,
         self_init = false;
         potential = _potential;
     }
+}
+
+double Hamiltonian::azimutal_potential(double x, int angular_momentum) {
+	double x_r = 0, y_r = 0;
+	map_lattice_to_coordinate_space(grid, x, 0, &x_r, &y_r);
+	return (angular_momentum * angular_momentum) / (2. * mass * x_r * x_r);
 }
 
 Hamiltonian::~Hamiltonian() {
@@ -814,6 +827,12 @@ Hamiltonian2Component::Hamiltonian2Component(Lattice *_grid,
     else {
         potential_b = _potential_b;
     }
+}
+
+double Hamiltonian2Component::azimutal_potential_b(double x, int angular_momentum) {
+	double x_r = 0, y_r = 0;
+	map_lattice_to_coordinate_space(grid, x, 0, &x_r, &y_r);
+	return (angular_momentum * angular_momentum) / (2. * mass_b * x_r * x_r);
 }
 
 Hamiltonian2Component::~Hamiltonian2Component() {
