@@ -39,8 +39,8 @@ complex<double> gauss_ini_state(double x, double y) {
     return complex<double>(sqrt(0.5 * w / M_PI) * exp(-(x * x + y * y) * 0.5 * w) * (1. + sqrt(2. * w) * x), 0.);
 }
 int main(int argc, char** argv) {
+
     double particle_mass = 1.;
-    double angular_velocity = 1.;
     bool imag_time = false;
     int time, tot_time = 0;
     double delta_t = double(DELTA_T);
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 #endif
 
     //set lattice
-    Lattice2D *grid = new Lattice2D(DIM, length, false, false, angular_velocity);
+    Lattice2D *grid = new Lattice2D(DIM, length);
     //set initial state
     State *state = new State(grid);
     state->init_state(gauss_ini_state);
