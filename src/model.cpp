@@ -96,7 +96,13 @@ void Lattice2D::init(int _dim_x, double _length_x, int _dim_y, double _length_y,
 	}
 	length_x = _length_x;
     length_y = _length_y;
-    delta_x = length_x / (double(_dim_x);
+    if (_coordinate_system == "Cylindrical") {
+    	_dim_x += 1;
+    	delta_x = length_x / (double(_dim_x) - 0.5);
+	}
+	else {
+		delta_x = length_x / double(_dim_x);
+	}
     delta_y = length_y / double(_dim_y);
     coordinate_system = _coordinate_system;
     periods[0] = (int) periodic_y_axis;
@@ -124,6 +130,9 @@ void Lattice2D::init(int _dim_x, double _length_x, int _dim_y, double _length_y,
     calculate_borders(mpi_coords[1], mpi_dims[1], &start_x, &end_x,
                       &inner_start_x, &inner_end_x,
                       _dim_x, halo_x, periods[1]);
+    if (coordinate_system == "Cylindrical" && mpi_coords[1] == 0) {
+    	inner_start_x += 1;
+    }
     calculate_borders(mpi_coords[0], mpi_dims[0], &start_y, &end_y,
                       &inner_start_y, &inner_end_y,
                       _dim_y, halo_y, periods[0]);
@@ -781,7 +790,7 @@ Hamiltonian::Hamiltonian(Lattice *_grid, Potential *_potential,
         }
     }
     if (grid->coordinate_system == "Cylindrical") {
-    	rot_coord_x = 0.5;
+    	rot_coord_x = 0;
     }
     else {
     	rot_coord_x = (grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x) * 0.5 + _rot_coord_x / grid->delta_x;

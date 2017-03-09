@@ -44,7 +44,7 @@ void block_kernel_vertical_imaginary(size_t start_offset, size_t stride, size_t 
 void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
 void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
 void block_kernel_radial_kinetic(size_t stride, size_t width, size_t height, double offset_x, double _kin_radial, double * p_real, double * p_imag);
-void block_kernel_radial_kinetic_imaginary(size_t stride, size_t width, size_t height, double offset_x, double _kin_radial, double * p_real, double * p_imag);
+void block_kernel_radial_kinetic_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double offset_x, double _kin_radial, double * p_real, double * p_imag);
 void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width, size_t height, double a, double b, double coupling_a, double coupling_b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag);
 void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, size_t width, size_t height, double a, double b, double coupling_a, double coupling_b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag);
 void block_kernel_rotation(size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double * p_real, double * p_imag);
@@ -80,11 +80,11 @@ public:
     void run_kernel();              ///< Evolve the remaining blocks in the inner part of the tile.
     void wait_for_completion();         ///< Synchronize all the processes at the end of halos communication. Perform normalization for imaginary time evolution in the case of single wave-function evolution.
     void get_sample(size_t dest_stride, size_t x, size_t y, size_t width, size_t height, double * dest_real, double * dest_imag, double * dest_real2 = 0, double * dest_imag2 = 0) const; ///< Copy the wave function from the two buffers pointed by p_real and p_imag, without halos, to dest_real and dest_imag.
-    void normalization();    ///<Normalize the state when performing an imaginary time evolution (only two wave-function evolution).
+    void normalization();    ///< Normalize the state when performing an imaginary time evolution (only two wave-function evolution).
     void rabi_coupling(double var, double delta_t);    ///< Evolution corresponding to the Rabi coupling term of the Hamiltonian (only two wave-function evolution).
     double calculate_squared_norm(bool global = true) const;  ///< Calculate squared norm of the state.
     void update_potential(double *_external_pot_real, double *_external_pot_imag, int which);    ///< Update memory pointed by external_potential_real and external_potential_imag (only non static external potential).
-
+    void cpy_first_positive_to_first_negative();    ///< Copy first points with positive radial coordinates to first points with negative coordinates.
     bool runs_in_place() const {
         return false;
     }
@@ -121,6 +121,7 @@ private:
     static const size_t block_width = BLOCK_WIDTH_CACHE;      ///< Width of the lattice block which is cached (number of lattice's dots).
     size_t block_height;     ///< Height of the lattice block which is cached (number of lattice's dots).
     bool two_wavefunctions;    ///< Flag parameter to distinguish whether the kernel is evolving a two-wave-function or a single-wave-function
+    int angular_momentum[2];   ///< Angular momentum when Cylindrical coordinates are used.
 
     double alpha_x;         ///< Real coupling constant associated to the X*P_y operator, part of the angular momentum.
     double alpha_y;         ///< Real coupling constant associated to the Y*P_x operator, part of the angular momentum.
@@ -185,7 +186,7 @@ public:
     void rabi_coupling(double var, double delta_t);    ///< Evolution corresponding to the Rabi coupling term of the Hamiltonian (only two wave-function evolution).
     double calculate_squared_norm(bool global = true) const;  ///< Calculate squared norm of the state.
     void update_potential(double *_external_pot_real, double *_external_pot_imag, int which);    ///< Update memory pointed by external_potential_real and external_potential_imag (only non static external potential).
-
+    void cpy_first_positive_to_first_negative();    ///< Copy first points with positive radial coordinates to first points with negative coordinates.
     bool runs_in_place() const {
         return false;
     }

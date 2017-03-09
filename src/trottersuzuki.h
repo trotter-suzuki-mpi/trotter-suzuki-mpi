@@ -428,6 +428,7 @@ public:
     virtual bool runs_in_place() const = 0;
     virtual string get_name() const = 0;				///< Get kernel name.
     virtual void update_potential(double *_external_pot_real, double *_external_pot_imag, int which) = 0;    ///< Update the evolution matrix, regarding the external potential, at time t.
+    virtual void cpy_first_positive_to_first_negative() = 0;    ///< Copy first points with positive radial coordinates to first points with negative coordinates.
 
     virtual void start_halo_exchange() = 0;					///< Exchange halos between processes.
     virtual void finish_halo_exchange() = 0;				///< Exchange halos between processes.

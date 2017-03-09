@@ -179,6 +179,7 @@ void Solver::evolve(int iterations, bool _imag_time) {
         iterations = -iterations;
         soft_update = true;
     }
+
     // Main loop
     for (int i = 0; i < iterations; ++i) {
         if (i > 0 && hamiltonian->potential->update(current_evolution_time)) {
@@ -222,6 +223,7 @@ void Solver::evolve(int iterations, bool _imag_time) {
             kernel->rabi_coupling(var, delta_t);
             kernel->normalization();
         }
+        kernel->cpy_first_positive_to_first_negative(); //only for cylindrical coordinates
         current_evolution_time += delta_t;
     }
     if (!soft_update) {
@@ -320,10 +322,12 @@ void Solver::calculate_energy_expected_values(void) {
 			complex<double> y_r = y;
 
             sum_norm2_0 += real(conj(psi_center) * psi_center);
-            sum_potential_energy_0 += real(conj(psi_center) * psi_center * complex<double> (potential->get_value(j, i), 0.));
-            if (grid->coordinate_system == "Cylindrical") {
-            	sum_potential_energy_0 += real(conj(psi_center) * psi_center * complex<double> (hamiltonian->azimutal_potential(j, state->angular_momentum), 0.));
-            }
+            sum_potential_energy_0 += real(conj(psi_center) * psi_center * complex<double> (
+            		                  potential->get_value(j, i) +
+            		                  (grid->coordinate_system == "Cylindrical" ? hamiltonian->azimutal_potential(j, state->angular_momentum) : 0), 0.));
+            //if (grid->coordinate_system == "Cylindrical") {
+            //	sum_potential_energy_0 += real(conj(psi_center) * psi_center * complex<double> (hamiltonian->azimutal_potential(j, state->angular_momentum), 0.));
+            //}
             sum_intra_species_energy_0 += real(conj(psi_center) * psi_center * psi_center * conj(psi_center) * complex<double> (0.5 * coupling, 0.));
 
             if (!single_component) {
@@ -331,10 +335,12 @@ void Solver::calculate_energy_expected_values(void) {
                                                 state_b->p_imag[i * tile_width + j]);
 
                 sum_norm2_1 += real(conj(psi_center_b) * psi_center_b);
-                sum_potential_energy_1 += real(conj(psi_center_b) * psi_center_b * complex<double> (potential_b->get_value(j, i), 0.));
-                if (grid->coordinate_system == "Cylindrical") {
-					sum_potential_energy_0 += real(conj(psi_center_b) * psi_center_b * complex<double> (static_cast<Hamiltonian2Component*>(hamiltonian)->azimutal_potential_b(j, state_b->angular_momentum), 0.));
-				}
+                sum_potential_energy_1 += real(conj(psi_center_b) * psi_center_b * complex<double> (
+                		                  potential_b->get_value(j, i) +
+                		                  (grid->coordinate_system == "Cylindrical" ? static_cast<Hamiltonian2Component*>(hamiltonian)->azimutal_potential_b(j, state_b->angular_momentum) : 0.), 0.));
+                //if (grid->coordinate_system == "Cylindrical") {
+                //	sum_potential_energy_0 += real(conj(psi_center_b) * psi_center_b * complex<double> (static_cast<Hamiltonian2Component*>(hamiltonian)->azimutal_potential_b(j, state_b->angular_momentum), 0.));
+                //}
                 sum_intra_species_energy_1 += real(conj(psi_center_b) * psi_center_b * psi_center_b * conj(psi_center_b) * complex<double> (0.5 * coupling_b, 0.));
                 sum_inter_species_energy += real(conj(psi_center) * psi_center * conj(psi_center) * psi_center *
                                                  conj(psi_center_b) * psi_center_b * conj(psi_center_b) * psi_center_b * complex<double> (coupling_ab));
@@ -367,9 +373,9 @@ void Solver::calculate_energy_expected_values(void) {
                 sum_kinetic_energy_0 += real(cost_E * conj(psi_center) *
 											 ((const_1 * psi_right_right + const_2 * psi_right + const_2 * psi_left + const_1 * psi_left_left + const_3 * psi_center) / (delta_x * delta_x) +
 											  (const_1 * psi_down_down + const_2 * psi_down + const_2 * psi_up + const_1 * psi_up_up + const_3 * psi_center) / (delta_y * delta_y)));
-                if (grid->coordinate_system == "Cylindrical") {
-                	sum_kinetic_energy_0 += real(cost_E * conj(psi_center) * (derivate1_4 * psi_right + derivate1_3 * psi_center + derivate1_2 * psi_left + derivate1_1 * psi_left_left)) / (x * delta_x);
-                }
+                //if (grid->coordinate_system == "Cylindrical") {
+                //	sum_kinetic_energy_0 += real(cost_E * conj(psi_center) * (derivate1_4 * psi_right + derivate1_3 * psi_center + derivate1_2 * psi_left + derivate1_1 * psi_left_left)) / (x * delta_x);
+                //}
                 rot_x = y_r * angular_velocity / delta_x * complex<double>(0., 1.);
 				rot_y = x_r * angular_velocity / delta_y * complex<double>(0., 1.);
 				sum_rotational_energy_0 += real(conj(psi_center) * (rot_y * (derivate1_4 * psi_up + derivate1_3 * psi_center + derivate1_2 * psi_down + derivate1_1 * psi_down_down)
@@ -405,6 +411,7 @@ void Solver::calculate_energy_expected_values(void) {
             }
         }
     }
+
     norm2[0] = sum_norm2_0;
     kinetic_energy[0] = sum_kinetic_energy_0;
     potential_energy[0] = sum_potential_energy_0;
@@ -441,7 +448,7 @@ void Solver::calculate_energy_expected_values(void) {
     intra_species_energy[0] = 0;
 
     for(int i = 0; i < grid->mpi_procs; i++) {
-    norm2[0] += norm2_mpi[i];
+        norm2[0] += norm2_mpi[i];
         kinetic_energy[0] += kinetic_energy_mpi[i];
         potential_energy[0] += potential_energy_mpi[i];
         rotational_energy[0] += rotational_energy_mpi[i];
@@ -454,7 +461,7 @@ void Solver::calculate_energy_expected_values(void) {
     delete [] intra_species_energy_mpi;
 
     if (!single_component) {
-    double *norm2_mpi = new double[grid->mpi_procs];
+        double *norm2_mpi = new double[grid->mpi_procs];
         double *kinetic_energy_mpi = new double[grid->mpi_procs];
         double *potential_energy_mpi = new double[grid->mpi_procs];
         double *rotational_energy_mpi = new double[grid->mpi_procs];
@@ -524,7 +531,7 @@ void Solver::calculate_energy_expected_values(void) {
         tot_intra_species_energy = intra_species_energy[0] + intra_species_energy[1];
         norm2[1] *= delta_x * delta_y;
     }
-    norm2[0] *= delta_x * delta_y;
+    norm2[0] *= delta_y * grid->length_x / (grid->global_no_halo_dim_x - (grid->coordinate_system == "Cylindrical" ? 1 : 0));//delta_x * delta_y;
     energy_expected_values_updated = true;
 }
 

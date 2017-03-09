@@ -1034,6 +1034,10 @@ void CC2Kernel::normalization() {
     }
 }
 
+void CC2Kernel::cpy_first_positive_to_first_negative() {
+
+}
+
 void CC2Kernel::get_sample(size_t dest_stride, size_t x, size_t y,
                            size_t width, size_t height,
                            double *dest_real, double *dest_imag,
