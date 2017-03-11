@@ -61,7 +61,7 @@ class State{
 public:
     Lattice *grid;
 
-    State(Lattice *grid, double *p_real=0, double *p_imag=0);
+    State(Lattice *grid, int angular_momentum = 0, double *p_real=0, double *p_imag=0);
     State(const State &obj /**< [in] State object. */);
     ~State();
     %extend {

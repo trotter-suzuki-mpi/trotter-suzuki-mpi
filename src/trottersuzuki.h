@@ -217,12 +217,11 @@ public:
         @param [in] mean_y           Y coordinate of the gaussian function's center.
         @param [in] norm             Squared norm of the state.
         @param [in] phase            Relative phase of the wave function.
-        @param [in] angular_momentum Angular momentum (only for Cylindrical coordinates).
         @param [in] p_real           Pointer to the real part of the wave function.
         @param [in] p_imag           Pointer to the imaginary part of the wave function.
      */
     GaussianState(Lattice2D *grid, double omega_x, double omega_y = -1., double mean_x = 0, double mean_y = 0, double norm = 1, double phase = 0,
-    		      int _angular_momentum = 0, double *p_real = 0, double *p_imag = 0);
+    		      double *p_real = 0, double *p_imag = 0);
 
 private:
     double mean_x;    ///< X coordinate of the gaussian function's center.

@@ -622,9 +622,10 @@ complex<double> ExponentialState::exp_state(double x, double y) {
 }
 
 GaussianState::GaussianState(Lattice2D *_grid, double _omega_x, double _omega_y, double _mean_x, double _mean_y,
-                             double _norm, double _phase, int _angular_momentum, double *_p_real, double *_p_imag):
-    State(_grid, _angular_momentum,_p_real, _p_imag), mean_x(_mean_x),
+                             double _norm, double _phase, double *_p_real, double *_p_imag):
+    State(_grid, 0,_p_real, _p_imag), mean_x(_mean_x),
     mean_y(_mean_y), omega_x(_omega_x), omega_y(_omega_y), norm(_norm), phase(_phase) {
+	angular_momentum = 0;
     if (omega_y == -1.) {
         omega_y = omega_x;
     }

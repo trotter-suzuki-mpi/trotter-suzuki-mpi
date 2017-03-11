@@ -49,8 +49,12 @@ class Lattice2D(_Lattice2D):
         * `x_axis` : numpy array
             X-axis of the lattice
         """
-        x_axis = np.arange(self.global_no_halo_dim_x) - self.global_no_halo_dim_x * 0.5 + 0.5
-        x_axis *= self.delta_x
+        if self.coordinate_system == 'Cartesian':
+            x_axis = np.arange(self.global_no_halo_dim_x) - self.global_no_halo_dim_x * 0.5 + 0.5
+            x_axis *= self.delta_x
+
+        if self.coordinate_system == 'Cylindrical':
+            x_axis = (np.arange(self.global_no_halo_dim_x - 1) + 0.5) * self.delta_x
 
         return x_axis
 

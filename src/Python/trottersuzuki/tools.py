@@ -39,9 +39,9 @@ def map_lattice_to_coordinate_space(grid, x, y=None):
             return idx - x_c, idy - y_c
         
     if grid.coordinate_system == 'Cylindrical':
-        idy = grid.start_y * grid.delta_y + 0.5 * grid.delta_y + _y * grid.delta_y
+        idy = grid.delta_y * (grid.start_y + 0.5 + _y)
+        idx = grid.delta_x * (grid.start_x - 0.5 + x)
         y_c = grid.global_no_halo_dim_y * grid.delta_y * 0.5
-        idx = grid.start_x * grid.delta_x + 0.5 * grid.delta_x + x * grid.delta_x
         if idy - y_c < -grid.length_y*0.5:
             idy += grid.length_y
         if idy - y_c > grid.length_y*0.5:
