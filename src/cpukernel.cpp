@@ -34,14 +34,16 @@ void full_step(bool two_wavefunctions, size_t stride, size_t width, size_t heigh
     }
     block_kernel_horizontal(1u, stride, width, height, a, b, real, imag);
     if (coordinate_system == "Cylindrical") {
-        block_kernel_radial_kinetic(stride, width, height, offset_x, kin_radial, real, imag);
+        block_kernel_radial_kinetic(0u, stride, width, height, offset_x, kin_radial, real, imag);
+        block_kernel_radial_kinetic(1u, stride, width, height, offset_x, kin_radial, real, imag);
     }
     block_kernel_potential (two_wavefunctions, stride, width, height, a, b, coupling_a, coupling_b, tile_width, external_pot_real, external_pot_imag, pb_real, pb_imag, real, imag);
     if (alpha_x != 0. && alpha_y != 0.) {
         block_kernel_rotation  (stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
     }
     if (coordinate_system == "Cylindrical") {
-        block_kernel_radial_kinetic(stride, width, height, offset_x, kin_radial, real, imag);
+        block_kernel_radial_kinetic(1u, stride, width, height, offset_x, kin_radial, real, imag);
+        block_kernel_radial_kinetic(0u, stride, width, height, offset_x, kin_radial, real, imag);
 	}
     block_kernel_horizontal(1u, stride, width, height, a, b, real, imag);
     if (height > 1 ) {
@@ -198,7 +200,7 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     	a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
     	b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
 		if (grid->coordinate_system == "Cylindrical") {
-			kin_radial[0] = - delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x);
+			kin_radial[0] = delta_t / (8. * hamiltonian->mass * grid->delta_x * grid->delta_x);
 		}
     }
     coupling_const[0] = hamiltonian->coupling_a * delta_t;
@@ -284,8 +286,8 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
     	a[1] = cosh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
 		b[1] = sinh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
 		if (grid->coordinate_system == "Cylindrical") {
-			kin_radial[0] = delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x);
-			kin_radial[1] = delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x);
+			kin_radial[0] = delta_t / (8. * hamiltonian->mass * grid->delta_x * grid->delta_x);
+			kin_radial[1] = delta_t / (8. * hamiltonian->mass_b * grid->delta_x * grid->delta_x);
 		}
 	}
 	else {
@@ -294,8 +296,8 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
 		a[1] = cos(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
 		b[1] = sin(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
 		if (grid->coordinate_system == "Cylindrical") {
-			kin_radial[0] = - delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x);
-			kin_radial[1] = - delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x);
+			kin_radial[0] = delta_t / (8. * hamiltonian->mass * grid->delta_x * grid->delta_x);
+			kin_radial[1] = delta_t / (8. * hamiltonian->mass_b * grid->delta_x * grid->delta_x);
 		}
 	}
     norm = _norm;
@@ -645,13 +647,10 @@ void CPUBlock::cpy_first_positive_to_first_negative() {
 		if (start_x <= 0) {
 			int stride = end_x - start_x;
 			double sign;
-			//cout << "sign" << start_y << " "<< end_y<< endl;
 			sign = (angular_momentum[0] % 2 == 0 ? 1 : -1);
 			for (int j = start_y, idx = 1, peer = 0; j < end_y; j += 1, idx += stride, peer += stride) {
-				//cout << "sign2" << endl;
 				p_real[0][sense][peer] = sign * p_real[0][sense][idx];
 				p_imag[0][sense][peer] = sign * p_imag[0][sense][idx];
-				//cout << endl << p_real[0][sense][idx] << " " << p_real[0][sense][peer] << endl;
 			}
 			if (two_wavefunctions) {
 				sign = (angular_momentum[1] % 2 == 0 ? 1 : -1);
