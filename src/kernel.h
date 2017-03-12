@@ -45,8 +45,8 @@ void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, s
 void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
 void block_kernel_radial_kinetic(size_t start_offset, size_t stride, size_t width, size_t height, double offset_x, double _kin_radial, double * p_real, double * p_imag);
 void block_kernel_radial_kinetic_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double offset_x, double _kin_radial, double * p_real, double * p_imag);
-void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width, size_t height, double a, double b, double coupling_a, double coupling_b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag);
-void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, size_t width, size_t height, double a, double b, double coupling_a, double coupling_b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag);
+void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width, size_t height, double coupling_a, double coupling_b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag);
+void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, size_t width, size_t height, double coupling_a, double coupling_b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag);
 void block_kernel_rotation(size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double * p_real, double * p_imag);
 void block_kernel_rotation_imaginary(size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double * p_real, double * p_imag);
 void rabi_coupling_real(size_t stride, size_t width, size_t height, double cc, double cs_r, double cs_i, double *p_real, double *p_imag, double *pb_real, double *pb_imag);
@@ -103,8 +103,10 @@ private:
     double *p_imag[2][2];       ///< Array of two pointers that point to two buffers used to store the imaginary part of the wave function at i-th time step and (i+1)-th time step.
     double *external_pot_real[2];   ///< Points to the matrix representation (real entries) of the operator given by the exponential of external potential.
     double *external_pot_imag[2];   ///< Points to the matrix representation (immaginary entries) of the operator given by the exponential of external potential.
-    double *a;            ///< Diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
-    double *b;            ///< Off diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
+    double *aH;            ///< Diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
+    double *bH;            ///< Off diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
+    double *aV;            ///< Diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
+    double *bV;            ///< Off diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
     double *kin_radial;   ///< Kinetic costant for the radial coordinate.
     double delta_x;         ///< Physical length between two neighbour along x axis dots of the lattice.
     double delta_y;         ///< Physical length between two neighbour along y axis dots of the lattice.
@@ -214,8 +216,10 @@ private:
     double *dev_external_pot_imag[2];		///< Points to the matrix representation (imaginary entries) of the operator given by the exponential of external potential (stored in Device).
     double *pdev_real[2][2];				///< Array of two pointers that point to two buffers used to store the real part of the wave function at i-th time step and (i+1)-th time step (stored in Device).
     double *pdev_imag[2][2];				///< Array of two pointers that point to two buffers used to store the imaginary part of the wave function at i-th time step and (i+1)-th time step (stored in Device).
-    double *a;							///< Diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
-    double *b;							///< Off diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
+    double *aH;							///< Diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
+    double *bH;							///< Off diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
+    double *aV;							///< Diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
+	double *bV;							///< Off diagonal value of the matrix representation of the operator given by the exponential of kinetic operator.
     double delta_x;						///< Physical length between two neighbour along x axis dots of the lattice.
     double delta_y;						///< Physical length between two neighbour along y axis dots of the lattice.
     double *norm;						///< Squared norm of the wave function.

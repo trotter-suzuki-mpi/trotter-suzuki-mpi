@@ -250,7 +250,7 @@ static  inline __device__ void gpu_kernel_potential(int tile_width, int tile_hei
 
 __launch_bounds__(BLOCK_X * STRIDE_Y)
 __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y,
-                          double a, double b, double coupling_a, double alpha_x, double alpha_y, const double * __restrict__ external_pot_real, const double * __restrict__ external_pot_imag,
+                          double aH, double bH, double aV, double bV, double coupling_a, double alpha_x, double alpha_y, const double * __restrict__ external_pot_real, const double * __restrict__ external_pot_imag,
                           const double * __restrict__ p_real, const double * __restrict__ p_imag,
                           double * __restrict__ p2_real, double * __restrict__ p2_imag,
                           int inner, int horizontal, int vertical) {
@@ -310,22 +310,22 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x
     // 12344321
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+        gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 0>(aV, bV, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+        gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 0>(aH, bH, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+        gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 1>(aV, bV, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+        gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 1>(aH, bH, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 //potential
@@ -341,22 +341,22 @@ __global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x
 
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+        gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 1>(aH, bH, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+        gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 1>(aV, bV, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+        gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 0>(aH, bH, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+        gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 0>(aV, bV, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 
@@ -464,7 +464,7 @@ static  inline __device__ void imag_gpu_kernel_potential(int tile_width, int til
 
 __launch_bounds__(BLOCK_X * STRIDE_Y)
 __global__ void imag_cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y,
-                               double a, double b, double coupling_a, double alpha_x, double alpha_y, const double * __restrict__ external_pot_real, const double * __restrict__ external_pot_imag,
+                               double aH, double bH, double aV, double bV, double coupling_a, double alpha_x, double alpha_y, const double * __restrict__ external_pot_real, const double * __restrict__ external_pot_imag,
                                const double * __restrict__ p_real, const double * __restrict__ p_imag,
                                double * __restrict__ p2_real, double * __restrict__ p2_imag,
                                int inner, int horizontal, int vertical) {
@@ -522,22 +522,22 @@ __global__ void imag_cc2kernel(size_t tile_width, size_t tile_height, size_t off
     // 12344321
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+        imag_gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 0>(aV, bV, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+        imag_gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 0>(aH, bH, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+        imag_gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 1>(aV, bV, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+        imag_gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 1>(aH, bH, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 //potential
@@ -553,22 +553,22 @@ __global__ void imag_cc2kernel(size_t tile_width, size_t tile_height, size_t off
 
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 1>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+        imag_gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 1>(aH, bH, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 1>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+        imag_gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 1>(aV, bV, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 0>(a, b, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
+        imag_gpu_kernel_horizontal<BLOCK_X, BLOCK_Y, 0>(aH, bH, tile_width, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, px, rl, im);
     }
     __syncthreads();
 #pragma unroll
     for (int part = 0; part < BLOCK_Y / (STRIDE_Y * 2); ++part) {
-        imag_gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 0>(a, b, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
+        imag_gpu_kernel_vertical<BLOCK_X, BLOCK_Y, 0>(aV, bV, tile_height, cell_r[part], cell_i[part], sx, sy + part * 2 * STRIDE_Y, checkerboard_py + part * 2 * STRIDE_Y, rl, im);
     }
     __syncthreads();
 
@@ -656,15 +656,21 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     coupling_const[1] = 0.;
     coupling_const[2] = 0.;
 
-    a = new double [1];
-	b = new double [1];
+    aH = new double [1];
+	bH = new double [1];
+	aV = new double [1];
+	bV = new double [1];
 	if (imag_time) {
-		a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-		b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		aH[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		bH[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		aV[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+		bV[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
 	}
 	else {
-		a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-		b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		aH[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		bH[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		aV[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+		bV[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
 	}
     norm = new double [1];
     norm[0] = _norm;
@@ -770,19 +776,29 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2,
     coupling_const[2] = delta_t * hamiltonian->coupling_ab;
     coupling_const[3] = 0.5 * hamiltonian->omega_r;
     coupling_const[4] = 0.5 * hamiltonian->omega_i;
-    a = new double [2];
-	b = new double [2];
+    aH = new double [2];
+	bH = new double [2];
+	aV = new double [2];
+	bV = new double [2];
     if (imag_time) {
-    	a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-		b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-    	a[1] = cosh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
-		b[1] = sinh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+    	aH[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		bH[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+    	aH[1] = cosh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+		bH[1] = sinh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+		aV[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+		bV[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+		aV[1] = cosh(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
+		bV[1] = sinh(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
 	}
 	else {
-		a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-		b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-		a[1] = cos(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
-		b[1] = sin(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+		aH[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		bH[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		aH[1] = cos(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+		bH[1] = sin(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+		aV[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+		bV[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+		aV[1] = cos(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
+		bV[1] = sin(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
 	}
     norm = _norm;
     tot_norm = norm[0] + norm[1];
@@ -916,8 +932,10 @@ CC2Kernel::~CC2Kernel() {
         CUDA_SAFE_CALL(cudaFree(dev_external_pot_imag[1]));
     }
     else {
-        delete [] a;
-        delete [] b;
+        delete [] aH;
+        delete [] bH;
+        delete [] aV;
+		delete [] bV;
         delete [] norm;
     }
     delete [] coupling_const;
@@ -938,9 +956,9 @@ void CC2Kernel::run_kernel_on_halo() {
     numBlocks.x = (tile_width  + (BLOCK_X - 2 * halo_x) - 1) / (BLOCK_X - 2 * halo_x);
     numBlocks.y = 2;
     if(imag_time)
-        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a[state_index], b[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
+        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, aH[state_index], bH[state_index], aV[state_index], bV[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
     else
-        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a[state_index], b[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
+        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, aH[state_index], bH[state_index], aV[state_index], bV[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
 
     inner = 0;
     horizontal = 0;
@@ -948,9 +966,9 @@ void CC2Kernel::run_kernel_on_halo() {
     numBlocks.x = 2;
     numBlocks.y = (tile_height  + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y);
     if(imag_time)
-        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a[state_index], b[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
+        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, aH[state_index], bH[state_index], aV[state_index], bV[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
     else
-        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a[state_index], b[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
+        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream1>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, aH[state_index], bH[state_index], aV[state_index], bV[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
 }
 
 void CC2Kernel::run_kernel() {
@@ -962,9 +980,9 @@ void CC2Kernel::run_kernel() {
     numBlocks.y = (tile_height + (BLOCK_Y - 2 * halo_y) - 1) / (BLOCK_Y - 2 * halo_y) - 2;
 
     if(imag_time)
-        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a[state_index], b[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
+        imag_cc2kernel <<< numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, aH[state_index], bH[state_index], aV[state_index], bV[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
     else
-        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, a[state_index], b[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
+        cc2kernel <<< numBlocks, threadsPerBlock, 0, stream2>>>(tile_width, tile_height, 0, 0, halo_x, halo_y, aH[state_index], bH[state_index], aV[state_index], bV[state_index], coupling_const[state_index], alpha_x, alpha_y, dev_external_pot_real[state_index], dev_external_pot_imag[state_index], pdev_real[state_index][sense], pdev_imag[state_index][sense], pdev_real[state_index][1 - sense], pdev_imag[state_index][1 - sense], inner, horizontal, vertical);
     sense = 1 - sense;
     CUT_CHECK_ERROR("Kernel error in CC2Kernel::run_kernel");
 }

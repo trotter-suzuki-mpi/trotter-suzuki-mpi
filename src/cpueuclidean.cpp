@@ -70,7 +70,7 @@ void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_
 }
 
 //double time potential
-void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width, size_t height, double a, double b, double coupling_a, double coupling_b, size_t tile_width,
+void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width, size_t height, double coupling_a, double coupling_b, size_t tile_width,
                             const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag) {
     if(two_wavefunctions) {
         for (size_t y = 0; y < height; ++y) {
@@ -108,7 +108,7 @@ void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width,
 }
 
 //double time potential
-void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, size_t width, size_t height, double a, double b, double coupling_a, double coupling_b, size_t tile_width,
+void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, size_t width, size_t height, double coupling_a, double coupling_b, size_t tile_width,
                                       const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag) {
     if(two_wavefunctions) {
         for (size_t y = 0; y < height; ++y) {

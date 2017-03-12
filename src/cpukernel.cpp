@@ -21,23 +21,23 @@
 
 void full_step(bool two_wavefunctions, size_t stride, size_t width, size_t height,
 		       double offset_x, double offset_y, double alpha_x, double alpha_y,
-		       double a, double b, double kin_radial, double coupling_a, double coupling_b,
+		       double aH, double bH, double aV, double bV, double kin_radial, double coupling_a, double coupling_b,
                size_t tile_width, const double *external_pot_real, const double *external_pot_imag,
                const double *pb_real, const double *pb_imag, double * real, double * imag,
                string coordinate_system) {
     if (height > 1 ) {
-        block_kernel_vertical  (0u, stride, width, height, a, b, real, imag);
+        block_kernel_vertical  (0u, stride, width, height, aV, bV, real, imag);
     }
-    block_kernel_horizontal(0u, stride, width, height, a, b, real, imag);
+    block_kernel_horizontal(0u, stride, width, height, aH, bH, real, imag);
     if (height > 1 ) {
-        block_kernel_vertical  (1u, stride, width, height, a, b, real, imag);
+        block_kernel_vertical  (1u, stride, width, height, aV, bV, real, imag);
     }
-    block_kernel_horizontal(1u, stride, width, height, a, b, real, imag);
+    block_kernel_horizontal(1u, stride, width, height, aH, bH, real, imag);
     if (coordinate_system == "Cylindrical") {
         block_kernel_radial_kinetic(0u, stride, width, height, offset_x, kin_radial, real, imag);
         block_kernel_radial_kinetic(1u, stride, width, height, offset_x, kin_radial, real, imag);
     }
-    block_kernel_potential (two_wavefunctions, stride, width, height, a, b, coupling_a, coupling_b, tile_width, external_pot_real, external_pot_imag, pb_real, pb_imag, real, imag);
+    block_kernel_potential (two_wavefunctions, stride, width, height, coupling_a, coupling_b, tile_width, external_pot_real, external_pot_imag, pb_real, pb_imag, real, imag);
     if (alpha_x != 0. && alpha_y != 0.) {
         block_kernel_rotation  (stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
     }
@@ -45,35 +45,35 @@ void full_step(bool two_wavefunctions, size_t stride, size_t width, size_t heigh
         block_kernel_radial_kinetic(1u, stride, width, height, offset_x, kin_radial, real, imag);
         block_kernel_radial_kinetic(0u, stride, width, height, offset_x, kin_radial, real, imag);
 	}
-    block_kernel_horizontal(1u, stride, width, height, a, b, real, imag);
+    block_kernel_horizontal(1u, stride, width, height, aH, bH, real, imag);
     if (height > 1 ) {
-        block_kernel_vertical  (1u, stride, width, height, a, b, real, imag);
+        block_kernel_vertical  (1u, stride, width, height, aV, bV, real, imag);
     }
-    block_kernel_horizontal(0u, stride, width, height, a, b, real, imag);
+    block_kernel_horizontal(0u, stride, width, height, aH, bH, real, imag);
     if (height > 1 ) {
-        block_kernel_vertical  (0u, stride, width, height, a, b, real, imag);
+        block_kernel_vertical  (0u, stride, width, height, aV, bV, real, imag);
     }
 }
 
 void full_step_imaginary(bool two_wavefunctions, size_t stride, size_t width, size_t height,
 						 double offset_x, double offset_y, double alpha_x, double alpha_y,
-						 double a, double b, double kin_radial, double coupling_a, double coupling_b,
+						 double aH, double bH, double aV, double bV, double kin_radial, double coupling_a, double coupling_b,
                          size_t tile_width, const double *external_pot_real, const double *external_pot_imag,
                          const double *pb_real, const double *pb_imag, double * real, double * imag,
                          string coordinate_system) {
     if (height > 1 ) {
-        block_kernel_vertical_imaginary  (0u, stride, width, height, a, b, real, imag);
+        block_kernel_vertical_imaginary  (0u, stride, width, height, aV, bV, real, imag);
     }
-    block_kernel_horizontal_imaginary(0u, stride, width, height, a, b, real, imag);
+    block_kernel_horizontal_imaginary(0u, stride, width, height, aH, bH, real, imag);
     if (height > 1 ) {
-        block_kernel_vertical_imaginary  (1u, stride, width, height, a, b, real, imag);
+        block_kernel_vertical_imaginary  (1u, stride, width, height, aV, bV, real, imag);
     }
-    block_kernel_horizontal_imaginary(1u, stride, width, height, a, b, real, imag);
+    block_kernel_horizontal_imaginary(1u, stride, width, height, aH, bH, real, imag);
     if (coordinate_system == "Cylindrical") {
     	block_kernel_radial_kinetic_imaginary(0u, stride, width, height, offset_x, kin_radial, real, imag);
     	block_kernel_radial_kinetic_imaginary(1u, stride, width, height, offset_x, kin_radial, real, imag);
 		}
-    block_kernel_potential_imaginary (two_wavefunctions, stride, width, height, a, b, coupling_a, coupling_b, tile_width, external_pot_real, external_pot_imag, pb_real, pb_imag, real, imag);
+    block_kernel_potential_imaginary (two_wavefunctions, stride, width, height, coupling_a, coupling_b, tile_width, external_pot_real, external_pot_imag, pb_real, pb_imag, real, imag);
     if (alpha_x != 0. && alpha_y != 0.) {
         block_kernel_rotation_imaginary(stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
     }
@@ -81,18 +81,18 @@ void full_step_imaginary(bool two_wavefunctions, size_t stride, size_t width, si
     	block_kernel_radial_kinetic_imaginary(1u, stride, width, height, offset_x, kin_radial, real, imag);
     	block_kernel_radial_kinetic_imaginary(0u, stride, width, height, offset_x, kin_radial, real, imag);
 	}
-    block_kernel_horizontal_imaginary(1u, stride, width, height, a, b, real, imag);
+    block_kernel_horizontal_imaginary(1u, stride, width, height, aH, bH, real, imag);
     if (height > 1 ) {
-        block_kernel_vertical_imaginary  (1u, stride, width, height, a, b, real, imag);
+        block_kernel_vertical_imaginary  (1u, stride, width, height, aV, bV, real, imag);
     }
-    block_kernel_horizontal_imaginary(0u, stride, width, height, a, b, real, imag);
+    block_kernel_horizontal_imaginary(0u, stride, width, height, aH, bH, real, imag);
     if (height > 1 ) {
-        block_kernel_vertical_imaginary  (0u, stride, width, height, a, b, real, imag);
+        block_kernel_vertical_imaginary  (0u, stride, width, height, aV, bV, real, imag);
     }
 }
 
 void process_sides(bool two_wavefunctions, double offset_tile_x, double offset_tile_y, double alpha_x, double alpha_y, size_t tile_width, size_t block_width, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height,
-                   double a, double b, double kin_radial, double coupling_a, double coupling_b, const double *external_pot_real, const double *external_pot_imag,
+				   double aH, double bH, double aV, double bV, double kin_radial, double coupling_a, double coupling_b, const double *external_pot_real, const double *external_pot_imag,
                    const double * p_real, const double * p_imag, const double * pb_real, const double * pb_imag,
                    double * next_real, double * next_imag, double * block_real, double * block_imag, bool imag_time, string coordinate_system) {
 
@@ -100,10 +100,10 @@ void process_sides(bool two_wavefunctions, double offset_tile_x, double offset_t
     memcpy2D(block_real, block_width * sizeof(double), &p_real[read_y * tile_width], tile_width * sizeof(double), block_width * sizeof(double), read_height);
     memcpy2D(block_imag, block_width * sizeof(double), &p_imag[read_y * tile_width], tile_width * sizeof(double), block_width * sizeof(double), read_height);
     if(imag_time)
-        full_step_imaginary(two_wavefunctions, block_width, block_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, a, b, kin_radial, coupling_a, coupling_b, tile_width,
+        full_step_imaginary(two_wavefunctions, block_width, block_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, aH, bH, aV, bV, kin_radial, coupling_a, coupling_b, tile_width,
                             &external_pot_real[read_y * tile_width], &external_pot_imag[read_y * tile_width], &pb_real[read_y * tile_width], &pb_imag[read_y * tile_width], block_real, block_imag, coordinate_system);
     else
-        full_step(two_wavefunctions, block_width, block_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, a, b, kin_radial, coupling_a, coupling_b, tile_width,
+        full_step(two_wavefunctions, block_width, block_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, aH, bH, aV, bV, kin_radial, coupling_a, coupling_b, tile_width,
                   &external_pot_real[read_y * tile_width], &external_pot_imag[read_y * tile_width], &pb_real[read_y * tile_width], &pb_imag[read_y * tile_width], block_real, block_imag, coordinate_system);
     memcpy2D(&next_real[(read_y + write_offset) * tile_width], tile_width * sizeof(double), &block_real[write_offset * block_width], block_width * sizeof(double), (block_width - halo_x) * sizeof(double), write_height);
     memcpy2D(&next_imag[(read_y + write_offset) * tile_width], tile_width * sizeof(double), &block_imag[write_offset * block_width], block_width * sizeof(double), (block_width - halo_x) * sizeof(double), write_height);
@@ -113,17 +113,17 @@ void process_sides(bool two_wavefunctions, double offset_tile_x, double offset_t
     memcpy2D(block_real, block_width * sizeof(double), &p_real[read_y * tile_width + block_start], tile_width * sizeof(double), (tile_width - block_start) * sizeof(double), read_height);
     memcpy2D(block_imag, block_width * sizeof(double), &p_imag[read_y * tile_width + block_start], tile_width * sizeof(double), (tile_width - block_start) * sizeof(double), read_height);
     if(imag_time)
-        full_step_imaginary(two_wavefunctions, block_width, tile_width - block_start, read_height, offset_tile_x + block_start, offset_tile_y + read_y, alpha_x, alpha_y, a, b, kin_radial, coupling_a, coupling_b, tile_width,
+        full_step_imaginary(two_wavefunctions, block_width, tile_width - block_start, read_height, offset_tile_x + block_start, offset_tile_y + read_y, alpha_x, alpha_y, aH, bH, aV, bV, kin_radial, coupling_a, coupling_b, tile_width,
                             &external_pot_real[read_y * tile_width + block_start], &external_pot_imag[read_y * tile_width + block_start], &pb_real[read_y * tile_width + block_start], &pb_imag[read_y * tile_width + block_start], block_real, block_imag, coordinate_system);
     else
-        full_step(two_wavefunctions, block_width, tile_width - block_start, read_height, offset_tile_x + block_start, offset_tile_y + read_y, alpha_x, alpha_y, a, b, kin_radial, coupling_a, coupling_b, tile_width,
+        full_step(two_wavefunctions, block_width, tile_width - block_start, read_height, offset_tile_x + block_start, offset_tile_y + read_y, alpha_x, alpha_y, aH, bH, aV, bV, kin_radial, coupling_a, coupling_b, tile_width,
                   &external_pot_real[read_y * tile_width + block_start], &external_pot_imag[read_y * tile_width + block_start], &pb_real[read_y * tile_width + block_start], &pb_imag[read_y * tile_width + block_start], block_real, block_imag, coordinate_system);
     memcpy2D(&next_real[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(double), &block_real[write_offset * block_width + halo_x], block_width * sizeof(double), (tile_width - block_start - halo_x) * sizeof(double), write_height);
     memcpy2D(&next_imag[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(double), &block_imag[write_offset * block_width + halo_x], block_width * sizeof(double), (tile_width - block_start - halo_x) * sizeof(double), write_height);
 }
 
 void process_band(bool two_wavefunctions, double offset_tile_x, double offset_tile_y, double alpha_x, double alpha_y, size_t tile_width, size_t block_width, size_t block_height, size_t halo_x, size_t read_y, size_t read_height, size_t write_offset, size_t write_height,
-                  double a, double b, double kin_radial, double coupling_a, double coupling_b, const double *external_pot_real, const double *external_pot_imag, const double * p_real, const double * p_imag,
+		          double aH, double bH, double aV, double bV, double kin_radial, double coupling_a, double coupling_b, const double *external_pot_real, const double *external_pot_imag, const double * p_real, const double * p_imag,
                   const double * pb_real, const double * pb_imag, double * next_real, double * next_imag, int inner, int sides, bool imag_time, string coordinate_system) {
     double *block_real = new double[block_height * block_width];
     double *block_imag = new double[block_height * block_width];
@@ -134,10 +134,10 @@ void process_band(bool two_wavefunctions, double offset_tile_x, double offset_ti
             memcpy2D(block_real, block_width * sizeof(double), &p_real[read_y * tile_width], tile_width * sizeof(double), tile_width * sizeof(double), read_height);
             memcpy2D(block_imag, block_width * sizeof(double), &p_imag[read_y * tile_width], tile_width * sizeof(double), tile_width * sizeof(double), read_height);
             if(imag_time)
-                full_step_imaginary(two_wavefunctions, block_width, tile_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, a, b, kin_radial, coupling_a, coupling_b, tile_width,
+                full_step_imaginary(two_wavefunctions, block_width, tile_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, aH, bH, aV, bV, kin_radial, coupling_a, coupling_b, tile_width,
                                     &external_pot_real[read_y * tile_width], &external_pot_imag[read_y * tile_width], &pb_real[read_y * tile_width], &pb_imag[read_y * tile_width], block_real, block_imag, coordinate_system);
             else
-                full_step(two_wavefunctions, block_width, tile_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, a, b, kin_radial, coupling_a, coupling_b, tile_width,
+                full_step(two_wavefunctions, block_width, tile_width, read_height, offset_tile_x, offset_tile_y + read_y, alpha_x, alpha_y, aH, bH, aV, bV, kin_radial, coupling_a, coupling_b, tile_width,
                           &external_pot_real[read_y * tile_width], &external_pot_imag[read_y * tile_width], &pb_real[read_y * tile_width], &pb_imag[read_y * tile_width], block_real, block_imag, coordinate_system);
             memcpy2D(&next_real[(read_y + write_offset) * tile_width], tile_width * sizeof(double), &block_real[write_offset * block_width], block_width * sizeof(double), tile_width * sizeof(double), write_height);
             memcpy2D(&next_imag[(read_y + write_offset) * tile_width], tile_width * sizeof(double), &block_imag[write_offset * block_width], block_width * sizeof(double), tile_width * sizeof(double), write_height);
@@ -145,17 +145,17 @@ void process_band(bool two_wavefunctions, double offset_tile_x, double offset_ti
     }
     else {
         if (sides) {
-            process_sides(two_wavefunctions, offset_tile_x, offset_tile_y, alpha_x, alpha_y, tile_width, block_width, halo_x, read_y, read_height, write_offset, write_height, a, b, kin_radial, coupling_a, coupling_b, external_pot_real, external_pot_imag, p_real, p_imag, pb_real, pb_imag, next_real, next_imag, block_real, block_imag, imag_time, coordinate_system);
+            process_sides(two_wavefunctions, offset_tile_x, offset_tile_y, alpha_x, alpha_y, tile_width, block_width, halo_x, read_y, read_height, write_offset, write_height, aH, bH, aV, bV, kin_radial, coupling_a, coupling_b, external_pot_real, external_pot_imag, p_real, p_imag, pb_real, pb_imag, next_real, next_imag, block_real, block_imag, imag_time, coordinate_system);
         }
         if (inner) {
             for (size_t block_start = block_width - 2 * halo_x; block_start < tile_width - block_width; block_start += block_width - 2 * halo_x) {
                 memcpy2D(block_real, block_width * sizeof(double), &p_real[read_y * tile_width + block_start], tile_width * sizeof(double), block_width * sizeof(double), read_height);
                 memcpy2D(block_imag, block_width * sizeof(double), &p_imag[read_y * tile_width + block_start], tile_width * sizeof(double), block_width * sizeof(double), read_height);
                 if(imag_time)
-                    full_step_imaginary(two_wavefunctions, block_width, block_width, read_height, offset_tile_x + block_start, offset_tile_y + read_y, alpha_x, alpha_y, a, b, kin_radial, coupling_a, coupling_b, tile_width,
+                    full_step_imaginary(two_wavefunctions, block_width, block_width, read_height, offset_tile_x + block_start, offset_tile_y + read_y, alpha_x, alpha_y, aH, bH, aV, bV, kin_radial, coupling_a, coupling_b, tile_width,
                                         &external_pot_real[read_y * tile_width + block_start], &external_pot_imag[read_y * tile_width + block_start], &pb_real[read_y * tile_width + block_start], &pb_imag[read_y * tile_width + block_start], block_real, block_imag, coordinate_system);
                 else
-                    full_step(two_wavefunctions, block_width, block_width, read_height, offset_tile_x + block_start, offset_tile_y + read_y, alpha_x, alpha_y, a, b, kin_radial, coupling_a, coupling_b, tile_width,
+                    full_step(two_wavefunctions, block_width, block_width, read_height, offset_tile_x + block_start, offset_tile_y + read_y, alpha_x, alpha_y, aH, bH, aV, bV, kin_radial, coupling_a, coupling_b, tile_width,
                               &external_pot_real[read_y * tile_width + block_start], &external_pot_imag[read_y * tile_width + block_start], &pb_real[read_y * tile_width + block_start], &pb_imag[read_y * tile_width + block_start], block_real, block_imag, coordinate_system);
                 memcpy2D(&next_real[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(double), &block_real[write_offset * block_width + halo_x], block_width * sizeof(double), (block_width - 2 * halo_x) * sizeof(double), write_height);
                 memcpy2D(&next_imag[(read_y + write_offset) * tile_width + block_start + halo_x], tile_width * sizeof(double), &block_imag[write_offset * block_width + halo_x], block_width * sizeof(double), (block_width - 2 * halo_x) * sizeof(double), write_height);
@@ -186,19 +186,25 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     alpha_y = hamiltonian->angular_velocity * delta_t * grid->delta_y / (2 * grid->delta_x);
     coupling_const = new double [3];
     norm = new double [1];
-    a = new double [1];
-	b = new double [1];
+    aH = new double [1];
+	bH = new double [1];
+	aV = new double [1];
+	bV = new double [1];
 	kin_radial = new double [1];
     if (imag_time) {
-    	a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-    	b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+    	aH[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+    	bH[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+    	aV[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+		bV[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
     	if (grid->coordinate_system == "Cylindrical") {
 			kin_radial[0] = delta_t / (8. * hamiltonian->mass * grid->delta_x * grid->delta_x);
 		}
     }
     else {
-    	a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-    	b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+    	aH[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+    	bH[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+    	aV[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+		bV[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
 		if (grid->coordinate_system == "Cylindrical") {
 			kin_radial[0] = delta_t / (8. * hamiltonian->mass * grid->delta_x * grid->delta_x);
 		}
@@ -277,24 +283,34 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
     alpha_y = hamiltonian->angular_velocity * delta_t * grid->delta_y / (2 * grid->delta_x),
     rot_coord_x = hamiltonian->rot_coord_x;
     rot_coord_y = hamiltonian->rot_coord_y;
-    a = new double [2];
-	b = new double [2];
+    aH = new double [2];
+	bH = new double [2];
+	aV = new double [2];
+	bV = new double [2];
 	kin_radial = new double [2];
     if (imag_time) {
-    	a[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-		b[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-    	a[1] = cosh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
-		b[1] = sinh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+    	aH[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		bH[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+    	aH[1] = cosh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+		bH[1] = sinh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+		aV[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+		bV[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+		aV[1] = cosh(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
+		bV[1] = sinh(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
 		if (grid->coordinate_system == "Cylindrical") {
 			kin_radial[0] = delta_t / (8. * hamiltonian->mass * grid->delta_x * grid->delta_x);
 			kin_radial[1] = delta_t / (8. * hamiltonian->mass_b * grid->delta_x * grid->delta_x);
 		}
 	}
 	else {
-		a[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-		b[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-		a[1] = cos(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
-		b[1] = sin(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+		aH[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		bH[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+		aH[1] = cos(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+		bH[1] = sin(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+		aV[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+		bV[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+		aV[1] = cos(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
+		bV[1] = sin(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
 		if (grid->coordinate_system == "Cylindrical") {
 			kin_radial[0] = delta_t / (8. * hamiltonian->mass * grid->delta_x * grid->delta_x);
 			kin_radial[1] = delta_t / (8. * hamiltonian->mass_b * grid->delta_x * grid->delta_x);
@@ -373,15 +389,15 @@ void CPUBlock::update_potential(double *_external_pot_real, double *_external_po
 }
 
 CPUBlock::~CPUBlock() {
-    delete[] p_real[0][1];
-    delete[] p_imag[0][1];
-    delete[] p_real[1][1];
-    delete[] p_imag[1][1];
-    if (!two_wavefunctions) {
-        delete [] a;
-        delete [] b;
-        delete [] norm;
-    }
+    delete [] p_real[0][1];
+    delete [] p_imag[0][1];
+    delete [] p_real[1][1];
+    delete [] p_imag[1][1];
+	delete [] aH;
+	delete [] bH;
+	delete [] aV;
+	delete [] bV;
+	delete [] norm;
     delete [] coupling_const;
 }
 
@@ -392,7 +408,7 @@ void CPUBlock::run_kernel() {
         process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y,
                      alpha_x, alpha_y, tile_width, block_width, block_height,
                      halo_x, 0, block_height, halo_y, block_height - 2 * halo_y,
-                     a[state_index], b[state_index], kin_radial[state_index],
+                     aH[state_index], bH[state_index], aV[state_index], bV[state_index], kin_radial[state_index],
                      coupling_const[state_index], coupling_const[2],
                      external_pot_real[state_index], external_pot_imag[state_index],
                      p_real[state_index][sense], p_imag[state_index][sense],
@@ -416,7 +432,7 @@ void CPUBlock::run_kernel() {
                 process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y,
                 alpha_x, alpha_y, tile_width, block_width, block_height,
                 halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y,
-                a[state_index], b[state_index], kin_radial[state_index],
+                aH[state_index], bH[state_index], aV[state_index], bV[state_index], kin_radial[state_index],
                 coupling_const[state_index], coupling_const[2],
                 external_pot_real[state_index], external_pot_imag[state_index],
                 p_real[state_index][sense], p_imag[state_index][sense],
@@ -438,7 +454,7 @@ void CPUBlock::run_kernel_on_halo() {
         process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y,
         		     alpha_x, alpha_y, tile_width, block_width, block_height,
         		     halo_x, 0, tile_height, 0, tile_height,
-        		     a[state_index], b[state_index], kin_radial[state_index],
+        		     aH[state_index], bH[state_index], aV[state_index], bV[state_index], kin_radial[state_index],
                      coupling_const[state_index], coupling_const[2],
                      external_pot_real[state_index], external_pot_imag[state_index],
                      p_real[state_index][sense], p_imag[state_index][sense],
@@ -458,7 +474,7 @@ void CPUBlock::run_kernel_on_halo() {
             process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y,
             		     alpha_x, alpha_y, tile_width, block_width, block_height,
             		     halo_x, block_start, block_height, halo_y, block_height - 2 * halo_y,
-            		     a[state_index], b[state_index], kin_radial[state_index],
+            		     aH[state_index], bH[state_index], aV[state_index], bV[state_index], kin_radial[state_index],
                          coupling_const[state_index], coupling_const[2],
                          external_pot_real[state_index], external_pot_imag[state_index],
                          p_real[state_index][sense], p_imag[state_index][sense],
@@ -474,7 +490,7 @@ void CPUBlock::run_kernel_on_halo() {
         process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y,
         		     alpha_x, alpha_y, tile_width, block_width, block_height,
         		     halo_x, 0, block_height, 0, block_height - halo_y,
-        		     a[state_index], b[state_index], kin_radial[state_index],
+        		     aH[state_index], bH[state_index], aV[state_index], bV[state_index], kin_radial[state_index],
                      coupling_const[state_index], coupling_const[2],
                      external_pot_real[state_index], external_pot_imag[state_index],
                      p_real[state_index][sense], p_imag[state_index][sense],
@@ -488,7 +504,7 @@ void CPUBlock::run_kernel_on_halo() {
         process_band(two_wavefunctions, start_x - rot_coord_x, start_y - rot_coord_y,
         			 alpha_x, alpha_y, tile_width, block_width, block_height,
         			 halo_x, block_start, tile_height - block_start, halo_y, tile_height - block_start - halo_y,
-        			 a[state_index], b[state_index], kin_radial[state_index],
+        			 aH[state_index], bH[state_index], aV[state_index], bV[state_index], kin_radial[state_index],
                      coupling_const[state_index], coupling_const[2],
                      external_pot_real[state_index], external_pot_imag[state_index],
                      p_real[state_index][sense], p_imag[state_index][sense],
