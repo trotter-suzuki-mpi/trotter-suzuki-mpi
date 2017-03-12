@@ -20,6 +20,7 @@
 #include "trottersuzuki.h"
 #include "common.h"
 #include <math.h>
+#include <boost/math/special_functions/bessel.hpp>
 
 double const_potential(double x) {
     return 0.;
@@ -664,6 +665,36 @@ complex<double> SinusoidState::sinusoid_state(double x, double y) {
     double L_x = grid->global_no_halo_dim_x * grid->delta_x;
     double L_y = grid->global_no_halo_dim_y * grid->delta_y;
     return sqrt(norm / (L_x * L_y)) * 2.* exp(complex<double>(0., phase)) * complex<double> (sin(2 * M_PI * double(n_x) / L_x * x) * sin(2 * M_PI * double(n_y) / L_y * y), 0.0);
+}
+
+BesselState::BesselState(Lattice2D *_grid, int _angular_momentum, int _zeros, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
+    State(_grid, _angular_momentum,_p_real, _p_imag), angular_momentum(_angular_momentum), zeros(_zeros), n_y(_n_y), norm(_norm), phase(_phase)  {
+    complex<double> tmp;
+    zero = boost::math::cyl_bessel_j_zero(double(angular_momentum), zeros);
+
+    // calculate normalization factor
+    double integral = 0;
+    double val = 0;
+	int num = 1.e5;
+	for (double i = 0; i < num; i++) {
+		val = boost::math::cyl_bessel_j(int(angular_momentum), i * zero / double(num));
+		integral += val * val;
+	}
+	integral *= grid->length_x / double(num);
+    normalization = sqrt(norm / (integral * grid->length_y) * (n_y == 0 ? 1. : 2.));
+    double x_r = 0, y_r = 0;
+    for (int y = 0; y < grid->dim_y; y++) {
+        for (int x = 0; x < grid->dim_x; x++) {
+        	map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
+        	tmp = bessel_state(x_r, y_r);
+            p_real[y * grid->dim_x + x] = real(tmp);
+            p_imag[y * grid->dim_x + x] = imag(tmp);
+        }
+    }
+}
+
+complex<double> BesselState::bessel_state(double x, double y) {
+	return normalization * exp(complex<double>(0., phase)) * complex<double> (boost::math::cyl_bessel_j(int(angular_momentum), x * zero / grid->length_x) * cos(M_PI * double(n_y) / grid->length_y * y), 0.);
 }
 
 Potential::Potential(Lattice *_grid, char *filename): grid(_grid) {

@@ -18,7 +18,6 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include <boost/math/special_functions/bessel.hpp>
 #include <sys/stat.h>
 #include <sys/time.h>
 #ifdef HAVE_MPI
@@ -26,7 +25,7 @@
 #endif
 #include "trottersuzuki.h"
 
-#define IMAG_TIME true    //If true performs imaginary time evolution
+#define IMAG_TIME false    //If true performs imaginary time evolution
 #define EDGE_LENGTH 100     //Physical length of the grid's edge
 #define DIM 100         //Number of dots of the grid's edge
 #define DELTA_T 1.e-2     //Time step evolution
@@ -36,11 +35,6 @@
 #define SNAP_PER_STAMP 5    //The particles density and phase of the wave function are stamped every "SNAP_PER_STAMP" expected values calculations
 #define ANGULAR_MOMENTUM 2
 
-complex<double> bessel_ini_state(double r, double z) {
-	double x0 = boost::math::cyl_bessel_j_zero(double((ANGULAR_MOMENTUM)), 1);
-	double norm = 3.15246 * sqrt(double(EDGE_LENGTH));
-	return 1. / norm * boost::math::cyl_bessel_j(int(ANGULAR_MOMENTUM), r * x0 / double(EDGE_LENGTH));
-}
 
 complex<double> const_ini_state(double r, double z) {
     return 1/double(EDGE_LENGTH);
@@ -60,12 +54,13 @@ int main(int argc, char** argv) {
     //set lattice
     Lattice2D *grid = new Lattice2D(DIM, length, DIM, length, false, true, 0., "Cylindrical");
     //set initial state
-    State *state = new State(grid, angular_momentum);
+    State *state;
     if (IMAG_TIME) {
+    	state = new State(grid, angular_momentum);
     	state->init_state(const_ini_state);
     }
     else {
-    	state->init_state(bessel_ini_state);
+    	state = new BesselState(grid, angular_momentum);
     }
     //set Hamiltonian
     Potential *potential = new Potential(grid, const_potential);

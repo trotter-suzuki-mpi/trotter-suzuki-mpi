@@ -102,7 +102,7 @@ def imprint(state, function):
 
 def get_vortex_position(grid, state, approx_cloud_radius=0.):
     """
-    Get the position of a single vortex in the quantum state.
+    Get the position of a single vortex in the quantum state (only for cartesian coordinates).
 
     Parameters
     ----------

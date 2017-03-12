@@ -177,6 +177,18 @@ private:
     complex<double> sinusoid_state(double x, double y);
 };
 
+class BesselState: public State {
+public:
+    BesselState(Lattice2D *grid, int angular_momentum = 0, int zeros = 1, int n_y = 0, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
+private:
+    int angular_momentum;
+    int zeros, n_y;
+    double zero;
+    double normalization;
+    double norm, phase;
+    complex<double> bessel_state(double x, double y);
+};
+
 class Potential {
 public:
     Lattice *grid;    ///< Object that defines the lattice structure.

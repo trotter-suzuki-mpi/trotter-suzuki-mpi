@@ -5,6 +5,7 @@ from .trottersuzuki import State as _State
 from .trottersuzuki import GaussianState as _GaussianState
 from .trottersuzuki import SinusoidState as _SinusoidState
 from .trottersuzuki import ExponentialState as _ExponentialState
+from .trottersuzuki import BesselState as _BesselState
 from .trottersuzuki import Potential as _Potential
 from .trottersuzuki import Solver as _Solver
 from .tools import map_lattice_to_coordinate_space, imprint
@@ -219,6 +220,41 @@ class SinusoidState(_SinusoidState):
 
 
 class ExponentialState(_ExponentialState):
+
+    def imprint(self, function):
+        """
+        Multiply the wave function of the state by the function provided.
+
+        Parameters
+        ----------
+        * `function` : python function
+            Function to be printed on the state.
+
+        Notes
+        -----
+        Useful, for instance, to imprint solitons and vortices on a condensate.
+        Generally, it performs a transformation of the state whose wave function becomes
+
+        .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
+
+        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.
+
+        Example
+        -------
+
+            >>> import trottersuzuki as ts  # import the module
+            >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+            >>> def vortex(x,y):  # Vortex function
+            >>>     z = x + 1j*y
+            >>>     angle = np.angle(z)
+            >>>     return np.exp(1j * angle)
+            >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
+            >>> state.imprint(vortex)  # Imprint a vortex on the state
+        """
+        imprint(self, function)
+
+
+class BesselState(_BesselState):
 
     def imprint(self, function):
         """
