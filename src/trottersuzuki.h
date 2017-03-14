@@ -66,12 +66,12 @@ public:
     /**
         Lattice constructor.
 
-        @param [in] dim              Linear dimension of the chain lattice.
-        @param [in] length           Physical length of the lattice.
-        @param [in] periodic_x_axis  Boundary condition along the x axis (false=closed, true=periodic).
-
+        @param [in] dim               Linear dimension of the chain lattice.
+        @param [in] length            Physical length of the lattice.
+        @param [in] periodic_x_axis   Boundary condition along the x axis (false=closed, true=periodic).
+        @param [in] coordinate_system Type of the coordinate system used.
      */
-    Lattice1D(int dim, double length, bool periodic_x_axis = false);
+    Lattice1D(int dim, double length, bool periodic_x_axis = false, string coordinate_system = "Cartesian");
 };
 
 /**

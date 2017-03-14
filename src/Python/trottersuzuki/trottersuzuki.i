@@ -46,7 +46,7 @@ public:
 
 class Lattice1D: public Lattice {
 public:
-    Lattice1D(int dim, double length, bool periodic_x_axis=false);
+    Lattice1D(int dim, double length, bool periodic_x_axis=false, std::string coordinate_system = "Cartesian");
 };
 
 

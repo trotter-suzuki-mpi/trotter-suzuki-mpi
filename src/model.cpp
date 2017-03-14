@@ -29,14 +29,28 @@ double const_potential(double x, double y) {
     return 0.;
 }
 
-Lattice1D::Lattice1D(int dim, double length, bool periodic_x_axis) {
+Lattice1D::Lattice1D(int dim, double length, bool periodic_x_axis, string _coordinate_system) {
+	if (_coordinate_system != "Cartesian" &&
+		_coordinate_system != "Cylindrical") {
+		my_abort("The coordinate system you have chosen is not implemented.");
+	}
+	if (_coordinate_system == "Cylindrical" &&
+		periodic_x_axis == true) {
+		my_abort("You cannot choose periodic boundary on the radial axis.");
+	}
+	coordinate_system = _coordinate_system;
     length_x = length;
     length_y = 0;
-    delta_x = length / double(dim);
+    if (_coordinate_system == "Cylindrical") {
+		dim += 1;
+		delta_x = length_x / (double(dim) - 0.5);
+	}
+	else {
+		delta_x = length_x / double(dim);
+	}
     delta_y = 1.0;
     periods[0] = 0;
     periods[1] = (int) periodic_x_axis;
-    coordinate_system = "Cartesian";
 #ifdef HAVE_MPI
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_procs);
     mpi_dims[0] = mpi_procs;
@@ -61,6 +75,9 @@ Lattice1D::Lattice1D(int dim, double length, bool periodic_x_axis) {
     calculate_borders(mpi_coords[0], mpi_dims[0], &start_x, &end_x,
                       &inner_start_x, &inner_end_x,
                       dim, halo_x, periods[1]);
+    if (coordinate_system == "Cylindrical" && mpi_coords[1] == 0) {
+		inner_start_x += 1;
+	}
     dim_x = end_x - start_x;
     start_y = 0;
     end_y = 1;
