@@ -343,8 +343,9 @@ class Potential(_Potential):
     def exponential_update(self, delta_t, t):
         for y in range(self.grid.dim_y):
             for x in range(self.grid.dim_x):
+                x1, y1 = map_lattice_to_coordinate_space(self.grid, x, y)
                 self.exp_potential_matrix[y, x] = \
-                    np.exp(-1j*delta_t*self.pot_function(map_lattice_to_coordinate_space(self.grid, x, y), t))
+                    np.exp(-1j*delta_t*self.pot_function(x1, y1, t))
         return self.exp_potential_matrix
 
 class Solver(_Solver):
