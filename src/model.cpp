@@ -20,7 +20,6 @@
 #include "trottersuzuki.h"
 #include "common.h"
 #include <math.h>
-#include <boost/math/special_functions/bessel.hpp>
 
 double const_potential(double x) {
     return 0.;
@@ -670,14 +669,14 @@ complex<double> SinusoidState::sinusoid_state(double x, double y) {
 BesselState::BesselState(Lattice2D *_grid, int _angular_momentum, int _zeros, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
     State(_grid, _angular_momentum,_p_real, _p_imag), angular_momentum(_angular_momentum), zeros(_zeros), n_y(_n_y), norm(_norm), phase(_phase)  {
     complex<double> tmp;
-    zero = boost::math::cyl_bessel_j_zero(double(angular_momentum), zeros);
+    zero = bessel_j_zeros(angular_momentum, zeros - 1);
 
     // calculate normalization factor
     double integral = 0;
     double val = 0;
 	int num = 1.e5;
 	for (double i = 0; i < num; i++) {
-		val = boost::math::cyl_bessel_j(int(angular_momentum), i * zero / double(num));
+		val = jn(int(angular_momentum), i * zero / double(num));
 		integral += val * val;
 	}
 	integral *= grid->length_x / double(num);
@@ -694,7 +693,7 @@ BesselState::BesselState(Lattice2D *_grid, int _angular_momentum, int _zeros, in
 }
 
 complex<double> BesselState::bessel_state(double x, double y) {
-	return normalization * exp(complex<double>(0., phase)) * complex<double> (boost::math::cyl_bessel_j(int(angular_momentum), x * zero / grid->length_x) * cos(M_PI * double(n_y) / grid->length_y * y), 0.);
+	return normalization * exp(complex<double>(0., phase)) * complex<double> (jn(int(angular_momentum), x * zero / grid->length_x) * cos(M_PI * double(n_y) / grid->length_y * y), 0.);
 }
 
 Potential::Potential(Lattice *_grid, char *filename): grid(_grid) {

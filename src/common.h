@@ -27,5 +27,6 @@ void stamp_matrix(Lattice *grid, double *matrix, string filename);
 void calculate_borders(int coord, int dim, int * start, int *end, int *inner_start, int *inner_end, int length, int halo, int periodic_bound);
 void my_abort(string err);
 void memcpy2D(void * dst, size_t dstride, const void * src, size_t sstride, size_t width, size_t height);
+double bessel_j_zeros(int l, int x);
 
 #endif
