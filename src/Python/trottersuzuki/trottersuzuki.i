@@ -144,8 +144,9 @@ protected:
 
 class ExponentialState: public State {
 public:
+    ExponentialState(Lattice1D *grid, int n_x = 1, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
     ExponentialState(Lattice2D *_grid, int _n_x=1, int _n_y=1, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
-
+    
 private:
     int n_x, n_y;
     double norm, phase;
@@ -154,6 +155,8 @@ private:
 
 class GaussianState: public State {
 public:
+    GaussianState(Lattice1D *grid, double omega_x, double mean_x = 0, double norm = 1, double phase = 0,
+				  double *p_real = 0, double *p_imag = 0);
     GaussianState(Lattice2D *grid, double omega_x, double omega_y = -1., double mean_x = 0, double mean_y = 0, double norm = 1, double phase = 0,
                   double *p_real = 0, double *p_imag = 0);
 
@@ -169,6 +172,7 @@ private:
 
 class SinusoidState: public State {
 public:
+    SinusoidState(Lattice1D *grid, int n_x = 1, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
     SinusoidState(Lattice2D *_grid, int _n_x=1, int _n_y=1, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
 
 private:
@@ -179,7 +183,9 @@ private:
 
 class BesselState: public State {
 public:
+    BesselState(Lattice1D *grid, int angular_momentum = 0, int zeros = 1, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
     BesselState(Lattice2D *grid, int angular_momentum = 0, int zeros = 1, int n_y = 0, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
+    
 private:
     int angular_momentum;
     int zeros, n_y;

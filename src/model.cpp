@@ -617,6 +617,19 @@ void State::write_to_file(string filename) {
     stamp(grid, this, filename);
 }
 
+ExponentialState::ExponentialState(Lattice1D *_grid, int _n_x, double _norm, double _phase, double *_p_real, double *_p_imag):
+    State(_grid, 0, _p_real, _p_imag), n_x(_n_x), n_y(0), norm(_norm), phase(_phase) {
+	angular_momentum = 0;
+    complex<double> tmp;
+    double x_r = 0;
+	for (int x = 0; x < grid->dim_x; x++) {
+		map_lattice_to_coordinate_space(grid, x, &x_r);
+		tmp = exp_state(x_r, 0.);
+		p_real[x] = real(tmp);
+		p_imag[x] = imag(tmp);
+	}
+}
+
 ExponentialState::ExponentialState(Lattice2D *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
     State(_grid, 0, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase) {
 	angular_momentum = 0;
@@ -636,6 +649,24 @@ complex<double> ExponentialState::exp_state(double x, double y) {
     double L_x = grid->global_no_halo_dim_x * grid->delta_x;
     double L_y = grid->global_no_halo_dim_y * grid->delta_y;
     return sqrt(norm / (L_x * L_y)) * exp(complex<double>(0., phase)) * exp(complex<double>(0., 2 * M_PI * double(n_x) / L_x * x + 2 * M_PI * double(n_y) / L_y * y));
+}
+
+GaussianState::GaussianState(Lattice1D *_grid, double _omega_x, double _mean_x,
+                             double _norm, double _phase, double *_p_real, double *_p_imag):
+    State(_grid, 0,_p_real, _p_imag), mean_x(_mean_x),
+    mean_y(0.), omega_x(_omega_x), omega_y(1.), norm(_norm), phase(_phase) {
+	angular_momentum = 0;
+    if (omega_y == -1.) {
+        omega_y = omega_x;
+    }
+    complex<double> tmp;
+    double x_r = 0;
+	for (int x = 0; x < grid->dim_x; x++) {
+		map_lattice_to_coordinate_space(grid, x, &x_r);
+		tmp = gauss_state(x_r, 0.);
+		p_real[x] = real(tmp);
+		p_imag[x] = imag(tmp);
+	}
 }
 
 GaussianState::GaussianState(Lattice2D *_grid, double _omega_x, double _omega_y, double _mean_x, double _mean_y,
@@ -662,6 +693,19 @@ complex<double> GaussianState::gauss_state(double x, double y) {
     return complex<double>(sqrt(norm * sqrt(omega_x * omega_y) / M_PI) * exp(-(omega_x * pow(x - mean_x, 2.0) + omega_y * pow(y - mean_y, 2.0)) * 0.5), 0.) * exp(complex<double>(0., phase));
 }
 
+SinusoidState::SinusoidState(Lattice1D *_grid, int _n_x, double _norm, double _phase, double *_p_real, double *_p_imag):
+    State(_grid, 0,_p_real, _p_imag), n_x(_n_x), n_y(0), norm(_norm), phase(_phase)  {
+	angular_momentum = 0;
+    complex<double> tmp;
+    double x_r = 0;
+	for (int x = 0; x < grid->dim_x; x++) {
+		map_lattice_to_coordinate_space(grid, x, &x_r);
+		tmp = sinusoid_state(x_r, 0.);
+		p_real[x] = real(tmp);
+		p_imag[x] = imag(tmp);
+    }
+}
+
 SinusoidState::SinusoidState(Lattice2D *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
     State(_grid, 0,_p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase)  {
 	angular_momentum = 0;
@@ -683,6 +727,34 @@ complex<double> SinusoidState::sinusoid_state(double x, double y) {
     return sqrt(norm / (L_x * L_y)) * 2.* exp(complex<double>(0., phase)) * complex<double> (sin(2 * M_PI * double(n_x) / L_x * x) * sin(2 * M_PI * double(n_y) / L_y * y), 0.0);
 }
 
+BesselState::BesselState(Lattice1D *_grid, int _angular_momentum, int _zeros, double _norm, double _phase, double *_p_real, double *_p_imag):
+    State(_grid, _angular_momentum,_p_real, _p_imag), angular_momentum(_angular_momentum), zeros(_zeros), n_y(0), norm(_norm), phase(_phase)  {
+    complex<double> tmp;
+    zero = bessel_j_zeros(angular_momentum, zeros - 1);
+
+    // calculate normalization factor
+    double integral = 0;
+    double val = 0;
+	int num = 1.e5;
+	for (double i = 0; i < num; i++) {
+		val = jn(int(angular_momentum), i * zero / double(num));
+		integral += val * val;
+	}
+	integral *= grid->length_x / double(num);
+    normalization = sqrt(norm / integral);
+    double x_r = 0;
+	for (int x = 0; x < grid->dim_x; x++) {
+		map_lattice_to_coordinate_space(grid, x, &x_r);
+		tmp = bessel_state1D(x_r);
+		p_real[x] = real(tmp);
+		p_imag[x] = imag(tmp);
+	}
+}
+
+complex<double> BesselState::bessel_state1D(double x) {
+	return normalization * exp(complex<double>(0., phase)) * complex<double> (jn(int(angular_momentum), x * zero / grid->length_x), 0.);
+}
+
 BesselState::BesselState(Lattice2D *_grid, int _angular_momentum, int _zeros, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
     State(_grid, _angular_momentum,_p_real, _p_imag), angular_momentum(_angular_momentum), zeros(_zeros), n_y(_n_y), norm(_norm), phase(_phase)  {
     complex<double> tmp;
@@ -702,14 +774,14 @@ BesselState::BesselState(Lattice2D *_grid, int _angular_momentum, int _zeros, in
     for (int y = 0; y < grid->dim_y; y++) {
         for (int x = 0; x < grid->dim_x; x++) {
         	map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
-        	tmp = bessel_state(x_r, y_r);
+        	tmp = bessel_state2D(x_r, y_r);
             p_real[y * grid->dim_x + x] = real(tmp);
             p_imag[y * grid->dim_x + x] = imag(tmp);
         }
     }
 }
 
-complex<double> BesselState::bessel_state(double x, double y) {
+complex<double> BesselState::bessel_state2D(double x, double y) {
 	return normalization * exp(complex<double>(0., phase)) * complex<double> (jn(int(angular_momentum), x * zero / grid->length_x) * cos(M_PI * double(n_y) / grid->length_y * y), 0.);
 }
 

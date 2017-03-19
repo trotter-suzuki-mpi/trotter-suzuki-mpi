@@ -23,15 +23,23 @@
 #include "common.h"
 
 void map_lattice_to_coordinate_space(Lattice *grid, int x_in, double *x_out) {
-    double idx = grid->start_x * grid->delta_x + 0.5 * grid->delta_x + x_in * grid->delta_x;
-    double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
-    if (idx - x_c < -grid->length_x * 0.5) {
-        idx += grid->length_x;
-    }
-    if (idx - x_c > grid->length_x * 0.5) {
-        idx -= grid->length_x;
-    }
-    *x_out = idx - x_c;
+	if (grid->coordinate_system == "Cartesian") {
+		double idx = grid->start_x * grid->delta_x + 0.5 * grid->delta_x + x_in * grid->delta_x;
+		double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
+		if (idx - x_c < -grid->length_x * 0.5) {
+			idx += grid->length_x;
+		}
+		if (idx - x_c > grid->length_x * 0.5) {
+			idx -= grid->length_x;
+		}
+		*x_out = idx - x_c;
+	}
+
+    // By convention the radial axis is the x axis.
+	if (grid->coordinate_system == "Cylindrical") {
+		double idx = grid->start_x * grid->delta_x + x_in * grid->delta_x - 0.5 * grid->delta_x;
+		*x_out = idx;
+	}
 }
 
 void map_lattice_to_coordinate_space(Lattice *grid, int x_in, int y_in, double *x_out, double *y_out) {
