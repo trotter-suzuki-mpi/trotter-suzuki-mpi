@@ -345,36 +345,38 @@ void Solver::calculate_energy_expected_values(void) {
                                         conj(psi_center_b * omega) * psi_center));
             }
 
-            if (i - (grid->inner_start_y - grid->start_y) >= (ini_halo_y == 0) * 2 &&
-                    i < grid->inner_end_y - grid->start_y - (end_halo_y == 0) * 2 &&
-                    j - (grid->inner_start_x - grid->start_x) >= (ini_halo_x == 0) * 2 + xlim &&
-                    j < grid->inner_end_x - grid->start_x - (end_halo_x == 0) * 2) {
+            if (((i - (grid->inner_start_y - grid->start_y) >= (ini_halo_y == 0) * 2 &&
+                 i < grid->inner_end_y - grid->start_y - (end_halo_y == 0) * 2) || grid->dim_y == 1) &&
+                (j - (grid->inner_start_x - grid->start_x) >= (ini_halo_x == 0) * 2 + xlim &&
+                 j < grid->inner_end_x - grid->start_x - (end_halo_x == 0) * 2)) {
 
-                psi_up = complex<double> (state->p_real[(i - 1) * tile_width + j],
-                                          state->p_imag[(i - 1) * tile_width + j]);
-                psi_down = complex<double> (state->p_real[(i + 1) * tile_width + j],
-                                            state->p_imag[(i + 1) * tile_width + j]);
                 psi_right = complex<double> (state->p_real[i * tile_width + j + 1],
                                              state->p_imag[i * tile_width + j + 1]);
                 psi_left = complex<double> (state->p_real[i * tile_width + j - 1],
                                             state->p_imag[i * tile_width + j - 1]);
-                psi_up_up = complex<double> (state->p_real[(i - 2) * tile_width + j],
-                                             state->p_imag[(i - 2) * tile_width + j]);
-                psi_down_down = complex<double> (state->p_real[(i + 2) * tile_width + j],
-                                                 state->p_imag[(i + 2) * tile_width + j]);
                 psi_right_right = complex<double> (state->p_real[i * tile_width + j + 2],
                                                    state->p_imag[i * tile_width + j + 2]);
                 psi_left_left = complex<double> (state->p_real[i * tile_width + j - 2],
                                                  state->p_imag[i * tile_width + j - 2]);
+				psi_up = complex<double> (state->p_real[(i - 1) * tile_width + j],
+										  state->p_imag[(i - 1) * tile_width + j]);
+				psi_down = complex<double> (state->p_real[(i + 1) * tile_width + j],
+											state->p_imag[(i + 1) * tile_width + j]);
+				psi_up_up = complex<double> (state->p_real[(i - 2) * tile_width + j],
+											 state->p_imag[(i - 2) * tile_width + j]);
+				psi_down_down = complex<double> (state->p_real[(i + 2) * tile_width + j],
+												 state->p_imag[(i + 2) * tile_width + j]);
 
                 sum_kinetic_energy_0 += real(cost_E * conj(psi_center) *
-											 ((const_1 * psi_right_right + const_2 * psi_right + const_2 * psi_left + const_1 * psi_left_left + const_3 * psi_center) / (delta_x * delta_x) +
-											  (const_1 * psi_down_down + const_2 * psi_down + const_2 * psi_up + const_1 * psi_up_up + const_3 * psi_center) / (delta_y * delta_y)));
-
-                rot_x = y_r * angular_velocity / delta_x * complex<double>(0., 1.);
-				rot_y = x_r * angular_velocity / delta_y * complex<double>(0., 1.);
-				sum_rotational_energy_0 += real(conj(psi_center) * (rot_y * (derivate1_4 * psi_up + derivate1_3 * psi_center + derivate1_2 * psi_down + derivate1_1 * psi_down_down)
-								+ rot_x * (derivate1_4 * psi_right + derivate1_3 * psi_center + derivate1_2 * psi_left + derivate1_1 * psi_left_left)));
+											 (const_1 * psi_right_right + const_2 * psi_right + const_2 * psi_left + const_1 * psi_left_left + const_3 * psi_center) / (delta_x * delta_x));
+                if (grid->dim_y > 1) {
+					sum_kinetic_energy_0 += real(cost_E * conj(psi_center) *
+												 (const_1 * psi_down_down + const_2 * psi_down + const_2 * psi_up + const_1 * psi_up_up + const_3 * psi_center) / (delta_y * delta_y));
+					rot_x = y_r * angular_velocity / delta_x * complex<double>(0., 1.);
+					rot_y = x_r * angular_velocity / delta_y * complex<double>(0., 1.);
+					sum_rotational_energy_0 += real(conj(psi_center) * (rot_y * (derivate1_4 * psi_up + derivate1_3 * psi_center + derivate1_2 * psi_down + derivate1_1 * psi_down_down)
+									+ rot_x * (derivate1_4 * psi_right + derivate1_3 * psi_center + derivate1_2 * psi_left + derivate1_1 * psi_left_left)));
+                }
 
                 if (!single_component) {
                     psi_up_b = complex<double> (state_b->p_real[(i - 1) * tile_width + j],
@@ -395,11 +397,13 @@ void Solver::calculate_energy_expected_values(void) {
                                                        state_b->p_imag[i * tile_width + j - 2]);
 
                     sum_kinetic_energy_1 += real(cost_E_b * conj(psi_center_b) *
-                    							 ((const_1 * psi_right_right_b + const_2 * psi_right_b + const_2 * psi_left_b + const_1 * psi_left_left_b + const_3 * psi_center_b) / (delta_x * delta_x) +
-                                                  (const_1 * psi_down_down_b + const_2 * psi_down_b + const_2 * psi_up_b + const_1 * psi_up_up_b + const_3 * psi_center_b) / (delta_y * delta_y)));
-
-                    sum_rotational_energy_1 += real(conj(psi_center_b) * (rot_y * (derivate1_4 * psi_up_b + derivate1_3 * psi_center_b + derivate1_2 * psi_down_b + derivate1_1 * psi_down_down_b)
-                                                    + rot_x * (derivate1_4 * psi_right_b + derivate1_3 * psi_center_b + derivate1_2 * psi_left_b + derivate1_1 * psi_left_left_b)));
+                    							 (const_1 * psi_right_right_b + const_2 * psi_right_b + const_2 * psi_left_b + const_1 * psi_left_left_b + const_3 * psi_center_b) / (delta_x * delta_x));
+                    if (grid->dim_y > 1) {
+						sum_kinetic_energy_1 += real(cost_E_b * conj(psi_center_b) *
+													 (const_1 * psi_down_down_b + const_2 * psi_down_b + const_2 * psi_up_b + const_1 * psi_up_up_b + const_3 * psi_center_b) / (delta_y * delta_y));
+						sum_rotational_energy_1 += real(conj(psi_center_b) * (rot_y * (derivate1_4 * psi_up_b + derivate1_3 * psi_center_b + derivate1_2 * psi_down_b + derivate1_1 * psi_down_down_b)
+														+ rot_x * (derivate1_4 * psi_right_b + derivate1_3 * psi_center_b + derivate1_2 * psi_left_b + derivate1_1 * psi_left_left_b)));
+                    }
                 }
             }
         }
