@@ -332,7 +332,7 @@ double *State::get_particle_density(double *_density) {
     }
     for(int id_j = 0, j = grid->inner_start_y - grid->start_y; j < grid->inner_end_y - grid->start_y; ++id_j, ++j) {
         for(int id_i = 0, i = grid->inner_start_x - grid->start_x; i < grid->inner_end_x - grid->start_x; ++id_i, ++i) {
-            density[id_j * local_no_halo_dim_x + id_i] = (p_real[j * grid->dim_x + i] * p_real[j * grid->dim_x + i] + p_imag[j * grid->dim_x + i] * p_imag[j * grid->dim_x + i]) * grid->delta_x * grid->delta_y;
+            density[id_j * local_no_halo_dim_x + id_i] = (p_real[j * grid->dim_x + i] * p_real[j * grid->dim_x + i] + p_imag[j * grid->dim_x + i] * p_imag[j * grid->dim_x + i]);
         }
     }
     return density;
