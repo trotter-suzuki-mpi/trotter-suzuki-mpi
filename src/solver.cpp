@@ -245,7 +245,9 @@ void Solver::calculate_energy_expected_values(void) {
 	double delta_y = grid->delta_y;
 
     double sum_norm2_0 = 0;
+    double sum_norm2_kin0 = 0;
     double sum_norm2_1 = 0;
+    double sum_norm2_kin1 = 0;
     double sum_kinetic_energy_0 = 0;
     double sum_kinetic_energy_1 = 0;
     double sum_potential_energy_0 = 0;
@@ -296,6 +298,7 @@ void Solver::calculate_energy_expected_values(void) {
 
 #ifndef HAVE_MPI
     #pragma omp parallel for reduction(+:sum_norm2_0,\
+	sum_norm2_kin0,\
     sum_potential_energy_0,\
     sum_intra_species_energy_0,\
     sum_kinetic_energy_0,\
@@ -303,6 +306,7 @@ void Solver::calculate_energy_expected_values(void) {
     sum_inter_species_energy,\
     sum_rabi_energy,\
     sum_norm2_1,\
+    sum_norm2_kin1,\
     sum_potential_energy_1,\
     sum_intra_species_energy_1,\
     sum_kinetic_energy_1,\
@@ -367,6 +371,7 @@ void Solver::calculate_energy_expected_values(void) {
 				psi_down_down = complex<double> (state->p_real[(i + 2) * tile_width + j],
 												 state->p_imag[(i + 2) * tile_width + j]);
 
+				sum_norm2_kin0 += real(conj(psi_center) * psi_center);
                 sum_kinetic_energy_0 += real(cost_E * conj(psi_center) *
 											 (const_1 * psi_right_right + const_2 * psi_right + const_2 * psi_left + const_1 * psi_left_left + const_3 * psi_center) / (delta_x * delta_x));
                 if (grid->dim_y > 1) {
@@ -396,6 +401,7 @@ void Solver::calculate_energy_expected_values(void) {
                     psi_left_left_b = complex<double> (state_b->p_real[i * tile_width + j - 2],
                                                        state_b->p_imag[i * tile_width + j - 2]);
 
+                    sum_norm2_kin1 += real(conj(psi_center_b) * psi_center_b);
                     sum_kinetic_energy_1 += real(cost_E_b * conj(psi_center_b) *
                     							 (const_1 * psi_right_right_b + const_2 * psi_right_b + const_2 * psi_left_b + const_1 * psi_left_left_b + const_3 * psi_center_b) / (delta_x * delta_x));
                     if (grid->dim_y > 1) {
@@ -409,6 +415,8 @@ void Solver::calculate_energy_expected_values(void) {
         }
     }
 
+    double *norm2_kin = new double[2];
+    norm2_kin[0] = sum_norm2_kin0;
     norm2[0] = sum_norm2_0;
     kinetic_energy[0] = sum_kinetic_energy_0;
     potential_energy[0] = sum_potential_energy_0;
@@ -416,7 +424,8 @@ void Solver::calculate_energy_expected_values(void) {
     intra_species_energy[0] = sum_intra_species_energy_0;
 
     if (!single_component) {
-    norm2[1] = sum_norm2_1;
+    	norm2_kin[1] = sum_norm2_kin1;
+        norm2[1] = sum_norm2_1;
         kinetic_energy[1] = sum_kinetic_energy_1;
         potential_energy[1] = sum_potential_energy_1;
         rotational_energy[1] = sum_rotational_energy_1;
@@ -426,18 +435,21 @@ void Solver::calculate_energy_expected_values(void) {
     }
 
 #ifdef HAVE_MPI
+    double *norm2_kin_mpi = new double[grid->mpi_procs];
     double *norm2_mpi = new double[grid->mpi_procs];
     double *kinetic_energy_mpi = new double[grid->mpi_procs];
     double *potential_energy_mpi = new double[grid->mpi_procs];
     double *rotational_energy_mpi = new double[grid->mpi_procs];
     double *intra_species_energy_mpi = new double[grid->mpi_procs];
 
+    MPI_Allgather(&norm2_kin[0], 1, MPI_DOUBLE, norm2_kin_mpi, 1, MPI_DOUBLE, grid->cartcomm);
     MPI_Allgather(&norm2[0], 1, MPI_DOUBLE, norm2_mpi, 1, MPI_DOUBLE, grid->cartcomm);
     MPI_Allgather(&kinetic_energy[0], 1, MPI_DOUBLE, kinetic_energy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
     MPI_Allgather(&potential_energy[0], 1, MPI_DOUBLE, potential_energy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
     MPI_Allgather(&rotational_energy[0], 1, MPI_DOUBLE, rotational_energy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
     MPI_Allgather(&intra_species_energy[0], 1, MPI_DOUBLE, intra_species_energy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
 
+    norm2_kin[0] = 0
     norm2[0] = 0;
     kinetic_energy[0] = 0;
     potential_energy[0] = 0;
@@ -445,12 +457,14 @@ void Solver::calculate_energy_expected_values(void) {
     intra_species_energy[0] = 0;
 
     for(int i = 0; i < grid->mpi_procs; i++) {
+    	norm2_kin[0] += norm2_kin_mpi[i];
         norm2[0] += norm2_mpi[i];
         kinetic_energy[0] += kinetic_energy_mpi[i];
         potential_energy[0] += potential_energy_mpi[i];
         rotational_energy[0] += rotational_energy_mpi[i];
         intra_species_energy[0] += intra_species_energy_mpi[i];
     }
+    delete [] norm2_kin_mpi;
     delete [] norm2_mpi;
     delete [] kinetic_energy_mpi;
     delete [] potential_energy_mpi;
@@ -458,6 +472,7 @@ void Solver::calculate_energy_expected_values(void) {
     delete [] intra_species_energy_mpi;
 
     if (!single_component) {
+    	double *norm2_kin_mpi = new double[grid->mpi_procs];
         double *norm2_mpi = new double[grid->mpi_procs];
         double *kinetic_energy_mpi = new double[grid->mpi_procs];
         double *potential_energy_mpi = new double[grid->mpi_procs];
@@ -466,6 +481,7 @@ void Solver::calculate_energy_expected_values(void) {
         double *inter_species_energy_mpi = new double[grid->mpi_procs];
         double *rabi_energy_mpi = new double[grid->mpi_procs];
 
+        MPI_Allgather(&norm2_kin[1], 1, MPI_DOUBLE, norm2_kin_mpi, 1, MPI_DOUBLE, grid->cartcomm);
         MPI_Allgather(&norm2[1], 1, MPI_DOUBLE, norm2_mpi, 1, MPI_DOUBLE, grid->cartcomm);
         MPI_Allgather(&kinetic_energy[1], 1, MPI_DOUBLE, kinetic_energy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
         MPI_Allgather(&potential_energy[1], 1, MPI_DOUBLE, potential_energy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
@@ -474,6 +490,7 @@ void Solver::calculate_energy_expected_values(void) {
         MPI_Allgather(&inter_species_energy, 1, MPI_DOUBLE, inter_species_energy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
         MPI_Allgather(&rabi_energy, 1, MPI_DOUBLE, rabi_energy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
 
+        norm2_kin[1] = 0
         norm2[1] = 0;
         kinetic_energy[1] = 0;
         potential_energy[1] = 0;
@@ -483,6 +500,7 @@ void Solver::calculate_energy_expected_values(void) {
         rabi_energy = 0;
 
         for(int i = 0; i < grid->mpi_procs; i++) {
+        	norm2_kin[1] += norm2_kin_mpi[i];
             norm2[1] += norm2_mpi[i];
             kinetic_energy[1] += kinetic_energy_mpi[i];
             potential_energy[1] += potential_energy_mpi[i];
@@ -491,6 +509,7 @@ void Solver::calculate_energy_expected_values(void) {
             inter_species_energy += inter_species_energy_mpi[i];
             rabi_energy += rabi_energy_mpi[i];
         }
+        delete [] norm2_kin_mpi;
         delete [] norm2_mpi;
         delete [] kinetic_energy_mpi;
         delete [] potential_energy_mpi;
@@ -500,20 +519,20 @@ void Solver::calculate_energy_expected_values(void) {
         delete [] rabi_energy_mpi;
     }
 #endif
-    kinetic_energy[0] = kinetic_energy[0] / norm2[0];
-    rotational_energy[0] = rotational_energy[0] / norm2[0];
+    kinetic_energy[0] = kinetic_energy[0] / norm2_kin[0];
+    rotational_energy[0] = rotational_energy[0] / norm2_kin[0];
     potential_energy[0] = potential_energy[0] / norm2[0];
     intra_species_energy[0] = intra_species_energy[0] / norm2[0];
     if (single_component) {
-    total_energy = kinetic_energy[0] + potential_energy[0] + intra_species_energy[0] + rotational_energy[0];
+        total_energy = kinetic_energy[0] + potential_energy[0] + intra_species_energy[0] + rotational_energy[0];
         tot_kinetic_energy = kinetic_energy[0];
         tot_potential_energy = potential_energy[0];
         tot_rotational_energy = rotational_energy[0];
         tot_intra_species_energy = intra_species_energy[0];
     }
     else {
-        kinetic_energy[1] = kinetic_energy[1] / norm2[1];
-        rotational_energy[1] = rotational_energy[1] / norm2[1];
+        kinetic_energy[1] = kinetic_energy[1] / norm2_kin[1];
+        rotational_energy[1] = rotational_energy[1] / norm2_kin[1];
         potential_energy[1] = potential_energy[1] / norm2[1];
         intra_species_energy[1] = intra_species_energy[1] / norm2[1];
         inter_species_energy = inter_species_energy / (norm2[0] * norm2[1]);
@@ -530,6 +549,7 @@ void Solver::calculate_energy_expected_values(void) {
     }
     norm2[0] *= delta_y * grid->length_x / (grid->global_no_halo_dim_x - (grid->coordinate_system == "Cylindrical" ? 1 : 0));//delta_x * delta_y;
     energy_expected_values_updated = true;
+    delete [] norm2_kin;
 }
 
 double Solver::get_total_energy(void) {
