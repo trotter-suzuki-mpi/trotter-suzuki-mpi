@@ -12,7 +12,7 @@ Lattice1D Class
 
    **Constructors**
 
-   .. py:method:: Lattice2D(dim_x, length_x, periodic_x_axis=False)
+   .. py:method:: Lattice1D(dim_x, length_x, periodic_x_axis=False)
 
       Construct the Lattice2D.
 
@@ -24,6 +24,8 @@ Lattice1D Class
           Physical length of the lattice's side in the x direction.
       * `periodic_x_axis` : bool,optional (default: False)
           Boundary condition along the x axis (false=closed, true=periodic).
+      * `coordinate_system` : string,optional (default: 'Cartesian')
+          Coordinates of the physical space ('Cartesian' or 'Cylindrical').
 
       **Returns**
 
@@ -32,7 +34,7 @@ Lattice1D Class
 
       **Notes**
 
-      The lattice created is squared.
+      For Cylindrical coordinates the radial coordinate is used.
 
       **Example**
 
@@ -99,6 +101,10 @@ Lattice2D Class
           Boundary condition along the x axis (false=closed, true=periodic).
       * `periodic_y_axis` : bool,optional (default: False)
           Boundary condition along the y axis (false=closed, true=periodic).
+      * `angular_velocity` : float, optional (default: 0.)
+          Angular velocity of the rotating reference frame (only for Cartesian coordinates).
+      * `coordinate_system` : string,optional (default: 'Cartesian')
+          Coordinates of the physical space ('Cartesian' or 'Cylindrical').
 
       **Returns**
 
@@ -107,7 +113,7 @@ Lattice2D Class
 
       **Notes**
 
-      The lattice created is squared.
+      For Cylindrical coordinates the radial coordinate is in place of the x-axis and the axial one is in place of the y-axis.
 
       **Example**
 
@@ -180,7 +186,7 @@ State Classes
 
    **Constructors**
 
-   .. py:method:: State(grid)
+   .. py:method:: State(grid, angular_momentum)
 
       Create a quantum state.
 
@@ -188,6 +194,8 @@ State Classes
 
       * `grid` : Lattice object
           Define the geometry of the simulation.
+      * `angular_momentum` : integer, optional (default: 0)
+          Angular momentum for the Cylindrical coordinates.
 
       **Returns**
 
@@ -470,12 +478,12 @@ State Classes
 
       **Parameters**
 
-      * `grid` : Lattice2D object
+      * `grid` : Lattice object
           Defines the geometry of the simulation.
       * `n_x` : integer,optional (default: 1)
           First quantum number.
       * `n_y` : integer,optional (default: 1)
-          Second quantum number.
+          Second quantum number (available if `grid` is a Lattice2D object).
       * `norm` : float,optional (default: 1)
           Squared norm of the quantum state.
       * `phase` : float,optional (default: 0)
@@ -727,16 +735,16 @@ State Classes
 
       **Parameters**
 
-      * `grid` : Lattice2D object
+      * `grid` : Lattice object
           Defines the geometry of the simulation.
       * `omega_x` : float
           Inverse of the variance along x-axis.
       * `omega_y` : float, optional (default: omega_x)
-          Inverse of the variance along y-axis.
+          Inverse of the variance along y-axis (available if `grid` is a Lattice2D object).
       * `mean_x` : float, optional (default: 0)
           X coordinate of the gaussian function's peak.
       * `mean_y` : float, optional (default: 0)
-          Y coordinate of the gaussian function's peak.
+          Y coordinate of the gaussian function's peak (available if `grid` is a Lattice2D object).
       * `norm` : float, optional (default: 1)
           Squared norm of the state.
       * `phase` : float, optional (default: 0)
@@ -986,12 +994,12 @@ State Classes
 
       **Parameters**
 
-      * `grid` : Lattice2D object
+      * `grid` : Lattice object
           Define the geometry of the simulation.
       * `n_x` : integer, optional (default: 1)
           First quantum number.
       * `n_y` : integer, optional (default: 1)
-          Second quantum number.
+          Second quantum number (available if `grid` is a Lattice2D object).
       * `norm` : float, optional (default: 1)
           Squared norm of the quantum state.
       * `phase` : float, optional (default: 1)
@@ -1216,6 +1224,255 @@ State Classes
           >>> import trottersuzuki as ts  # import the module
           >>> grid = ts.Lattice2D()  # Define the simulation's geometry
           >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
+          >>> state.write_to_file('wave_function.txt')  # Write to a file the wave function
+          >>> state2 = ts.State(grid)  # Create a quantum state
+          >>> state2.loadtxt('wave_function.txt')  # Load the wave function
+
+
+.. py:class:: BesselState
+   :module: trottersuzuki
+
+   This class defines a quantum state with sinusoidal like wave function.
+
+   This class is a child of State class.
+
+   **Constructors**
+
+   .. py:method:: BesselState(grid, angular_momentum=0, zeros=1, n_y=0, norm=1, phase=0)
+
+      Construct the quantum state with wave function given by a first kind of Bessel functions.
+
+      **Parameters**
+
+      * `grid` : Lattice object
+          Define the geometry of the simulation.
+      * `angular_momentum` : integer, optional (default: 0)
+          Angular momentum for the Cylindrical coordinates.
+      * `zeros` : integer, optional (default: 1)
+          Number of zeros points along the radial axis.
+      * `n_y` : integer, optional (default: 1)
+          Quantum number (available if `grid` is a Lattice2D object).
+      * `norm` : float, optional (default: 1)
+          Squared norm of the quantum state.
+      * `phase` : float, optional (default: 1)
+          Relative phase of the wave function.
+
+      **Returns**
+
+      * `BesselState` : State object.
+          Quantum state with wave function given by a first kind of Bessel functions. The wave function is given by:
+          
+          .. math:: \psi(r,z,\phi) = f(r,z)e^{i l \phi}
+          
+          with
+
+          .. math:: f(r,z) = \sqrt{N}/\tilde{N} J_l(r r_i / L_r) \cos(n_y \pi r / (2L_z)) \mathrm{e}^{(i \phi_0)}
+
+          being :math:`N` the norm of the state, :math:`\tilde{N}` a normalization factor for :math:`J_l`,
+          :math:`J_l` the Bessel function of the first kind with angulat momentum :math:`l`,
+          :math:`r_i` the radial coordinate of the i-th zero of :math:`J_l`
+          :math:`L_r` the length of the lattice along the radial axis,
+          :math:`L_z` the length of the lattice along the z axis, :math:`n_y` the quantum number
+          and :math:`\phi_0` the relative phase.
+
+      **Example**
+
+          >>> import trottersuzuki as ts  # import the module
+          >>> grid = ts.Lattice2D(300, 30., True, True, 0., 'Cylindrical')  # Define the simulation's geometry
+          >>> state = ts.BesselState(grid, 2, 1, 1)  # Create the system's state
+
+   **Members**
+
+   .. py:method:: BesselState.imprint(function)
+      :module: trottersuzuki
+
+        Multiply the wave function of the state by the function provided.
+
+        **Parameters**
+
+        * `function` : python function
+            Function to be printed on the state.
+
+        **Notes**
+
+        Useful, for instance, to imprint solitons and vortices on a condensate.
+        Generally, it performs a transformation of the state whose wave function becomes:
+
+        .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
+
+        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.
+
+
+   .. py:method:: BesselState.get_mean_px()
+      :module: trottersuzuki
+
+      Return the expected value of the :math:`P_x` operator.
+
+      **Returns**
+
+      * `mean_px` : float
+            Expected value of the :math:`P_x` operator.
+
+   .. py:method:: BesselState.get_mean_pxpx()
+      :module: trottersuzuki
+
+      Return the expected value of the :math:`P_x^2` operator.
+
+      **Returns**
+
+      * `mean_pxpx` : float
+            Expected value of the :math:`P_x^2` operator.
+
+
+
+   .. py:method:: BesselState.get_mean_py()
+      :module: trottersuzuki
+
+      Return the expected value of the :math:`P_y` operator.
+
+      **Returns**
+
+      * `mean_py` : float
+            Expected value of the :math:`P_y` operator.
+
+   .. py:method:: BesselState.get_mean_pypy()
+      :module: trottersuzuki
+
+      Return the expected value of the :math:`P_y^2` operator.
+
+      **Returns**
+
+      * `mean_pypy` : float
+            Expected value of the :math:`P_y^2` operator.
+
+   .. py:method:: BesselState.get_mean_x()
+      :module: trottersuzuki
+
+      Return the expected value of the :math:`X` operator.
+
+      **Returns**
+
+      * `mean_x` : float
+            Expected value of the :math:`X` operator.
+
+   .. py:method:: BesselState.get_mean_xx()
+      :module: trottersuzuki
+
+      Return the expected value of the :math:`X^2` operator.
+
+      **Returns**
+
+      * `mean_xx` : float
+            Expected value of the :math:`X^2` operator.
+
+
+   .. py:method:: BesselState.get_mean_y()
+      :module: trottersuzuki
+
+      Return the expected value of the :math:`Y` operator.
+
+      **Returns**
+
+      * `mean_y` : float
+            Expected value of the :math:`Y` operator.
+
+   .. py:method:: BesselState.get_mean_yy()
+      :module: trottersuzuki
+
+      Return the expected value of the :math:`Y^2` operator.
+
+      **Returns**
+
+      * `mean_yy` : float
+            Expected value of the :math:`Y^2` operator.
+
+   .. py:method:: BesselState.get_particle_density()
+      :module: trottersuzuki
+
+      Return a matrix storing the squared norm of the wave function.
+
+      **Returns**
+
+      * `particle_density` : numpy matrix
+          Particle density of the state :math:`|\psi(x,y)|^2`
+
+
+   .. py:method:: BesselState.get_phase()
+      :module: trottersuzuki
+
+      Return a matrix of the wave function's phase.
+
+      **Returns**
+
+      * `get_phase` : numpy matrix
+          Matrix of the wave function's phase :math:`\phi(x,y) = \log(\psi(x,y))`
+
+
+   .. py:method:: BesselState.get_squared_norm()
+      :module: trottersuzuki
+
+      Return the squared norm of the quantum state.
+
+      **Returns**
+
+      * `squared_norm` : float
+            Squared norm of the quantum state.
+
+   .. py:method:: BesselState.loadtxt(file_name)
+      :module: trottersuzuki
+
+      Load the wave function from a file.
+
+      **Parameters**
+
+      * `file_name` : string
+            Name of the file to be written.
+
+      **Example**
+
+          >>> import trottersuzuki as ts  # import the module
+          >>> grid = ts.Lattice2D(300, 30., True, True, 0., 'Cylindrical')  # Define the simulation's geometry
+          >>> state = ts.BesselState(grid, 1.)  # Create the system's state
+          >>> state.write_to_file('wave_function.txt')  # Write to a file the wave function
+          >>> state2 = ts.State(grid)  # Create a quantum state
+          >>> state2.loadtxt('wave_function.txt')  # Load the wave function
+
+   .. py:method:: BesselState.write_particle_density(file_name)
+      :module: trottersuzuki
+
+      Write to a file the particle density matrix of the wave function.
+
+      **Parameters**
+
+      * `file_name` : string
+          Name of the file.
+
+   .. py:method:: BesselState.write_phase(file_name)
+      :module: trottersuzuki
+
+      Write to a file the wave function.
+
+      **Parameters**
+
+      * `file_name` : string
+            Name of the file to be written.
+
+
+   .. py:method:: BesselState.write_to_file(file_name)
+      :module: trottersuzuki
+
+      Write to a file the wave function.
+
+      **Parameters**
+
+      * `file_name` : string
+            Name of the file to be written.
+
+      **Example**
+
+          >>> import trottersuzuki as ts  # import the module
+          >>> grid = ts.Lattice2D(300, 30., True, True, 0., 'Cylindrical')  # Define the simulation's geometry
+          >>> state = ts.BesselState(grid, 1.)  # Create the system's state
           >>> state.write_to_file('wave_function.txt')  # Write to a file the wave function
           >>> state2 = ts.State(grid)  # Create a quantum state
           >>> state2.loadtxt('wave_function.txt')  # Load the wave function

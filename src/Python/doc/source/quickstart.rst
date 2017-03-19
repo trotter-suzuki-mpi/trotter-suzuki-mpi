@@ -22,7 +22,7 @@ physical area of 20x20, then we have to specify these in the constructor of the 
     grid = ts.Lattice2D(300, 20.)
 
 The object ``grid`` defines the geometry of the system and it
-will be used throughout the simulations. Note that the origin of the lattice is at its centre and the lattice points are scaled to the physical locations. The actual transformation is exposed to the user via the function `center_coordinates`.
+will be used throughout the simulations. Note that the origin of the lattice is at its centre and the lattice points are scaled to the physical locations.
 
 The physics of the problem is described by the Hamiltonian. A single
 object is going to store all the information regarding the Hamiltonian.
@@ -35,11 +35,17 @@ equation of a single or two-component wave function, namely (in units
    i \frac{\partial}{\partial t} \psi(t) = H \psi(t)
 
 
-being
+being, for Cartesian coordinates
 
 .. math::
 
    H = \frac{1}{2m}(P_x^2 + P_y^2) + V(x,y) + g|\psi(x,y)|^2 + \omega L_z
+
+while for Cylindrical coordinates
+
+.. math::
+
+   H = -\frac{1}{2m}(1/r \partial_r(r \partial_r - l^2/r^2) + \partial_z^2) + V(r,z) + g|\psi(r,z)|^2
 
 and :math:`\psi(t) = \psi_t(x,y)` for the single component wave
 function, or

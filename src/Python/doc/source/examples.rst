@@ -142,3 +142,56 @@ The results are the following plots:
 .. image:: figures/bec1.png
 
 .. image:: figures/bec2.png
+
+Imaginary time evolution in a 1D lattice using radial coordinate
+----------------------------------------------------------------
+
+.. code-block:: python
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import trottersuzuki as ts
+    
+    angular_momentum = 1 # quantum number
+    radius = 100 # Physical radius
+    dim = 50 # Lattice points
+    time_step = 1e-1
+    fontsize = 16
+    
+    # Set up the system
+    grid = ts.Lattice1D(dim, radius, False, 'Cylindrical')
+    
+    def const_state(r):
+        return 1./np.sqrt(radius)
+        
+    state = ts.State(grid, angular_momentum)
+    state.init_state(const_state)
+
+    def pot_func(r,z):
+        return 0.
+        
+    potential = ts.Potential(grid)
+    potential.init_potential(pot_func)
+
+    hamiltonian = ts.Hamiltonian(grid, potential)
+    solver = ts.Solver(grid, state, hamiltonian, time_step)
+
+    # Evolve the system
+    solver.evolve(30000, True)
+
+    # Compare the calculated wave functions with respect to the groundstate function
+    psi = np.sqrt(state.get_particle_density()[0])
+    psi = psi / np.linalg.norm(psi)
+
+    groundstate = ts.BesselState(grid, angular_momentum)
+    groundstate_psi = np.sqrt(groundstate.get_particle_density()[0])
+
+    # Plot wave functions
+    plt.plot(grid.get_x_axis(), psi, 'o')
+    plt.plot(grid.get_x_axis(), groundstate_psi)
+    plt.grid()
+    plt.xlim(0,radius)
+    plt.xlabel('r', fontsize = fontsize)
+    plt.ylabel(r'$\psi$', fontsize = fontsize)
+    plt.show()
+
