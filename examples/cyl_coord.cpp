@@ -26,14 +26,14 @@
 #include "trottersuzuki.h"
 
 #define IMAG_TIME false    //If true performs imaginary time evolution
-#define EDGE_LENGTH 100     //Physical length of the grid's edge
-#define DIM 100         //Number of dots of the grid's edge
+#define EDGE_LENGTH 10     //Physical length of the grid's edge
+#define DIM 10         //Number of dots of the grid's edge
 #define DELTA_T 1.e-2     //Time step evolution
-#define ITERATIONS 10000     //Number of iterations before calculating expected values
+#define ITERATIONS 1000     //Number of iterations before calculating expected values
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 10      //Number of times the expected values are calculated
 #define SNAP_PER_STAMP 5    //The particles density and phase of the wave function are stamped every "SNAP_PER_STAMP" expected values calculations
-#define ANGULAR_MOMENTUM 2
+#define ANGULAR_MOMENTUM 0
 
 
 complex<double> const_ini_state(double r, double z) {
@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
 #endif
 
     //set lattice
-    Lattice2D *grid = new Lattice2D(DIM, length, DIM, length, false, true, 0., "Cylindrical");
+    Lattice2D *grid = new Lattice2D(DIM, length,10, 10, false, true,0., "Cylindrical");
     //set initial state
     State *state;
     if (IMAG_TIME) {
