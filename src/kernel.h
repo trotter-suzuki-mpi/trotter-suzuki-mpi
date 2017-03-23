@@ -45,8 +45,8 @@ void block_kernel_horizontal(size_t start_offset, size_t stride, size_t width, s
 void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double a, double b, double * p_real, double * p_imag);
 void block_kernel_radial_kinetic(size_t start_offset, size_t stride, size_t width, size_t height, double offset_x, double _kin_radial, double * p_real, double * p_imag);
 void block_kernel_radial_kinetic_imaginary(size_t start_offset, size_t stride, size_t width, size_t height, double offset_x, double _kin_radial, double * p_real, double * p_imag);
-void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width, size_t height, double coupling_a, double coupling_b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag);
-void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, size_t width, size_t height, double coupling_a, double coupling_b, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag);
+void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width, size_t height, double coupling_a, double coupling_b, double coupling_aa, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag);
+void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, size_t width, size_t height, double coupling_a, double coupling_b, double coupling_aa, size_t tile_width, const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag);
 void block_kernel_rotation(size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double * p_real, double * p_imag);
 void block_kernel_rotation_imaginary(size_t stride, size_t width, size_t height, int offset_x, int offset_y, double alpha_x, double alpha_y, double * p_real, double * p_imag);
 void rabi_coupling_real(size_t stride, size_t width, size_t height, double cc, double cs_r, double cs_i, double *p_real, double *p_imag, double *pb_real, double *pb_imag);
@@ -113,6 +113,7 @@ private:
     double *norm;         ///< Squared norm of the single wave functions.
     double tot_norm;    ///< Squared norm of the total state.
     double *coupling_const;     ///< Coupling constant of the density self-interacting term.
+    double *LeeHuangYang_coupling;     ///< Coupling constant of the Lee-Huang-Yang terms.
     int sense;            ///< Takes values 0 or 1 and tells which of the two buffers pointed by p_real and p_imag is used to calculate the next time step.
     int state_index;    ///< Takes values 0 or 1 and tells which wave function is pointed by p_real and p_imag, and is being evolved.
     size_t halo_x;          ///< Thickness of the vertical halos (number of lattice's dots).

@@ -70,15 +70,16 @@ void block_kernel_horizontal_imaginary(size_t start_offset, size_t stride, size_
 }
 
 //double time potential
-void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width, size_t height, double coupling_a, double coupling_b, size_t tile_width,
+void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width, size_t height, double coupling_a, double coupling_b, double coupling_aa, size_t tile_width,
                             const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag) {
     if(two_wavefunctions) {
         for (size_t y = 0; y < height; ++y) {
             for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
                 double norm_2 = p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx];
+                double norm_3 = norm_2 * sqrt(norm_2);
                 double norm_2b = pb_real[idx_pot] * pb_real[idx_pot] + pb_imag[idx_pot] * pb_imag[idx_pot];
-                double c_cos = cos(coupling_a * norm_2 + coupling_b * norm_2b);
-                double c_sin = sin(coupling_a * norm_2 + coupling_b * norm_2b);
+                double c_cos = cos(coupling_a * norm_2 + coupling_b * norm_2b + coupling_aa * norm_3);
+                double c_sin = sin(coupling_a * norm_2 + coupling_b * norm_2b + coupling_aa * norm_3);
                 double tmp = p_real[idx];
                 p_real[idx] = external_pot_real[idx_pot] * tmp - external_pot_imag[idx_pot] * p_imag[idx];
                 p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx] + external_pot_imag[idx_pot] * tmp;
@@ -93,8 +94,9 @@ void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width,
         for (size_t y = 0; y < height; ++y) {
             for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
                 double norm_2 = p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx];
-                double c_cos = cos(coupling_a * norm_2);
-                double c_sin = sin(coupling_a * norm_2);
+                double norm_3 = norm_2 * sqrt(norm_2);
+                double c_cos = cos(coupling_a * norm_2 + coupling_aa * norm_3);
+                double c_sin = sin(coupling_a * norm_2 + coupling_aa * norm_3);
                 double tmp = p_real[idx];
                 p_real[idx] = external_pot_real[idx_pot] * tmp - external_pot_imag[idx_pot] * p_imag[idx];
                 p_imag[idx] = external_pot_real[idx_pot] * p_imag[idx] + external_pot_imag[idx_pot] * tmp;
@@ -108,12 +110,15 @@ void block_kernel_potential(bool two_wavefunctions, size_t stride, size_t width,
 }
 
 //double time potential
-void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, size_t width, size_t height, double coupling_a, double coupling_b, size_t tile_width,
+void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, size_t width, size_t height, double coupling_a, double coupling_b, double coupling_aa, size_t tile_width,
                                       const double *external_pot_real, const double *external_pot_imag, const double *pb_real, const double *pb_imag, double * p_real, double * p_imag) {
     if(two_wavefunctions) {
         for (size_t y = 0; y < height; ++y) {
             for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
-                double tmp = exp(-1. * (coupling_a * (p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx]) + coupling_b * (pb_real[idx_pot] * pb_real[idx_pot] + pb_imag[idx_pot] * pb_imag[idx_pot])));
+            	double norm_2 = p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx];
+				double norm_3 = norm_2 * sqrt(norm_2);
+				double norm_2b = pb_real[idx_pot] * pb_real[idx_pot] + pb_imag[idx_pot] * pb_imag[idx_pot];
+                double tmp = exp(-1. * (coupling_a * norm_2 + coupling_b * norm_2b + coupling_aa * norm_3));
                 p_real[idx] = tmp * external_pot_real[idx_pot] * p_real[idx];
                 p_imag[idx] = tmp * external_pot_real[idx_pot] * p_imag[idx];
             }
@@ -122,7 +127,9 @@ void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, siz
     else {
         for (size_t y = 0; y < height; ++y) {
             for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
-                double tmp = exp(-1. * coupling_a * (p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx]));
+            	double norm_2 = p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx];
+            	double norm_3 = norm_2 * sqrt(norm_2);
+                double tmp = exp(-1. * (coupling_a * norm_2 + coupling_aa * norm_3));
                 p_real[idx] = tmp * external_pot_real[idx_pot] * p_real[idx];
                 p_imag[idx] = tmp * external_pot_real[idx_pot] * p_imag[idx];
             }

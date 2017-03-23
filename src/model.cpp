@@ -891,10 +891,10 @@ HarmonicPotential::~HarmonicPotential() {
 }
 
 Hamiltonian::Hamiltonian(Lattice *_grid, Potential *_potential,
-                         double _mass, double _coupling_a,
+                         double _mass, double _coupling_a, double _LeeHuangYang_coupling_a,
                          double _angular_velocity,
                          double _rot_coord_x, double _rot_coord_y): mass(_mass),
-    coupling_a(_coupling_a), angular_velocity(_angular_velocity), grid(_grid) {
+    coupling_a(_coupling_a), LeeHuangYang_coupling_a(_LeeHuangYang_coupling_a), angular_velocity(_angular_velocity), grid(_grid) {
     if (angular_velocity != 0.) {
         if (grid->periods[0] != 0 || grid->periods[1] != 0) {
             cout << "Boundary conditions must be closed for rotating frame of reference\n";
@@ -942,13 +942,13 @@ Hamiltonian2Component::Hamiltonian2Component(Lattice *_grid,
         Potential *_potential,
         Potential *_potential_b,
         double _mass,
-        double _mass_b, double _coupling_a,
-        double _coupling_ab, double _coupling_b,
+        double _mass_b, double _coupling_a, double _LeeHuangYang_coupling_a,
+        double _coupling_ab, double _coupling_b, double _LeeHuangYang_coupling_b,
         double _omega_r, double _omega_i,
         double _angular_velocity,
         double _rot_coord_x, double _rot_coord_y):
-    Hamiltonian(_grid, _potential, _mass, _coupling_a, _angular_velocity, _rot_coord_x, rot_coord_y), mass_b(_mass_b),
-    coupling_ab( _coupling_ab), coupling_b(_coupling_b), omega_r(_omega_r), omega_i(_omega_i) {
+    Hamiltonian(_grid, _potential, _mass, _coupling_a, _LeeHuangYang_coupling_a, _angular_velocity, _rot_coord_x, rot_coord_y), mass_b(_mass_b),
+    coupling_ab( _coupling_ab), coupling_b(_coupling_b), LeeHuangYang_coupling_b(_LeeHuangYang_coupling_b), omega_r(_omega_r), omega_i(_omega_i) {
 
     if (_potential_b == NULL) {
         potential_b = _potential;
