@@ -258,6 +258,7 @@ void Solver::calculate_energy_expected_values(void) {
     double sum_intra_species_energy_1 = 0;
     double sum_inter_species_energy = 0;
     double sum_rabi_energy = 0;
+    double sum_LeeHuangYang = 0;
 
     int ini_halo_x = grid->inner_start_x - grid->start_x;
     int ini_halo_y = grid->inner_start_y - grid->start_y;
@@ -267,13 +268,14 @@ void Solver::calculate_energy_expected_values(void) {
 
     double x, y;
     Potential *potential, *potential_b = NULL;
-    double coupling, coupling_b = 0, coupling_ab;
+    double coupling, coupling_b = 0, coupling_ab, LeeHuangYang_coupling_a;
     double mass, mass_b;
     double angular_velocity = hamiltonian->angular_velocity;
     complex<double> omega;
 
     potential = hamiltonian->potential;
     coupling = hamiltonian->coupling_a;
+    LeeHuangYang_coupling_a = hamiltonian->LeeHuangYang_coupling_a;
     mass = hamiltonian->mass;
     if (!single_component) {
         potential_b = static_cast<Hamiltonian2Component*>(hamiltonian)->potential_b;
@@ -303,6 +305,7 @@ void Solver::calculate_energy_expected_values(void) {
     sum_intra_species_energy_0,\
     sum_kinetic_energy_0,\
     sum_rotational_energy_0,\
+    sum_LeeHuangYang,\
     sum_inter_species_energy,\
     sum_rabi_energy,\
     sum_norm2_1,\
@@ -326,12 +329,11 @@ void Solver::calculate_energy_expected_values(void) {
 			complex<double> x_r = x;
 			complex<double> y_r = y;
 
-            sum_norm2_0 += real(conj(psi_center) * psi_center);
-            sum_potential_energy_0 += real(conj(psi_center) * psi_center * complex<double> (
-            		                  potential->get_value(j, i) +
-            		                  (grid->coordinate_system == "Cylindrical" ? hamiltonian->azimutal_potential(j, state->angular_momentum) : 0), 0.));
-
-            sum_intra_species_energy_0 += real(conj(psi_center) * psi_center * psi_center * conj(psi_center) * complex<double> (0.5 * coupling, 0.));
+			double norm2 = real(conj(psi_center) * psi_center);
+            sum_norm2_0 += norm2;
+            sum_potential_energy_0 += norm2 * (potential->get_value(j, i) + (grid->coordinate_system == "Cylindrical" ? hamiltonian->azimutal_potential(j, state->angular_momentum) : 0));
+            sum_intra_species_energy_0 += norm2 * norm2 * 0.5 * coupling;
+            sum_LeeHuangYang += pow(norm2, 2.5) * 0.4 * LeeHuangYang_coupling_a;
 
             if (!single_component) {
                 psi_center_b = complex<double> (state_b->p_real[i * tile_width + j],
@@ -422,6 +424,7 @@ void Solver::calculate_energy_expected_values(void) {
     potential_energy[0] = sum_potential_energy_0;
     rotational_energy[0] = sum_rotational_energy_0;
     intra_species_energy[0] = sum_intra_species_energy_0;
+    LeeHuangYang_energy = sum_LeeHuangYang;
 
     if (!single_component) {
     	norm2_kin[1] = sum_norm2_kin1;
@@ -441,6 +444,7 @@ void Solver::calculate_energy_expected_values(void) {
     double *potential_energy_mpi = new double[grid->mpi_procs];
     double *rotational_energy_mpi = new double[grid->mpi_procs];
     double *intra_species_energy_mpi = new double[grid->mpi_procs];
+    double *LeeHuangYang_energy_mpi = new double[grid->mpi_procs];
 
     MPI_Allgather(&norm2_kin[0], 1, MPI_DOUBLE, norm2_kin_mpi, 1, MPI_DOUBLE, grid->cartcomm);
     MPI_Allgather(&norm2[0], 1, MPI_DOUBLE, norm2_mpi, 1, MPI_DOUBLE, grid->cartcomm);
@@ -448,6 +452,7 @@ void Solver::calculate_energy_expected_values(void) {
     MPI_Allgather(&potential_energy[0], 1, MPI_DOUBLE, potential_energy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
     MPI_Allgather(&rotational_energy[0], 1, MPI_DOUBLE, rotational_energy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
     MPI_Allgather(&intra_species_energy[0], 1, MPI_DOUBLE, intra_species_energy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
+    MPI_Allgather(&LeeHuangYang_energy, 1, MPI_DOUBLE, LeeHuangYang_energy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
 
     norm2_kin[0] = 0
     norm2[0] = 0;
@@ -455,6 +460,7 @@ void Solver::calculate_energy_expected_values(void) {
     potential_energy[0] = 0;
     rotational_energy[0] = 0;
     intra_species_energy[0] = 0;
+    LeeHuangYang_energy = 0;
 
     for(int i = 0; i < grid->mpi_procs; i++) {
     	norm2_kin[0] += norm2_kin_mpi[i];
@@ -463,6 +469,7 @@ void Solver::calculate_energy_expected_values(void) {
         potential_energy[0] += potential_energy_mpi[i];
         rotational_energy[0] += rotational_energy_mpi[i];
         intra_species_energy[0] += intra_species_energy_mpi[i];
+        LeeHuangYang_energy += LeeHuangYang_energy_mpi[i];
     }
     delete [] norm2_kin_mpi;
     delete [] norm2_mpi;
@@ -470,6 +477,7 @@ void Solver::calculate_energy_expected_values(void) {
     delete [] potential_energy_mpi;
     delete [] rotational_energy_mpi;
     delete [] intra_species_energy_mpi;
+    delete [] LeeHuangYang_energy_mpi;
 
     if (!single_component) {
     	double *norm2_kin_mpi = new double[grid->mpi_procs];
@@ -523,8 +531,9 @@ void Solver::calculate_energy_expected_values(void) {
     rotational_energy[0] = rotational_energy[0] / norm2_kin[0];
     potential_energy[0] = potential_energy[0] / norm2[0];
     intra_species_energy[0] = intra_species_energy[0] / norm2[0];
+    LeeHuangYang_energy = LeeHuangYang_energy / norm2[0];
     if (single_component) {
-        total_energy = kinetic_energy[0] + potential_energy[0] + intra_species_energy[0] + rotational_energy[0];
+        total_energy = kinetic_energy[0] + potential_energy[0] + intra_species_energy[0] + rotational_energy[0] + LeeHuangYang_energy;
         tot_kinetic_energy = kinetic_energy[0];
         tot_potential_energy = potential_energy[0];
         tot_rotational_energy = rotational_energy[0];
@@ -547,7 +556,7 @@ void Solver::calculate_energy_expected_values(void) {
         tot_intra_species_energy = intra_species_energy[0] + intra_species_energy[1];
         norm2[1] *= delta_x * delta_y;
     }
-    norm2[0] *= delta_y * grid->length_x / (grid->global_no_halo_dim_x - (grid->coordinate_system == "Cylindrical" ? 1 : 0));//delta_x * delta_y;
+    norm2[0] *= delta_y * grid->length_x / (grid->global_no_halo_dim_x - (grid->coordinate_system == "Cylindrical" ? 1 : 0));
     energy_expected_values_updated = true;
     delete [] norm2_kin;
 }
@@ -660,6 +669,12 @@ double Solver::get_intra_species_energy(size_t which) {
         cout << "Input may be 1, 2 or 3\n";
         return 0;
     }
+}
+
+double Solver::get_LeeHuangYang_energy(void) {
+    if (!energy_expected_values_updated)
+        calculate_energy_expected_values();
+    return LeeHuangYang_energy;
 }
 
 double Solver::get_inter_species_energy(void) {

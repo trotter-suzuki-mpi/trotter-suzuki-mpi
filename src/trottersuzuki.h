@@ -564,6 +564,7 @@ public:
     double get_potential_energy(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the potential energy of the system.
     double get_rotational_energy(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the rotational energy of the system.
     double get_intra_species_energy(size_t which = 3 /** [in] Which = 1(first component); 2 (second component); 3(total state) */);  ///< Get the intra-particles interaction energy of the system.
+    double get_LeeHuangYang_energy(void);    ///< Get the LeeHuangYang energy (only first component);
     double get_inter_species_energy(void);    ///< Get the inter-particles interaction energy of the system.
     double get_rabi_energy(void);    ///< Get the Rabi energy of the system.
     void set_exp_potential(double *real, int real_length, double *imag,
@@ -588,6 +589,7 @@ private:
     double tot_rotational_energy;    ///< Total Rotational energy of the system.
     double intra_species_energy[2];    ///< Intra-particles interaction energy for the single components.
     double tot_intra_species_energy;    ///< Total intra-particles interaction energy of the system.
+    double LeeHuangYang_energy;    ///< LeeHuangYang energy term.
     double inter_species_energy;    ///< Inter-particles interaction energy of the system.
     double rabi_energy;    ///< Rabi energy of the system.
     bool has_parameters_changed;   ///< Keeps track whether the Hamiltonian parameters were changed

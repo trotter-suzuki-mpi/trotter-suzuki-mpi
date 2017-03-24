@@ -301,6 +301,7 @@ public:
     double get_potential_energy(size_t which=3);
     double get_rotational_energy(size_t which=3);
     double get_intra_species_energy(size_t which=3);
+    double get_LeeHuangYang_energy(void);
     double get_inter_species_energy(void);
     double get_rabi_energy(void);
     void set_exp_potential(double *exp_pot_real, int exp_pot_real_length, double *exp_pot_imag,
@@ -324,6 +325,7 @@ private:
     double tot_rotational_energy;
     double intra_species_energy[2];
     double tot_intra_species_energy;
+    double LeeHuangYang_energy;
     double inter_species_energy;
     double rabi_energy;
     bool has_parameters_changed;
