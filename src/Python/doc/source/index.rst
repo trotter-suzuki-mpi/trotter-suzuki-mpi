@@ -7,5 +7,6 @@
    download.rst
    quickstart.rst
    examples.rst
+   TSapproximation.rst
    reference.rst
    

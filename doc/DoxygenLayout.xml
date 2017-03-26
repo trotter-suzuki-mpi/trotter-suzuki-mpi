@@ -6,6 +6,7 @@
     <tab type="user" url="md_download.html" title="Download and Installation"/>
     <tab type="user" url="md_tutorial.html" title="Tutorial"/>
     <tab type="user" url="md_examples.html" title="Examples"/>
+    <tab type="user" url="md_TSapproximation.html" title="TS approximation"/>
     <tab type="pages" visible="no" title="" intro=""/>
     <tab type="modules" visible="yes" title="" intro=""/>
     <tab type="namespaces" visible="yes" title="">

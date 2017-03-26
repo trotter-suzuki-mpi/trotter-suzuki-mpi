@@ -39,13 +39,13 @@ being, for Cartesian coordinates
 
 .. math::
 
-   H = \frac{1}{2m}(P_x^2 + P_y^2) + V(x,y) + g|\psi(x,y)|^2 + \omega L_z
+   H = \frac{1}{2m}(P_x^2 + P_y^2) + V(x,y) + g|\psi(x,y)|^2 + g_{LHY} |\psi(x,y)|^3 + \omega L_z
 
 while for Cylindrical coordinates
 
 .. math::
 
-   H = -\frac{1}{2m}(1/r \partial_r(r \partial_r - l^2/r^2) + \partial_z^2) + V(r,z) + g|\psi(r,z)|^2
+   H = -\frac{1}{2m}(1/r \partial_r(r \partial_r - l^2/r^2) + \partial_z^2) + V(r,z) + g|\psi(r,z)|^2 + g_{LHY} |\psi(x,y)|^3
 
 and :math:`\psi(t) = \psi_t(x,y)` for the single component wave
 function, or

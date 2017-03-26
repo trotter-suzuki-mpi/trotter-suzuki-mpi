@@ -1615,7 +1615,7 @@ Hamiltonian Classes
 
    **Constructors**
 
-   .. py:method:: Hamiltonian(grid, potential=0, mass=1., coupling=0., angular_velocity=0., rot_coord_x=0, rot_coord_y=0)
+   .. py:method:: Hamiltonian(grid, potential=0, mass=1., coupling=0., LeeHuangYang_coupling=0., angular_velocity=0., rot_coord_x=0, rot_coord_y=0)
 
       Construct the Hamiltonian of a single component system.
 
@@ -1629,6 +1629,8 @@ Hamiltonian Classes
           Mass of the particle (:math:`m`).
       * `coupling` : float,optional (default: 0.)
           Coupling constant of intra-particle interaction (:math:`g`).
+      * `LeeHuangYang_coupling` : float,optional (default: 0.)
+          Coupling constant of the Lee-Huang-Yang term (:math:`g_{LHY}`).
       * `angular_velocity` : float,optional (default: 0.)
           The frame of reference rotates with this angular velocity (:math:`\omega`).
       * `rot_coord_x` : float,optional (default: 0.)
@@ -1641,10 +1643,11 @@ Hamiltonian Classes
       * `Hamiltonian` : Hamiltonian object
           Hamiltonian of the system to be simulated:
 
-          .. math:: H(x,y) = \frac{1}{2m}(P_x^2 + P_y^2)  + V(x,y) + g |\psi(x,y)|^2 + \omega L_z
+          .. math:: H(x,y) = \frac{1}{2m}(P_x^2 + P_y^2)  + V(x,y) + g |\psi(x,y)|^2 + g_{LHY} |\psi(x,y)|^3 + \omega L_z
 
           being :math:`m` the particle mass, :math:`V(x,y)` the external potential,
-          :math:`g` the coupling constant of intra-particle interaction, :math:`\omega`
+          :math:`g` the coupling constant of intra-particle interaction,
+          :math:`g_{LHY}` the coupling constant of the Lee-Huang-Yang term, :math:`\omega`
           the angular velocity of the frame of reference and :math:`L_z` the angular momentum operator along the z-axis.
 
       **Example**
@@ -1878,6 +1881,17 @@ Solver Class
           Which squared state norm to return: total system (default, which=3), first component (which=1), second component (which=2).
 
 
+   .. py:method:: Solver.get_LeeHuangYang_energy()
+      :module: trottersuzuki
+      
+      Get the Lee-Huang-Yang energy.
+      
+      **Returns**
+
+      * `LeeHuangYang_energy` : float
+          Lee-Huang-Yang energy of the system.
+      
+
    .. py:method:: Solver.get_total_energy()
       :module: trottersuzuki
 
@@ -1907,20 +1921,23 @@ Solver Class
 
 Tools
 =====
-.. py:method:: center_coordinates(grid, x, y=None):
+.. py:method:: map_lattice_to_coordinate_space(grid, x, y=None)
 
-    Center and scale the coordinates of the grid to physical locations.
+    Map the lattice coordinate to the coordinate space depending on the coordinate system.
 
     **Parameters**
 
-    * `grid`: Lattice object
+    * `grid` : Lattice object
         Defines the topology.
-    * `x`: int.
+    * `x` : int.
         Grid point.
-    * `y`: int, optional.
+    * `y` : int, optional.
         Grid point, 2D case.
-    Get the position of a single vortex in the quantum state.
 
+    **Returns**
+
+    * `x_p`, `y_p` : tuple.
+        Coordinate of the physical space.
 
 .. py:method:: get_vortex_position(grid, state, approx_cloud_radius=0.)
 

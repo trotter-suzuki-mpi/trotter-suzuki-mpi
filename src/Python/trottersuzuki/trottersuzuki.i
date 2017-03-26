@@ -262,7 +262,6 @@ public:
     double mass_b;
     double coupling_ab;
     double coupling_b;
-    double LeeHuangYang_coupling_b;
     double omega_r;
     double omega_i;
     Potential *potential_b;
@@ -270,8 +269,8 @@ public:
     Hamiltonian2Component(Lattice *_grid, Potential *_potential=0,
                           Potential *_potential_b=0,
                           double _mass=1., double _mass_b=1.,
-                          double _coupling_a=0., double LeeHuangYang_coupling_a = 0., double coupling_ab=0.,
-                          double _coupling_b=0., double LeeHuangYang_coupling_b = 0.,
+                          double _coupling_a=0., double coupling_ab=0.,
+                          double _coupling_b=0.,
                           double _omega_r=0, double _omega_i=0,
                           double _angular_velocity=0.,
                           double _rot_coord_x=0,
