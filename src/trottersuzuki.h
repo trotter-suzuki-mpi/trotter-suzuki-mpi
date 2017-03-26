@@ -461,7 +461,7 @@ public:
     double mass_b;    ///< Mass of the second component.
     double coupling_ab;    ///< Coupling constant of the inter-particles interaction.
     double coupling_b;    ///< Coupling constant of the intra-particles interaction of the second component.
-    double LeeHuangYang_coupling_b;    ///< Coupling constant of the Lee-Huang-Yang term of the second component.
+    //double LeeHuangYang_coupling_b;    ///< Coupling constant of the Lee-Huang-Yang term of the second component.
     double omega_r;    ///< Real part of the Rabi coupling.
     double omega_i;    ///< Imaginary part of the Rabi coupling.
     Potential *potential_b;    ///< External potential for the second component.
@@ -476,10 +476,8 @@ public:
     	@param [in] mass                Mass of the first-component's particles.
     	@param [in] mass_b              Mass of the second-component's particles.
     	@param [in] coupling_a          Coupling constant of intra-particle interaction for the first component.
-    	@param [in] LeeHuangYang_coupling_a          Coupling constant of the Lee-Huang-Yang term of the first component.
     	@param [in] coupling_ab         Coupling constant of inter-particle interaction between the two components.
     	@param [in] coupling_b          Coupling constant of intra-particle interaction of the second component.
-    	@param [in] LeeHuangYang_coupling_b          Coupling constant of the Lee-Huang-Yang term of the second component.
     	@param [in] omega_r             Real part of the Rabi coupling.
     	@param [in] omega_i             Imaginary part of the Rabi coupling.
     	@param [in] angular_velocity    The frame of reference rotates with this angular velocity.
@@ -489,8 +487,8 @@ public:
     Hamiltonian2Component(Lattice *grid, Potential *potential = 0,
                           Potential *potential_b = 0,
                           double mass = 1., double mass_b = 1.,
-                          double coupling_a = 0., double LeeHuangYang_coupling_a = 0., double coupling_ab = 0.,
-                          double coupling_b = 0., double LeeHuangYang_coupling_b = 0.,
+                          double coupling_a = 0.,/* double LeeHuangYang_coupling_a = 0.,*/ double coupling_ab = 0.,
+                          double coupling_b = 0.,/* double LeeHuangYang_coupling_b = 0.,*/
                           double omega_r = 0, double omega_i = 0,
                           double angular_velocity = 0.,
                           double rot_coord_x = 0,
