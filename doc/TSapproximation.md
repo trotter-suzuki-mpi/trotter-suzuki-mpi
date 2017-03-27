@@ -10,7 +10,7 @@ MPI structure
 =============
 The evolution of the wave function can be distributed among independent processes, using the MPI framework. The lattice is divided in a number of smaller lattices, called tiles, equal to the number of available processes. Each process evolves the part of the wave function defined over the tile it has. In particular, each tile possesses points shared between neighbouring processes (cyan region) and points that are not shared (orange region). The former are needed to ensure stability of the evolution of the wave function inside the orange region. The integer numbers 'start-x', 'inner-start-x', ecc. define the size of the regions and they are calculated by the function 'calculate-borders'. Each point of the tile is mapped to a point of the physical space by the function 'map-lattice-to-coordinate-space', which is described in the next section.
 
-![Example of a two-dimensional tile of a single process. Points in the cyan region (halo) are shared among neighbouring processes to ensure stability of the evolution of the wave function inside the orange region.](@ref disegno.png)
+![Example of a two-dimensional tile of a single process. Points in the cyan region (halo) are shared among neighbouring processes to ensure stability of the evolution of the wave function inside the orange region.](@ref tile.png)
 
 Mapping coordinates of the lattice to the physical space
 --------------------------------------------------------
