@@ -733,17 +733,25 @@ BesselState::BesselState(Lattice1D *_grid, int _angular_momentum, int _zeros, do
     zero = bessel_j_zeros(angular_momentum, zeros - 1);
 
     // calculate normalization factor
+    normalization = 1.;
     double integral = 0;
-    double val = 0;
-	int num = 1.e5;
-	for (double i = 0; i < num; i++) {
-		val = jn(int(angular_momentum), i * zero / double(num));
-		integral += val * val;
-	}
-	integral *= grid->length_x / double(num);
-    normalization = sqrt(norm / integral);
     double x_r = 0;
-	for (int x = 0; x < grid->dim_x; x++) {
+	for (int x = grid->inner_start_x - grid->start_x; x < grid->inner_end_x - grid->start_x; x++) {
+		map_lattice_to_coordinate_space(grid, x, &x_r);
+		tmp = bessel_state1D(x_r);
+		integral += real(conj(tmp) * tmp);
+	}
+#ifdef HAVE_MPI
+    double *integral_mpi = new double[grid->mpi_procs];
+    MPI_Allgather(&integral, 1, MPI_DOUBLE, integral_mpi, 1, MPI_DOUBLE, grid->cartcomm);
+    integral = 0;
+    for(int i = 0; i < grid->mpi_procs; i++) {
+    	integral += integral_mpi[i];
+    }
+    delete [] integral_mpi;
+#endif
+    normalization = sqrt(norm / (integral * grid->length_x / (grid->global_no_halo_dim_x - 1)));
+    for (int x = 0; x < grid->dim_x; x++) {
 		map_lattice_to_coordinate_space(grid, x, &x_r);
 		tmp = bessel_state1D(x_r);
 		p_real[x] = real(tmp);
@@ -761,16 +769,26 @@ BesselState::BesselState(Lattice2D *_grid, int _angular_momentum, int _zeros, in
     zero = bessel_j_zeros(angular_momentum, zeros - 1);
 
     // calculate normalization factor
+    normalization = 1.;
     double integral = 0;
-    double val = 0;
-	int num = 1.e5;
-	for (double i = 0; i < num; i++) {
-		val = jn(int(angular_momentum), i * zero / double(num));
-		integral += val * val;
-	}
-	integral *= grid->length_x / double(num);
-    normalization = sqrt(norm / (integral * grid->length_y) * (n_y == 0 ? 1. : 2.));
     double x_r = 0, y_r = 0;
+    for (int y = grid->inner_start_y - grid->start_y; y < grid->inner_end_y - grid->start_y; y++) {
+		for (int x = grid->inner_start_x - grid->start_x; x < grid->inner_end_x - grid->start_x; x++) {
+			map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
+			tmp = bessel_state2D(x_r, y_r);
+			integral += real(conj(tmp) * tmp);
+		}
+	}
+#ifdef HAVE_MPI
+    double *integral_mpi = new double[grid->mpi_procs];
+    MPI_Allgather(&integral, 1, MPI_DOUBLE, integral_mpi, 1, MPI_DOUBLE, grid->cartcomm);
+    integral = 0;
+    for(int i = 0; i < grid->mpi_procs; i++) {
+    	integral += integral_mpi[i];
+    }
+    delete [] integral_mpi;
+#endif
+    normalization = sqrt(norm / (integral * grid->delta_y * grid->length_x / (grid->global_no_halo_dim_x - 1)));
     for (int y = 0; y < grid->dim_y; y++) {
         for (int x = 0; x < grid->dim_x; x++) {
         	map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);

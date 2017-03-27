@@ -454,7 +454,7 @@ void Solver::calculate_energy_expected_values(void) {
     MPI_Allgather(&intra_species_energy[0], 1, MPI_DOUBLE, intra_species_energy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
     MPI_Allgather(&LeeHuangYang_energy, 1, MPI_DOUBLE, LeeHuangYang_energy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
 
-    norm2_kin[0] = 0
+    norm2_kin[0] = 0;
     norm2[0] = 0;
     kinetic_energy[0] = 0;
     potential_energy[0] = 0;
@@ -498,7 +498,7 @@ void Solver::calculate_energy_expected_values(void) {
         MPI_Allgather(&inter_species_energy, 1, MPI_DOUBLE, inter_species_energy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
         MPI_Allgather(&rabi_energy, 1, MPI_DOUBLE, rabi_energy_mpi, 1, MPI_DOUBLE, grid->cartcomm);
 
-        norm2_kin[1] = 0
+        norm2_kin[1] = 0;
         norm2[1] = 0;
         kinetic_energy[1] = 0;
         potential_energy[1] = 0;
@@ -554,7 +554,7 @@ void Solver::calculate_energy_expected_values(void) {
         tot_potential_energy = potential_energy[0] + potential_energy[1];
         tot_rotational_energy = rotational_energy[0] + rotational_energy[1];
         tot_intra_species_energy = intra_species_energy[0] + intra_species_energy[1];
-        norm2[1] *= delta_x * delta_y;
+        norm2[1] *= delta_y * grid->length_x / (grid->global_no_halo_dim_x - (grid->coordinate_system == "Cylindrical" ? 1 : 0));
     }
     norm2[0] *= delta_y * grid->length_x / (grid->global_no_halo_dim_x - (grid->coordinate_system == "Cylindrical" ? 1 : 0));
     energy_expected_values_updated = true;

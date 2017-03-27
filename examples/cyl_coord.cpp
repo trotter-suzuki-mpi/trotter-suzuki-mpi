@@ -26,10 +26,10 @@
 #include "trottersuzuki.h"
 
 #define IMAG_TIME false    //If true performs imaginary time evolution
-#define EDGE_LENGTH 10     //Physical length of the grid's edge
-#define DIM 10         //Number of dots of the grid's edge
+#define EDGE_LENGTH 50     //Physical length of the grid's edge
+#define DIM 50         //Number of dots of the grid's edge
 #define DELTA_T 1.e-2     //Time step evolution
-#define ITERATIONS 1000     //Number of iterations before calculating expected values
+#define ITERATIONS 10000     //Number of iterations before calculating expected values
 #define KERNEL_TYPE "cpu"
 #define SNAPSHOTS 10      //Number of times the expected values are calculated
 #define SNAP_PER_STAMP 5    //The particles density and phase of the wave function are stamped every "SNAP_PER_STAMP" expected values calculations
@@ -52,7 +52,8 @@ int main(int argc, char** argv) {
 #endif
 
     //set lattice
-    Lattice2D *grid = new Lattice2D(DIM, length,10, 10, false, true,0., "Cylindrical");
+    Lattice2D *grid = new Lattice2D(DIM, length,10, 50, false, true,0., "Cylindrical");
+    //Lattice1D *grid = new Lattice1D(DIM, length, false, "Cylindrical");
     //set initial state
     State *state;
     if (IMAG_TIME) {
@@ -96,7 +97,7 @@ int main(int argc, char** argv) {
 
     //get and stamp phase
     fileprefix.str("");
-    fileprefix << dirname << "/" << 0;
+    fileprefix << dirname << "/" << 0 << "-" << grid->mpi_rank;
     state->write_phase(fileprefix.str());
 
     //get and stamp particles density
@@ -143,7 +144,7 @@ int main(int argc, char** argv) {
         if((count_snap + 1) % SNAP_PER_STAMP == 0.) {
             //get and stamp phase
             fileprefix.str("");
-            fileprefix << dirname << "/" << ITERATIONS * (count_snap + 1);
+            fileprefix << dirname << "/" << ITERATIONS * (count_snap + 1) << "-" << grid->mpi_rank;
             state->write_phase(fileprefix.str());
 
             //get and stamp particles density
@@ -153,7 +154,7 @@ int main(int argc, char** argv) {
     out.close();
 
     if (grid->mpi_rank == 0) {
-        cout << "TROTTER " << DIM << "x" << DIM << " kernel:" << KERNEL_TYPE << " np:" << grid->mpi_procs << " time:" << tot_time << " usec" << endl;
+        cout << "TROTTER " << DIM << "x" << 10 << " kernel:" << KERNEL_TYPE << " np:" << grid->mpi_procs << " time:" << tot_time << " usec" << endl;
     }
     delete solver;
     delete hamiltonian;

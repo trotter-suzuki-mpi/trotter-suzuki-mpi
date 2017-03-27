@@ -330,8 +330,8 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
     coupling_const[3] = 0.5 * hamiltonian->omega_r;
     coupling_const[4] = 0.5 * hamiltonian->omega_i;
     LeeHuangYang_coupling = new double [2];
-    LeeHuangYang_coupling[0] = hamiltonian->LeeHuangYang_coupling_a  * delta_t;
-	LeeHuangYang_coupling[1] = hamiltonian->LeeHuangYang_coupling_b  * delta_t;
+    //LeeHuangYang_coupling[0] = hamiltonian->LeeHuangYang_coupling_a  * delta_t;
+	//LeeHuangYang_coupling[1] = hamiltonian->LeeHuangYang_coupling_b  * delta_t;
     periods = grid->periods;
     coordinate_system = grid->coordinate_system;
     angular_momentum[0] = state1->angular_momentum;
