@@ -268,6 +268,27 @@ private:
 
 };
 
+extern "C" {
+__global__ void cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y,
+                          double aH, double bH, double aV, double bV, double coupling_a, double alpha_x, double alpha_y, const double * __restrict__ external_pot_real, const double * __restrict__ external_pot_imag,
+                          const double * __restrict__ p_real, const double * __restrict__ p_imag,
+                          double * __restrict__ p2_real, double * __restrict__ p2_imag,
+                          int inner, int horizontal, int vertical);
+__global__ void imag_cc2kernel(size_t tile_width, size_t tile_height, size_t offset_x, size_t offset_y, size_t halo_x, size_t halo_y,
+                               double aH, double bH, double aV, double bV, double coupling_a, double alpha_x, double alpha_y, const double * __restrict__ external_pot_real, const double * __restrict__ external_pot_imag,
+                               const double * __restrict__ p_real, const double * __restrict__ p_imag,
+                               double * __restrict__ p2_real, double * __restrict__ p2_imag,
+                               int inner, int horizontal, int vertical);
+__global__ void gpu_rabi_coupling_real(size_t width, size_t height,
+                                       double cc, double cs_r, double cs_i,
+                                       double *p_real, double *p_imag,
+                                       double *pb_real, double *pb_imag);
+__global__ void gpu_rabi_coupling_imag(size_t width, size_t height,
+                                       double cc, double cs_r, double cs_i,
+                                       double *p_real, double *p_imag,
+                                       double *pb_real, double *pb_imag);
+}
+
 #endif // CUDA
 
 #endif // __KERNEL_H
