@@ -181,10 +181,11 @@ State::State(Lattice *_grid, int _angular_momentum, double *_p_real, double *_p_
     }
 }
 
-State::State(const State &obj): grid(obj.grid), expected_values_updated(obj.expected_values_updated), self_init(obj.self_init),
+State::State(const State &obj): grid(obj.grid), angular_momentum(obj.angular_momentum),
+    expected_values_updated(obj.expected_values_updated), self_init(obj.self_init),
     mean_X(obj.mean_X), mean_XX(obj.mean_XX), mean_Y(obj.mean_Y), mean_YY(obj.mean_YY),
     mean_Px(obj.mean_Px), mean_PxPx(obj.mean_PxPx), mean_Py(obj.mean_Py), mean_PyPy(obj.mean_PyPy),
-    norm2(obj.norm2), angular_momentum(obj.angular_momentum) {
+    norm2(obj.norm2) {
     p_real = new double[grid->dim_x * grid->dim_y];
     p_imag = new double[grid->dim_x * grid->dim_y];
     for (int y = 0; y < grid->dim_y; y++) {
@@ -566,8 +567,9 @@ double State::get_expected_value(string _operator) {
         return mean_PyPy;
     }
     else {
-        std::cout << "The expected value of the operator " << _operator << " is not calculated.\n"
+        std::cerr << "The expected value of the operator " << _operator << " is not calculated.\n"
                   << "Available operators are: L_z, X, X^2, Y, Y^2, P_x, P_x^2, P_y, P_y^2.\n";
+        return std::numeric_limits<double>::quiet_NaN();
     }
 }
 

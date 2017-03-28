@@ -356,4 +356,5 @@ double bessel_j_zeros(int l, int x) {
     else {
         my_abort("bessel_j_zeros takes integer numbers from 0 to 19");
     }
+    return std::numeric_limits<double>::quiet_NaN();
 }

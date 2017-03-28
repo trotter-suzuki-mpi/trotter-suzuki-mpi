@@ -293,8 +293,8 @@ void Solver::calculate_energy_expected_values(void) {
     if (!single_component)
         cost_E_b = -1. / (2. * mass_b);
 
-    double cost_rot_x = angular_velocity * delta_y / delta_x;
-    double cost_rot_y = angular_velocity * delta_x / delta_y;
+    // double cost_rot_x = angular_velocity * delta_y / delta_x;
+    // double cost_rot_y = angular_velocity * delta_x / delta_y;
 
     complex<double> const_1 = -1. / 12., const_2 = 4. / 3., const_3 = -2.5;
     complex<double> derivate1_1 = 1. / 6., derivate1_2 = - 1., derivate1_3 = 0.5, derivate1_4 = 1. / 3.;

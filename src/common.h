@@ -18,6 +18,7 @@
 
 #ifndef __COMMON_H
 #define __COMMON_H
+#include <limits>
 #include "trottersuzuki.h"
 
 void print_matrix(string filename, double * matrix, size_t stride, size_t width, size_t height);
