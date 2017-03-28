@@ -23,11 +23,13 @@ class Lattice1D(_Lattice1D):
             X-axis of the lattice
         """
         if self.coordinate_system == "cartesian":
-            x_axis = np.arange(self.global_no_halo_dim_x) - self.global_no_halo_dim_x * 0.5 + 0.5
+            x_axis = np.arange(self.global_no_halo_dim_x) - \
+                self.global_no_halo_dim_x * 0.5 + 0.5
             x_axis *= self.delta_x
 
         if self.coordinate_system == "cylindrical":
-            x_axis = (np.arange(self.global_no_halo_dim_x - 1) + 0.5) * self.delta_x
+            x_axis = (np.arange(self.global_no_halo_dim_x - 1) +
+                      0.5) * self.delta_x
 
         return x_axis
 
@@ -36,7 +38,7 @@ class Lattice2D(_Lattice2D):
 
     def __init__(self, dim_x, length_x, dim_y=None, length_y=None,
                  periodic_x_axis=False, periodic_y_axis=False,
-                 angular_velocity=0., coordinate_system = "cartesian"):
+                 angular_velocity=0., coordinate_system="cartesian"):
         if dim_y is None:
             dim_y = dim_x
         if length_y is None:
@@ -55,11 +57,13 @@ class Lattice2D(_Lattice2D):
             X-axis of the lattice
         """
         if self.coordinate_system == "cartesian":
-            x_axis = np.arange(self.global_no_halo_dim_x) - self.global_no_halo_dim_x * 0.5 + 0.5
+            x_axis = np.arange(self.global_no_halo_dim_x) - \
+                self.global_no_halo_dim_x * 0.5 + 0.5
             x_axis *= self.delta_x
 
         if self.coordinate_system == "cylindrical":
-            x_axis = (np.arange(self.global_no_halo_dim_x - 1) + 0.5) * self.delta_x
+            x_axis = (np.arange(self.global_no_halo_dim_x - 1) +
+                      0.5) * self.delta_x
 
         return x_axis
 
@@ -72,7 +76,8 @@ class Lattice2D(_Lattice2D):
         * `y_axis` : numpy array
             Y-axis of the lattice
         """
-        y_axis = np.arange(self.global_no_halo_dim_y) - self.global_no_halo_dim_y * 0.5 + 0.5
+        y_axis = np.arange(self.global_no_halo_dim_y) - \
+            self.global_no_halo_dim_y * 0.5 + 0.5
         y_axis *= self.delta_y
 
         return y_axis
@@ -87,7 +92,7 @@ class State(_State):
         Parameters
         ----------
         * `state_function` : python function
-            Python function defining the wave function of the state :math:`\psi`.
+          Python function defining the wave function of the state :math:`\psi`.
 
         Notes
         -----
@@ -101,7 +106,7 @@ class State(_State):
             >>> def wave_function(x,y):  # Define a flat wave function
             >>>     return 1.
             >>> state = ts.State(grid)  # Create the system's state
-            >>> state.ini_state(wave_function)  # Initialize the wave function of the state
+            >>> state.ini_state(wave_function)  # Initialize the wave function
         """
         try:
             state_function(0)
@@ -167,11 +172,13 @@ class GaussianState(_GaussianState):
         Notes
         -----
         Useful, for instance, to imprint solitons and vortices on a condensate.
-        Generally, it performs a transformation of the state whose wave function becomes
+        Generally, it performs a transformation of the state whose wave
+        function becomes
 
         .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
 
-        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.
+        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the
+        initial wave function.
 
         Example
         -------
@@ -202,11 +209,13 @@ class SinusoidState(_SinusoidState):
         Notes
         -----
         Useful, for instance, to imprint solitons and vortices on a condensate.
-        Generally, it performs a transformation of the state whose wave function becomes
+        Generally, it performs a transformation of the state whose wave
+        function becomes
 
         .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
 
-        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.
+        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the
+        initial wave function.
 
         Example
         -------
@@ -237,11 +246,13 @@ class ExponentialState(_ExponentialState):
         Notes
         -----
         Useful, for instance, to imprint solitons and vortices on a condensate.
-        Generally, it performs a transformation of the state whose wave function becomes
+        Generally, it performs a transformation of the state whose wave
+        function becomes
 
         .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
 
-        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.
+        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the
+        initial wave function.
 
         Example
         -------
@@ -272,11 +283,13 @@ class BesselState(_BesselState):
         Notes
         -----
         Useful, for instance, to imprint solitons and vortices on a condensate.
-        Generally, it performs a transformation of the state whose wave function becomes
+        Generally, it performs a transformation of the state whose wave
+        function becomes
 
         .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
 
-        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.
+        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the
+        initial wave function.
 
         Example
         -------
@@ -313,7 +326,7 @@ class Potential(_Potential):
             >>> def external_potential_function(x,y):
             >>>     return 1.
             >>> potential = ts.Potential(grid)  # Create the external potential
-            >>> potential.init_potential(external_potential_function)  # Initialize the external potential
+            >>> potential.init_potential(external_potential_function)
 
         """
         try:
@@ -351,6 +364,7 @@ class Potential(_Potential):
                 self.exp_potential_matrix[y, x] = \
                     np.exp(-1j*delta_t*self.pot_function(x1, y1, t))
         return self.exp_potential_matrix
+
 
 class Solver(_Solver):
 

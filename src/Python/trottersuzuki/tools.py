@@ -1,10 +1,11 @@
 from __future__ import print_function, division
-import numpy as np
 import math
+import numpy as np
 
 
 def map_lattice_to_coordinate_space(grid, x, y=None):
-    """Maps the lattice coordinate to the coordinate space depending on the coordinate system.
+    """Maps the lattice coordinate to the coordinate space depending on the
+    coordinate system.
 
     Parameters
     ----------
@@ -21,10 +22,10 @@ def map_lattice_to_coordinate_space(grid, x, y=None):
     else:
         _y = y
     if grid.coordinate_system == "cartesian":
-        idy = grid.start_y * grid.delta_y + 0.5 * grid.delta_y + _y * grid.delta_y
+        idy = grid.start_y*grid.delta_y + 0.5*grid.delta_y + _y*grid.delta_y
         x_c = grid.global_no_halo_dim_x * grid.delta_x * 0.5
         y_c = grid.global_no_halo_dim_y * grid.delta_y * 0.5
-        idx = grid.start_x * grid.delta_x + 0.5 * grid.delta_x + x * grid.delta_x
+        idx = grid.start_x*grid.delta_x + 0.5*grid.delta_x + x*grid.delta_x
         if idx - x_c < -grid.length_x*0.5:
             idx += grid.length_x
         if idx - x_c > grid.length_x*0.5:
@@ -37,8 +38,7 @@ def map_lattice_to_coordinate_space(grid, x, y=None):
             return idx - x_c
         else:
             return idx - x_c, idy - y_c
-
-    if grid.coordinate_system == "cylindrical":
+    elif grid.coordinate_system == "cylindrical":
         idy = grid.delta_y * (grid.start_y + 0.5 + _y)
         idx = grid.delta_x * (grid.start_x - 0.5 + x)
         y_c = grid.global_no_halo_dim_y * grid.delta_y * 0.5
@@ -53,56 +53,58 @@ def map_lattice_to_coordinate_space(grid, x, y=None):
 
 
 def imprint(state, function):
-        """
-        Multiply the wave function of the state by the function provided.
+    """Multiply the wave function of the state by the function provided.
 
-        Parameters
-        ----------
-        * `function` : python function
-            Function to be printed on the state.
+    Parameters
+    ----------
+    * `function` : python function
+        Function to be printed on the state.
 
-        Notes
-        -----
-        Useful, for instance, to imprint solitons and vortices on a condensate.
-        Generally, it performs a transformation of the state whose wave function becomes
+    Notes
+    -----
+    Useful, for instance, to imprint solitons and vortices on a condensate.
+    Generally, it performs a transformation of the state whose wave function
+    becomes
 
-        .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
+    .. math:: \psi(x,y)' = f(x,y) \psi(x,y)
 
-        being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial wave function.
+    being :math:`f(x,y)` the input function and :math:`\psi(x,y)` the initial
+    wave function.
 
-        Example
-        -------
+    Example
+    -------
 
-            >>> import trottersuzuki as ts  # import the module
-            >>> grid = ts.Lattice2D()  # Define the simulation's geometry
-            >>> def vortex(x,y):  # Vortex function
-            >>>     z = x + 1j*y
-            >>>     angle = np.angle(z)
-            >>>     return np.exp(1j * angle)
-            >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
-            >>> state.imprint(vortex)  # Imprint a vortex on the state
-        """
-        try:
-            function(0)
+        >>> import trottersuzuki as ts  # import the module
+        >>> grid = ts.Lattice2D()  # Define the simulation's geometry
+        >>> def vortex(x,y):  # Vortex function
+        >>>     z = x + 1j*y
+        >>>     angle = np.angle(z)
+        >>>     return np.exp(1j * angle)
+        >>> state = ts.GaussianState(grid, 1.)  # Create the system's state
+        >>> state.imprint(vortex)  # Imprint a vortex on the state
+    """
+    try:
+        function(0)
 
-            def _function(x, y):
-                return function(x)
-        except TypeError:
-            _function = function
+        def _function(x, y):
+            return function(x)
+    except TypeError:
+        _function = function
 
-        matrix = np.zeros((state.grid.dim_y, state.grid.dim_x),
-                          dtype=np.complex128)
+    matrix = np.zeros((state.grid.dim_y, state.grid.dim_x),
+                      dtype=np.complex128)
 
-        for y in range(state.grid.dim_y):
-            for x in range(state.grid.dim_x):
-                matrix[y, x] = _function(*map_lattice_to_coordinate_space(state.grid, x, y))
+    for y in range(state.grid.dim_y):
+        for x in range(state.grid.dim_x):
+            matrix[y, x] = _function(*map_lattice_to_coordinate_space(state.grid, x, y))
 
-        state.imprint_matrix(matrix.real, matrix.imag)
+    state.imprint_matrix(matrix.real, matrix.imag)
 
 
 def get_vortex_position(grid, state, approx_cloud_radius=0.):
     """
-    Get the position of a single vortex in the quantum state (only for cartesian coordinates).
+    Get the position of a single vortex in the quantum state (only for
+    Cartesian coordinates).
 
     Parameters
     ----------
@@ -130,7 +132,7 @@ def get_vortex_position(grid, state, approx_cloud_radius=0.):
         >>> import trottersuzuki as ts  # import the module
         >>> import numpy as np
         >>> grid = ts.Lattice2D()  # Define the simulation's geometry
-        >>> state = ts.GaussianState(grid, 1.)  # Create a state with gaussian wave function
+        >>> state = ts.GaussianState(grid, 1.)  # Create a Gaussian state
         >>> def vortex_a(x, y):  # Define the vortex to be imprinted
         >>>     z = x + 1j*y
         >>>     angle = np.angle(z)
