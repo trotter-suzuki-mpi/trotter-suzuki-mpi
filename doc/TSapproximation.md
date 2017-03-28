@@ -1,5 +1,5 @@
-Trotter-Suzuki approximation
-============================
+Mathematical Details
+====================
 What follows is a brief description of the approximation used to calculate the evolution of the wave function. Formulas of the evolution operator are provided.
 
 Lattice
