@@ -57,6 +57,7 @@ lib: $(LIBOBJS)
 python:
 	mkdir -p ./Python/trottersuzuki/src
 	cp ../COPYING ./Python
+	cp ../doc/changes.md ./Python/doc/source/changes.rst
 	cp ./common.h ./Python/trottersuzuki/src/
 	cp ./kernel.h ./Python/trottersuzuki/src/
 	cp ./trottersuzuki.h ./Python/trottersuzuki/src/
