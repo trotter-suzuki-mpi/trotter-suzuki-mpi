@@ -101,7 +101,7 @@ If the library was compiled with CUDA support, it is enough to change a single l
      Solver *solver = new Solver(grid, state, hamiltonian, delta_t, "gpu");
 ~~~~~~~~~~~~~~~
 
-The compilation is the same as above. For using multiple GPUs, compile the code with MPI and launch one process for each GPU.
+The compilation is the same as above. For using multiple GPUs, compile the code with MPI and launch one process for each GPU. [Not all functionality](https://github.com/trotter-suzuki-mpi/trotter-suzuki-mpi/issues/48) is available in the GPU kernel.
 
 **Distributed version**
 

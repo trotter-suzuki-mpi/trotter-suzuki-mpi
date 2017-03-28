@@ -127,6 +127,15 @@ We are left with the creation of the last object: the ``Solver`` class gathers a
     delta_t = 1e-3  # Physical time of a single iteration
     solver = ts.Solver(grid, state, hamiltonian, delta_t)  # Creating the solver object
 
+If you want to solve the problem on the GPU, request the matching kernel:
+
+.. code:: python
+
+    delta_t = 1e-3  # Physical time of a single iteration
+    solver = ts.Solver(grid, state, hamiltonian, delta_t, kernel_type="gpu")
+
+Note that `not all functionality is available <https://github.com/trotter-suzuki-mpi/trotter-suzuki-mpi/issues/48>`_ in the GPU kernel.
+
 Finally we can perform both real-time and imaginary-time evolution using
 the method ``evolve``:
 
