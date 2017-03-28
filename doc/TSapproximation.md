@@ -10,7 +10,7 @@ MPI structure
 =============
 The evolution of the wave function can be distributed among independent processes, using the MPI framework. The lattice is divided in a number of smaller lattices, called tiles, equal to the number of available processes. Each process evolves the part of the wave function defined over the tile it has. In particular, each tile possesses points shared between neighbouring processes (cyan region) and points that are not shared (orange region). The former are needed to ensure stability of the evolution of the wave function inside the orange region. The integer numbers 'start-x', 'inner-start-x', ecc. define the size of the regions and they are calculated by the function 'calculate-borders'. Each point of the tile is mapped to a point of the physical space by the function 'map-lattice-to-coordinate-space', which is described in the next section.
 
-![Example of a two-dimensional tile of a single process. Points in the cyan region (halo) are shared among neighbouring processes to ensure stability of the evolution of the wave function inside the orange region.](@ref tile.png)
+![Example of a two-dimensional tile of a single process. Points in the cyan region (halo) are shared among neighbouring processes to ensure stability of the evolution of the wave function inside the orange region.](tile.png)
 
 Mapping coordinates of the lattice to the physical space
 --------------------------------------------------------
@@ -127,7 +127,7 @@ While, for imaginary time evolution:
 \cos\beta & \alpha\sin\beta \\
 -\frac{1}{\alpha}\sin\beta & \cos\beta \end{array} \right).
 \f}
-with \f$\beta = \frac{\Delta t}{8m \Delta r \sqrt{r_1r_2}}\f$, \f$\alpha = \sqrt{\frac{r_2}{r_1}}\f$ and \f$r_1, r_2 > 0\f$. However, the block matrix that contains \f$1/r_0\f$ has a different exponentiation, since \f$r_0 < 0 \f$. 
+with \f$\beta = \frac{\Delta t}{8m \Delta r \sqrt{r_1r_2}}\f$, \f$\alpha = \sqrt{\frac{r_2}{r_1}}\f$ and \f$r_1, r_2 > 0\f$. However, the block matrix that contains \f$1/r_0\f$ has a different exponentiation, since \f$r_0 < 0 \f$.
 
 In particular \f$r_0 = - r_1\f$ and for the real-time evolution, the block is of the form
 \f{equation}{
@@ -195,7 +195,7 @@ For the trotter-suzuki approximation, the exponentiation is done separately for 
 - First term, real-time evolution, \f$\beta = \frac{\Delta t \omega x}{2\Delta y}\f$
 
 \f{equation}{
-\exp[-\Delta t \omega x\partial_y] = 
+\exp[-\Delta t \omega x\partial_y] =
 \exp\left[-\beta
 \left(\begin{array}{cc}
 0 & 1 \\
@@ -207,7 +207,7 @@ For the trotter-suzuki approximation, the exponentiation is done separately for 
 
 - First term, imaginary-time evolution, \f$\beta = \frac{\Delta t \omega x}{2\Delta y}\f$
 \f{equation}{
-\exp[i\Delta t \omega x\partial_y] = 
+\exp[i\Delta t \omega x\partial_y] =
 \exp\left[-\beta
 \left(\begin{array}{cc}
 0 & 1 \\
@@ -219,7 +219,7 @@ For the trotter-suzuki approximation, the exponentiation is done separately for 
 
 - Second term, real-time evolution, \f$\beta = \frac{\Delta t \omega y}{2\Delta x}\f$
 \f{equation}{
-\exp[\Delta t \omega y\partial_x] = 
+\exp[\Delta t \omega y\partial_x] =
 \exp\left[-\beta
 \left(\begin{array}{cc}
 0 & 1 \\
@@ -231,7 +231,7 @@ For the trotter-suzuki approximation, the exponentiation is done separately for 
 
 - Second term, imaginary-time evolution, \f$\beta = \frac{\Delta t \omega y}{2\Delta x}\f$
 \f{equation}{
-\exp[-i\Delta t \omega y\partial_x] = 
+\exp[-i\Delta t \omega y\partial_x] =
 \exp\left[-\beta
 \left(\begin{array}{cc}
 0 & 1 \\
