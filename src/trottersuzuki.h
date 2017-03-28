@@ -175,6 +175,50 @@ protected:
 };
 
 /**
+ * \brief This class defines a quantum state with Bessel function of the first kind, along the radial coordinate.
+ *
+ * This class is a child of State class. The wave function, along the y-axis, is sinusoidal.
+ */
+class BesselState: public State {
+public:
+	/**
+		Construct the quantum state with bessel function of the first kind, along the radial coordinate.
+
+		@param [in] grid             Lattice object.
+		@param [in] angular_momentum Angular momentum.
+		@param [in] zeros            Number of zeros points along the radial axis.
+		@param [in] norm             Squared norm of the quantum state.
+		@param [in] phase            Relative phase of the wave function.
+		@param [in] p_real           Pointer to the real part of the wave function.
+		@param [in] p_imag           Pointer to the imaginary part of the wave function.
+	 */
+	BesselState(Lattice1D *grid, int angular_momentum = 0, int zeros = 1, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
+
+    /**
+        Construct the quantum state with bessel function of the first kind, along the radial coordinate.
+
+        @param [in] grid             Lattice object.
+        @param [in] angular_momentum Angular momentum.
+        @param [in] zeros            Number of zeros points along the radial axis.
+        @param [in] n_y              Second quantum number for the sinusoid along the y-axis.
+        @param [in] norm             Squared norm of the quantum state.
+        @param [in] phase            Relative phase of the wave function.
+        @param [in] p_real           Pointer to the real part of the wave function.
+        @param [in] p_imag           Pointer to the imaginary part of the wave function.
+     */
+    BesselState(Lattice2D *grid, int angular_momentum = 0, int zeros = 1, int n_y = 0, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
+
+private:
+    int angular_momentum;   ///< Angular momentum.
+    int zeros, n_y;    ///< First and second quantum number.
+    double zero;    ///< radial coordinate of the last zero.
+    double normalization;    ///< Variable used for the normalization of the state.
+    double norm, phase;    ///< Norm and phase of the state.
+    complex<double> bessel_state1D(double x);    ///< Bessel function of the first kind.
+    complex<double> bessel_state2D(double x, double y);    ///< Bessel function of the first kind.
+};
+
+/**
  * \brief This class defines a quantum state with exponential like wave function.
  *
  * This class is a child of State class.
@@ -295,50 +339,6 @@ private:
     int n_x, n_y;    ///< First and second quantum number.
     double norm, phase;    ///< Norm and phase of the state.
     complex<double> sinusoid_state(double x, double y);    ///< Sinusoidal function.
-};
-
-/**
- * \brief This class defines a quantum state with bessel function of the first kind, along the radial coordinate.
- *
- * This class is a child of State class. The wave function, along the y-axis, is sinusoidal.
- */
-class BesselState: public State {
-public:
-	/**
-		Construct the quantum state with bessel function of the first kind, along the radial coordinate.
-
-		@param [in] grid             Lattice object.
-		@param [in] angular_momentum Angular momentum.
-		@param [in] zeros            Number of zeros points along the radial axis.
-		@param [in] norm             Squared norm of the quantum state.
-		@param [in] phase            Relative phase of the wave function.
-		@param [in] p_real           Pointer to the real part of the wave function.
-		@param [in] p_imag           Pointer to the imaginary part of the wave function.
-	 */
-	BesselState(Lattice1D *grid, int angular_momentum = 0, int zeros = 1, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
-
-    /**
-        Construct the quantum state with bessel function of the first kind, along the radial coordinate.
-
-        @param [in] grid             Lattice object.
-        @param [in] angular_momentum Angular momentum.
-        @param [in] zeros            Number of zeros points along the radial axis.
-        @param [in] n_y              Second quantum number for the sinusoid along the y-axis.
-        @param [in] norm             Squared norm of the quantum state.
-        @param [in] phase            Relative phase of the wave function.
-        @param [in] p_real           Pointer to the real part of the wave function.
-        @param [in] p_imag           Pointer to the imaginary part of the wave function.
-     */
-    BesselState(Lattice2D *grid, int angular_momentum = 0, int zeros = 1, int n_y = 0, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
-
-private:
-    int angular_momentum;   ///< Angular momentum.
-    int zeros, n_y;    ///< First and second quantum number.
-    double zero;    ///< radial coordinate of the last zero.
-    double normalization;    ///< Variable used for the normalization of the state.
-    double norm, phase;    ///< Norm and phase of the state.
-    complex<double> bessel_state1D(double x);    ///< Bessel function of the first kind.
-    complex<double> bessel_state2D(double x, double y);    ///< Bessel function of the first kind.
 };
 
 /**

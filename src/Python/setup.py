@@ -93,9 +93,10 @@ if sys.platform.startswith('win') and os.path.exists(win_cuda_dir):
                           sources=['trottersuzuki/trottersuzuki_wrap.cxx'],
                           extra_objects=['trottersuzuki/src/common.obj',
                                          'trottersuzuki/src/cpukernel.obj',
-                                         'trottersuzuki/src/cpueuclidean.obj',
+                                         'trottersuzuki/src/cpucartesian.obj',
+                                         'trottersuzuki/src/cpucylindrical.obj',
                                          'trottersuzuki/src/gpukernel.obj',
-                                         'trottersuzuki/src/gpueuclidean.obj',
+                                         'trottersuzuki/src/gpucartesian.obj',
                                          'trottersuzuki/src/model.obj',
                                          'trottersuzuki/src/solver.obj'],
                           define_macros=[('CUDA', None)],
@@ -117,7 +118,8 @@ else:
             libraries = ['gomp']
     sources_files = ['trottersuzuki/src/common.cpp',
                      'trottersuzuki/src/cpukernel.cpp',
-                     'trottersuzuki/src/cpueuclidean.cpp',
+                     'trottersuzuki/src/cpucartesian.cpp',
+                     'trottersuzuki/src/cpucylindrical.cpp',
                      'trottersuzuki/src/model.cpp',
                      'trottersuzuki/src/solver.cpp',
                      'trottersuzuki/trottersuzuki_wrap.cxx']
@@ -129,7 +131,7 @@ else:
                           )
     if CUDA is not None:
         ts_module.sources += ['trottersuzuki/src/gpukernel.cu',
-                              'trottersuzuki/src/gpueuclidean.cu']
+                              'trottersuzuki/src/gpucartesian.cu']
         ts_module.define_macros = [('CUDA', None)]
         ts_module.include_dirs.append(CUDA['include'])
         ts_module.library_dirs = [CUDA['lib']]

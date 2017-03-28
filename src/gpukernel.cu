@@ -17,7 +17,6 @@
  */
 
 #undef _GLIBCXX_ATOMIC_BUILTINS
-#include <iostream>
 #include <stdio.h>
 #include <sstream>
 #include <vector>

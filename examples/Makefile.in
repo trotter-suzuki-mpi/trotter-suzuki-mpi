@@ -35,7 +35,7 @@ srcdir	 = ./../src
 CXXFLAGS+=-L$(srcdir)/
 LIBS=-ltrottersuzuki
 ifdef CUDA_LIBS
-	LIBOBJS+=$(srcdir)/gpueuclidean.cu.co $(srcdir)/gpukernel.cu.co
+	LIBOBJS+=$(srcdir)/gpucartesian.cu.co $(srcdir)/gpukernel.cu.co
 endif
 
 BOX_OBJS_3 = $(LIBOBJS) exponential_initial_state.o
