@@ -1,10 +1,3 @@
-#undef _GLIBCXX_ATOMIC_BUILTINS
-#include <stdio.h>
-#include <sstream>
-#include <vector>
-#include <map>
-#include <cassert>
-#include "common.h"
 #include "kernel.h"
 
 __global__ void gpu_rabi_coupling_real(size_t width, size_t height,

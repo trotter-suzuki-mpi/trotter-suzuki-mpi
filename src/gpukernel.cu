@@ -15,12 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
-#undef _GLIBCXX_ATOMIC_BUILTINS
-#include <stdio.h>
 #include <sstream>
 #include <vector>
-#include <map>
 #include <cassert>
 #include "common.h"
 #include "kernel.h"
