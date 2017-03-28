@@ -1,8 +1,17 @@
 Revision History
 ================
 
-Since 1.6.1:
+Version 1.6.2: 2017-03-29
+  * New: Cylindrical coordinate system can be requested by passing the optional parameter `coordinate_system="cylindrical"` to the lattice constructor.
+  * New: `BesselState` class.
+  * New: Optional Lee-Huang-Yang term in the Hamiltonian.
+  * New: Calculate the azimuthal potential in the Hamiltonian.
+  * Changed: The function `center_coordinates` was renamed to `map_lattice_to_coordinate_space`.
   * Changed: Hybrid kernel removed.
+  * Changed: Improved the precision of energy expectation values.
+  * Changed: The function `get_particle_density` no longer depends on the lattice resolution (see issues #161 and #124).
+  * Fixed: 1D lattice works for all built-in state classes.
+  * Fixed: Different resolution between the x- and y-axes works correctly in the CPU and GPU kernels.
 
 Version 1.6.1: 2016-12-21
   * New: One-dimensional topology through the class `Lattice1D`.
