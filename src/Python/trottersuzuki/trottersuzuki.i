@@ -46,15 +46,15 @@ public:
 
 class Lattice1D: public Lattice {
 public:
-    Lattice1D(int dim, double length, bool periodic_x_axis=false, std::string coordinate_system = "Cartesian");
+    Lattice1D(int dim, double length, bool periodic_x_axis=false, std::string coordinate_system="Cartesian");
 };
 
 
 class Lattice2D: public Lattice {
 public:
     Lattice2D(int dim_x, double length_x, int dim_y, double length_y,
-              bool periodic_x_axis=false, bool periodic_y_axis=false, 
-              double angular_velocity=0., std::string coordinate_system = "Cartesian");
+              bool periodic_x_axis=false, bool periodic_y_axis=false,
+              double angular_velocity=0., std::string coordinate_system="Cartesian");
 };
 
 class State{
@@ -146,7 +146,7 @@ class ExponentialState: public State {
 public:
     ExponentialState(Lattice1D *grid, int n_x = 1, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
     ExponentialState(Lattice2D *_grid, int _n_x=1, int _n_y=1, double _norm=1, double _phase=0, double *_p_real=0, double *_p_imag=0);
-    
+
 private:
     int n_x, n_y;
     double norm, phase;
@@ -185,7 +185,7 @@ class BesselState: public State {
 public:
     BesselState(Lattice1D *grid, int angular_momentum = 0, int zeros = 1, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
     BesselState(Lattice2D *grid, int angular_momentum = 0, int zeros = 1, int n_y = 0, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
-    
+
 private:
     int angular_momentum;
     int zeros, n_y;

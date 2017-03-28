@@ -14,6 +14,9 @@ State Classes
 .. autoclass:: trottersuzuki.State
    :members: get_particle_density, get_phase, get_squared_norm, get_mean_x, get_mean_xx, get_mean_y, get_mean_yy, get_mean_px, get_mean_pxpx, get_mean_py, get_mean_pypy, init_state, imprint, write_to_file, write_particle_density, write_phase
 
+.. autoclass:: trottersuzuki.BesselState
+  :members: get_particle_density, get_phase, get_squared_norm, get_mean_x, get_mean_xx, get_mean_y, get_mean_yy, get_mean_px, get_mean_pxpx, get_mean_py, get_mean_pypy, imprint, write_to_file, write_particle_density, write_phase
+
 .. autoclass:: trottersuzuki.ExponentialState
   :members: get_particle_density, get_phase, get_squared_norm, get_mean_x, get_mean_xx, get_mean_y, get_mean_yy, get_mean_px, get_mean_pxpx, get_mean_py, get_mean_pypy, imprint, write_to_file, write_particle_density, write_phase
 
@@ -44,5 +47,5 @@ Solver Class
 
 Tools
 =====
-.. autofunction:: trottersuzuki.center_coordinates
+.. autofunction:: trottersuzuki.map_lattice_to_coordinate_space
 .. autofunction:: trottersuzuki.get_vortex_position

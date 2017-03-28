@@ -1,5 +1,5 @@
-Trotter-Suzuki approximation
-============================
+Mathematical Details
+====================
 What follows is a brief description of the approximation used to calculate the evolution of the wave function. Formulas of the evolution operator are provided.
 
 Evolution operator
@@ -117,7 +117,7 @@ While, for imaginary time evolution:
     \cos\beta & \alpha\sin\beta \\
     -\frac{1}{\alpha}\sin\beta & \cos\beta \end{array} \right).
 
-with :math:`\beta = \frac{\Delta t}{8m \Delta r \sqrt{r_1r_2}}`, :math:`\alpha = \sqrt{\frac{r_2}{r_1}}` and :math:`r_1, r_2 > 0`. However, the block matrix that contains :math:`1/r_0` has a different exponentiation, since :math:`r_0 < 0 `. 
+with :math:`\beta = \frac{\Delta t}{8m \Delta r \sqrt{r_1r_2}}`, :math:`\alpha = \sqrt{\frac{r_2}{r_1}}` and :math:`r_1, r_2 > 0`. However, the block matrix that contains :math:`1/r_0` has a different exponentiation, since :math:`r_0 < 0 `.
 
 In particular :math:`r_0 = - r_1` and for the real-time evolution, the block is of the form
 
@@ -193,7 +193,7 @@ For the trotter-suzuki approximation, the exponentiation is done separately for 
 
 .. math::
 
-    \exp[-\Delta t \omega x\partial_y] = 
+    \exp[-\Delta t \omega x\partial_y] =
     \exp\left[-\beta
     \left(\begin{array}{cc}
     0 & 1 \\
@@ -207,7 +207,7 @@ For the trotter-suzuki approximation, the exponentiation is done separately for 
 
 .. math::
 
-    \exp[i\Delta t \omega x\partial_y] = 
+    \exp[i\Delta t \omega x\partial_y] =
     \exp\left[-\beta
     \left(\begin{array}{cc}
     0 & 1 \\
@@ -221,7 +221,7 @@ For the trotter-suzuki approximation, the exponentiation is done separately for 
 
 .. math::
 
-    \exp[\Delta t \omega y\partial_x] = 
+    \exp[\Delta t \omega y\partial_x] =
     \exp\left[-\beta
     \left(\begin{array}{cc}
     0 & 1 \\
@@ -235,7 +235,7 @@ For the trotter-suzuki approximation, the exponentiation is done separately for 
 
 .. math::
 
-    \exp[-i\Delta t \omega y\partial_x] = 
+    \exp[-i\Delta t \omega y\partial_x] =
     \exp\left[-\beta
     \left(\begin{array}{cc}
     0 & 1 \\
