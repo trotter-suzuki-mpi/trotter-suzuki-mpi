@@ -151,7 +151,7 @@ else:
 
 
 setup(name='trottersuzuki',
-      version='1.6.1',
+      version='1.6.2',
       license='GPL3',
       author="Peter Wittek, Luca Calderaro",
       author_email='peterwittek@users.noreply.github.com',
