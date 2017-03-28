@@ -145,21 +145,21 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     coupling_const[2] = 0.;
 
     aH = new double [1];
-	bH = new double [1];
-	aV = new double [1];
-	bV = new double [1];
-	if (imag_time) {
-		aH[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-		bH[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-		aV[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
-		bV[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
-	}
-	else {
-		aH[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-		bH[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-		aV[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
-		bV[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
-	}
+    bH = new double [1];
+    aV = new double [1];
+    bV = new double [1];
+    if (imag_time) {
+        aH[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+        bH[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+        aV[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+        bV[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+    }
+    else {
+        aH[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+        bH[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+        aV[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+        bV[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+    }
     norm = new double [1];
     norm[0] = _norm;
     tot_norm = norm[0];
@@ -265,29 +265,29 @@ CC2Kernel::CC2Kernel(Lattice *grid, State *state1, State *state2,
     coupling_const[3] = 0.5 * hamiltonian->omega_r;
     coupling_const[4] = 0.5 * hamiltonian->omega_i;
     aH = new double [2];
-	bH = new double [2];
-	aV = new double [2];
-	bV = new double [2];
+    bH = new double [2];
+    aV = new double [2];
+    bV = new double [2];
     if (imag_time) {
-    	aH[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-		bH[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-    	aH[1] = cosh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
-		bH[1] = sinh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
-		aV[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
-		bV[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
-		aV[1] = cosh(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
-		bV[1] = sinh(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
-	}
-	else {
-		aH[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-		bH[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
-		aH[1] = cos(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
-		bH[1] = sin(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
-		aV[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
-		bV[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
-		aV[1] = cos(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
-		bV[1] = sin(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
-	}
+        aH[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+        bH[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+        aH[1] = cosh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+        bH[1] = sinh(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+        aV[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+        bV[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+        aV[1] = cosh(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
+        bV[1] = sinh(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
+    }
+    else {
+        aH[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+        bH[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
+        aH[1] = cos(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+        bH[1] = sin(delta_t / (4. * hamiltonian->mass_b * grid->delta_x * grid->delta_x));
+        aV[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+        bV[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
+        aV[1] = cos(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
+        bV[1] = sin(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
+    }
     norm = _norm;
     tot_norm = norm[0] + norm[1];
     external_pot_real[0] = _external_pot_real[0];
@@ -423,7 +423,7 @@ CC2Kernel::~CC2Kernel() {
         delete [] aH;
         delete [] bH;
         delete [] aV;
-		delete [] bV;
+        delete [] bV;
         delete [] norm;
     }
     delete [] coupling_const;

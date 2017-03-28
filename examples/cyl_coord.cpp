@@ -37,7 +37,7 @@
 
 
 complex<double> const_ini_state(double r, double z) {
-    return 1/double(EDGE_LENGTH);
+    return 1 / double(EDGE_LENGTH);
 }
 
 int main(int argc, char** argv) {
@@ -52,16 +52,16 @@ int main(int argc, char** argv) {
 #endif
 
     //set lattice
-    Lattice2D *grid = new Lattice2D(DIM, length,10, 50, false, true,0., "cylindrical");
+    Lattice2D *grid = new Lattice2D(DIM, length, 10, 50, false, true, 0., "cylindrical");
     //Lattice1D *grid = new Lattice1D(DIM, length, false, "cylindrical");
     //set initial state
     State *state;
     if (IMAG_TIME) {
-    	state = new State(grid, angular_momentum);
-    	state->init_state(const_ini_state);
+        state = new State(grid, angular_momentum);
+        state->init_state(const_ini_state);
     }
     else {
-    	state = new BesselState(grid, angular_momentum);
+        state = new BesselState(grid, angular_momentum);
     }
     //set Hamiltonian
     Potential *potential = new Potential(grid, const_potential);
@@ -103,13 +103,13 @@ int main(int argc, char** argv) {
     //get and stamp particles density
     state->write_particle_density(fileprefix.str());
 
-    if (grid->mpi_rank == 0){
-      out << std::setw(11) << "time" << std::setw(14) << "squared norm" << std::setw(14) << "tot energy" << std::setw(14) << "kin energy" << std::setw(14) << "pot energy"
-          << std::setw(14) << "<X>" << std::setw(14) << "<(X-<X>)^2>" << std::setw(14) << "<Y>" << std::setw(14) << "<(Y-<Y>)^2>"
-          << std::setw(14) << "<Px>" << std::setw(14) << "<(Px-<Px>)^2>" << std::setw(14) << "<Py>" << std::setw(14) << "<(Py-<Py>)^2>\n";
-      out << std::setw(11) << "0" << std::setw(14) << norm2 << std::setw(14) << std::setw(14) << tot_energy << std::setw(14) << kin_energy << std::setw(14) << solver->get_potential_energy() << std::setw(14)
-          << mean_X << std::setw(14) << var_X << std::setw(14) << mean_Y << std::setw(14) << var_Y << std::setw(14)
-          << mean_Px << std::setw(14) << var_Px << std::setw(14) << mean_Py << std::setw(14) << var_Py << endl;
+    if (grid->mpi_rank == 0) {
+        out << std::setw(11) << "time" << std::setw(14) << "squared norm" << std::setw(14) << "tot energy" << std::setw(14) << "kin energy" << std::setw(14) << "pot energy"
+            << std::setw(14) << "<X>" << std::setw(14) << "<(X-<X>)^2>" << std::setw(14) << "<Y>" << std::setw(14) << "<(Y-<Y>)^2>"
+            << std::setw(14) << "<Px>" << std::setw(14) << "<(Px-<Px>)^2>" << std::setw(14) << "<Py>" << std::setw(14) << "<(Py-<Py>)^2>\n";
+        out << std::setw(11) << "0" << std::setw(14) << norm2 << std::setw(14) << std::setw(14) << tot_energy << std::setw(14) << kin_energy << std::setw(14) << solver->get_potential_energy() << std::setw(14)
+            << mean_X << std::setw(14) << var_X << std::setw(14) << mean_Y << std::setw(14) << var_Y << std::setw(14)
+            << mean_Px << std::setw(14) << var_Px << std::setw(14) << mean_Py << std::setw(14) << var_Py << endl;
     }
 
     struct timeval start, end;
@@ -134,10 +134,10 @@ int main(int argc, char** argv) {
         mean_Py = state->get_mean_py();
         var_Py = state->get_mean_pypy() - state->get_mean_py() * state->get_mean_py();
 
-        if(grid->mpi_rank == 0){
+        if(grid->mpi_rank == 0) {
             out << std::setw(11) << (count_snap + 1) * ITERATIONS * delta_t << std::setw(14) << norm2 << std::setw(14) << tot_energy << std::setw(14) << kin_energy << std::setw(14) << solver->get_potential_energy() << std::setw(14) <<
-            mean_X << std::setw(14) << var_X << std::setw(14) << mean_Y << std::setw(14) << var_Y << std::setw(14) <<
-            mean_Px << std::setw(14) << var_Px << std::setw(14) << mean_Py << std::setw(14) << var_Py << endl;
+                mean_X << std::setw(14) << var_X << std::setw(14) << mean_Y << std::setw(14) << var_Y << std::setw(14) <<
+                mean_Px << std::setw(14) << var_Px << std::setw(14) << mean_Py << std::setw(14) << var_Py << endl;
         }
 
         //stamp phase and particles density

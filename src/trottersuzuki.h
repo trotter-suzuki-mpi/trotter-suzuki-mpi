@@ -181,18 +181,18 @@ protected:
  */
 class BesselState: public State {
 public:
-	/**
-		Construct the quantum state with bessel function of the first kind, along the radial coordinate.
+    /**
+    	Construct the quantum state with bessel function of the first kind, along the radial coordinate.
 
-		@param [in] grid             Lattice object.
-		@param [in] angular_momentum Angular momentum.
-		@param [in] zeros            Number of zeros points along the radial axis.
-		@param [in] norm             Squared norm of the quantum state.
-		@param [in] phase            Relative phase of the wave function.
-		@param [in] p_real           Pointer to the real part of the wave function.
-		@param [in] p_imag           Pointer to the imaginary part of the wave function.
-	 */
-	BesselState(Lattice1D *grid, int angular_momentum = 0, int zeros = 1, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
+    	@param [in] grid             Lattice object.
+    	@param [in] angular_momentum Angular momentum.
+    	@param [in] zeros            Number of zeros points along the radial axis.
+    	@param [in] norm             Squared norm of the quantum state.
+    	@param [in] phase            Relative phase of the wave function.
+    	@param [in] p_real           Pointer to the real part of the wave function.
+    	@param [in] p_imag           Pointer to the imaginary part of the wave function.
+     */
+    BesselState(Lattice1D *grid, int angular_momentum = 0, int zeros = 1, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
 
     /**
         Construct the quantum state with bessel function of the first kind, along the radial coordinate.
@@ -225,17 +225,17 @@ private:
  */
 class ExponentialState: public State {
 public:
-	/**
-		Construct the quantum state with exponential like wave function.
+    /**
+    	Construct the quantum state with exponential like wave function.
 
-		@param [in] grid             Lattice object.
-		@param [in] n_x              First quantum number.
-		@param [in] norm             Squared norm of the quantum state.
-		@param [in] phase            Relative phase of the wave function.
-		@param [in] p_real           Pointer to the real part of the wave function.
-		@param [in] p_imag           Pointer to the imaginary part of the wave function.
-	 */
-	ExponentialState(Lattice1D *grid, int n_x = 1, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
+    	@param [in] grid             Lattice object.
+    	@param [in] n_x              First quantum number.
+    	@param [in] norm             Squared norm of the quantum state.
+    	@param [in] phase            Relative phase of the wave function.
+    	@param [in] p_real           Pointer to the real part of the wave function.
+    	@param [in] p_imag           Pointer to the imaginary part of the wave function.
+     */
+    ExponentialState(Lattice1D *grid, int n_x = 1, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
 
     /**
         Construct the quantum state with exponential like wave function.
@@ -263,19 +263,19 @@ private:
  */
 class GaussianState: public State {
 public:
-	/**
-		Construct the quantum state with gaussian like wave function.
+    /**
+    	Construct the quantum state with gaussian like wave function.
 
-		@param [in] grid             Lattice object.
-		@param [in] omega_x          Inverse of the variance along x-axis.
-		@param [in] mean_x           X coordinate of the gaussian function's center.
-		@param [in] norm             Squared norm of the state.
-		@param [in] phase            Relative phase of the wave function.
-		@param [in] p_real           Pointer to the real part of the wave function.
-		@param [in] p_imag           Pointer to the imaginary part of the wave function.
-	 */
-	GaussianState(Lattice1D *grid, double omega_x, double mean_x = 0, double norm = 1, double phase = 0,
-				  double *p_real = 0, double *p_imag = 0);
+    	@param [in] grid             Lattice object.
+    	@param [in] omega_x          Inverse of the variance along x-axis.
+    	@param [in] mean_x           X coordinate of the gaussian function's center.
+    	@param [in] norm             Squared norm of the state.
+    	@param [in] phase            Relative phase of the wave function.
+    	@param [in] p_real           Pointer to the real part of the wave function.
+    	@param [in] p_imag           Pointer to the imaginary part of the wave function.
+     */
+    GaussianState(Lattice1D *grid, double omega_x, double mean_x = 0, double norm = 1, double phase = 0,
+                  double *p_real = 0, double *p_imag = 0);
 
     /**
         Construct the quantum state with gaussian like wave function.
@@ -291,7 +291,7 @@ public:
         @param [in] p_imag           Pointer to the imaginary part of the wave function.
      */
     GaussianState(Lattice2D *grid, double omega_x, double omega_y = -1., double mean_x = 0, double mean_y = 0, double norm = 1, double phase = 0,
-    		      double *p_real = 0, double *p_imag = 0);
+                  double *p_real = 0, double *p_imag = 0);
 
 private:
     double mean_x;    ///< X coordinate of the gaussian function's center.
@@ -310,19 +310,19 @@ private:
  */
 class SinusoidState: public State {
 public:
-	/**
-		Construct the quantum state with sinusoidal like wave function.
+    /**
+    	Construct the quantum state with sinusoidal like wave function.
 
-		@param [in] grid             Lattice object.
-		@param [in] n_x              First quantum number.
-		@param [in] norm             Squared norm of the quantum state.
-		@param [in] phase            Relative phase of the wave function.
-		@param [in] p_real           Pointer to the real part of the wave function.
-		@param [in] p_imag           Pointer to the imaginary part of the wave function.
-	 */
-	SinusoidState(Lattice1D *grid, int n_x = 1, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
+    	@param [in] grid             Lattice object.
+    	@param [in] n_x              First quantum number.
+    	@param [in] norm             Squared norm of the quantum state.
+    	@param [in] phase            Relative phase of the wave function.
+    	@param [in] p_real           Pointer to the real part of the wave function.
+    	@param [in] p_imag           Pointer to the imaginary part of the wave function.
+     */
+    SinusoidState(Lattice1D *grid, int n_x = 1, double norm = 1, double phase = 0, double *p_real = 0, double *p_imag = 0);
 
-	/**
+    /**
         Construct the quantum state with sinusoidal like wave function.
 
         @param [in] grid             Lattice object.

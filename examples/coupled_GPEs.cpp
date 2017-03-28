@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
     double coupling_b = 0;//7.116007999594e-4;
     double coupling_ab = 0;
     double omega_i = 0.;
-    double omega_r = 2.*M_PI/20.;
+    double omega_r = 2.*M_PI / 20.;
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
 #endif
@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
     Lattice2D *grid = new Lattice2D(DIM, length);
     //set initial state
     State *state1 = new GaussianState(grid, 1, 1, 0., 0., PARTICLES_NUM);
-    State *state2 = new GaussianState(grid, 1, 1, 0., 0., PARTICLES_NUM, M_PI/2.);
+    State *state2 = new GaussianState(grid, 1, 1, 0., 0., PARTICLES_NUM, M_PI / 2.);
 
     //set hamiltonian
     Potential *potential = new HarmonicPotential(grid, 1., 1.);
@@ -79,11 +79,11 @@ int main(int argc, char** argv) {
     double inter_energy = solver->get_inter_species_energy();
 
 
-    if (grid->mpi_rank == 0){
-      out << std::setw(11) << "time" << std::setw(14) << "squared norm" << std::setw(14) << "sq norm1" << std::setw(14) << "sq norm2" << std::setw(14) << "tot energy" << std::setw(14)
-          << "kin energy" << std::setw(14) << "pot energy" << std::setw(14) << "intra energy" << std::setw(14) << "inter energy"  << std::setw(14) << "rabi energy\n";
-      out << std::setw(11) << "0" << std::setw(14) << norm2[0] + norm2[1] << std::setw(14) << norm2[0] << std::setw(14) << norm2[1] << std::setw(14) << tot_energy << std::setw(14)
-          << kin_energy << std::setw(14) << pot_energy << std::setw(14) << intra_energy << std::setw(14) << inter_energy << std::setw(14) << rabi_energy << endl;
+    if (grid->mpi_rank == 0) {
+        out << std::setw(11) << "time" << std::setw(14) << "squared norm" << std::setw(14) << "sq norm1" << std::setw(14) << "sq norm2" << std::setw(14) << "tot energy" << std::setw(14)
+            << "kin energy" << std::setw(14) << "pot energy" << std::setw(14) << "intra energy" << std::setw(14) << "inter energy"  << std::setw(14) << "rabi energy\n";
+        out << std::setw(11) << "0" << std::setw(14) << norm2[0] + norm2[1] << std::setw(14) << norm2[0] << std::setw(14) << norm2[1] << std::setw(14) << tot_energy << std::setw(14)
+            << kin_energy << std::setw(14) << pot_energy << std::setw(14) << intra_energy << std::setw(14) << inter_energy << std::setw(14) << rabi_energy << endl;
     }
 
     //write phase and density
@@ -109,7 +109,7 @@ int main(int argc, char** argv) {
         intra_energy = solver->get_intra_species_energy();
         inter_energy = solver->get_inter_species_energy();
 
-        if(grid->mpi_rank == 0){
+        if(grid->mpi_rank == 0) {
             out << std::setw(11) << (count_snap + 1) * ITERATIONS * delta_t << std::setw(14) << norm2[0] + norm2[1] << std::setw(14) << norm2[0] << std::setw(14) << norm2[1] << std::setw(14) << tot_energy << std::setw(14)
                 << kin_energy << std::setw(14) << pot_energy << std::setw(14) << intra_energy << std::setw(14) << inter_energy << std::setw(14) << rabi_energy << endl;
         }

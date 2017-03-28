@@ -69,8 +69,8 @@ int main(int argc, char** argv) {
     mkdir(dirname.str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
     fileprefix.str("");
-	fileprefix << dirname.str() << "/" << 0;
-	state->write_to_file(fileprefix.str());
+    fileprefix << dirname.str() << "/" << 0;
+    state->write_to_file(fileprefix.str());
     for(int count_snap = 0; count_snap < SNAPSHOTS; count_snap++) {
         solver->evolve(ITERATIONS, imag_time);
         fileprefix.str("");

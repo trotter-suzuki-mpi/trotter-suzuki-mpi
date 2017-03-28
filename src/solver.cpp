@@ -86,13 +86,13 @@ void Solver::initialize_exp_potential(double delta_t, int which) {
                 if (which == 0) {
                     ptmp = hamiltonian->potential->get_value(x, y);
                     if (grid->coordinate_system == "cylindrical") {
-                    	ptmp += hamiltonian->azimuthal_potential(x, state->angular_momentum);
+                        ptmp += hamiltonian->azimuthal_potential(x, state->angular_momentum);
                     }
                 }
                 else {
                     ptmp = static_cast<Hamiltonian2Component*>(hamiltonian)->potential_b->get_value(x, y);
                     if (grid->coordinate_system == "cylindrical") {
-                    	ptmp += static_cast<Hamiltonian2Component*>(hamiltonian)->azimuthal_potential_b(x, state_b->angular_momentum);
+                        ptmp += static_cast<Hamiltonian2Component*>(hamiltonian)->azimuthal_potential_b(x, state_b->angular_momentum);
                     }
                 }
                 if (imag_time) {
@@ -126,7 +126,8 @@ void Solver::init_kernel() {
         else {
             kernel = new CPUBlock(grid, state, state_b, static_cast<Hamiltonian2Component*>(hamiltonian), external_pot_real, external_pot_imag, delta_t, norm2, imag_time);
         }
-    } else if (kernel_type == "gpu") {
+    }
+    else if (kernel_type == "gpu") {
 #ifdef CUDA
         if (hamiltonian->angular_velocity != 0) {
             my_abort("The GPU kernel does not work with nonzero angular velocity.");
@@ -140,7 +141,8 @@ void Solver::init_kernel() {
 #else
         my_abort("Compiled without CUDA");
 #endif
-    } else {
+    }
+    else {
         my_abort("Unknown kernel");
     }
 }
@@ -241,8 +243,8 @@ void Solver::evolve(int iterations, bool _imag_time) {
 
 void Solver::calculate_energy_expected_values(void) {
 
-	double delta_x = grid->delta_x;
-	double delta_y = grid->delta_y;
+    double delta_x = grid->delta_x;
+    double delta_y = grid->delta_y;
 
     double sum_norm2_0 = 0;
     double sum_norm2_kin0 = 0;
@@ -300,7 +302,7 @@ void Solver::calculate_energy_expected_values(void) {
 
 #ifndef HAVE_MPI
     #pragma omp parallel for reduction(+:sum_norm2_0,\
-	sum_norm2_kin0,\
+    sum_norm2_kin0,\
     sum_potential_energy_0,\
     sum_intra_species_energy_0,\
     sum_kinetic_energy_0,\
@@ -316,20 +318,20 @@ void Solver::calculate_energy_expected_values(void) {
     sum_rotational_energy_1) private(x,y)
 #endif
     for (int i = grid->inner_start_y - grid->start_y; i < grid->inner_end_y - grid->start_y; ++i) {
-        complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
-        complex<double> psi_up_b, psi_down_b, psi_center_b, psi_left_b, psi_right_b;
-        complex<double> rot_y, rot_x;
-        complex<double> psi_up_up, psi_down_down, psi_left_left, psi_right_right;
-        complex<double> psi_up_up_b, psi_down_down_b, psi_left_left_b, psi_right_right_b;
+    complex<double> psi_up, psi_down, psi_center, psi_left, psi_right;
+    complex<double> psi_up_b, psi_down_b, psi_center_b, psi_left_b, psi_right_b;
+    complex<double> rot_y, rot_x;
+    complex<double> psi_up_up, psi_down_down, psi_left_left, psi_right_right;
+    complex<double> psi_up_up_b, psi_down_down_b, psi_left_left_b, psi_right_right_b;
 
-        for (int j = grid->inner_start_x - grid->start_x; j < grid->inner_end_x - grid->start_x; ++j) {
+    for (int j = grid->inner_start_x - grid->start_x; j < grid->inner_end_x - grid->start_x; ++j) {
             psi_center = complex<double> (state->p_real[i * tile_width + j],
                                           state->p_imag[i * tile_width + j]);
             map_lattice_to_coordinate_space(grid, j, i, &x, &y);
-			complex<double> x_r = x;
-			complex<double> y_r = y;
+            complex<double> x_r = x;
+            complex<double> y_r = y;
 
-			double norm2 = real(conj(psi_center) * psi_center);
+            double norm2 = real(conj(psi_center) * psi_center);
             sum_norm2_0 += norm2;
             sum_potential_energy_0 += norm2 * (potential->get_value(j, i) + (grid->coordinate_system == "cylindrical" ? hamiltonian->azimuthal_potential(j, state->angular_momentum) : 0));
             sum_intra_species_energy_0 += norm2 * norm2 * 0.5 * coupling;
@@ -341,8 +343,8 @@ void Solver::calculate_energy_expected_values(void) {
 
                 sum_norm2_1 += real(conj(psi_center_b) * psi_center_b);
                 sum_potential_energy_1 += real(conj(psi_center_b) * psi_center_b * complex<double> (
-                		                  potential_b->get_value(j, i) +
-                		                  (grid->coordinate_system == "cylindrical" ? static_cast<Hamiltonian2Component*>(hamiltonian)->azimuthal_potential_b(j, state_b->angular_momentum) : 0.), 0.));
+                                                   potential_b->get_value(j, i) +
+                                                   (grid->coordinate_system == "cylindrical" ? static_cast<Hamiltonian2Component*>(hamiltonian)->azimuthal_potential_b(j, state_b->angular_momentum) : 0.), 0.));
 
                 sum_intra_species_energy_1 += real(conj(psi_center_b) * psi_center_b * psi_center_b * conj(psi_center_b) * complex<double> (0.5 * coupling_b, 0.));
                 sum_inter_species_energy += real(conj(psi_center) * psi_center * conj(psi_center) * psi_center *
@@ -352,9 +354,9 @@ void Solver::calculate_energy_expected_values(void) {
             }
 
             if (((i - (grid->inner_start_y - grid->start_y) >= (ini_halo_y == 0) * 2 &&
-                 i < grid->inner_end_y - grid->start_y - (end_halo_y == 0) * 2) || grid->dim_y == 1) &&
-                (j - (grid->inner_start_x - grid->start_x) >= (ini_halo_x == 0) * 2 + xlim &&
-                 j < grid->inner_end_x - grid->start_x - (end_halo_x == 0) * 2)) {
+                    i < grid->inner_end_y - grid->start_y - (end_halo_y == 0) * 2) || grid->dim_y == 1) &&
+                    (j - (grid->inner_start_x - grid->start_x) >= (ini_halo_x == 0) * 2 + xlim &&
+                     j < grid->inner_end_x - grid->start_x - (end_halo_x == 0) * 2)) {
 
                 psi_right = complex<double> (state->p_real[i * tile_width + j + 1],
                                              state->p_imag[i * tile_width + j + 1]);
@@ -364,25 +366,25 @@ void Solver::calculate_energy_expected_values(void) {
                                                    state->p_imag[i * tile_width + j + 2]);
                 psi_left_left = complex<double> (state->p_real[i * tile_width + j - 2],
                                                  state->p_imag[i * tile_width + j - 2]);
-				psi_up = complex<double> (state->p_real[(i - 1) * tile_width + j],
-										  state->p_imag[(i - 1) * tile_width + j]);
-				psi_down = complex<double> (state->p_real[(i + 1) * tile_width + j],
-											state->p_imag[(i + 1) * tile_width + j]);
-				psi_up_up = complex<double> (state->p_real[(i - 2) * tile_width + j],
-											 state->p_imag[(i - 2) * tile_width + j]);
-				psi_down_down = complex<double> (state->p_real[(i + 2) * tile_width + j],
-												 state->p_imag[(i + 2) * tile_width + j]);
+                psi_up = complex<double> (state->p_real[(i - 1) * tile_width + j],
+                                          state->p_imag[(i - 1) * tile_width + j]);
+                psi_down = complex<double> (state->p_real[(i + 1) * tile_width + j],
+                                            state->p_imag[(i + 1) * tile_width + j]);
+                psi_up_up = complex<double> (state->p_real[(i - 2) * tile_width + j],
+                                             state->p_imag[(i - 2) * tile_width + j]);
+                psi_down_down = complex<double> (state->p_real[(i + 2) * tile_width + j],
+                                                 state->p_imag[(i + 2) * tile_width + j]);
 
-				sum_norm2_kin0 += real(conj(psi_center) * psi_center);
+                sum_norm2_kin0 += real(conj(psi_center) * psi_center);
                 sum_kinetic_energy_0 += real(cost_E * conj(psi_center) *
-											 (const_1 * psi_right_right + const_2 * psi_right + const_2 * psi_left + const_1 * psi_left_left + const_3 * psi_center) / (delta_x * delta_x));
+                                             (const_1 * psi_right_right + const_2 * psi_right + const_2 * psi_left + const_1 * psi_left_left + const_3 * psi_center) / (delta_x * delta_x));
                 if (grid->dim_y > 1) {
-					sum_kinetic_energy_0 += real(cost_E * conj(psi_center) *
-												 (const_1 * psi_down_down + const_2 * psi_down + const_2 * psi_up + const_1 * psi_up_up + const_3 * psi_center) / (delta_y * delta_y));
-					rot_x = y_r * angular_velocity / delta_x * complex<double>(0., 1.);
-					rot_y = x_r * angular_velocity / delta_y * complex<double>(0., 1.);
-					sum_rotational_energy_0 += real(conj(psi_center) * (rot_y * (derivate1_4 * psi_up + derivate1_3 * psi_center + derivate1_2 * psi_down + derivate1_1 * psi_down_down)
-									+ rot_x * (derivate1_4 * psi_right + derivate1_3 * psi_center + derivate1_2 * psi_left + derivate1_1 * psi_left_left)));
+                    sum_kinetic_energy_0 += real(cost_E * conj(psi_center) *
+                                                 (const_1 * psi_down_down + const_2 * psi_down + const_2 * psi_up + const_1 * psi_up_up + const_3 * psi_center) / (delta_y * delta_y));
+                    rot_x = y_r * angular_velocity / delta_x * complex<double>(0., 1.);
+                    rot_y = x_r * angular_velocity / delta_y * complex<double>(0., 1.);
+                    sum_rotational_energy_0 += real(conj(psi_center) * (rot_y * (derivate1_4 * psi_up + derivate1_3 * psi_center + derivate1_2 * psi_down + derivate1_1 * psi_down_down)
+                                                    + rot_x * (derivate1_4 * psi_right + derivate1_3 * psi_center + derivate1_2 * psi_left + derivate1_1 * psi_left_left)));
                 }
 
                 if (!single_component) {
@@ -405,12 +407,12 @@ void Solver::calculate_energy_expected_values(void) {
 
                     sum_norm2_kin1 += real(conj(psi_center_b) * psi_center_b);
                     sum_kinetic_energy_1 += real(cost_E_b * conj(psi_center_b) *
-                    							 (const_1 * psi_right_right_b + const_2 * psi_right_b + const_2 * psi_left_b + const_1 * psi_left_left_b + const_3 * psi_center_b) / (delta_x * delta_x));
+                                                 (const_1 * psi_right_right_b + const_2 * psi_right_b + const_2 * psi_left_b + const_1 * psi_left_left_b + const_3 * psi_center_b) / (delta_x * delta_x));
                     if (grid->dim_y > 1) {
-						sum_kinetic_energy_1 += real(cost_E_b * conj(psi_center_b) *
-													 (const_1 * psi_down_down_b + const_2 * psi_down_b + const_2 * psi_up_b + const_1 * psi_up_up_b + const_3 * psi_center_b) / (delta_y * delta_y));
-						sum_rotational_energy_1 += real(conj(psi_center_b) * (rot_y * (derivate1_4 * psi_up_b + derivate1_3 * psi_center_b + derivate1_2 * psi_down_b + derivate1_1 * psi_down_down_b)
-														+ rot_x * (derivate1_4 * psi_right_b + derivate1_3 * psi_center_b + derivate1_2 * psi_left_b + derivate1_1 * psi_left_left_b)));
+                        sum_kinetic_energy_1 += real(cost_E_b * conj(psi_center_b) *
+                                                     (const_1 * psi_down_down_b + const_2 * psi_down_b + const_2 * psi_up_b + const_1 * psi_up_up_b + const_3 * psi_center_b) / (delta_y * delta_y));
+                        sum_rotational_energy_1 += real(conj(psi_center_b) * (rot_y * (derivate1_4 * psi_up_b + derivate1_3 * psi_center_b + derivate1_2 * psi_down_b + derivate1_1 * psi_down_down_b)
+                                                        + rot_x * (derivate1_4 * psi_right_b + derivate1_3 * psi_center_b + derivate1_2 * psi_left_b + derivate1_1 * psi_left_left_b)));
                     }
                 }
             }
@@ -427,7 +429,7 @@ void Solver::calculate_energy_expected_values(void) {
     LeeHuangYang_energy = sum_LeeHuangYang;
 
     if (!single_component) {
-    	norm2_kin[1] = sum_norm2_kin1;
+    norm2_kin[1] = sum_norm2_kin1;
         norm2[1] = sum_norm2_1;
         kinetic_energy[1] = sum_kinetic_energy_1;
         potential_energy[1] = sum_potential_energy_1;
@@ -463,7 +465,7 @@ void Solver::calculate_energy_expected_values(void) {
     LeeHuangYang_energy = 0;
 
     for(int i = 0; i < grid->mpi_procs; i++) {
-    	norm2_kin[0] += norm2_kin_mpi[i];
+    norm2_kin[0] += norm2_kin_mpi[i];
         norm2[0] += norm2_mpi[i];
         kinetic_energy[0] += kinetic_energy_mpi[i];
         potential_energy[0] += potential_energy_mpi[i];
@@ -480,7 +482,7 @@ void Solver::calculate_energy_expected_values(void) {
     delete [] LeeHuangYang_energy_mpi;
 
     if (!single_component) {
-    	double *norm2_kin_mpi = new double[grid->mpi_procs];
+    double *norm2_kin_mpi = new double[grid->mpi_procs];
         double *norm2_mpi = new double[grid->mpi_procs];
         double *kinetic_energy_mpi = new double[grid->mpi_procs];
         double *potential_energy_mpi = new double[grid->mpi_procs];
@@ -508,7 +510,7 @@ void Solver::calculate_energy_expected_values(void) {
         rabi_energy = 0;
 
         for(int i = 0; i < grid->mpi_procs; i++) {
-        	norm2_kin[1] += norm2_kin_mpi[i];
+            norm2_kin[1] += norm2_kin_mpi[i];
             norm2[1] += norm2_mpi[i];
             kinetic_energy[1] += kinetic_energy_mpi[i];
             potential_energy[1] += potential_energy_mpi[i];
@@ -533,7 +535,7 @@ void Solver::calculate_energy_expected_values(void) {
     intra_species_energy[0] = intra_species_energy[0] / norm2[0];
     LeeHuangYang_energy = LeeHuangYang_energy / norm2[0];
     if (single_component) {
-        total_energy = kinetic_energy[0] + potential_energy[0] + intra_species_energy[0] + rotational_energy[0] + LeeHuangYang_energy;
+    total_energy = kinetic_energy[0] + potential_energy[0] + intra_species_energy[0] + rotational_energy[0] + LeeHuangYang_energy;
         tot_kinetic_energy = kinetic_energy[0];
         tot_potential_energy = potential_energy[0];
         tot_rotational_energy = rotational_energy[0];

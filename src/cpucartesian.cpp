@@ -115,9 +115,9 @@ void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, siz
     if(two_wavefunctions) {
         for (size_t y = 0; y < height; ++y) {
             for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
-            	double norm_2 = p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx];
-				//double norm_3 = norm_2 * sqrt(norm_2);
-				double norm_2b = pb_real[idx_pot] * pb_real[idx_pot] + pb_imag[idx_pot] * pb_imag[idx_pot];
+                double norm_2 = p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx];
+                //double norm_3 = norm_2 * sqrt(norm_2);
+                double norm_2b = pb_real[idx_pot] * pb_real[idx_pot] + pb_imag[idx_pot] * pb_imag[idx_pot];
                 double tmp = exp(-1. * (coupling_a * norm_2 + coupling_b * norm_2b/* + coupling_aa * norm_3*/));
                 p_real[idx] = tmp * external_pot_real[idx_pot] * p_real[idx];
                 p_imag[idx] = tmp * external_pot_real[idx_pot] * p_imag[idx];
@@ -127,8 +127,8 @@ void block_kernel_potential_imaginary(bool two_wavefunctions, size_t stride, siz
     else {
         for (size_t y = 0; y < height; ++y) {
             for (size_t idx = y * stride, idx_pot = y * tile_width; idx < y * stride + width; ++idx, ++idx_pot) {
-            	double norm_2 = p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx];
-            	double norm_3 = norm_2 * sqrt(norm_2);
+                double norm_2 = p_real[idx] * p_real[idx] + p_imag[idx] * p_imag[idx];
+                double norm_3 = norm_2 * sqrt(norm_2);
                 double tmp = exp(-1. * (coupling_a * norm_2 + coupling_aa * norm_3));
                 p_real[idx] = tmp * external_pot_real[idx_pot] * p_real[idx];
                 p_imag[idx] = tmp * external_pot_real[idx_pot] * p_imag[idx];

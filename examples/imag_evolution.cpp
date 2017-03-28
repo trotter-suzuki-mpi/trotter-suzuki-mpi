@@ -37,8 +37,8 @@
 complex<double> super_position_two_exp_state(double x, double y) {
     double L_x = double(DIM);
 
-    return exp(complex<double>(0. , 2.*M_PI/L_x*x)) +
-           exp(complex<double>(0. , 10.*2.*M_PI/L_x*x));
+    return exp(complex<double>(0. , 2.*M_PI / L_x * x)) +
+           exp(complex<double>(0. , 10.*2.*M_PI / L_x * x));
 }
 
 int main(int argc, char** argv) {

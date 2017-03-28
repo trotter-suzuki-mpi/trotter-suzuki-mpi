@@ -30,24 +30,24 @@ double const_potential(double x, double y) {
 }
 
 Lattice1D::Lattice1D(int dim, double length, bool periodic_x_axis, string _coordinate_system) {
-	if (_coordinate_system != "cartesian" &&
-		_coordinate_system != "cylindrical") {
-		my_abort("The coordinate system you have chosen is not implemented.");
-	}
-	if (_coordinate_system == "cylindrical" &&
-		periodic_x_axis == true) {
-		my_abort("You cannot choose periodic boundary on the radial axis.");
-	}
-	coordinate_system = _coordinate_system;
+    if (_coordinate_system != "cartesian" &&
+            _coordinate_system != "cylindrical") {
+        my_abort("The coordinate system you have chosen is not implemented.");
+    }
+    if (_coordinate_system == "cylindrical" &&
+            periodic_x_axis == true) {
+        my_abort("You cannot choose periodic boundary on the radial axis.");
+    }
+    coordinate_system = _coordinate_system;
     length_x = length;
     length_y = 0;
     if (_coordinate_system == "cylindrical") {
-		dim += 1;
-		delta_x = length_x / (double(dim) - 0.5);
-	}
-	else {
-		delta_x = length_x / double(dim);
-	}
+        dim += 1;
+        delta_x = length_x / (double(dim) - 0.5);
+    }
+    else {
+        delta_x = length_x / double(dim);
+    }
     delta_y = 1.0;
     periods[0] = 0;
     periods[1] = (int) periodic_x_axis;
@@ -76,8 +76,8 @@ Lattice1D::Lattice1D(int dim, double length, bool periodic_x_axis, string _coord
                       &inner_start_x, &inner_end_x,
                       dim, halo_x, periods[1]);
     if (coordinate_system == "cylindrical" && mpi_coords[1] == 0) {
-		inner_start_x += 1;
-	}
+        inner_start_x += 1;
+    }
     dim_x = end_x - start_x;
     start_y = 0;
     end_y = 1;
@@ -103,27 +103,27 @@ Lattice2D::Lattice2D(int _dim_x, double _length_x, int _dim_y, double _length_y,
 void Lattice2D::init(int _dim_x, double _length_x, int _dim_y, double _length_y,
                      bool periodic_x_axis, bool periodic_y_axis,
                      double angular_velocity, string _coordinate_system) {
-	if (_coordinate_system != "cartesian" &&
-		_coordinate_system != "cylindrical") {
-		my_abort("The coordinate system you have chosen is not implemented.");
-	}
-	if (_coordinate_system == "cylindrical" &&
-		periodic_x_axis == true) {
-		my_abort("You cannot choose periodic boundary on the radial axis.");
-	}
-	length_x = _length_x;
+    if (_coordinate_system != "cartesian" &&
+            _coordinate_system != "cylindrical") {
+        my_abort("The coordinate system you have chosen is not implemented.");
+    }
+    if (_coordinate_system == "cylindrical" &&
+            periodic_x_axis == true) {
+        my_abort("You cannot choose periodic boundary on the radial axis.");
+    }
+    length_x = _length_x;
     length_y = _length_y;
     if (_coordinate_system == "cylindrical") {
-    	_dim_x += 1;
-    	delta_x = length_x / (double(_dim_x) - 0.5);
-	}
-	else {
-		delta_x = length_x / double(_dim_x);
-	}
+        _dim_x += 1;
+        delta_x = length_x / (double(_dim_x) - 0.5);
+    }
+    else {
+        delta_x = length_x / double(_dim_x);
+    }
     delta_y = length_y / double(_dim_y);
     coordinate_system = _coordinate_system;
     periods[0] = (int) periodic_y_axis;
-	periods[1] = (int) periodic_x_axis;
+    periods[1] = (int) periodic_x_axis;
     mpi_dims[0] = mpi_dims[1] = 0;
 #ifdef HAVE_MPI
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_procs);
@@ -148,7 +148,7 @@ void Lattice2D::init(int _dim_x, double _length_x, int _dim_y, double _length_y,
                       &inner_start_x, &inner_end_x,
                       _dim_x, halo_x, periods[1]);
     if (coordinate_system == "cylindrical" && mpi_coords[1] == 0) {
-    	inner_start_x += 1;
+        inner_start_x += 1;
     }
     calculate_borders(mpi_coords[0], mpi_dims[0], &start_y, &end_y,
                       &inner_start_y, &inner_end_y,
@@ -157,7 +157,7 @@ void Lattice2D::init(int _dim_x, double _length_x, int _dim_y, double _length_y,
     dim_y = end_y - start_y;
 }
 
-State::State(Lattice *_grid, int _angular_momentum, double *_p_real, double *_p_imag): grid(_grid), angular_momentum(_angular_momentum){
+State::State(Lattice *_grid, int _angular_momentum, double *_p_real, double *_p_imag): grid(_grid), angular_momentum(_angular_momentum) {
     expected_values_updated = false;
     if (_p_real == 0) {
         self_init = true;
@@ -184,7 +184,7 @@ State::State(Lattice *_grid, int _angular_momentum, double *_p_real, double *_p_
 State::State(const State &obj): grid(obj.grid), expected_values_updated(obj.expected_values_updated), self_init(obj.self_init),
     mean_X(obj.mean_X), mean_XX(obj.mean_XX), mean_Y(obj.mean_Y), mean_YY(obj.mean_YY),
     mean_Px(obj.mean_Px), mean_PxPx(obj.mean_PxPx), mean_Py(obj.mean_Py), mean_PyPy(obj.mean_PyPy),
-    norm2(obj.norm2), angular_momentum(obj.angular_momentum){
+    norm2(obj.norm2), angular_momentum(obj.angular_momentum) {
     p_real = new double[grid->dim_x * grid->dim_y];
     p_imag = new double[grid->dim_x * grid->dim_y];
     for (int y = 0; y < grid->dim_y; y++) {
@@ -411,8 +411,8 @@ void State::calculate_expected_values(void) {
         for (int j = ini_halo_x; j < grid->inner_end_x - grid->start_x; ++j) {
             psi_center = complex<double> (p_real[i * tile_width + j], p_imag[i * tile_width + j]);
             map_lattice_to_coordinate_space(grid, j, i, &x, &y);
-			complex<double> x_r = x;
-			complex<double> y_r = y;
+            complex<double> x_r = x;
+            complex<double> y_r = y;
 
             sum_norm2 += real(conj(psi_center) * psi_center);
             sum_x_mean += real(conj(psi_center) * psi_center * x_r);
@@ -535,22 +535,40 @@ void State::calculate_expected_values(void) {
 }
 
 double State::get_expected_value(string _operator) {
-	if(!expected_values_updated)
-	        calculate_expected_values();
+    if(!expected_values_updated)
+        calculate_expected_values();
 
-	if (_operator == "L_z") {return mean_angular_momentum;}
-	else if (_operator == "X") {return mean_X;}
-	else if (_operator == "X^2") {return mean_XX;}
-	else if (_operator == "Y")   {return mean_Y;}
-	else if (_operator == "Y^2") {return mean_YY;}
-	else if (_operator == "P_x") {return mean_Px;}
-	else if (_operator == "P_x^2") {return mean_PxPx;}
-	else if (_operator == "P_y") {return mean_Py;}
-	else if (_operator == "P_y^2") {return mean_PyPy;}
-	else {
-		std::cout << "The expected value of the operator " << _operator << " is not calculated.\n"
-				  << "Available operators are: L_z, X, X^2, Y, Y^2, P_x, P_x^2, P_y, P_y^2.\n";
-	}
+    if (_operator == "L_z") {
+        return mean_angular_momentum;
+    }
+    else if (_operator == "X") {
+        return mean_X;
+    }
+    else if (_operator == "X^2") {
+        return mean_XX;
+    }
+    else if (_operator == "Y")   {
+        return mean_Y;
+    }
+    else if (_operator == "Y^2") {
+        return mean_YY;
+    }
+    else if (_operator == "P_x") {
+        return mean_Px;
+    }
+    else if (_operator == "P_x^2") {
+        return mean_PxPx;
+    }
+    else if (_operator == "P_y") {
+        return mean_Py;
+    }
+    else if (_operator == "P_y^2") {
+        return mean_PyPy;
+    }
+    else {
+        std::cout << "The expected value of the operator " << _operator << " is not calculated.\n"
+                  << "Available operators are: L_z, X, X^2, Y, Y^2, P_x, P_x^2, P_y, P_y^2.\n";
+    }
 }
 
 double State::get_mean_x(void) {
@@ -619,25 +637,25 @@ void State::write_to_file(string filename) {
 
 ExponentialState::ExponentialState(Lattice1D *_grid, int _n_x, double _norm, double _phase, double *_p_real, double *_p_imag):
     State(_grid, 0, _p_real, _p_imag), n_x(_n_x), n_y(0), norm(_norm), phase(_phase) {
-	angular_momentum = 0;
+    angular_momentum = 0;
     complex<double> tmp;
     double x_r = 0;
-	for (int x = 0; x < grid->dim_x; x++) {
-		map_lattice_to_coordinate_space(grid, x, &x_r);
-		tmp = exp_state(x_r, 0.);
-		p_real[x] = real(tmp);
-		p_imag[x] = imag(tmp);
-	}
+    for (int x = 0; x < grid->dim_x; x++) {
+        map_lattice_to_coordinate_space(grid, x, &x_r);
+        tmp = exp_state(x_r, 0.);
+        p_real[x] = real(tmp);
+        p_imag[x] = imag(tmp);
+    }
 }
 
 ExponentialState::ExponentialState(Lattice2D *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
     State(_grid, 0, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase) {
-	angular_momentum = 0;
+    angular_momentum = 0;
     complex<double> tmp;
     double x_r = 0, y_r = 0;
     for (int y = 0; y < grid->dim_y; y++) {
         for (int x = 0; x < grid->dim_x; x++) {
-        	map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
+            map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
             tmp = exp_state(x_r, y_r);
             p_real[y * grid->dim_x + x] = real(tmp);
             p_imag[y * grid->dim_x + x] = imag(tmp);
@@ -653,27 +671,27 @@ complex<double> ExponentialState::exp_state(double x, double y) {
 
 GaussianState::GaussianState(Lattice1D *_grid, double _omega_x, double _mean_x,
                              double _norm, double _phase, double *_p_real, double *_p_imag):
-    State(_grid, 0,_p_real, _p_imag), mean_x(_mean_x),
+    State(_grid, 0, _p_real, _p_imag), mean_x(_mean_x),
     mean_y(0.), omega_x(_omega_x), omega_y(1.), norm(_norm), phase(_phase) {
-	angular_momentum = 0;
+    angular_momentum = 0;
     if (omega_y == -1.) {
         omega_y = omega_x;
     }
     complex<double> tmp;
     double x_r = 0;
-	for (int x = 0; x < grid->dim_x; x++) {
-		map_lattice_to_coordinate_space(grid, x, &x_r);
-		tmp = gauss_state(x_r, 0.);
-		p_real[x] = real(tmp);
-		p_imag[x] = imag(tmp);
-	}
+    for (int x = 0; x < grid->dim_x; x++) {
+        map_lattice_to_coordinate_space(grid, x, &x_r);
+        tmp = gauss_state(x_r, 0.);
+        p_real[x] = real(tmp);
+        p_imag[x] = imag(tmp);
+    }
 }
 
 GaussianState::GaussianState(Lattice2D *_grid, double _omega_x, double _omega_y, double _mean_x, double _mean_y,
                              double _norm, double _phase, double *_p_real, double *_p_imag):
-    State(_grid, 0,_p_real, _p_imag), mean_x(_mean_x),
+    State(_grid, 0, _p_real, _p_imag), mean_x(_mean_x),
     mean_y(_mean_y), omega_x(_omega_x), omega_y(_omega_y), norm(_norm), phase(_phase) {
-	angular_momentum = 0;
+    angular_momentum = 0;
     if (omega_y == -1.) {
         omega_y = omega_x;
     }
@@ -694,27 +712,27 @@ complex<double> GaussianState::gauss_state(double x, double y) {
 }
 
 SinusoidState::SinusoidState(Lattice1D *_grid, int _n_x, double _norm, double _phase, double *_p_real, double *_p_imag):
-    State(_grid, 0,_p_real, _p_imag), n_x(_n_x), n_y(0), norm(_norm), phase(_phase)  {
-	angular_momentum = 0;
+    State(_grid, 0, _p_real, _p_imag), n_x(_n_x), n_y(0), norm(_norm), phase(_phase)  {
+    angular_momentum = 0;
     complex<double> tmp;
     double x_r = 0;
-	for (int x = 0; x < grid->dim_x; x++) {
-		map_lattice_to_coordinate_space(grid, x, &x_r);
-		tmp = sinusoid_state(x_r, 0.);
-		p_real[x] = real(tmp);
-		p_imag[x] = imag(tmp);
+    for (int x = 0; x < grid->dim_x; x++) {
+        map_lattice_to_coordinate_space(grid, x, &x_r);
+        tmp = sinusoid_state(x_r, 0.);
+        p_real[x] = real(tmp);
+        p_imag[x] = imag(tmp);
     }
 }
 
 SinusoidState::SinusoidState(Lattice2D *_grid, int _n_x, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
-    State(_grid, 0,_p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase)  {
-	angular_momentum = 0;
+    State(_grid, 0, _p_real, _p_imag), n_x(_n_x), n_y(_n_y), norm(_norm), phase(_phase)  {
+    angular_momentum = 0;
     complex<double> tmp;
     double x_r = 0, y_r = 0;
     for (int y = 0; y < grid->dim_y; y++) {
         for (int x = 0; x < grid->dim_x; x++) {
-        	map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
-        	tmp = sinusoid_state(x_r, y_r);
+            map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
+            tmp = sinusoid_state(x_r, y_r);
             p_real[y * grid->dim_x + x] = real(tmp);
             p_imag[y * grid->dim_x + x] = imag(tmp);
         }
@@ -728,7 +746,7 @@ complex<double> SinusoidState::sinusoid_state(double x, double y) {
 }
 
 BesselState::BesselState(Lattice1D *_grid, int _angular_momentum, int _zeros, double _norm, double _phase, double *_p_real, double *_p_imag):
-    State(_grid, _angular_momentum,_p_real, _p_imag), angular_momentum(_angular_momentum), zeros(_zeros), n_y(0), norm(_norm), phase(_phase)  {
+    State(_grid, _angular_momentum, _p_real, _p_imag), angular_momentum(_angular_momentum), zeros(_zeros), n_y(0), norm(_norm), phase(_phase)  {
     complex<double> tmp;
     zero = bessel_j_zeros(angular_momentum, zeros - 1);
 
@@ -736,35 +754,35 @@ BesselState::BesselState(Lattice1D *_grid, int _angular_momentum, int _zeros, do
     normalization = 1.;
     double integral = 0;
     double x_r = 0;
-	for (int x = grid->inner_start_x - grid->start_x; x < grid->inner_end_x - grid->start_x; x++) {
-		map_lattice_to_coordinate_space(grid, x, &x_r);
-		tmp = bessel_state1D(x_r);
-		integral += real(conj(tmp) * tmp);
-	}
+    for (int x = grid->inner_start_x - grid->start_x; x < grid->inner_end_x - grid->start_x; x++) {
+        map_lattice_to_coordinate_space(grid, x, &x_r);
+        tmp = bessel_state1D(x_r);
+        integral += real(conj(tmp) * tmp);
+    }
 #ifdef HAVE_MPI
     double *integral_mpi = new double[grid->mpi_procs];
     MPI_Allgather(&integral, 1, MPI_DOUBLE, integral_mpi, 1, MPI_DOUBLE, grid->cartcomm);
     integral = 0;
     for(int i = 0; i < grid->mpi_procs; i++) {
-    	integral += integral_mpi[i];
+        integral += integral_mpi[i];
     }
     delete [] integral_mpi;
 #endif
     normalization = sqrt(norm / (integral * grid->length_x / (grid->global_no_halo_dim_x - 1)));
     for (int x = 0; x < grid->dim_x; x++) {
-		map_lattice_to_coordinate_space(grid, x, &x_r);
-		tmp = bessel_state1D(x_r);
-		p_real[x] = real(tmp);
-		p_imag[x] = imag(tmp);
-	}
+        map_lattice_to_coordinate_space(grid, x, &x_r);
+        tmp = bessel_state1D(x_r);
+        p_real[x] = real(tmp);
+        p_imag[x] = imag(tmp);
+    }
 }
 
 complex<double> BesselState::bessel_state1D(double x) {
-	return normalization * exp(complex<double>(0., phase)) * complex<double> (jn(int(angular_momentum), x * zero / grid->length_x), 0.);
+    return normalization * exp(complex<double>(0., phase)) * complex<double> (jn(int(angular_momentum), x * zero / grid->length_x), 0.);
 }
 
 BesselState::BesselState(Lattice2D *_grid, int _angular_momentum, int _zeros, int _n_y, double _norm, double _phase, double *_p_real, double *_p_imag):
-    State(_grid, _angular_momentum,_p_real, _p_imag), angular_momentum(_angular_momentum), zeros(_zeros), n_y(_n_y), norm(_norm), phase(_phase)  {
+    State(_grid, _angular_momentum, _p_real, _p_imag), angular_momentum(_angular_momentum), zeros(_zeros), n_y(_n_y), norm(_norm), phase(_phase)  {
     complex<double> tmp;
     zero = bessel_j_zeros(angular_momentum, zeros - 1);
 
@@ -773,26 +791,26 @@ BesselState::BesselState(Lattice2D *_grid, int _angular_momentum, int _zeros, in
     double integral = 0;
     double x_r = 0, y_r = 0;
     for (int y = grid->inner_start_y - grid->start_y; y < grid->inner_end_y - grid->start_y; y++) {
-		for (int x = grid->inner_start_x - grid->start_x; x < grid->inner_end_x - grid->start_x; x++) {
-			map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
-			tmp = bessel_state2D(x_r, y_r);
-			integral += real(conj(tmp) * tmp);
-		}
-	}
+        for (int x = grid->inner_start_x - grid->start_x; x < grid->inner_end_x - grid->start_x; x++) {
+            map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
+            tmp = bessel_state2D(x_r, y_r);
+            integral += real(conj(tmp) * tmp);
+        }
+    }
 #ifdef HAVE_MPI
     double *integral_mpi = new double[grid->mpi_procs];
     MPI_Allgather(&integral, 1, MPI_DOUBLE, integral_mpi, 1, MPI_DOUBLE, grid->cartcomm);
     integral = 0;
     for(int i = 0; i < grid->mpi_procs; i++) {
-    	integral += integral_mpi[i];
+        integral += integral_mpi[i];
     }
     delete [] integral_mpi;
 #endif
     normalization = sqrt(norm / (integral * grid->delta_y * grid->length_x / (grid->global_no_halo_dim_x - 1)));
     for (int y = 0; y < grid->dim_y; y++) {
         for (int x = 0; x < grid->dim_x; x++) {
-        	map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
-        	tmp = bessel_state2D(x_r, y_r);
+            map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
+            tmp = bessel_state2D(x_r, y_r);
             p_real[y * grid->dim_x + x] = real(tmp);
             p_imag[y * grid->dim_x + x] = imag(tmp);
         }
@@ -800,7 +818,7 @@ BesselState::BesselState(Lattice2D *_grid, int _angular_momentum, int _zeros, in
 }
 
 complex<double> BesselState::bessel_state2D(double x, double y) {
-	return normalization * exp(complex<double>(0., phase)) * complex<double> (jn(int(angular_momentum), x * zero / grid->length_x) * cos(M_PI * double(n_y) / grid->length_y * y), 0.);
+    return normalization * exp(complex<double>(0., phase)) * complex<double> (jn(int(angular_momentum), x * zero / grid->length_x) * cos(M_PI * double(n_y) / grid->length_y * y), 0.);
 }
 
 Potential::Potential(Lattice *_grid, char *filename): grid(_grid) {
@@ -899,9 +917,9 @@ HarmonicPotential::HarmonicPotential(Lattice2D *_grid, double _omegax, double _o
 
 double HarmonicPotential::get_value(int x, int y) {
     double x_r = 0, y_r = 0;
-	map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
-	x_r -= mean_x;
-	y_r -= mean_y;
+    map_lattice_to_coordinate_space(grid, x, y, &x_r, &y_r);
+    x_r -= mean_x;
+    y_r -= mean_y;
     return 0.5 * mass * (omegax * omegax * x_r * x_r + omegay * omegay * y_r * y_r);
 }
 
@@ -928,10 +946,10 @@ Hamiltonian::Hamiltonian(Lattice *_grid, Potential *_potential,
         }
     }
     if (grid->coordinate_system == "cylindrical") {
-    	rot_coord_x = 0;
+        rot_coord_x = 0;
     }
     else {
-    	rot_coord_x = (grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x) * 0.5 + _rot_coord_x / grid->delta_x;
+        rot_coord_x = (grid->global_dim_x - grid->periods[1] * 2 * grid->halo_x) * 0.5 + _rot_coord_x / grid->delta_x;
     }
     rot_coord_y = (grid->global_dim_y - grid->periods[0] * 2 * grid->halo_y) * 0.5 + _rot_coord_y / grid->delta_y;
     if (_potential == NULL) {
@@ -945,9 +963,9 @@ Hamiltonian::Hamiltonian(Lattice *_grid, Potential *_potential,
 }
 
 double Hamiltonian::azimuthal_potential(double x, int angular_momentum) {
-	double x_r = 0, y_r = 0;
-	map_lattice_to_coordinate_space(grid, x, 0, &x_r, &y_r);
-	return (angular_momentum * angular_momentum) / (2. * mass * x_r * x_r);
+    double x_r = 0, y_r = 0;
+    map_lattice_to_coordinate_space(grid, x, 0, &x_r, &y_r);
+    return (angular_momentum * angular_momentum) / (2. * mass * x_r * x_r);
 }
 
 Hamiltonian::~Hamiltonian() {
@@ -977,9 +995,9 @@ Hamiltonian2Component::Hamiltonian2Component(Lattice *_grid,
 }
 
 double Hamiltonian2Component::azimuthal_potential_b(double x, int angular_momentum) {
-	double x_r = 0, y_r = 0;
-	map_lattice_to_coordinate_space(grid, x, 0, &x_r, &y_r);
-	return (angular_momentum * angular_momentum) / (2. * mass_b * x_r * x_r);
+    double x_r = 0, y_r = 0;
+    map_lattice_to_coordinate_space(grid, x, 0, &x_r, &y_r);
+    return (angular_momentum * angular_momentum) / (2. * mass_b * x_r * x_r);
 }
 
 Hamiltonian2Component::~Hamiltonian2Component() {
