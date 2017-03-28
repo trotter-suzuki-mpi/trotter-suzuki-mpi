@@ -6,6 +6,7 @@ The Trotter-Suzuki approximation leads to an efficient algorithm for simulating 
 Key features:
 
   - Simulation of 1D and 2D quantum systems.
+  - Cartesian and cylindrical coordinate systems.
   - Arbitrary single-body initial state with closed and periodic boundary conditions.
   - Many-body simulations with non-interacting particles.
   - Solving the Gross-Pitaevskii equation (e.g., [dark solitons](https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb), [vortex dynamics in Bose-Einstein Condensates](http://nbviewer.jupyter.org/github/trotter-suzuki-mpi/notebooks/blob/master/Vortex_Dynamics.ipynb)).

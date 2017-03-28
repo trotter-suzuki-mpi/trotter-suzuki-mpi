@@ -5,6 +5,7 @@ The module is a massively parallel implementation of the Trotter-Suzuki approxim
 Key features of the Python interface:
 
 * Simulation of 1D and 2D quantum systems.
+* Cartesian and cylindrical coordinate systems.
 * Fast execution by parallelization: OpenMP and CUDA are supported.
 * Many-body simulations with non-interacting particles.
 * Solving the Gross-Pitaevskii equation  (e.g., `dark solitons <https://github.com/Lucacalderaro/Master-Thesis/blob/master/Soliton%20generation%20on%20Bose-Einstein%20Condensate.ipynb>`_, `vortex dynamics in Bose-Einstein Condensates <http://nbviewer.jupyter.org/github/trotter-suzuki-mpi/notebooks/blob/master/Vortex_Dynamics.ipynb>`_).
