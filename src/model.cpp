@@ -30,18 +30,18 @@ double const_potential(double x, double y) {
 }
 
 Lattice1D::Lattice1D(int dim, double length, bool periodic_x_axis, string _coordinate_system) {
-	if (_coordinate_system != "Cartesian" &&
-		_coordinate_system != "Cylindrical") {
+	if (_coordinate_system != "cartesian" &&
+		_coordinate_system != "cylindrical") {
 		my_abort("The coordinate system you have chosen is not implemented.");
 	}
-	if (_coordinate_system == "Cylindrical" &&
+	if (_coordinate_system == "cylindrical" &&
 		periodic_x_axis == true) {
 		my_abort("You cannot choose periodic boundary on the radial axis.");
 	}
 	coordinate_system = _coordinate_system;
     length_x = length;
     length_y = 0;
-    if (_coordinate_system == "Cylindrical") {
+    if (_coordinate_system == "cylindrical") {
 		dim += 1;
 		delta_x = length_x / (double(dim) - 0.5);
 	}
@@ -75,7 +75,7 @@ Lattice1D::Lattice1D(int dim, double length, bool periodic_x_axis, string _coord
     calculate_borders(mpi_coords[0], mpi_dims[0], &start_x, &end_x,
                       &inner_start_x, &inner_end_x,
                       dim, halo_x, periods[1]);
-    if (coordinate_system == "Cylindrical" && mpi_coords[1] == 0) {
+    if (coordinate_system == "cylindrical" && mpi_coords[1] == 0) {
 		inner_start_x += 1;
 	}
     dim_x = end_x - start_x;
@@ -103,17 +103,17 @@ Lattice2D::Lattice2D(int _dim_x, double _length_x, int _dim_y, double _length_y,
 void Lattice2D::init(int _dim_x, double _length_x, int _dim_y, double _length_y,
                      bool periodic_x_axis, bool periodic_y_axis,
                      double angular_velocity, string _coordinate_system) {
-	if (_coordinate_system != "Cartesian" &&
-		_coordinate_system != "Cylindrical") {
+	if (_coordinate_system != "cartesian" &&
+		_coordinate_system != "cylindrical") {
 		my_abort("The coordinate system you have chosen is not implemented.");
 	}
-	if (_coordinate_system == "Cylindrical" &&
+	if (_coordinate_system == "cylindrical" &&
 		periodic_x_axis == true) {
 		my_abort("You cannot choose periodic boundary on the radial axis.");
 	}
 	length_x = _length_x;
     length_y = _length_y;
-    if (_coordinate_system == "Cylindrical") {
+    if (_coordinate_system == "cylindrical") {
     	_dim_x += 1;
     	delta_x = length_x / (double(_dim_x) - 0.5);
 	}
@@ -147,7 +147,7 @@ void Lattice2D::init(int _dim_x, double _length_x, int _dim_y, double _length_y,
     calculate_borders(mpi_coords[1], mpi_dims[1], &start_x, &end_x,
                       &inner_start_x, &inner_end_x,
                       _dim_x, halo_x, periods[1]);
-    if (coordinate_system == "Cylindrical" && mpi_coords[1] == 0) {
+    if (coordinate_system == "cylindrical" && mpi_coords[1] == 0) {
     	inner_start_x += 1;
     }
     calculate_borders(mpi_coords[0], mpi_dims[0], &start_y, &end_y,
@@ -927,7 +927,7 @@ Hamiltonian::Hamiltonian(Lattice *_grid, Potential *_potential,
             return;
         }
     }
-    if (grid->coordinate_system == "Cylindrical") {
+    if (grid->coordinate_system == "cylindrical") {
     	rot_coord_x = 0;
     }
     else {
@@ -944,7 +944,7 @@ Hamiltonian::Hamiltonian(Lattice *_grid, Potential *_potential,
     }
 }
 
-double Hamiltonian::azimutal_potential(double x, int angular_momentum) {
+double Hamiltonian::azimuthal_potential(double x, int angular_momentum) {
 	double x_r = 0, y_r = 0;
 	map_lattice_to_coordinate_space(grid, x, 0, &x_r, &y_r);
 	return (angular_momentum * angular_momentum) / (2. * mass * x_r * x_r);
@@ -976,7 +976,7 @@ Hamiltonian2Component::Hamiltonian2Component(Lattice *_grid,
     }
 }
 
-double Hamiltonian2Component::azimutal_potential_b(double x, int angular_momentum) {
+double Hamiltonian2Component::azimuthal_potential_b(double x, int angular_momentum) {
 	double x_r = 0, y_r = 0;
 	map_lattice_to_coordinate_space(grid, x, 0, &x_r, &y_r);
 	return (angular_momentum * angular_momentum) / (2. * mass_b * x_r * x_r);

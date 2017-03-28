@@ -46,7 +46,7 @@ public:
 
 class Lattice1D: public Lattice {
 public:
-    Lattice1D(int dim, double length, bool periodic_x_axis=false, std::string coordinate_system="Cartesian");
+    Lattice1D(int dim, double length, bool periodic_x_axis=false, std::string coordinate_system="cartesian");
 };
 
 
@@ -54,7 +54,7 @@ class Lattice2D: public Lattice {
 public:
     Lattice2D(int dim_x, double length_x, int dim_y, double length_y,
               bool periodic_x_axis=false, bool periodic_y_axis=false,
-              double angular_velocity=0., std::string coordinate_system="Cartesian");
+              double angular_velocity=0., std::string coordinate_system="cartesian");
 };
 
 class State{

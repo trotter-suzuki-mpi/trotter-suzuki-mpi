@@ -23,7 +23,7 @@
 #include "common.h"
 
 void map_lattice_to_coordinate_space(Lattice *grid, int x_in, double *x_out) {
-	if (grid->coordinate_system == "Cartesian") {
+	if (grid->coordinate_system == "cartesian") {
 		double idx = grid->start_x * grid->delta_x + 0.5 * grid->delta_x + x_in * grid->delta_x;
 		double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
 		if (idx - x_c < -grid->length_x * 0.5) {
@@ -36,14 +36,14 @@ void map_lattice_to_coordinate_space(Lattice *grid, int x_in, double *x_out) {
 	}
 
     // By convention the radial axis is the x axis.
-	if (grid->coordinate_system == "Cylindrical") {
+	if (grid->coordinate_system == "cylindrical") {
 		double idx = grid->start_x * grid->delta_x + x_in * grid->delta_x - 0.5 * grid->delta_x;
 		*x_out = idx;
 	}
 }
 
 void map_lattice_to_coordinate_space(Lattice *grid, int x_in, int y_in, double *x_out, double *y_out) {
-	if (grid->coordinate_system == "Cartesian") {
+	if (grid->coordinate_system == "cartesian") {
 		double idy = grid->start_y * grid->delta_y + 0.5 * grid->delta_y + y_in * grid->delta_y;
 		double idx = grid->start_x * grid->delta_x + 0.5 * grid->delta_x + x_in * grid->delta_x;
 		double x_c = grid->global_no_halo_dim_x * grid->delta_x * 0.5;
@@ -65,7 +65,7 @@ void map_lattice_to_coordinate_space(Lattice *grid, int x_in, int y_in, double *
 	}
 
 	// By convention the radial axis is the x axis.
-	if (grid->coordinate_system == "Cylindrical") {
+	if (grid->coordinate_system == "cylindrical") {
 		double idy = grid->start_y * grid->delta_y + 0.5 * grid->delta_y + y_in * grid->delta_y;
 		double idx = grid->start_x * grid->delta_x + x_in * grid->delta_x - 0.5 * grid->delta_x;
 		double y_c = grid->global_no_halo_dim_y * grid->delta_y * 0.5;

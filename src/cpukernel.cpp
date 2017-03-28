@@ -33,7 +33,7 @@ void full_step(bool two_wavefunctions, size_t stride, size_t width, size_t heigh
         block_kernel_vertical  (1u, stride, width, height, aV, bV, real, imag);
     }
     block_kernel_horizontal(1u, stride, width, height, aH, bH, real, imag);
-    if (coordinate_system == "Cylindrical") {
+    if (coordinate_system == "cylindrical") {
         block_kernel_radial_kinetic(0u, stride, width, height, offset_x, kin_radial, real, imag);
         block_kernel_radial_kinetic(1u, stride, width, height, offset_x, kin_radial, real, imag);
     }
@@ -41,7 +41,7 @@ void full_step(bool two_wavefunctions, size_t stride, size_t width, size_t heigh
     if (alpha_x != 0. && alpha_y != 0.) {
         block_kernel_rotation  (stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
     }
-    if (coordinate_system == "Cylindrical") {
+    if (coordinate_system == "cylindrical") {
         block_kernel_radial_kinetic(1u, stride, width, height, offset_x, kin_radial, real, imag);
         block_kernel_radial_kinetic(0u, stride, width, height, offset_x, kin_radial, real, imag);
 	}
@@ -69,7 +69,7 @@ void full_step_imaginary(bool two_wavefunctions, size_t stride, size_t width, si
         block_kernel_vertical_imaginary  (1u, stride, width, height, aV, bV, real, imag);
     }
     block_kernel_horizontal_imaginary(1u, stride, width, height, aH, bH, real, imag);
-    if (coordinate_system == "Cylindrical") {
+    if (coordinate_system == "cylindrical") {
     	block_kernel_radial_kinetic_imaginary(0u, stride, width, height, offset_x, kin_radial, real, imag);
     	block_kernel_radial_kinetic_imaginary(1u, stride, width, height, offset_x, kin_radial, real, imag);
 		}
@@ -77,7 +77,7 @@ void full_step_imaginary(bool two_wavefunctions, size_t stride, size_t width, si
     if (alpha_x != 0. && alpha_y != 0.) {
         block_kernel_rotation_imaginary(stride, width, height, offset_x, offset_y, alpha_x, alpha_y, real, imag);
     }
-    if (coordinate_system == "Cylindrical") {
+    if (coordinate_system == "cylindrical") {
     	block_kernel_radial_kinetic_imaginary(1u, stride, width, height, offset_x, kin_radial, real, imag);
     	block_kernel_radial_kinetic_imaginary(0u, stride, width, height, offset_x, kin_radial, real, imag);
 	}
@@ -197,7 +197,7 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     	bH[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
     	aV[0] = cosh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
 		bV[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
-    	if (grid->coordinate_system == "Cylindrical") {
+    	if (grid->coordinate_system == "cylindrical") {
 			kin_radial[0] = delta_t / (8. * hamiltonian->mass * grid->delta_x * grid->delta_x);
 		}
     }
@@ -206,7 +206,7 @@ CPUBlock::CPUBlock(Lattice *grid, State *state, Hamiltonian *hamiltonian,
     	bH[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_x * grid->delta_x));
     	aV[0] = cos(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
 		bV[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
-		if (grid->coordinate_system == "Cylindrical") {
+		if (grid->coordinate_system == "cylindrical") {
 			kin_radial[0] = delta_t / (8. * hamiltonian->mass * grid->delta_x * grid->delta_x);
 		}
     }
@@ -300,7 +300,7 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
 		bV[0] = sinh(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
 		aV[1] = cosh(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
 		bV[1] = sinh(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
-		if (grid->coordinate_system == "Cylindrical") {
+		if (grid->coordinate_system == "cylindrical") {
 			kin_radial[0] = delta_t / (8. * hamiltonian->mass * grid->delta_x * grid->delta_x);
 			kin_radial[1] = delta_t / (8. * hamiltonian->mass_b * grid->delta_x * grid->delta_x);
 		}
@@ -314,7 +314,7 @@ CPUBlock::CPUBlock(Lattice *grid, State *state1, State *state2,
 		bV[0] = sin(delta_t / (4. * hamiltonian->mass * grid->delta_y * grid->delta_y));
 		aV[1] = cos(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
 		bV[1] = sin(delta_t / (4. * hamiltonian->mass_b * grid->delta_y * grid->delta_y));
-		if (grid->coordinate_system == "Cylindrical") {
+		if (grid->coordinate_system == "cylindrical") {
 			kin_radial[0] = delta_t / (8. * hamiltonian->mass * grid->delta_x * grid->delta_x);
 			kin_radial[1] = delta_t / (8. * hamiltonian->mass_b * grid->delta_x * grid->delta_x);
 		}
@@ -667,7 +667,7 @@ void CPUBlock::normalization() {
 }
 
 void CPUBlock::cpy_first_positive_to_first_negative() {
-	if (imag_time && coordinate_system == "Cylindrical") {
+	if (imag_time && coordinate_system == "cylindrical") {
 		// performs the copy only for the tiles containing the origin of the radial coordinate
 		if (start_x <= 0) {
 			int stride = end_x - start_x;

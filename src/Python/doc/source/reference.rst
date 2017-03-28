@@ -12,7 +12,7 @@ Lattice1D Class
 
    **Constructors**
 
-   .. py:method:: Lattice1D(dim_x, length_x, periodic_x_axis=False, coordinate_system="Cartesian")
+   .. py:method:: Lattice1D(dim_x, length_x, periodic_x_axis=False, coordinate_system="cartesian")
 
       Construct a one-dimensional lattice.
 
@@ -24,8 +24,8 @@ Lattice1D Class
           Physical length of the lattice's side in the x direction.
       * `periodic_x_axis` : bool,optional (default: False)
           Boundary condition along the x axis (false=closed, true=periodic).
-      * `coordinate_system` : string,optional (default: 'Cartesian')
-          Coordinates of the physical space ('Cartesian' or 'Cylindrical').
+      * `coordinate_system` : string,optional (default: "cartesian")
+          Coordinates of the physical space ("cartesian" or "cylindrical").
 
       **Returns**
 
@@ -83,7 +83,7 @@ Lattice2D Class
 
    **Constructors**
 
-   .. py:method:: Lattice2D(dim_x, length_x, dim_y=None, length_y=None, periodic_x_axis=False, periodic_y_axis=False, coordinate_system="Cartesian")
+   .. py:method:: Lattice2D(dim_x, length_x, dim_y=None, length_y=None, periodic_x_axis=False, periodic_y_axis=False, coordinate_system="cartesian")
 
       Construct the Lattice2D.
 
@@ -103,8 +103,8 @@ Lattice2D Class
           Boundary condition along the y axis (false=closed, true=periodic).
       * `angular_velocity` : float, optional (default: 0.)
           Angular velocity of the rotating reference frame (only for Cartesian coordinates).
-      * `coordinate_system` : string,optional (default: 'Cartesian')
-          Coordinates of the physical space ('Cartesian' or 'Cylindrical').
+      * `coordinate_system` : string,optional (default: "cartesian")
+          Coordinates of the physical space ("cartesian" or "cylindrical").
 
       **Returns**
 
@@ -195,7 +195,7 @@ State Classes
       * `grid` : Lattice object
           Define the geometry of the simulation.
       * `angular_momentum` : integer, optional (default: 0)
-          Angular momentum for the Cylindrical coordinates.
+          Angular momentum for the cylindrical coordinates.
 
       **Returns**
 
@@ -480,7 +480,7 @@ State Classes
       * `grid` : Lattice object
           Define the geometry of the simulation.
       * `angular_momentum` : integer, optional (default: 0)
-          Angular momentum for the Cylindrical coordinates.
+          Angular momentum for the cylindrical coordinates.
       * `zeros` : integer, optional (default: 1)
           Number of zeros points along the radial axis.
       * `n_y` : integer, optional (default: 1)
@@ -511,7 +511,7 @@ State Classes
       **Example**
 
           >>> import trottersuzuki as ts  # import the module
-          >>> grid = ts.Lattice2D(300, 30., True, True, 0., 'Cylindrical')  # Define the simulation's geometry
+          >>> grid = ts.Lattice2D(300, 30., True, True, 0., "cylindrical")  # Define the simulation's geometry
           >>> state = ts.BesselState(grid, 2, 1, 1)  # Create the system's state
 
    **Members**
@@ -664,7 +664,7 @@ State Classes
       **Example**
 
           >>> import trottersuzuki as ts  # import the module
-          >>> grid = ts.Lattice2D(300, 30., True, True, 0., 'Cylindrical')  # Define the simulation's geometry
+          >>> grid = ts.Lattice2D(300, 30., True, True, 0., "cylindrical")  # Define the simulation's geometry
           >>> state = ts.BesselState(grid, 1.)  # Create the system's state
           >>> state.write_to_file('wave_function.txt')  # Write to a file the wave function
           >>> state2 = ts.State(grid)  # Create a quantum state
@@ -704,7 +704,7 @@ State Classes
       **Example**
 
           >>> import trottersuzuki as ts  # import the module
-          >>> grid = ts.Lattice2D(300, 30., True, True, 0., 'Cylindrical')  # Define the simulation's geometry
+          >>> grid = ts.Lattice2D(300, 30., True, True, 0., "cylindrical")  # Define the simulation's geometry
           >>> state = ts.BesselState(grid, 1.)  # Create the system's state
           >>> state.write_to_file('wave_function.txt')  # Write to a file the wave function
           >>> state2 = ts.State(grid)  # Create a quantum state

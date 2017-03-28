@@ -124,7 +124,7 @@ private:
     static const size_t block_width = BLOCK_WIDTH_CACHE;      ///< Width of the lattice block which is cached (number of lattice's dots).
     size_t block_height;     ///< Height of the lattice block which is cached (number of lattice's dots).
     bool two_wavefunctions;    ///< Flag parameter to distinguish whether the kernel is evolving a two-wave-function or a single-wave-function
-    int angular_momentum[2];   ///< Angular momentum when Cylindrical coordinates are used.
+    int angular_momentum[2];   ///< Angular momentum when cylindrical coordinates are used.
 
     double alpha_x;         ///< Real coupling constant associated to the X*P_y operator, part of the angular momentum.
     double alpha_y;         ///< Real coupling constant associated to the Y*P_x operator, part of the angular momentum.

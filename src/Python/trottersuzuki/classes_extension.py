@@ -22,11 +22,11 @@ class Lattice1D(_Lattice1D):
         * `x_axis` : numpy array
             X-axis of the lattice
         """
-        if self.coordinate_system == 'Cartesian':
+        if self.coordinate_system == "cartesian":
             x_axis = np.arange(self.global_no_halo_dim_x) - self.global_no_halo_dim_x * 0.5 + 0.5
             x_axis *= self.delta_x
 
-        if self.coordinate_system == 'Cylindrical':
+        if self.coordinate_system == "cylindrical":
             x_axis = (np.arange(self.global_no_halo_dim_x - 1) + 0.5) * self.delta_x
 
         return x_axis
@@ -36,7 +36,7 @@ class Lattice2D(_Lattice2D):
 
     def __init__(self, dim_x, length_x, dim_y=None, length_y=None,
                  periodic_x_axis=False, periodic_y_axis=False,
-                 angular_velocity=0., coordinate_system = 'Cartesian'):
+                 angular_velocity=0., coordinate_system = "cartesian"):
         if dim_y is None:
             dim_y = dim_x
         if length_y is None:
@@ -54,11 +54,11 @@ class Lattice2D(_Lattice2D):
         * `x_axis` : numpy array
             X-axis of the lattice
         """
-        if self.coordinate_system == 'Cartesian':
+        if self.coordinate_system == "cartesian":
             x_axis = np.arange(self.global_no_halo_dim_x) - self.global_no_halo_dim_x * 0.5 + 0.5
             x_axis *= self.delta_x
 
-        if self.coordinate_system == 'Cylindrical':
+        if self.coordinate_system == "cylindrical":
             x_axis = (np.arange(self.global_no_halo_dim_x - 1) + 0.5) * self.delta_x
 
         return x_axis

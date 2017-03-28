@@ -52,8 +52,8 @@ int main(int argc, char** argv) {
 #endif
 
     //set lattice
-    Lattice2D *grid = new Lattice2D(DIM, length,10, 50, false, true,0., "Cylindrical");
-    //Lattice1D *grid = new Lattice1D(DIM, length, false, "Cylindrical");
+    Lattice2D *grid = new Lattice2D(DIM, length,10, 50, false, true,0., "cylindrical");
+    //Lattice1D *grid = new Lattice1D(DIM, length, false, "cylindrical");
     //set initial state
     State *state;
     if (IMAG_TIME) {

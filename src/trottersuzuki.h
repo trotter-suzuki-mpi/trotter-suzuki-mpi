@@ -71,7 +71,7 @@ public:
         @param [in] periodic_x_axis   Boundary condition along the x axis (false=closed, true=periodic).
         @param [in] coordinate_system Type of the coordinate system used.
      */
-    Lattice1D(int dim, double length, bool periodic_x_axis = false, string coordinate_system = "Cartesian");
+    Lattice1D(int dim, double length, bool periodic_x_axis = false, string coordinate_system = "cartesian");
 };
 
 /**
@@ -94,7 +94,7 @@ public:
      */
     Lattice2D(int dim, double length,
               bool periodic_x_axis = false, bool periodic_y_axis = false,
-              double angular_velocity = 0., string coordinate_system = "Cartesian");
+              double angular_velocity = 0., string coordinate_system = "cartesian");
     /**
         Lattice constructor.
 
@@ -109,11 +109,11 @@ public:
      */
     Lattice2D(int dim_x, double length_x, int dim_y, double length_y,
               bool periodic_x_axis = false, bool periodic_y_axis = false,
-              double angular_velocity = 0., string coordinate_system = "Cartesian");
+              double angular_velocity = 0., string coordinate_system = "cartesian");
 private:
     void init(int dim_x, double length_x, int dim_y, double length_y,
               bool periodic_x_axis = false, bool periodic_y_axis = false,
-              double angular_velocity = 0., string coordinate_system = "Cartesian");
+              double angular_velocity = 0., string coordinate_system = "cartesian");
 };
 
 /**
@@ -125,13 +125,13 @@ public:
     double *p_real;    ///< Real part of the wave function.
     double *p_imag;    ///< Imaginary part of the wave function.
     Lattice *grid;    ///< Object that defines the lattice structure.
-    int angular_momentum;   ///< Angular momentum when Cylindrical coordinates are used.
+    int angular_momentum;   ///< Angular momentum when cylindrical coordinates are used.
 
     /**
         Construct the state from given matrices if they are provided, otherwise construct a state with null wave function, initializing p_real and p_imag.
 
         @param [in] grid             Lattice object.
-        @param [in] angular_momentum Angular momentum (only for Cylindrical coordinates).
+        @param [in] angular_momentum Angular momentum (only for cylindrical coordinates).
         @param [in] p_real           Pointer to the real part of the wave function.
         @param [in] p_imag           Pointer to the imaginary part of the wave function.
      */
@@ -429,7 +429,7 @@ public:
     double angular_velocity;    ///< The frame of reference rotates with this angular velocity.
     double rot_coord_x;    ///< X coordinate of the center of rotation.
     double rot_coord_y;    ///< Y coordinate of the center of rotation.
-    double azimutal_potential(double x, int angular_momentum);
+    double azimuthal_potential(double x, int angular_momentum);
 
     /**
     	Construct the Hamiltonian of a single component system.
@@ -465,7 +465,7 @@ public:
     double omega_r;    ///< Real part of the Rabi coupling.
     double omega_i;    ///< Imaginary part of the Rabi coupling.
     Potential *potential_b;    ///< External potential for the second component.
-    double azimutal_potential_b(double x, int angular_momentum);
+    double azimuthal_potential_b(double x, int angular_momentum);
 
     /**
     	Construct the Hamiltonian of a two component system.

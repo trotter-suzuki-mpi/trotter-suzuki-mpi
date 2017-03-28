@@ -85,14 +85,14 @@ void Solver::initialize_exp_potential(double delta_t, int which) {
             for (int x = 0; x < grid->dim_x; ++x) {
                 if (which == 0) {
                     ptmp = hamiltonian->potential->get_value(x, y);
-                    if (grid->coordinate_system == "Cylindrical") {
-                    	ptmp += hamiltonian->azimutal_potential(x, state->angular_momentum);
+                    if (grid->coordinate_system == "cylindrical") {
+                    	ptmp += hamiltonian->azimuthal_potential(x, state->angular_momentum);
                     }
                 }
                 else {
                     ptmp = static_cast<Hamiltonian2Component*>(hamiltonian)->potential_b->get_value(x, y);
-                    if (grid->coordinate_system == "Cylindrical") {
-                    	ptmp += static_cast<Hamiltonian2Component*>(hamiltonian)->azimutal_potential_b(x, state_b->angular_momentum);
+                    if (grid->coordinate_system == "cylindrical") {
+                    	ptmp += static_cast<Hamiltonian2Component*>(hamiltonian)->azimuthal_potential_b(x, state_b->angular_momentum);
                     }
                 }
                 if (imag_time) {
@@ -296,7 +296,7 @@ void Solver::calculate_energy_expected_values(void) {
 
     complex<double> const_1 = -1. / 12., const_2 = 4. / 3., const_3 = -2.5;
     complex<double> derivate1_1 = 1. / 6., derivate1_2 = - 1., derivate1_3 = 0.5, derivate1_4 = 1. / 3.;
-    int xlim = (grid->coordinate_system == "Cylindrical" ? 3 : 0);
+    int xlim = (grid->coordinate_system == "cylindrical" ? 3 : 0);
 
 #ifndef HAVE_MPI
     #pragma omp parallel for reduction(+:sum_norm2_0,\
@@ -331,7 +331,7 @@ void Solver::calculate_energy_expected_values(void) {
 
 			double norm2 = real(conj(psi_center) * psi_center);
             sum_norm2_0 += norm2;
-            sum_potential_energy_0 += norm2 * (potential->get_value(j, i) + (grid->coordinate_system == "Cylindrical" ? hamiltonian->azimutal_potential(j, state->angular_momentum) : 0));
+            sum_potential_energy_0 += norm2 * (potential->get_value(j, i) + (grid->coordinate_system == "cylindrical" ? hamiltonian->azimuthal_potential(j, state->angular_momentum) : 0));
             sum_intra_species_energy_0 += norm2 * norm2 * 0.5 * coupling;
             sum_LeeHuangYang += pow(norm2, 2.5) * 0.4 * LeeHuangYang_coupling_a;
 
@@ -342,7 +342,7 @@ void Solver::calculate_energy_expected_values(void) {
                 sum_norm2_1 += real(conj(psi_center_b) * psi_center_b);
                 sum_potential_energy_1 += real(conj(psi_center_b) * psi_center_b * complex<double> (
                 		                  potential_b->get_value(j, i) +
-                		                  (grid->coordinate_system == "Cylindrical" ? static_cast<Hamiltonian2Component*>(hamiltonian)->azimutal_potential_b(j, state_b->angular_momentum) : 0.), 0.));
+                		                  (grid->coordinate_system == "cylindrical" ? static_cast<Hamiltonian2Component*>(hamiltonian)->azimuthal_potential_b(j, state_b->angular_momentum) : 0.), 0.));
 
                 sum_intra_species_energy_1 += real(conj(psi_center_b) * psi_center_b * psi_center_b * conj(psi_center_b) * complex<double> (0.5 * coupling_b, 0.));
                 sum_inter_species_energy += real(conj(psi_center) * psi_center * conj(psi_center) * psi_center *
@@ -554,9 +554,9 @@ void Solver::calculate_energy_expected_values(void) {
         tot_potential_energy = potential_energy[0] + potential_energy[1];
         tot_rotational_energy = rotational_energy[0] + rotational_energy[1];
         tot_intra_species_energy = intra_species_energy[0] + intra_species_energy[1];
-        norm2[1] *= delta_y * grid->length_x / (grid->global_no_halo_dim_x - (grid->coordinate_system == "Cylindrical" ? 1 : 0));
+        norm2[1] *= delta_y * grid->length_x / (grid->global_no_halo_dim_x - (grid->coordinate_system == "cylindrical" ? 1 : 0));
     }
-    norm2[0] *= delta_y * grid->length_x / (grid->global_no_halo_dim_x - (grid->coordinate_system == "Cylindrical" ? 1 : 0));
+    norm2[0] *= delta_y * grid->length_x / (grid->global_no_halo_dim_x - (grid->coordinate_system == "cylindrical" ? 1 : 0));
     energy_expected_values_updated = true;
     delete [] norm2_kin;
 }

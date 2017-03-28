@@ -41,7 +41,7 @@ being, for Cartesian coordinates
 
    H = \frac{1}{2m}(P_x^2 + P_y^2) + V(x,y) + g|\psi(x,y)|^2 + g_{LHY} |\psi(x,y)|^3 + \omega L_z
 
-while for Cylindrical coordinates
+while for cylindrical coordinates
 
 .. math::
 
