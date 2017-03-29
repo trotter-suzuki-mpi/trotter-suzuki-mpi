@@ -52,7 +52,6 @@ $(distdir):
 	cp $(srcdir)/Makefile.in $(distdir)
 	cp $(srcdir)/README.md $(distdir)
 	cp $(srcdir)/COPYING $(distdir)
-	cp $(srcdir)/CHANGES $(distdir)
 	cp -R $(srcdir)/doc/* $(distdir)/doc/
 	cp $(srcdir)/examples/Makefile.in $(srcdir)/examples/*cpp $(distdir)/examples
 	cp $(srcdir)/src/Makefile.in $(distdir)/src
