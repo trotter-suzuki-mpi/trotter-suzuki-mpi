@@ -185,6 +185,7 @@ Imaginary time evolution in a 1D lattice using radial coordinate
 
     groundstate = ts.BesselState(grid, angular_momentum)
     groundstate_psi = np.sqrt(groundstate.get_particle_density()[0])
+    groundstate_psi = groundstate_psi / np.linalg.norm(groundstate_psi)
 
     # Plot wave functions
     plt.plot(grid.get_x_axis(), psi, 'o')
