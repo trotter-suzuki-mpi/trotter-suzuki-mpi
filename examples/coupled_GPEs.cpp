@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
 
     //set hamiltonian
     Potential *potential = new HarmonicPotential(grid, 1., 1.);
-    Hamiltonian2Component *hamiltonian = new Hamiltonian2Component(grid, potential, potential, particle_mass_a, particle_mass_b, coupling_a, 0., coupling_ab, coupling_b, 0., omega_r, omega_i);
+    Hamiltonian2Component *hamiltonian = new Hamiltonian2Component(grid, potential, potential, particle_mass_a, particle_mass_b, coupling_a, coupling_ab, coupling_b, omega_r, omega_i);
 
     //set evolution
     Solver *solver = new Solver(grid, state1, state2, hamiltonian, delta_t, KERNEL_TYPE);
