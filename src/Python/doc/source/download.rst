@@ -10,6 +10,8 @@ Dependencies
 ============
 The module requires `Numpy <http://www.numpy.org/>`_. The code is compatible with both Python 2 and 3.
 
+If you want to use the GPU kernel, ensure that CUDA is installed and set the `CUDAHOME` environment variable before you start.
+
 Installation via conda
 ----------------------
 The `conda-forge <http://anaconda.org/conda-forge/trottersuzuki>`_ channel provides packages for Linux and macOS that can be installed using `conda <https://conda.io/docs/>`_:
@@ -46,8 +48,6 @@ Then follow the standard procedure for installing Python modules from the `src/P
 
 ::
     $ sudo python setup.py install
-
-To install with CUDA support, set the `CUDAHOME` environment variable before calling the Python install.
 
 Build on Mac OS X
 --------------------
